@@ -1,0 +1,49 @@
+# Environment variables
+.env
+.env.*
+!.env.example
+
+# IDE
+.vscode/
+.idea/
+*.iml
+
+# Operating system
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Logs
+*.log
+logs/
+
+# Temporary files
+*.tmp
+*.temp
+*.swp
+
+# Build outputs
+dist/
+build/
+out/
+target/
+
+# Dependencies
+node_modules/
+
+# Test and coverage
+coverage/
+
+# Java
+*.class
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# Local configuration
+application-local.yml
+application-local.yaml
+application-local.properties
