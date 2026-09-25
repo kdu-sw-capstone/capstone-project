@@ -1,0 +1,8 @@
+# FOCURVE · ERD
+
+
+
+| 문서 | 형식 |
+|---|---|
+| [FOCURVE_ERD_계정과사이트](FOCURVE_ERD_%EA%B3%84%EC%A0%95%EA%B3%BC%EC%82%AC%EC%9D%B4%ED%8A%B8.png) | PNG |
+| [FOCURVE_ERD_전체관계도](FOCURVE_ERD_%EC%A0%84%EC%B2%B4%EA%B4%80%EA%B3%84%EB%8F%84.png) | PNG |
