@@ -1,0 +1,1556 @@
+{
+  "fixture_version": "1.0",
+  "purpose": "FOCURVE 화면 검수용 예시 데이터. 실제 사용자 기록이나 API 전송 스키마가 아님.",
+  "timezone": "Asia/Seoul",
+  "as_of": "2026-09-20T14:30:00+09:00",
+  "sources": {
+    "figma": "https://www.figma.com/design/TmEt1UQV5jIhrArfijGwQe?node-id=435-13012",
+    "today_sessions": "SESSION-01_웹_집중_세션_화면_명세.xlsx 검수 예시",
+    "week_sessions": "2026.09.14–09.19 세션은 기존 주간 29회·630분과 이벤트 시각을 만족하도록 이 기준표에서 정의한 검수용 보완 데이터"
+  },
+  "sessions": [
+    {
+      "session_key": "S-20260914-06",
+      "started_at": "2026-09-14T06:10:00+09:00",
+      "ended_at": "2026-09-14T06:30:00+09:00",
+      "end_reason": "TIME_EXPIRED",
+      "source": "기존 주간 화면 합계와 이벤트 시각에 맞춰 정의한 검수용 세션"
+    },
+    {
+      "session_key": "S-20260914-09",
+      "started_at": "2026-09-14T09:10:00+09:00",
+      "ended_at": "2026-09-14T09:30:00+09:00",
+      "end_reason": "TIME_EXPIRED",
+      "source": "기존 주간 화면 합계와 이벤트 시각에 맞춰 정의한 검수용 세션"
+    },
+    {
+      "session_key": "S-20260914-12",
+      "started_at": "2026-09-14T12:10:00+09:00",
+      "ended_at": "2026-09-14T12:30:00+09:00",
+      "end_reason": "TIME_EXPIRED",
+      "source": "기존 주간 화면 합계와 이벤트 시각에 맞춰 정의한 검수용 세션"
+    },
+    {
+      "session_key": "S-20260914-15",
+      "started_at": "2026-09-14T15:10:00+09:00",
+      "ended_at": "2026-09-14T15:30:00+09:00",
+      "end_reason": "TIME_EXPIRED",
+      "source": "기존 주간 화면 합계와 이벤트 시각에 맞춰 정의한 검수용 세션"
+    },
+    {
+      "session_key": "S-20260914-20",
+      "started_at": "2026-09-14T20:10:00+09:00",
+      "ended_at": "2026-09-14T20:30:00+09:00",
+      "end_reason": "TIME_EXPIRED",
+      "source": "기존 주간 화면 합계와 이벤트 시각에 맞춰 정의한 검수용 세션"
+    },
+    {
+      "session_key": "S-20260915-07",
+      "started_at": "2026-09-15T07:10:00+09:00",
+      "ended_at": "2026-09-15T07:30:00+09:00",
+      "end_reason": "TIME_EXPIRED",
+      "source": "기존 주간 화면 합계와 이벤트 시각에 맞춰 정의한 검수용 세션"
+    },
+    {
+      "session_key": "S-20260915-10",
+      "started_at": "2026-09-15T10:10:00+09:00",
+      "ended_at": "2026-09-15T10:30:00+09:00",
+      "end_reason": "TIME_EXPIRED",
+      "source": "기존 주간 화면 합계와 이벤트 시각에 맞춰 정의한 검수용 세션"
+    },
+    {
+      "session_key": "S-20260915-13",
+      "started_at": "2026-09-15T13:10:00+09:00",
+      "ended_at": "2026-09-15T13:30:00+09:00",
+      "end_reason": "TIME_EXPIRED",
+      "source": "기존 주간 화면 합계와 이벤트 시각에 맞춰 정의한 검수용 세션"
+    },
+    {
+      "session_key": "S-20260915-15",
+      "started_at": "2026-09-15T15:10:00+09:00",
+      "ended_at": "2026-09-15T15:30:00+09:00",
+      "end_reason": "TIME_EXPIRED",
+      "source": "기존 주간 화면 합계와 이벤트 시각에 맞춰 정의한 검수용 세션"
+    },
+    {
+      "session_key": "S-20260915-21",
+      "started_at": "2026-09-15T21:10:00+09:00",
+      "ended_at": "2026-09-15T21:30:00+09:00",
+      "end_reason": "TIME_EXPIRED",
+      "source": "기존 주간 화면 합계와 이벤트 시각에 맞춰 정의한 검수용 세션"
+    },
+    {
+      "session_key": "S-20260916-08",
+      "started_at": "2026-09-16T08:10:00+09:00",
+      "ended_at": "2026-09-16T08:30:00+09:00",
+      "end_reason": "TIME_EXPIRED",
+      "source": "기존 주간 화면 합계와 이벤트 시각에 맞춰 정의한 검수용 세션"
+    },
+    {
+      "session_key": "S-20260916-11",
+      "started_at": "2026-09-16T11:10:00+09:00",
+      "ended_at": "2026-09-16T11:30:00+09:00",
+      "end_reason": "TIME_EXPIRED",
+      "source": "기존 주간 화면 합계와 이벤트 시각에 맞춰 정의한 검수용 세션"
+    },
+    {
+      "session_key": "S-20260916-14",
+      "started_at": "2026-09-16T14:10:00+09:00",
+      "ended_at": "2026-09-16T14:30:00+09:00",
+      "end_reason": "TIME_EXPIRED",
+      "source": "기존 주간 화면 합계와 이벤트 시각에 맞춰 정의한 검수용 세션"
+    },
+    {
+      "session_key": "S-20260916-16",
+      "started_at": "2026-09-16T16:10:00+09:00",
+      "ended_at": "2026-09-16T16:30:00+09:00",
+      "end_reason": "TIME_EXPIRED",
+      "source": "기존 주간 화면 합계와 이벤트 시각에 맞춰 정의한 검수용 세션"
+    },
+    {
+      "session_key": "S-20260916-22",
+      "started_at": "2026-09-16T22:10:00+09:00",
+      "ended_at": "2026-09-16T22:30:00+09:00",
+      "end_reason": "TIME_EXPIRED",
+      "source": "기존 주간 화면 합계와 이벤트 시각에 맞춰 정의한 검수용 세션"
+    },
+    {
+      "session_key": "S-20260917-06",
+      "started_at": "2026-09-17T06:10:00+09:00",
+      "ended_at": "2026-09-17T06:30:00+09:00",
+      "end_reason": "TIME_EXPIRED",
+      "source": "기존 주간 화면 합계와 이벤트 시각에 맞춰 정의한 검수용 세션"
+    },
+    {
+      "session_key": "S-20260917-10",
+      "started_at": "2026-09-17T10:10:00+09:00",
+      "ended_at": "2026-09-17T10:30:00+09:00",
+      "end_reason": "TIME_EXPIRED",
+      "source": "기존 주간 화면 합계와 이벤트 시각에 맞춰 정의한 검수용 세션"
+    },
+    {
+      "session_key": "S-20260917-15",
+      "started_at": "2026-09-17T15:10:00+09:00",
+      "ended_at": "2026-09-17T15:30:00+09:00",
+      "end_reason": "TIME_EXPIRED",
+      "source": "기존 주간 화면 합계와 이벤트 시각에 맞춰 정의한 검수용 세션"
+    },
+    {
+      "session_key": "S-20260917-18",
+      "started_at": "2026-09-17T18:10:00+09:00",
+      "ended_at": "2026-09-17T18:30:00+09:00",
+      "end_reason": "TIME_EXPIRED",
+      "source": "기존 주간 화면 합계와 이벤트 시각에 맞춰 정의한 검수용 세션"
+    },
+    {
+      "session_key": "S-20260918-07",
+      "started_at": "2026-09-18T07:10:00+09:00",
+      "ended_at": "2026-09-18T07:30:00+09:00",
+      "end_reason": "TIME_EXPIRED",
+      "source": "기존 주간 화면 합계와 이벤트 시각에 맞춰 정의한 검수용 세션"
+    },
+    {
+      "session_key": "S-20260918-11",
+      "started_at": "2026-09-18T11:10:00+09:00",
+      "ended_at": "2026-09-18T11:30:00+09:00",
+      "end_reason": "TIME_EXPIRED",
+      "source": "기존 주간 화면 합계와 이벤트 시각에 맞춰 정의한 검수용 세션"
+    },
+    {
+      "session_key": "S-20260918-15",
+      "started_at": "2026-09-18T15:10:00+09:00",
+      "ended_at": "2026-09-18T15:30:00+09:00",
+      "end_reason": "TIME_EXPIRED",
+      "source": "기존 주간 화면 합계와 이벤트 시각에 맞춰 정의한 검수용 세션"
+    },
+    {
+      "session_key": "S-20260918-19",
+      "started_at": "2026-09-18T19:10:00+09:00",
+      "ended_at": "2026-09-18T19:30:00+09:00",
+      "end_reason": "TIME_EXPIRED",
+      "source": "기존 주간 화면 합계와 이벤트 시각에 맞춰 정의한 검수용 세션"
+    },
+    {
+      "session_key": "S-20260919-08",
+      "started_at": "2026-09-19T08:10:00+09:00",
+      "ended_at": "2026-09-19T08:30:00+09:00",
+      "end_reason": "TIME_EXPIRED",
+      "source": "기존 주간 화면 합계와 이벤트 시각에 맞춰 정의한 검수용 세션"
+    },
+    {
+      "session_key": "S-20260919-12",
+      "started_at": "2026-09-19T12:10:00+09:00",
+      "ended_at": "2026-09-19T12:30:00+09:00",
+      "end_reason": "TIME_EXPIRED",
+      "source": "기존 주간 화면 합계와 이벤트 시각에 맞춰 정의한 검수용 세션"
+    },
+    {
+      "session_key": "S-20260919-16",
+      "started_at": "2026-09-19T16:10:00+09:00",
+      "ended_at": "2026-09-19T16:30:00+09:00",
+      "end_reason": "TIME_EXPIRED",
+      "source": "기존 주간 화면 합계와 이벤트 시각에 맞춰 정의한 검수용 세션"
+    },
+    {
+      "session_key": "S-20260919-20",
+      "started_at": "2026-09-19T20:10:00+09:00",
+      "ended_at": "2026-09-19T20:30:00+09:00",
+      "end_reason": "TIME_EXPIRED",
+      "source": "기존 주간 화면 합계와 이벤트 시각에 맞춰 정의한 검수용 세션"
+    },
+    {
+      "session_key": "S-20260920-09",
+      "started_at": "2026-09-20T09:00:00+09:00",
+      "ended_at": "2026-09-20T10:00:00+09:00",
+      "end_reason": "TIME_EXPIRED",
+      "source": "SESSION-01 화면 명세의 기존 예시"
+    },
+    {
+      "session_key": "S-20260920-14",
+      "started_at": "2026-09-20T14:00:00+09:00",
+      "ended_at": "2026-09-20T14:30:00+09:00",
+      "end_reason": "TIME_EXPIRED",
+      "source": "SESSION-01 화면 명세의 기존 예시"
+    }
+  ],
+  "events": [
+    {
+      "event_key": "EX-001",
+      "session_key": "S-20260914-06",
+      "occurred_at": "2026-09-14T06:11:00+09:00",
+      "target": "Instagram",
+      "action": "사이트 차단",
+      "ordinal": 1,
+      "is_repeat": false,
+      "figma_node_id": "435:14924"
+    },
+    {
+      "event_key": "EX-002",
+      "session_key": "S-20260914-06",
+      "occurred_at": "2026-09-14T06:13:34+09:00",
+      "target": "Reddit",
+      "action": "허용 후 기록",
+      "ordinal": 1,
+      "is_repeat": false,
+      "figma_node_id": "435:14911"
+    },
+    {
+      "event_key": "EX-003",
+      "session_key": "S-20260914-06",
+      "occurred_at": "2026-09-14T06:16:08+09:00",
+      "target": "YouTube Shorts",
+      "action": "내부 기능 제한",
+      "ordinal": 1,
+      "is_repeat": false,
+      "figma_node_id": "435:14898"
+    },
+    {
+      "event_key": "EX-004",
+      "session_key": "S-20260914-06",
+      "occurred_at": "2026-09-14T06:18:42+09:00",
+      "target": "X",
+      "action": "사이트 차단",
+      "ordinal": 1,
+      "is_repeat": false,
+      "figma_node_id": "435:14885"
+    },
+    {
+      "event_key": "EX-005",
+      "session_key": "S-20260914-06",
+      "occurred_at": "2026-09-14T06:21:17+09:00",
+      "target": "Instagram",
+      "action": "사이트 차단",
+      "ordinal": 2,
+      "is_repeat": true,
+      "figma_node_id": "435:14872"
+    },
+    {
+      "event_key": "EX-006",
+      "session_key": "S-20260914-06",
+      "occurred_at": "2026-09-14T06:23:51+09:00",
+      "target": "YouTube Shorts",
+      "action": "내부 기능 제한",
+      "ordinal": 2,
+      "is_repeat": true,
+      "figma_node_id": "435:14859"
+    },
+    {
+      "event_key": "EX-007",
+      "session_key": "S-20260914-06",
+      "occurred_at": "2026-09-14T06:26:25+09:00",
+      "target": "X",
+      "action": "사이트 차단",
+      "ordinal": 2,
+      "is_repeat": true,
+      "figma_node_id": "435:14846"
+    },
+    {
+      "event_key": "EX-008",
+      "session_key": "S-20260914-09",
+      "occurred_at": "2026-09-14T09:11:00+09:00",
+      "target": "Instagram",
+      "action": "사이트 차단",
+      "ordinal": 1,
+      "is_repeat": false,
+      "figma_node_id": "435:14833"
+    },
+    {
+      "event_key": "EX-009",
+      "session_key": "S-20260914-09",
+      "occurred_at": "2026-09-14T09:14:00+09:00",
+      "target": "Reddit",
+      "action": "허용 후 기록",
+      "ordinal": 1,
+      "is_repeat": false,
+      "figma_node_id": "435:14820"
+    },
+    {
+      "event_key": "EX-010",
+      "session_key": "S-20260914-09",
+      "occurred_at": "2026-09-14T09:17:00+09:00",
+      "target": "YouTube Shorts",
+      "action": "내부 기능 제한",
+      "ordinal": 1,
+      "is_repeat": false,
+      "figma_node_id": "435:14807"
+    },
+    {
+      "event_key": "EX-011",
+      "session_key": "S-20260914-09",
+      "occurred_at": "2026-09-14T09:20:00+09:00",
+      "target": "Hacker News",
+      "action": "허용 후 기록",
+      "ordinal": 1,
+      "is_repeat": false,
+      "figma_node_id": "435:14794"
+    },
+    {
+      "event_key": "EX-012",
+      "session_key": "S-20260914-09",
+      "occurred_at": "2026-09-14T09:23:00+09:00",
+      "target": "Reddit",
+      "action": "허용 후 기록",
+      "ordinal": 2,
+      "is_repeat": true,
+      "figma_node_id": "435:14781"
+    },
+    {
+      "event_key": "EX-013",
+      "session_key": "S-20260914-09",
+      "occurred_at": "2026-09-14T09:26:00+09:00",
+      "target": "Hacker News",
+      "action": "허용 후 기록",
+      "ordinal": 2,
+      "is_repeat": true,
+      "figma_node_id": "435:14768"
+    },
+    {
+      "event_key": "EX-014",
+      "session_key": "S-20260914-12",
+      "occurred_at": "2026-09-14T12:11:00+09:00",
+      "target": "Instagram",
+      "action": "사이트 차단",
+      "ordinal": 1,
+      "is_repeat": false,
+      "figma_node_id": "435:14755"
+    },
+    {
+      "event_key": "EX-015",
+      "session_key": "S-20260914-12",
+      "occurred_at": "2026-09-14T12:20:00+09:00",
+      "target": "X",
+      "action": "사이트 차단",
+      "ordinal": 1,
+      "is_repeat": false,
+      "figma_node_id": "435:14742"
+    },
+    {
+      "event_key": "EX-016",
+      "session_key": "S-20260914-15",
+      "occurred_at": "2026-09-14T15:11:00+09:00",
+      "target": "Instagram",
+      "action": "사이트 차단",
+      "ordinal": 1,
+      "is_repeat": false,
+      "figma_node_id": "435:14729"
+    },
+    {
+      "event_key": "EX-017",
+      "session_key": "S-20260914-15",
+      "occurred_at": "2026-09-14T15:14:00+09:00",
+      "target": "Reddit",
+      "action": "허용 후 기록",
+      "ordinal": 1,
+      "is_repeat": false,
+      "figma_node_id": "435:14716"
+    },
+    {
+      "event_key": "EX-018",
+      "session_key": "S-20260914-15",
+      "occurred_at": "2026-09-14T15:17:00+09:00",
+      "target": "YouTube Shorts",
+      "action": "내부 기능 제한",
+      "ordinal": 1,
+      "is_repeat": false,
+      "figma_node_id": "435:14703"
+    },
+    {
+      "event_key": "EX-019",
+      "session_key": "S-20260914-15",
+      "occurred_at": "2026-09-14T15:20:00+09:00",
+      "target": "X",
+      "action": "사이트 차단",
+      "ordinal": 1,
+      "is_repeat": false,
+      "figma_node_id": "435:14690"
+    },
+    {
+      "event_key": "EX-020",
+      "session_key": "S-20260914-15",
+      "occurred_at": "2026-09-14T15:23:00+09:00",
+      "target": "Hacker News",
+      "action": "허용 후 기록",
+      "ordinal": 1,
+      "is_repeat": false,
+      "figma_node_id": "435:14677"
+    },
+    {
+      "event_key": "EX-021",
+      "session_key": "S-20260914-15",
+      "occurred_at": "2026-09-14T15:26:00+09:00",
+      "target": "YouTube Shorts",
+      "action": "내부 기능 제한",
+      "ordinal": 2,
+      "is_repeat": true,
+      "figma_node_id": "435:14664"
+    },
+    {
+      "event_key": "EX-022",
+      "session_key": "S-20260914-20",
+      "occurred_at": "2026-09-14T20:11:00+09:00",
+      "target": "Instagram",
+      "action": "사이트 차단",
+      "ordinal": 1,
+      "is_repeat": false,
+      "figma_node_id": "435:14651"
+    },
+    {
+      "event_key": "EX-023",
+      "session_key": "S-20260914-20",
+      "occurred_at": "2026-09-14T20:15:30+09:00",
+      "target": "Reddit",
+      "action": "허용 후 기록",
+      "ordinal": 1,
+      "is_repeat": false,
+      "figma_node_id": "435:14638"
+    },
+    {
+      "event_key": "EX-024",
+      "session_key": "S-20260914-20",
+      "occurred_at": "2026-09-14T20:20:00+09:00",
+      "target": "YouTube Shorts",
+      "action": "내부 기능 제한",
+      "ordinal": 1,
+      "is_repeat": false,
+      "figma_node_id": "435:14625"
+    },
+    {
+      "event_key": "EX-025",
+      "session_key": "S-20260914-20",
+      "occurred_at": "2026-09-14T20:24:30+09:00",
+      "target": "X",
+      "action": "사이트 차단",
+      "ordinal": 1,
+      "is_repeat": false,
+      "figma_node_id": "435:14612"
+    },
+    {
+      "event_key": "EX-026",
+      "session_key": "S-20260915-07",
+      "occurred_at": "2026-09-15T07:11:00+09:00",
+      "target": "Instagram",
+      "action": "사이트 차단",
+      "ordinal": 1,
+      "is_repeat": false,
+      "figma_node_id": "435:14599"
+    },
+    {
+      "event_key": "EX-027",
+      "session_key": "S-20260915-07",
+      "occurred_at": "2026-09-15T07:15:30+09:00",
+      "target": "Reddit",
+      "action": "허용 후 기록",
+      "ordinal": 1,
+      "is_repeat": false,
+      "figma_node_id": "435:14586"
+    },
+    {
+      "event_key": "EX-028",
+      "session_key": "S-20260915-07",
+      "occurred_at": "2026-09-15T07:20:00+09:00",
+      "target": "Hacker News",
+      "action": "허용 후 기록",
+      "ordinal": 1,
+      "is_repeat": false,
+      "figma_node_id": "435:14573"
+    },
+    {
+      "event_key": "EX-029",
+      "session_key": "S-20260915-07",
+      "occurred_at": "2026-09-15T07:24:30+09:00",
+      "target": "Instagram",
+      "action": "사이트 차단",
+      "ordinal": 2,
+      "is_repeat": true,
+      "figma_node_id": "435:14560"
+    },
+    {
+      "event_key": "EX-030",
+      "session_key": "S-20260915-10",
+      "occurred_at": "2026-09-15T10:11:00+09:00",
+      "target": "Instagram",
+      "action": "사이트 차단",
+      "ordinal": 1,
+      "is_repeat": false,
+      "figma_node_id": "435:14547"
+    },
+    {
+      "event_key": "EX-031",
+      "session_key": "S-20260915-10",
+      "occurred_at": "2026-09-15T10:14:00+09:00",
+      "target": "Reddit",
+      "action": "허용 후 기록",
+      "ordinal": 1,
+      "is_repeat": false,
+      "figma_node_id": "435:14534"
+    },
+    {
+      "event_key": "EX-032",
+      "session_key": "S-20260915-10",
+      "occurred_at": "2026-09-15T10:17:00+09:00",
+      "target": "YouTube Shorts",
+      "action": "내부 기능 제한",
+      "ordinal": 1,
+      "is_repeat": false,
+      "figma_node_id": "435:14521"
+    },
+    {
+      "event_key": "EX-033",
+      "session_key": "S-20260915-10",
+      "occurred_at": "2026-09-15T10:20:00+09:00",
+      "target": "X",
+      "action": "사이트 차단",
+      "ordinal": 1,
+      "is_repeat": false,
+      "figma_node_id": "435:14508"
+    },
+    {
+      "event_key": "EX-034",
+      "session_key": "S-20260915-10",
+      "occurred_at": "2026-09-15T10:23:00+09:00",
+      "target": "YouTube Shorts",
+      "action": "내부 기능 제한",
+      "ordinal": 2,
+      "is_repeat": true,
+      "figma_node_id": "435:14495"
+    },
+    {
+      "event_key": "EX-035",
+      "session_key": "S-20260915-10",
+      "occurred_at": "2026-09-15T10:26:00+09:00",
+      "target": "X",
+      "action": "사이트 차단",
+      "ordinal": 2,
+      "is_repeat": true,
+      "figma_node_id": "435:14482"
+    },
+    {
+      "event_key": "EX-036",
+      "session_key": "S-20260915-13",
+      "occurred_at": "2026-09-15T13:11:00+09:00",
+      "target": "Instagram",
+      "action": "사이트 차단",
+      "ordinal": 1,
+      "is_repeat": false,
+      "figma_node_id": "435:14469"
+    },
+    {
+      "event_key": "EX-037",
+      "session_key": "S-20260915-13",
+      "occurred_at": "2026-09-15T13:15:30+09:00",
+      "target": "Reddit",
+      "action": "허용 후 기록",
+      "ordinal": 1,
+      "is_repeat": false,
+      "figma_node_id": "435:14456"
+    },
+    {
+      "event_key": "EX-038",
+      "session_key": "S-20260915-13",
+      "occurred_at": "2026-09-15T13:20:00+09:00",
+      "target": "YouTube Shorts",
+      "action": "내부 기능 제한",
+      "ordinal": 1,
+      "is_repeat": false,
+      "figma_node_id": "435:14443"
+    },
+    {
+      "event_key": "EX-039",
+      "session_key": "S-20260915-13",
+      "occurred_at": "2026-09-15T13:24:30+09:00",
+      "target": "Hacker News",
+      "action": "허용 후 기록",
+      "ordinal": 1,
+      "is_repeat": false,
+      "figma_node_id": "435:14430"
+    },
+    {
+      "event_key": "EX-040",
+      "session_key": "S-20260915-15",
+      "occurred_at": "2026-09-15T15:11:00+09:00",
+      "target": "Instagram",
+      "action": "사이트 차단",
+      "ordinal": 1,
+      "is_repeat": false,
+      "figma_node_id": "435:14417"
+    },
+    {
+      "event_key": "EX-041",
+      "session_key": "S-20260915-15",
+      "occurred_at": "2026-09-15T15:17:00+09:00",
+      "target": "Reddit",
+      "action": "허용 후 기록",
+      "ordinal": 1,
+      "is_repeat": false,
+      "figma_node_id": "435:14404"
+    },
+    {
+      "event_key": "EX-042",
+      "session_key": "S-20260915-15",
+      "occurred_at": "2026-09-15T15:23:00+09:00",
+      "target": "X",
+      "action": "사이트 차단",
+      "ordinal": 1,
+      "is_repeat": false,
+      "figma_node_id": "435:14391"
+    },
+    {
+      "event_key": "EX-043",
+      "session_key": "S-20260915-21",
+      "occurred_at": "2026-09-15T21:11:00+09:00",
+      "target": "Instagram",
+      "action": "사이트 차단",
+      "ordinal": 1,
+      "is_repeat": false,
+      "figma_node_id": "435:14378"
+    },
+    {
+      "event_key": "EX-044",
+      "session_key": "S-20260915-21",
+      "occurred_at": "2026-09-15T21:14:00+09:00",
+      "target": "Reddit",
+      "action": "허용 후 기록",
+      "ordinal": 1,
+      "is_repeat": false,
+      "figma_node_id": "435:14365"
+    },
+    {
+      "event_key": "EX-045",
+      "session_key": "S-20260915-21",
+      "occurred_at": "2026-09-15T21:17:00+09:00",
+      "target": "YouTube Shorts",
+      "action": "내부 기능 제한",
+      "ordinal": 1,
+      "is_repeat": false,
+      "figma_node_id": "435:14352"
+    },
+    {
+      "event_key": "EX-046",
+      "session_key": "S-20260915-21",
+      "occurred_at": "2026-09-15T21:20:00+09:00",
+      "target": "Hacker News",
+      "action": "허용 후 기록",
+      "ordinal": 1,
+      "is_repeat": false,
+      "figma_node_id": "435:14339"
+    },
+    {
+      "event_key": "EX-047",
+      "session_key": "S-20260915-21",
+      "occurred_at": "2026-09-15T21:23:00+09:00",
+      "target": "Reddit",
+      "action": "허용 후 기록",
+      "ordinal": 2,
+      "is_repeat": true,
+      "figma_node_id": "435:14326"
+    },
+    {
+      "event_key": "EX-048",
+      "session_key": "S-20260915-21",
+      "occurred_at": "2026-09-15T21:26:00+09:00",
+      "target": "YouTube Shorts",
+      "action": "내부 기능 제한",
+      "ordinal": 2,
+      "is_repeat": true,
+      "figma_node_id": "435:14313"
+    },
+    {
+      "event_key": "EX-049",
+      "session_key": "S-20260916-08",
+      "occurred_at": "2026-09-16T08:11:00+09:00",
+      "target": "Instagram",
+      "action": "사이트 차단",
+      "ordinal": 1,
+      "is_repeat": false,
+      "figma_node_id": "435:14300"
+    },
+    {
+      "event_key": "EX-050",
+      "session_key": "S-20260916-08",
+      "occurred_at": "2026-09-16T08:14:36+09:00",
+      "target": "Reddit",
+      "action": "허용 후 기록",
+      "ordinal": 1,
+      "is_repeat": false,
+      "figma_node_id": "435:14287"
+    },
+    {
+      "event_key": "EX-051",
+      "session_key": "S-20260916-08",
+      "occurred_at": "2026-09-16T08:18:12+09:00",
+      "target": "YouTube Shorts",
+      "action": "내부 기능 제한",
+      "ordinal": 1,
+      "is_repeat": false,
+      "figma_node_id": "435:14274"
+    },
+    {
+      "event_key": "EX-052",
+      "session_key": "S-20260916-08",
+      "occurred_at": "2026-09-16T08:21:48+09:00",
+      "target": "X",
+      "action": "사이트 차단",
+      "ordinal": 1,
+      "is_repeat": false,
+      "figma_node_id": "435:14261"
+    },
+    {
+      "event_key": "EX-053",
+      "session_key": "S-20260916-08",
+      "occurred_at": "2026-09-16T08:25:24+09:00",
+      "target": "Instagram",
+      "action": "사이트 차단",
+      "ordinal": 2,
+      "is_repeat": true,
+      "figma_node_id": "435:14248"
+    },
+    {
+      "event_key": "EX-054",
+      "session_key": "S-20260916-11",
+      "occurred_at": "2026-09-16T11:11:00+09:00",
+      "target": "Instagram",
+      "action": "사이트 차단",
+      "ordinal": 1,
+      "is_repeat": false,
+      "figma_node_id": "435:14235"
+    },
+    {
+      "event_key": "EX-055",
+      "session_key": "S-20260916-11",
+      "occurred_at": "2026-09-16T11:20:00+09:00",
+      "target": "Hacker News",
+      "action": "허용 후 기록",
+      "ordinal": 1,
+      "is_repeat": false,
+      "figma_node_id": "435:14222"
+    },
+    {
+      "event_key": "EX-056",
+      "session_key": "S-20260916-14",
+      "occurred_at": "2026-09-16T14:11:00+09:00",
+      "target": "Instagram",
+      "action": "사이트 차단",
+      "ordinal": 1,
+      "is_repeat": false,
+      "figma_node_id": "435:14209"
+    },
+    {
+      "event_key": "EX-057",
+      "session_key": "S-20260916-14",
+      "occurred_at": "2026-09-16T14:14:00+09:00",
+      "target": "Reddit",
+      "action": "허용 후 기록",
+      "ordinal": 1,
+      "is_repeat": false,
+      "figma_node_id": "435:14196"
+    },
+    {
+      "event_key": "EX-058",
+      "session_key": "S-20260916-14",
+      "occurred_at": "2026-09-16T14:17:00+09:00",
+      "target": "YouTube Shorts",
+      "action": "내부 기능 제한",
+      "ordinal": 1,
+      "is_repeat": false,
+      "figma_node_id": "435:14183"
+    },
+    {
+      "event_key": "EX-059",
+      "session_key": "S-20260916-14",
+      "occurred_at": "2026-09-16T14:20:00+09:00",
+      "target": "X",
+      "action": "사이트 차단",
+      "ordinal": 1,
+      "is_repeat": false,
+      "figma_node_id": "435:14170"
+    },
+    {
+      "event_key": "EX-060",
+      "session_key": "S-20260916-14",
+      "occurred_at": "2026-09-16T14:23:00+09:00",
+      "target": "YouTube Shorts",
+      "action": "내부 기능 제한",
+      "ordinal": 2,
+      "is_repeat": true,
+      "figma_node_id": "435:14157"
+    },
+    {
+      "event_key": "EX-061",
+      "session_key": "S-20260916-14",
+      "occurred_at": "2026-09-16T14:26:00+09:00",
+      "target": "X",
+      "action": "사이트 차단",
+      "ordinal": 2,
+      "is_repeat": true,
+      "figma_node_id": "435:14144"
+    },
+    {
+      "event_key": "EX-062",
+      "session_key": "S-20260916-16",
+      "occurred_at": "2026-09-16T16:11:00+09:00",
+      "target": "Instagram",
+      "action": "사이트 차단",
+      "ordinal": 1,
+      "is_repeat": false,
+      "figma_node_id": "435:14131"
+    },
+    {
+      "event_key": "EX-063",
+      "session_key": "S-20260916-16",
+      "occurred_at": "2026-09-16T16:14:36+09:00",
+      "target": "Reddit",
+      "action": "허용 후 기록",
+      "ordinal": 1,
+      "is_repeat": false,
+      "figma_node_id": "435:14118"
+    },
+    {
+      "event_key": "EX-064",
+      "session_key": "S-20260916-16",
+      "occurred_at": "2026-09-16T16:18:12+09:00",
+      "target": "YouTube Shorts",
+      "action": "내부 기능 제한",
+      "ordinal": 1,
+      "is_repeat": false,
+      "figma_node_id": "435:14105"
+    },
+    {
+      "event_key": "EX-065",
+      "session_key": "S-20260916-16",
+      "occurred_at": "2026-09-16T16:21:48+09:00",
+      "target": "Hacker News",
+      "action": "허용 후 기록",
+      "ordinal": 1,
+      "is_repeat": false,
+      "figma_node_id": "435:14092"
+    },
+    {
+      "event_key": "EX-066",
+      "session_key": "S-20260916-16",
+      "occurred_at": "2026-09-16T16:25:24+09:00",
+      "target": "Hacker News",
+      "action": "허용 후 기록",
+      "ordinal": 2,
+      "is_repeat": true,
+      "figma_node_id": "435:14079"
+    },
+    {
+      "event_key": "EX-067",
+      "session_key": "S-20260916-22",
+      "occurred_at": "2026-09-16T22:11:00+09:00",
+      "target": "Instagram",
+      "action": "사이트 차단",
+      "ordinal": 1,
+      "is_repeat": false,
+      "figma_node_id": "435:14066"
+    },
+    {
+      "event_key": "EX-068",
+      "session_key": "S-20260916-22",
+      "occurred_at": "2026-09-16T22:17:00+09:00",
+      "target": "Reddit",
+      "action": "허용 후 기록",
+      "ordinal": 1,
+      "is_repeat": false,
+      "figma_node_id": "435:14053"
+    },
+    {
+      "event_key": "EX-069",
+      "session_key": "S-20260916-22",
+      "occurred_at": "2026-09-16T22:23:00+09:00",
+      "target": "X",
+      "action": "사이트 차단",
+      "ordinal": 1,
+      "is_repeat": false,
+      "figma_node_id": "435:14040"
+    },
+    {
+      "event_key": "EX-070",
+      "session_key": "S-20260917-06",
+      "occurred_at": "2026-09-17T06:11:00+09:00",
+      "target": "Instagram",
+      "action": "사이트 차단",
+      "ordinal": 1,
+      "is_repeat": false,
+      "figma_node_id": "435:14027"
+    },
+    {
+      "event_key": "EX-071",
+      "session_key": "S-20260917-06",
+      "occurred_at": "2026-09-17T06:13:34+09:00",
+      "target": "Reddit",
+      "action": "허용 후 기록",
+      "ordinal": 1,
+      "is_repeat": false,
+      "figma_node_id": "435:14014"
+    },
+    {
+      "event_key": "EX-072",
+      "session_key": "S-20260917-06",
+      "occurred_at": "2026-09-17T06:16:08+09:00",
+      "target": "YouTube Shorts",
+      "action": "내부 기능 제한",
+      "ordinal": 1,
+      "is_repeat": false,
+      "figma_node_id": "435:14001"
+    },
+    {
+      "event_key": "EX-073",
+      "session_key": "S-20260917-06",
+      "occurred_at": "2026-09-17T06:18:42+09:00",
+      "target": "X",
+      "action": "사이트 차단",
+      "ordinal": 1,
+      "is_repeat": false,
+      "figma_node_id": "435:13988"
+    },
+    {
+      "event_key": "EX-074",
+      "session_key": "S-20260917-06",
+      "occurred_at": "2026-09-17T06:21:17+09:00",
+      "target": "Hacker News",
+      "action": "허용 후 기록",
+      "ordinal": 1,
+      "is_repeat": false,
+      "figma_node_id": "435:13975"
+    },
+    {
+      "event_key": "EX-075",
+      "session_key": "S-20260917-06",
+      "occurred_at": "2026-09-17T06:23:51+09:00",
+      "target": "Instagram",
+      "action": "사이트 차단",
+      "ordinal": 2,
+      "is_repeat": true,
+      "figma_node_id": "435:13962"
+    },
+    {
+      "event_key": "EX-076",
+      "session_key": "S-20260917-06",
+      "occurred_at": "2026-09-17T06:26:25+09:00",
+      "target": "YouTube Shorts",
+      "action": "내부 기능 제한",
+      "ordinal": 2,
+      "is_repeat": true,
+      "figma_node_id": "435:13949"
+    },
+    {
+      "event_key": "EX-077",
+      "session_key": "S-20260917-10",
+      "occurred_at": "2026-09-17T10:11:00+09:00",
+      "target": "Instagram",
+      "action": "사이트 차단",
+      "ordinal": 1,
+      "is_repeat": false,
+      "figma_node_id": "435:13936"
+    },
+    {
+      "event_key": "EX-078",
+      "session_key": "S-20260917-10",
+      "occurred_at": "2026-09-17T10:15:30+09:00",
+      "target": "Reddit",
+      "action": "허용 후 기록",
+      "ordinal": 1,
+      "is_repeat": false,
+      "figma_node_id": "435:13923"
+    },
+    {
+      "event_key": "EX-079",
+      "session_key": "S-20260917-10",
+      "occurred_at": "2026-09-17T10:20:00+09:00",
+      "target": "YouTube Shorts",
+      "action": "내부 기능 제한",
+      "ordinal": 1,
+      "is_repeat": false,
+      "figma_node_id": "435:13910"
+    },
+    {
+      "event_key": "EX-080",
+      "session_key": "S-20260917-10",
+      "occurred_at": "2026-09-17T10:24:30+09:00",
+      "target": "X",
+      "action": "사이트 차단",
+      "ordinal": 1,
+      "is_repeat": false,
+      "figma_node_id": "435:13897"
+    },
+    {
+      "event_key": "EX-081",
+      "session_key": "S-20260917-15",
+      "occurred_at": "2026-09-17T15:11:00+09:00",
+      "target": "Instagram",
+      "action": "사이트 차단",
+      "ordinal": 1,
+      "is_repeat": false,
+      "figma_node_id": "435:13884"
+    },
+    {
+      "event_key": "EX-082",
+      "session_key": "S-20260917-15",
+      "occurred_at": "2026-09-17T15:17:00+09:00",
+      "target": "Reddit",
+      "action": "허용 후 기록",
+      "ordinal": 1,
+      "is_repeat": false,
+      "figma_node_id": "435:13871"
+    },
+    {
+      "event_key": "EX-083",
+      "session_key": "S-20260917-15",
+      "occurred_at": "2026-09-17T15:23:00+09:00",
+      "target": "Hacker News",
+      "action": "허용 후 기록",
+      "ordinal": 1,
+      "is_repeat": false,
+      "figma_node_id": "435:13858"
+    },
+    {
+      "event_key": "EX-084",
+      "session_key": "S-20260917-18",
+      "occurred_at": "2026-09-17T18:11:00+09:00",
+      "target": "Instagram",
+      "action": "사이트 차단",
+      "ordinal": 1,
+      "is_repeat": false,
+      "figma_node_id": "435:13845"
+    },
+    {
+      "event_key": "EX-085",
+      "session_key": "S-20260917-18",
+      "occurred_at": "2026-09-17T18:14:36+09:00",
+      "target": "Reddit",
+      "action": "허용 후 기록",
+      "ordinal": 1,
+      "is_repeat": false,
+      "figma_node_id": "435:13832"
+    },
+    {
+      "event_key": "EX-086",
+      "session_key": "S-20260917-18",
+      "occurred_at": "2026-09-17T18:18:12+09:00",
+      "target": "YouTube Shorts",
+      "action": "내부 기능 제한",
+      "ordinal": 1,
+      "is_repeat": false,
+      "figma_node_id": "435:13819"
+    },
+    {
+      "event_key": "EX-087",
+      "session_key": "S-20260917-18",
+      "occurred_at": "2026-09-17T18:21:48+09:00",
+      "target": "X",
+      "action": "사이트 차단",
+      "ordinal": 1,
+      "is_repeat": false,
+      "figma_node_id": "435:13806"
+    },
+    {
+      "event_key": "EX-088",
+      "session_key": "S-20260917-18",
+      "occurred_at": "2026-09-17T18:25:24+09:00",
+      "target": "Reddit",
+      "action": "허용 후 기록",
+      "ordinal": 2,
+      "is_repeat": true,
+      "figma_node_id": "435:13793"
+    },
+    {
+      "event_key": "EX-089",
+      "session_key": "S-20260918-07",
+      "occurred_at": "2026-09-18T07:11:00+09:00",
+      "target": "Instagram",
+      "action": "사이트 차단",
+      "ordinal": 1,
+      "is_repeat": false,
+      "figma_node_id": "435:13780"
+    },
+    {
+      "event_key": "EX-090",
+      "session_key": "S-20260918-07",
+      "occurred_at": "2026-09-18T07:15:30+09:00",
+      "target": "Reddit",
+      "action": "허용 후 기록",
+      "ordinal": 1,
+      "is_repeat": false,
+      "figma_node_id": "435:13767"
+    },
+    {
+      "event_key": "EX-091",
+      "session_key": "S-20260918-07",
+      "occurred_at": "2026-09-18T07:20:00+09:00",
+      "target": "YouTube Shorts",
+      "action": "내부 기능 제한",
+      "ordinal": 1,
+      "is_repeat": false,
+      "figma_node_id": "435:13754"
+    },
+    {
+      "event_key": "EX-092",
+      "session_key": "S-20260918-07",
+      "occurred_at": "2026-09-18T07:24:30+09:00",
+      "target": "Hacker News",
+      "action": "허용 후 기록",
+      "ordinal": 1,
+      "is_repeat": false,
+      "figma_node_id": "435:13741"
+    },
+    {
+      "event_key": "EX-093",
+      "session_key": "S-20260918-11",
+      "occurred_at": "2026-09-18T11:11:00+09:00",
+      "target": "Instagram",
+      "action": "사이트 차단",
+      "ordinal": 1,
+      "is_repeat": false,
+      "figma_node_id": "435:13728"
+    },
+    {
+      "event_key": "EX-094",
+      "session_key": "S-20260918-11",
+      "occurred_at": "2026-09-18T11:15:30+09:00",
+      "target": "Reddit",
+      "action": "허용 후 기록",
+      "ordinal": 1,
+      "is_repeat": false,
+      "figma_node_id": "435:13715"
+    },
+    {
+      "event_key": "EX-095",
+      "session_key": "S-20260918-11",
+      "occurred_at": "2026-09-18T11:20:00+09:00",
+      "target": "X",
+      "action": "사이트 차단",
+      "ordinal": 1,
+      "is_repeat": false,
+      "figma_node_id": "435:13702"
+    },
+    {
+      "event_key": "EX-096",
+      "session_key": "S-20260918-11",
+      "occurred_at": "2026-09-18T11:24:30+09:00",
+      "target": "Instagram",
+      "action": "사이트 차단",
+      "ordinal": 2,
+      "is_repeat": true,
+      "figma_node_id": "435:13689"
+    },
+    {
+      "event_key": "EX-097",
+      "session_key": "S-20260918-15",
+      "occurred_at": "2026-09-18T15:11:00+09:00",
+      "target": "Instagram",
+      "action": "사이트 차단",
+      "ordinal": 1,
+      "is_repeat": false,
+      "figma_node_id": "435:13676"
+    },
+    {
+      "event_key": "EX-098",
+      "session_key": "S-20260918-15",
+      "occurred_at": "2026-09-18T15:15:30+09:00",
+      "target": "Reddit",
+      "action": "허용 후 기록",
+      "ordinal": 1,
+      "is_repeat": false,
+      "figma_node_id": "435:13663"
+    },
+    {
+      "event_key": "EX-099",
+      "session_key": "S-20260918-15",
+      "occurred_at": "2026-09-18T15:20:00+09:00",
+      "target": "YouTube Shorts",
+      "action": "내부 기능 제한",
+      "ordinal": 1,
+      "is_repeat": false,
+      "figma_node_id": "435:13650"
+    },
+    {
+      "event_key": "EX-100",
+      "session_key": "S-20260918-15",
+      "occurred_at": "2026-09-18T15:24:30+09:00",
+      "target": "Hacker News",
+      "action": "허용 후 기록",
+      "ordinal": 1,
+      "is_repeat": false,
+      "figma_node_id": "435:13637"
+    },
+    {
+      "event_key": "EX-101",
+      "session_key": "S-20260918-19",
+      "occurred_at": "2026-09-18T19:11:00+09:00",
+      "target": "Instagram",
+      "action": "사이트 차단",
+      "ordinal": 1,
+      "is_repeat": false,
+      "figma_node_id": "435:13624"
+    },
+    {
+      "event_key": "EX-102",
+      "session_key": "S-20260918-19",
+      "occurred_at": "2026-09-18T19:15:30+09:00",
+      "target": "Reddit",
+      "action": "허용 후 기록",
+      "ordinal": 1,
+      "is_repeat": false,
+      "figma_node_id": "435:13611"
+    },
+    {
+      "event_key": "EX-103",
+      "session_key": "S-20260918-19",
+      "occurred_at": "2026-09-18T19:20:00+09:00",
+      "target": "YouTube Shorts",
+      "action": "내부 기능 제한",
+      "ordinal": 1,
+      "is_repeat": false,
+      "figma_node_id": "435:13598"
+    },
+    {
+      "event_key": "EX-104",
+      "session_key": "S-20260918-19",
+      "occurred_at": "2026-09-18T19:24:30+09:00",
+      "target": "X",
+      "action": "사이트 차단",
+      "ordinal": 1,
+      "is_repeat": false,
+      "figma_node_id": "435:13585"
+    },
+    {
+      "event_key": "EX-105",
+      "session_key": "S-20260919-08",
+      "occurred_at": "2026-09-19T08:11:00+09:00",
+      "target": "Instagram",
+      "action": "사이트 차단",
+      "ordinal": 1,
+      "is_repeat": false,
+      "figma_node_id": "435:13572"
+    },
+    {
+      "event_key": "EX-106",
+      "session_key": "S-20260919-08",
+      "occurred_at": "2026-09-19T08:20:00+09:00",
+      "target": "Hacker News",
+      "action": "허용 후 기록",
+      "ordinal": 1,
+      "is_repeat": false,
+      "figma_node_id": "435:13559"
+    },
+    {
+      "event_key": "EX-107",
+      "session_key": "S-20260919-12",
+      "occurred_at": "2026-09-19T12:11:00+09:00",
+      "target": "Instagram",
+      "action": "사이트 차단",
+      "ordinal": 1,
+      "is_repeat": false,
+      "figma_node_id": "435:13546"
+    },
+    {
+      "event_key": "EX-108",
+      "session_key": "S-20260919-12",
+      "occurred_at": "2026-09-19T12:15:30+09:00",
+      "target": "Reddit",
+      "action": "허용 후 기록",
+      "ordinal": 1,
+      "is_repeat": false,
+      "figma_node_id": "435:13533"
+    },
+    {
+      "event_key": "EX-109",
+      "session_key": "S-20260919-12",
+      "occurred_at": "2026-09-19T12:20:00+09:00",
+      "target": "YouTube Shorts",
+      "action": "내부 기능 제한",
+      "ordinal": 1,
+      "is_repeat": false,
+      "figma_node_id": "435:13520"
+    },
+    {
+      "event_key": "EX-110",
+      "session_key": "S-20260919-12",
+      "occurred_at": "2026-09-19T12:24:30+09:00",
+      "target": "X",
+      "action": "사이트 차단",
+      "ordinal": 1,
+      "is_repeat": false,
+      "figma_node_id": "435:13507"
+    },
+    {
+      "event_key": "EX-111",
+      "session_key": "S-20260919-16",
+      "occurred_at": "2026-09-19T16:11:00+09:00",
+      "target": "Instagram",
+      "action": "사이트 차단",
+      "ordinal": 1,
+      "is_repeat": false,
+      "figma_node_id": "435:13494"
+    },
+    {
+      "event_key": "EX-112",
+      "session_key": "S-20260919-16",
+      "occurred_at": "2026-09-19T16:14:36+09:00",
+      "target": "Reddit",
+      "action": "허용 후 기록",
+      "ordinal": 1,
+      "is_repeat": false,
+      "figma_node_id": "435:13481"
+    },
+    {
+      "event_key": "EX-113",
+      "session_key": "S-20260919-16",
+      "occurred_at": "2026-09-19T16:18:12+09:00",
+      "target": "YouTube Shorts",
+      "action": "내부 기능 제한",
+      "ordinal": 1,
+      "is_repeat": false,
+      "figma_node_id": "435:13468"
+    },
+    {
+      "event_key": "EX-114",
+      "session_key": "S-20260919-16",
+      "occurred_at": "2026-09-19T16:21:48+09:00",
+      "target": "Hacker News",
+      "action": "허용 후 기록",
+      "ordinal": 1,
+      "is_repeat": false,
+      "figma_node_id": "435:13455"
+    },
+    {
+      "event_key": "EX-115",
+      "session_key": "S-20260919-16",
+      "occurred_at": "2026-09-19T16:25:24+09:00",
+      "target": "Instagram",
+      "action": "사이트 차단",
+      "ordinal": 2,
+      "is_repeat": true,
+      "figma_node_id": "435:13442"
+    },
+    {
+      "event_key": "EX-116",
+      "session_key": "S-20260919-20",
+      "occurred_at": "2026-09-19T20:11:00+09:00",
+      "target": "Instagram",
+      "action": "사이트 차단",
+      "ordinal": 1,
+      "is_repeat": false,
+      "figma_node_id": "435:13429"
+    },
+    {
+      "event_key": "EX-117",
+      "session_key": "S-20260919-20",
+      "occurred_at": "2026-09-19T20:15:30+09:00",
+      "target": "Reddit",
+      "action": "허용 후 기록",
+      "ordinal": 1,
+      "is_repeat": false,
+      "figma_node_id": "435:13416"
+    },
+    {
+      "event_key": "EX-118",
+      "session_key": "S-20260919-20",
+      "occurred_at": "2026-09-19T20:20:00+09:00",
+      "target": "YouTube Shorts",
+      "action": "내부 기능 제한",
+      "ordinal": 1,
+      "is_repeat": false,
+      "figma_node_id": "435:13403"
+    },
+    {
+      "event_key": "EX-119",
+      "session_key": "S-20260919-20",
+      "occurred_at": "2026-09-19T20:24:30+09:00",
+      "target": "X",
+      "action": "사이트 차단",
+      "ordinal": 1,
+      "is_repeat": false,
+      "figma_node_id": "435:13390"
+    },
+    {
+      "event_key": "EX-120",
+      "session_key": "S-20260920-09",
+      "occurred_at": "2026-09-20T09:05:00+09:00",
+      "target": "Instagram",
+      "action": "사이트 차단",
+      "ordinal": 1,
+      "is_repeat": false,
+      "figma_node_id": "435:13376"
+    },
+    {
+      "event_key": "EX-121",
+      "session_key": "S-20260920-09",
+      "occurred_at": "2026-09-20T09:20:00+09:00",
+      "target": "YouTube Shorts",
+      "action": "내부 기능 제한",
+      "ordinal": 1,
+      "is_repeat": false,
+      "figma_node_id": "435:13362"
+    },
+    {
+      "event_key": "EX-122",
+      "session_key": "S-20260920-09",
+      "occurred_at": "2026-09-20T09:25:00+09:00",
+      "target": "Reddit",
+      "action": "허용 후 기록",
+      "ordinal": 1,
+      "is_repeat": false,
+      "figma_node_id": "435:13348"
+    },
+    {
+      "event_key": "EX-123",
+      "session_key": "S-20260920-09",
+      "occurred_at": "2026-09-20T09:35:00+09:00",
+      "target": "Instagram",
+      "action": "사이트 차단",
+      "ordinal": 2,
+      "is_repeat": true,
+      "figma_node_id": "435:13334"
+    },
+    {
+      "event_key": "EX-124",
+      "session_key": "S-20260920-14",
+      "occurred_at": "2026-09-20T14:03:00+09:00",
+      "target": "Instagram",
+      "action": "사이트 차단",
+      "ordinal": 1,
+      "is_repeat": false,
+      "figma_node_id": "435:13320"
+    },
+    {
+      "event_key": "EX-125",
+      "session_key": "S-20260920-14",
+      "occurred_at": "2026-09-20T14:08:00+09:00",
+      "target": "X",
+      "action": "사이트 차단",
+      "ordinal": 1,
+      "is_repeat": false,
+      "figma_node_id": "435:13306"
+    },
+    {
+      "event_key": "EX-126",
+      "session_key": "S-20260920-14",
+      "occurred_at": "2026-09-20T14:10:00+09:00",
+      "target": "Reddit",
+      "action": "허용 후 기록",
+      "ordinal": 1,
+      "is_repeat": false,
+      "figma_node_id": "435:13292"
+    },
+    {
+      "event_key": "EX-127",
+      "session_key": "S-20260920-14",
+      "occurred_at": "2026-09-20T14:16:00+09:00",
+      "target": "Instagram",
+      "action": "사이트 차단",
+      "ordinal": 2,
+      "is_repeat": true,
+      "figma_node_id": "435:13278"
+    },
+    {
+      "event_key": "EX-128",
+      "session_key": "S-20260920-14",
+      "occurred_at": "2026-09-20T14:20:00+09:00",
+      "target": "Hacker News",
+      "action": "허용 후 기록",
+      "ordinal": 1,
+      "is_repeat": false,
+      "figma_node_id": "435:13264"
+    },
+    {
+      "event_key": "EX-129",
+      "session_key": "S-20260920-14",
+      "occurred_at": "2026-09-20T14:23:00+09:00",
+      "target": "YouTube Shorts",
+      "action": "내부 기능 제한",
+      "ordinal": 1,
+      "is_repeat": false,
+      "figma_node_id": "435:13250"
+    },
+    {
+      "event_key": "EX-130",
+      "session_key": "S-20260920-14",
+      "occurred_at": "2026-09-20T14:25:00+09:00",
+      "target": "Reddit",
+      "action": "허용 후 기록",
+      "ordinal": 2,
+      "is_repeat": true,
+      "figma_node_id": "435:13236"
+    },
+    {
+      "event_key": "EX-131",
+      "session_key": "S-20260920-14",
+      "occurred_at": "2026-09-20T14:28:00+09:00",
+      "target": "Instagram",
+      "action": "사이트 차단",
+      "ordinal": 3,
+      "is_repeat": true,
+      "figma_node_id": "435:13222"
+    }
+  ],
+  "alternative_manual_end": {
+    "replaces_session_key": "S-20260920-14",
+    "ended_at": "2026-09-20T14:05:42+09:00",
+    "end_reason": "USER_ENDED",
+    "included_event_keys": [
+      "EX-124"
+    ],
+    "excluded_event_keys": [
+      "EX-125",
+      "EX-126",
+      "EX-127",
+      "EX-128",
+      "EX-129",
+      "EX-130",
+      "EX-131"
+    ],
+    "today_expected": {
+      "duration_seconds": 3942,
+      "ended_sessions": 2,
+      "goal_completed": 1,
+      "user_ended": 1,
+      "total": 5,
+      "block": 3,
+      "record": 1,
+      "feature": 1,
+      "repeat": 1
+    }
+  }
+}
