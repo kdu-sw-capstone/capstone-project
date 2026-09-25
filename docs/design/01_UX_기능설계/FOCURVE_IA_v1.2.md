@@ -79,14 +79,6 @@ flowchart LR
     siteGroup --- siteEditor
     logGroup --- logList
     logGroup --- logDetail
-
-    style focurve fill:#DCCCFF,stroke:#874FFF
-    style extension fill:#C2E5FF,stroke:#3DADFF
-    style web fill:#C2E5FF,stroke:#3DADFF
-    style guestState fill:#FFECBD,stroke:#FFC943
-    style importState fill:#FFECBD,stroke:#FFC943
-    style memberState fill:#CDF4D3,stroke:#66D575
-    style firstState fill:#F5F5F5,stroke:#B3B3B3
 ```
 
 ## 비회원 정책 초안과 화면 상태

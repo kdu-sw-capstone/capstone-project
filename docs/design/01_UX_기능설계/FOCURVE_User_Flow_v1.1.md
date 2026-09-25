@@ -23,6 +23,7 @@
 ```mermaid
 flowchart TB
     subgraph prep["01 집중 전 · 진입과 준비"]
+    direction TB
         openExtension(["확장 프로그램 열기"])
         connected{"계정 연결됨?"}
         entryChoice{"시작 방식?"}
@@ -48,6 +49,7 @@ flowchart TB
     end
 
     subgraph focusing["02 집중 중 · 정책 적용"]
+    direction TB
         focus(["집중 진행"])
         access["관리 대상 접근"]
         policyType{"적용 정책?"}
@@ -64,6 +66,7 @@ flowchart TB
     end
 
     subgraph afterFocus["03 집중 후 · 확인과 다음 세션"]
+    direction TB
         finishSession["세션 종료·정책 해제"]
         accountMode{"로그인 이용인가?"}
         reviewLogs["웹 행동 기록·반복 접근 확인"]
@@ -84,17 +87,6 @@ flowchart TB
 
     policyReady -->|"성공"| focus
     focus -->|"시간 만료·직접 종료"| finishSession
-
-    style prep fill:#EEF6FF,stroke:#3DADFF
-    style focusing fill:#EDFBF6,stroke:#5AD8CC
-    style afterFocus fill:#F5F0FF,stroke:#874FFF
-    style guestMain fill:#FFECBD,stroke:#FFC943
-    style guestFinish fill:#FFECBD,stroke:#FFC943
-    style guestSettings fill:#FFECBD,stroke:#FFC943
-    style memberMain fill:#C2E5FF,stroke:#3DADFF
-    style allowed fill:#CDF4D3,stroke:#66D575
-    style blocked fill:#FFCDC2,stroke:#FF7556
-    style startError fill:#FFE0C2,stroke:#FF9E42
 ```
 
 ## 04 계정 연결·데이터 이전 — 별도 영역
@@ -126,10 +118,6 @@ flowchart TB
     failed -->|"나중에"| member
     done --> member
     skip --> member
-    style skip fill:#FFECBD,stroke:#FFC943
-    style done fill:#CDF4D3,stroke:#66D575
-    style failed fill:#FFE0C2,stroke:#FF9E42
-    style member fill:#C2E5FF,stroke:#3DADFF
 ```
 
 ## 읽는 법

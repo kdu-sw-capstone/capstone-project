@@ -21,7 +21,7 @@ IA, User Flow, Task Flow는 각각 별도 FigJam 파일로 관리합니다. 이 
 
 ## 흐름 목록
 
-읽는 방법: 각 흐름은 위에서 아래로 읽는다. 이중 테두리의 “복귀·재시도” 상자는 같은 이름의 단계부터 다시 진행하는 연결점이다. 작업 완료가 아니며, 긴 되돌림 화살표를 대신한다. 초록색은 정상 완료, 주황색은 오류, 노란색은 확인·주의 안내다.
+읽는 방법: 각 흐름은 위에서 아래로 읽는다. 이중 테두리의 “복귀·재시도” 상자는 같은 이름의 단계부터 다시 진행하는 연결점이다. 작업 완료가 아니며, 긴 되돌림 화살표를 대신한다. 정상 완료·오류·확인 상태는 상자의 문구로 구분한다.
 
 | ID | 작업 | 관련 화면 |
 |---|---|---|
@@ -62,6 +62,7 @@ IA, User Flow, Task Flow는 각각 별도 FigJam 파일로 관리합니다. 이 
 ```mermaid
 flowchart TB
 subgraph taskOne["TF-01 사이트 등록"]
+    direction TB
 regOpen(["사이트 추가 선택"])
 regInput["URL·범위 입력"]
 regValid{"주소가 유효한가?"}
@@ -97,10 +98,6 @@ regReturnInput[["URL·범위 입력으로 복귀"]]
 regReturnOther[["URL·범위 입력으로 복귀"]]
 regRetrySave[["저장 선택부터 재시도"]]
 end
-style taskOne fill:#EEF6FF,stroke:#3DADFF
-style regInvalid fill:#FFE0C2,stroke:#FF9E42
-style regFailure fill:#FFE0C2,stroke:#FF9E42
-style regDone fill:#CDF4D3,stroke:#66D575
 ```
 
 - URL에서 호스트명을 추출하고 프로토콜·포트·경로·쿼리·프래그먼트를 제외한다. 하위 도메인 포함은 기본값이다.
@@ -118,6 +115,7 @@ style regDone fill:#CDF4D3,stroke:#66D575
 ```mermaid
 flowchart TB
 subgraph taskTwo["TF-02 사이트 정보 수정"]
+    direction TB
 editOpen(["사이트 선택·수정 열기"])
 editLoad["기존 정보 불러오기"]
 editLoaded{"조회 성공?"}
@@ -150,10 +148,6 @@ editRetryLoad[["기존 정보 불러오기로 복귀"]]
 editRetryInput[["사이트 정보 수정으로 복귀"]]
 editRetrySave[["현재 저장 결과 확인 후 재시도"]]
 end
-style taskTwo fill:#EEF6FF,stroke:#3DADFF
-style editInvalid fill:#FFE0C2,stroke:#FF9E42
-style editError fill:#FFE0C2,stroke:#FF9E42
-style editDone fill:#CDF4D3,stroke:#66D575
 ```
 
 - 주소·하위 도메인 범위를 바꾸면 자신을 제외한 등록 사이트와 중복 여부를 다시 확인한다.
@@ -171,6 +165,7 @@ style editDone fill:#CDF4D3,stroke:#66D575
 ```mermaid
 flowchart TB
 subgraph taskThree["TF-03 사이트 삭제"]
+    direction TB
 delOpen(["사이트 선택·삭제 클릭"])
 delImpact["삭제 대상·기록 유지·다음 세션 적용 안내"]
 delConfirm{"삭제할까?"}
@@ -190,10 +185,6 @@ delError -->|"재시도"| delRetry
 delError -->|"돌아가기"| delCancel
 delRetry[["현재 결과 확인 후 삭제 재시도"]]
 end
-style taskThree fill:#EEF6FF,stroke:#3DADFF
-style delImpact fill:#FFECBD,stroke:#FFC943
-style delError fill:#FFE0C2,stroke:#FF9E42
-style delDone fill:#CDF4D3,stroke:#66D575
 ```
 
 - 사이트 삭제는 관리 설정에서 대상을 제거하는 작업이다. 행동 기록 삭제와 구분하며, 기존 접근 기록과 관련 통계는 정해진 보관 기간 동안 유지한다.
@@ -214,6 +205,7 @@ style delDone fill:#CDF4D3,stroke:#66D575
 ```mermaid
 flowchart TB
 subgraph taskFour["TF-04 분류·관리 정책 설정"]
+    direction TB
 polOpen(["사이트 설정 열기"])
 polClass["집중·방해·일반 선택"]
 polDistract{"방해 대상인가?"}
@@ -247,10 +239,6 @@ polError -->|"재시도"| polRetry
 polError -->|"취소"| polCancel
 polRetry[["설정 저장부터 재시도"]]
 end
-style taskFour fill:#F5F0FF,stroke:#874FFF
-style polPriority fill:#FFECBD,stroke:#FFC943
-style polError fill:#FFE0C2,stroke:#FF9E42
-style polDone fill:#CDF4D3,stroke:#66D575
 ```
 
 - 집중·방해·일반은 이용 목적 분류이며, 전체 차단·기록은 방해 사이트의 관리 방식이다.
@@ -269,6 +257,7 @@ style polDone fill:#CDF4D3,stroke:#66D575
 ```mermaid
 flowchart TB
 subgraph taskFive["TF-05 로그인 사용자 집중 시작"]
+    direction TB
 memOpen(["집중 화면 열기"])
 memActive{"진행 세션 있음?"}
 memExisting(["현재 세션 상태 보기"])
@@ -304,10 +293,6 @@ memRetryInput[["시간·저장된 정책 확인으로 복귀"]]
 memRetryReady[["확장 연결·권한 준비 재확인"]]
 memRetryApply[["정책 적용 상태부터 재확인"]]
 end
-style taskFive fill:#EDFBF6,stroke:#5AD8CC
-style memGuide fill:#FFECBD,stroke:#FFC943
-style memError fill:#FFE0C2,stroke:#FF9E42
-style memDone fill:#CDF4D3,stroke:#66D575
 ```
 
 - Web 또는 확장 프로그램에서 시작한다. Web 진입 시 확장 설치·계정 연결·필수 권한 상태를 확인한다.
@@ -327,6 +312,7 @@ style memDone fill:#CDF4D3,stroke:#66D575
 ```mermaid
 flowchart TB
 subgraph taskSix["TF-06 비회원 집중 시작 · 정책 초안"]
+    direction TB
 guestEntry(["로그인 없이 시작 선택"])
 guestNotice["로컬 보관·이용 범위 안내"]
 guestActive{"진행 세션 있음?"}
@@ -358,11 +344,6 @@ guestError -->|"시작 취소·정리"| guestBack
 guestRetryConfig[["로컬 설정·집중 시간 확인으로 복귀"]]
 guestRetryApply[["정책 적용 상태부터 재확인"]]
 end
-style taskSix fill:#FFFBF0,stroke:#FFC943
-style guestNotice fill:#FFECBD,stroke:#FFC943
-style guestFix fill:#FFE0C2,stroke:#FF9E42
-style guestError fill:#FFE0C2,stroke:#FF9E42
-style guestRun fill:#CDF4D3,stroke:#66D575
 ```
 
 - 비회원 보관·조회 규칙은 기존 User Flow의 정책 초안을 따른다. 설정은 삭제 전까지, 기록은 발생일부터 최근 90일이다.
@@ -381,6 +362,7 @@ style guestRun fill:#CDF4D3,stroke:#66D575
 ```mermaid
 flowchart TB
 subgraph taskSeven["TF-07 집중 세션 종료"]
+    direction TB
 stopEntry(["종료 선택 또는 시간 만료"])
 stopManual{"직접 종료인가?"}
 stopConfirm{"종료할까?"}
@@ -424,13 +406,6 @@ stopDone -->|"사유 미확인"| stopReasonCheck
 stopReasonCheck -->|"재확인"| stopDone
 stopRetry[["같은 세션의 해제 결과 재확인"]]
 end
-style taskSeven fill:#EDFBF6,stroke:#5AD8CC
-style stopError fill:#FFE0C2,stroke:#FF9E42
-style stopPending fill:#FFECBD,stroke:#FFC943
-style stopLocalError fill:#FFE0C2,stroke:#FF9E42
-style stopUserDone fill:#CDF4D3,stroke:#66D575
-style stopTimeDone fill:#CDF4D3,stroke:#66D575
-style stopReasonCheck fill:#FFECBD,stroke:#FFC943
 ```
 
 - 직접 종료는 확인창에서 ‘종료하기’를 선택한 뒤 요청한다. ‘계속 집중하기’ 또는 확인창 닫기는 요청을 보내지 않고 같은 세션의 타이머·시작 설정·기록 수집을 유지한다. 시간 만료는 확인창 없이 종료한다.
@@ -479,6 +454,7 @@ style stopReasonCheck fill:#FFECBD,stroke:#FFC943
 ```mermaid
 flowchart TB
 subgraph taskEight["TF-08 사이트·Shorts 접근 제어와 기록"]
+    direction TB
 accessStart(["사이트·내부 기능 접근"])
 accessActive{"집중 세션 활성?"}
 accessSite{"사이트 전체 차단?"}
@@ -515,10 +491,6 @@ accessValid -->|"예"| accessSave
 accessSave --> accessRepeat
 accessRepeat --> accessReturn
 end
-style taskEight fill:#FFF5F5,stroke:#FF7556
-style accessNotice fill:#FFCDC2,stroke:#FF7556
-style accessFail fill:#FFE0C2,stroke:#FF9E42
-style accessAllowed fill:#CDF4D3,stroke:#66D575
 ```
 
 - 전체 사이트 차단을 먼저 판정한다. 동일 접근을 Shorts 제한으로 다시 기록하지 않는다.
@@ -539,6 +511,7 @@ style accessAllowed fill:#CDF4D3,stroke:#66D575
 ```mermaid
 flowchart TB
 subgraph taskNine["TF-09 행동 기록·반복 접근 조회"]
+    direction TB
 logOpen(["행동 기록 또는 최근 기록 열기"])
 logFilter["기간·세션·대상 조건 선택"]
 logLoad["기록 불러오기"]
@@ -568,10 +541,6 @@ logDetail --> logDone
 logRetryLoad[["기록 불러오기부터 재시도"]]
 logRetryFilter[["기간·세션·대상 선택으로 복귀"]]
 end
-style taskNine fill:#F5F0FF,stroke:#874FFF
-style logEmpty fill:#FFECBD,stroke:#FFC943
-style logError fill:#FFE0C2,stroke:#FF9E42
-style logDone fill:#CDF4D3,stroke:#66D575
 ```
 
 - 기간·세션·사이트·행동 유형 필터는 상세 UX 초안이다. 지원 범위는 화면 명세에 이어 적는다.
@@ -590,6 +559,7 @@ style logDone fill:#CDF4D3,stroke:#66D575
 ```mermaid
 flowchart TB
 subgraph taskTen["TF-10 통계 확인·다음 세션 조정"]
+    direction TB
 statOpen(["대시보드·통계·로컬 요약 열기"])
 statPeriod["기간·대상 선택"]
 statLoad["통계 불러오기"]
@@ -622,10 +592,6 @@ statPolicy -->|"저장 또는 취소"| statNext
 statRetryLoad[["통계 불러오기부터 재시도"]]
 statRetryPeriod[["기간·대상 선택으로 복귀"]]
 end
-style taskTen fill:#F5F0FF,stroke:#874FFF
-style statEmpty fill:#FFECBD,stroke:#FFC943
-style statError fill:#FFE0C2,stroke:#FF9E42
-style statNext fill:#CDF4D3,stroke:#66D575
 ```
 
 - 세션 시간은 시작·종료 사이의 경과 시간이며 실제 순공 시간으로 표시하지 않는다.
@@ -644,6 +610,7 @@ style statNext fill:#CDF4D3,stroke:#66D575
 ```mermaid
 flowchart TB
 subgraph taskEleven["TF-11 비회원 데이터 가져오기 · 정책 초안"]
+    direction TB
 importOpen(["로그인 후 복귀·가져오기 선택"])
 importHas{"로컬 자료 있음?"}
 importPreview["현재 계정·자료·충돌 안내"]
@@ -674,10 +641,6 @@ importRecheck --> importResult
 importFailure -->|"나중에"| importDone
 importRetry[["미완료 항목만 가져오기 재시도"]]
 end
-style taskEleven fill:#FFFBF0,stroke:#FFC943
-style importSkip fill:#FFECBD,stroke:#FFC943
-style importFailure fill:#FFE0C2,stroke:#FF9E42
-style importSuccess fill:#CDF4D3,stroke:#66D575
 ```
 
 - 비회원 세션 진행 중에는 해당 세션을 종료한 뒤 로그인 전환한다. 웹 로그인 취소 시 비회원으로 계속 이용한다.
@@ -697,6 +660,7 @@ style importSuccess fill:#CDF4D3,stroke:#66D575
 ```mermaid
 flowchart TB
 subgraph taskTwelve["TF-12 회원가입·로그인·계정 연결"]
+    direction TB
 authOpen(["웹 로그인 화면 진입"])
 authChoice{"이용 방식 선택"}
 authSignup["가입 정보 입력·가입 선택"]
@@ -740,11 +704,6 @@ authRetrySignup[["가입 정보 입력으로 복귀"]]
 authRetryChoice[["이용 방식 선택으로 복귀"]]
 authRetryLink[["확장 계정 연결 확인으로 복귀"]]
 end
-style taskTwelve fill:#EEF6FF,stroke:#3DADFF
-style authSignupError fill:#FFE0C2,stroke:#FF9E42
-style authError fill:#FFE0C2,stroke:#FF9E42
-style authLinkError fill:#FFE0C2,stroke:#FF9E42
-style authWeb fill:#CDF4D3,stroke:#66D575
 ```
 
 - 기획안 41쪽에 이메일·비밀번호 인증과 지원 소셜 계정 로그인이 포함되어 있어 두 경로를 표시한다. 제공 사업자의 확정 목록은 인증 화면 명세와 일치시킨다.
@@ -763,6 +722,7 @@ style authWeb fill:#CDF4D3,stroke:#66D575
 ```mermaid
 flowchart TB
 subgraph taskThirteen["TF-13 로그아웃·계정 연결 해제"]
+    direction TB
 logoutOpen(["로그아웃 선택"])
 logoutActive{"진행 세션 있음?"}
 logoutStop["세션 종료 필요 안내"]
@@ -791,10 +751,6 @@ logoutOk -->|"아니오"| logoutError
 logoutError -->|"다시 확인"| logoutRetry
 logoutRetry[["현재 연결 상태 확인 후 해제 재시도"]]
 end
-style taskThirteen fill:#EEF6FF,stroke:#3DADFF
-style logoutImpact fill:#FFECBD,stroke:#FFC943
-style logoutError fill:#FFE0C2,stroke:#FF9E42
-style logoutDone fill:#CDF4D3,stroke:#66D575
 ```
 
 - 진행 중인 세션을 먼저 종료하는 흐름과 영향 확인창은 상세 UX 초안이다. 종료를 취소하면 현재 계정 이용을 유지한다.

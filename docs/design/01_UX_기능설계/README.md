@@ -1,0 +1,18 @@
+# FOCURVE · UX 기능설계
+
+
+
+| 문서 | 형식 |
+|---|---|
+| [EXT-01_확장_프로그램_팝업_명세](EXT-01_%ED%99%95%EC%9E%A5_%ED%94%84%EB%A1%9C%EA%B7%B8%EB%9E%A8_%ED%8C%9D%EC%97%85_%EB%AA%85%EC%84%B8.xlsx) | XLSX |
+| [FOCURVE_IA_v1.2](FOCURVE_IA_v1.2.md) | MD |
+| [FOCURVE_LowFi_설계](FOCURVE_LowFi_%EC%84%A4%EA%B3%84.md) | MD |
+| [FOCURVE_Task_Flow_v1.0](FOCURVE_Task_Flow_v1.0.md) | MD |
+| [FOCURVE_User_Flow_v1.1](FOCURVE_User_Flow_v1.1.md) | MD |
+| [FOCURVE_기능_목록_v1.0](FOCURVE_%EA%B8%B0%EB%8A%A5_%EB%AA%A9%EB%A1%9D_v1.0.xlsx) | XLSX |
+| [FOCURVE_기능_범위_및_설계_기준](FOCURVE_%EA%B8%B0%EB%8A%A5_%EB%B2%94%EC%9C%84_%EB%B0%8F_%EC%84%A4%EA%B3%84_%EA%B8%B0%EC%A4%80.md) | MD |
+| [FOCURVE_추가_기능_설계](FOCURVE_%EC%B6%94%EA%B0%80_%EA%B8%B0%EB%8A%A5_%EC%84%A4%EA%B3%84.md) | MD |
+| [FOCURVE_화면_명세_v1.0](FOCURVE_%ED%99%94%EB%A9%B4_%EB%AA%85%EC%84%B8_v1.0.xlsx) | XLSX |
+| [FOCURVE_화면_설계_v1.0](FOCURVE_%ED%99%94%EB%A9%B4_%EC%84%A4%EA%B3%84_v1.0.xlsx) | XLSX |
+| [SESSION-01_웹_집중_세션_화면_명세](SESSION-01_%EC%9B%B9_%EC%A7%91%EC%A4%91_%EC%84%B8%EC%85%98_%ED%99%94%EB%A9%B4_%EB%AA%85%EC%84%B8.xlsx) | XLSX |
+| [SETTING-01_화면_모드_설정_명세](SETTING-01_%ED%99%94%EB%A9%B4_%EB%AA%A8%EB%93%9C_%EC%84%A4%EC%A0%95_%EB%AA%85%EC%84%B8.md) | MD |
