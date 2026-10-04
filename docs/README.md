@@ -1,18 +1,20 @@
-# FOCURVE 문서
+# 문서 안내
 
-[프로젝트 소개](../README.md) · [읽는 순서와 적용 기준](00_문서안내.md) · [전체 설계 통합본](FOCURVE_설계_통합본.md)
+## 설계 확인
 
-| 문서 | 형식 |
-|---|---|
-| [00_문서안내](00_%EB%AC%B8%EC%84%9C%EC%95%88%EB%82%B4.md) | MD |
-| [DEVELOPMENT_RULE](DEVELOPMENT_RULE.md) | MD |
-| [FOCURVE_설계_통합본](FOCURVE_%EC%84%A4%EA%B3%84_%ED%86%B5%ED%95%A9%EB%B3%B8.html) | HTML |
-| [FOCURVE_설계_통합본](FOCURVE_%EC%84%A4%EA%B3%84_%ED%86%B5%ED%95%A9%EB%B3%B8.md) | MD |
-| [GIT_GUIDE](GIT_GUIDE.md) | MD |
-| [TEAM_GUIDE](TEAM_GUIDE.md) | MD |
-| [api](api/) | 폴더 |
-| [architecture](architecture/) | 폴더 |
-| [design](design/) | 폴더 |
-| [meeting](meeting/) | 폴더 |
-| [presentation](presentation/) | 폴더 |
-| [파일목록](%ED%8C%8C%EC%9D%BC%EB%AA%A9%EB%A1%9D.md) | MD |
+- [설계 안내](design/00_문서안내.md): 기능 범위와 명세 구성
+- [통합 Markdown](design/FOCURVE_설계_통합본.md): GitHub에서 읽거나 AI에 전달하는 통합 문서
+- [통합 HTML](design/FOCURVE_설계_통합본.html): 폴더를 내려받아 Chrome·Edge에서 열면 도면을 함께 확인할 수 있다.
+
+설계 수정은 design/의 항목별 원문에 반영하고 통합 Markdown·HTML도 함께 갱신한다. 도면과 미리보기 파일은 같은 폴더 구조를 유지한다.
+
+## 개발과 협업
+
+- [개발 기준](DEVELOPMENT_RULE.md): 설계 적용과 검증 원칙
+- [Git 작업 순서](GIT_GUIDE.md): 브랜치·커밋·PR·병합
+- [담당·협업 기준](TEAM_GUIDE.md): 영역별 책임과 인계
+- [개발 운영](implementation/개발운영.md): 필수·추가 MVP 진행 단계와 완료 조건
+- [기능별 현황](implementation/통합현황.md): 진행 상태와 작업카드
+- [AI 요청문](implementation/AI_요청문.md): 기능 작업을 요청하는 양식
+
+현행 설계는 design/, 구현·검증 기록은 implementation/에서 관리한다. archive/와 design/이전자료/는 참고용 보관 자료이며 현행 구현 기준이 아니다.

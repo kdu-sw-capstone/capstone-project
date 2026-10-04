@@ -1,0 +1,158 @@
+# API 및 시스템 연동
+
+## 공통 계약
+
+기존 /api/v1 경로·기본 식별자 체계를 유지한다. 기능/화면 ID와 API ID는 별개다. 여기의 API- 접두어는 문서상의 구분이며 URL 일부가 아니다. JSON UTF-8, snake_case. 내부 bigint는 십진 문자열, 외부 세션·이벤트·설치·작업은 UUID. 시각은 UTC RFC3339, 기간은 ms 정수, 화면 집계 기본 Asia/Seoul이다.
+
+W=Web HttpOnly Secure SameSite=Lax 쿠키, 변경 요청 CSRF+Origin 검증. E=소유 계정·설치에 결박된 Bearer. I=설치 증명, 회원 데이터 접근 불가. 소유자는 body user_id로 결정하지 않는다. 타 계정 자원은 404, 설치 불일치는403. 모든 자료 조회·변경은 계정과 설치 관계를 확인한다.
+
+생성·명령·전송에는 Idempotency-Key UUID. 인증 로그인·OAuth 리다이렉트·단회 토큰 소비는 별도 challenge 식별자로 재사용을 막는다. 같은 주체+method+path+key/본문은 같은 결과, 다른 본문은409. 수정·삭제는 If-Match version, 누락428/불일치412. 같은 멱등 요청의 재전송은 version 검사보다 먼저 기존 결과를 반환한다. 멱등 캐시7일, 이벤트/원본/예약 고유 제약은 별도 영속 유지. POST 결과 미확인은 같은 키로 재요청하며 새 요청으로 간주하지 않는다.
+
+목록 {items,next_cursor,has_more}, limit기본20/최대100. from_date/to_date 양 끝 날짜 포함 최대366일. 조회는 200, 생성201, 실행 요청202+operation_id, 삭제204. 202를 실제 적용 성공으로 표시하지 않는다. 자원 변경 응답에는 ETag를 포함한다. 오류={error:{code,message,field_errors:[{field,reason}],retryable},request_id}. 429/503은 Retry-After, 통신 재시도1/2/4/8/16/30초+지터. 422는 입력 수정 전 자동 재시도 금지.
+
+## 객체 명세
+
+표에서 ?는 선택/null, 그 외 필수다. 목록 응답의 시간·수치 null은 미확인이고 0과 다르다.
+| 객체 | 필드·형식 |
+|---|---|
+| User | user_id:string, display_name:string, email:string?, email_verified:boolean, providers:[EMAIL,GOOGLE,KAKAO] |
+| SiteWrite | url:string≤2048, display_name:1..100, include_subdomains:boolean=true, purpose:FOCUS/DISTRACTION/GENERAL, access_policy:ALLOW/BLOCK/RECORD, feature_policies:[{feature_code,enabled}] |
+| Site | site_id:string, canonical_host:string, SiteWrite 중 url 제외, version:int≥1,created_at,updated_at,deleted_at? |
+| ContentPolicyWrite | keywords:{enabled,rules:[{id UUID,text1..80,scopes:[TITLE/URL/BODY]}],exceptions:[Host]},adult_domains:{enabled,custom_hosts:[Host],exceptions:[Host]},image_blur:{enabled,sensitivity:LOW/MEDIUM/HIGH,strength:LOW/MEDIUM/HIGH},usage_tracking:{enabled} |
+| Host | host:소문자 IDNA 정규화≤253,include_subdomains:boolean. 각 목록≤500. 키워드≤200. |
+| ContentPolicy | ContentPolicyWrite + version:int,updated_at |
+| Snapshot | policy_snapshot_id UUID,format_version=1.1,owner_user_id?,executor_id,created_at,sites:[Site],content_policy,catalog_version?,model_profile_version?,source_version |
+| Session | session_id UUID,executor_id UUID,policy_snapshot_id UUID,origin:MEMBER/GUEST_IMPORT,source:MANUAL/SCHEDULE,execution_status,record_status:PENDING/PARTIAL/COMPLETE/REVIEW_REQUIRED,duration_minutes,active_duration_ms,overrun_ms,remaining_ms,started_at?,planned_end_at?,ended_at?,policy_released_at?,end_reason?,version,desired_revision,last_error_code? |
+| Command | command_id UUID,session_id,executor_id,type:APPLY_POLICY/RELEASE_POLICY,desired_revision,snapshot?,reason,created_at,execute_before? |
+| ExecutionReport | report_id UUID,command_id?,session_id,executor_id,desired_revision,result:APPLIED/RELEASED/FAILED/UNCONFIRMED,observed_at,error_code?,rollback_confirmed?,intervals:[Interval],local_action_seq? |
+| Interval | interval_id UUID,kind:RUN/PAUSE,start_at,end_at?,duration_ms?,quality:CONFIRMED/UNCONFIRMED; RUN 종료는 실제 해제 시각 |
+| Note | session_id,text:0..2000,version:int≥0,updated_at? |
+| Access | event_id,session_id,executor_id,occurred_at,event_type,target_kind,target_host,feature_code?,target_key,access_seq,target_access_index,is_repeat,policy_snapshot_id,quality |
+| Metrics | total_access,repeat_access,blocked_access,active_duration_ms,repeat_ratio?,quality:COMPLETE/PARTIAL/NO_DATA/NOT_COLLECTED,as_of; TargetMetrics는 host 추가 |
+| ScheduleWrite | name:1..80,weekdays:서로다른1..7배열,start_local:HH:mm,duration_minutes:1..180,timezone:IANA,executor_id UUID,enabled:boolean |
+| Schedule | schedule_id UUID,ScheduleWrite,version,created_at,updated_at,deleted_at? |
+| Occurrence | occurrence_id UUID,schedule_id,scheduled_start_at,scheduled_end_at,status:PENDING/WAITING_CONFLICT/STARTING/RUNNING/FINISHED/SKIPPED,reason?,session_id?,schedule_version |
+| AnalysisJob | job_id UUID,from_date,to_date,status:QUEUED/RUNNING/SUCCEEDED/FAILED/INSUFFICIENT_DATA,input_hash,as_of,model_version?,result?,error_code?,created_at |
+| Result | observations:[{text,metric_ids[]}],suggestions:[{text,screen_id,metric_ids[]}],limitations:string[],metrics:[{metric_id,value,unit}],generated_at |
+| ImportItem | type:SITE/CONTENT_POLICY/SCHEDULE/SESSION,source_item_id UUID,source_hash,payload. SESSION payload는 snapshot,session,events,intervals,usage_segments,note를 포함; 완료 세션만 |
+| ImportBatch | batch_id UUID,status:PENDING/PROCESSING/SUCCEEDED/PARTIAL/FAILED,items:[{source_item_id,status,result_id?,error_code?}],created_at,completed_at? |
+| Capability | feature_code,supported_hosts[],client_min_version,adapter_version,status:SUPPORTED/UNSUPPORTED/FAILED,limits |
+| Catalog | version,sha256,generated_at,source_manifest:[{url,license,version}],hosts[]; 이전 검증본 유지 |
+| Installation | executor_id,current_user_id?,last_seen_at,client_version,execution_status |
+
+## 사이트·인증 검증
+
+URL에서 host만 관리 범위로 사용하고 경로·query·fragment는 저장하지 않는다. 자격정보 URL·IP·localhost·명시적 port는 거절한다. www를 임의 제거하지 않는다. 동일하거나 포함관계인 등록 범위는409. 목적 FOCUS/GENERAL은 ALLOW, DISTRACTION은 BLOCK/RECORD다. feature_code는 YOUTUBE_SHORTS/YOUTUBE_RECOMMENDATIONS/YOUTUBE_COMMENTS/YOUTUBE_AUTOPLAY/INSTAGRAM_REELS/INSTAGRAM_RECOMMENDATIONS이며 host와 호환해야 한다.
+
+이메일은 인증 주소를 계정 식별 수단으로 사용한다. 비밀번호는 단방향 해시(Argon2id)를 서버에 저장하고 원문은 로그/이벤트에 남기지 않는다. 이메일 인증24시간, 비밀번호 재설정30분, 단회 사용. 로그인 실패 제한은 계정+IP 각각5회/분, 메일 재발송1분 간격·5회/시간 설계값이다. 로그인 성공 시 세션 ID를 교체한다.
+
+Google은 OIDC의 issuer/audience/expiry/nonce와 서명을 검증한다. 카카오는 서버 code 교환 후 공식 사용자 정보의 id로 식별한다. redirect는 사전 등록 정확 일치, state 단회 검증, client secret은 Server에만 둔다. 카카오 이메일은 제공되지 않을 수 있으므로 내부 사용자 ID와 provider subject를 기본키로 삼는다. 소셜 취소는 새 회원을 만들지 않는다. 제공자 인증만 끝난 최초 사용자는 가입 확인 전 서비스 계정이 생성되지 않는다.
+
+확장 연결은 설치 증명+S256 code challenge, 서버 승인과 단회 code 교환을 사용한다. 연결 요청5분, code60초, access15분, 회전 refresh30일. refresh 해시 저장·재사용 탐지, executor 소유 확인. 사용자 로그아웃은 로컬 해제/기록 보존→연결 종료→Web 인증 종료다. 인증 자연 만료가 진행 중 세션을 임의로 비회원 소유로 바꾸지 않는다.
+
+## API 목록
+| API ID | 방식·경로 | 인증 | 입력 | 응답 | 주요 오류 |
+|---|---|---|---|---|---|
+| API-AUTH-01 | GET /api/v1/auth/csrf | 공개 | 없음 | 200 {csrf_token} | 503 |
+| API-AUTH-02 | POST /api/v1/auth/signup | 공개+CSRF | email,password,display_name,terms_version | 201 {user_id,status:PENDING_VERIFICATION} | 422 VALIDATION_FAILED; 409 EMAIL_IN_USE |
+| API-AUTH-03 | POST /api/v1/auth/login | 공개+CSRF | email,password | 200 User + Web 쿠키 | 401 INVALID_CREDENTIALS; 403 EMAIL_UNVERIFIED |
+| API-AUTH-04 | GET /api/v1/auth/me | W/E | 없음 | 200 User | 401 |
+| API-AUTH-05 | POST /api/v1/auth/logout | W | 없음 | 204 Web 인증 폐기; 제품 로그아웃의 마지막 단계 | 409 ACTIVE_EXECUTION_OR_LINK; 401 |
+| API-AUTH-06 | GET /api/v1/auth/social/{provider}/authorize | 공개 | provider=google/kakao; mode=login/link; return_path 내부허용값 | 302 제공자; state/nonce 저장 | 422 INVALID_PROVIDER |
+| API-AUTH-07 | GET /api/v1/auth/social/{provider}/callback | state 검증 | code,state 또는 error | 303 가입 확인/로그인 완료/연결 화면 | SOCIAL_CANCELED; INVALID_STATE; IDENTITY_CONFLICT |
+| API-AUTH-08 | POST /api/v1/auth/social/complete | 단회 인증증명+CSRF | ticket,terms_version,display_name | 201 User + 쿠키; 최초 가입만 | 409 IDENTITY_CONFLICT |
+| API-AUTH-09 | POST /api/v1/auth/identities/link | W+최근5분 재인증 | ticket | 200 User; 두 인증의 동일 사용자 결합 | 409 IDENTITY_ALREADY_LINKED |
+| API-AUTH-10 | POST /api/v1/auth/email/verify | 단회 token | token | 200 verified | 410 TOKEN_EXPIRED; 409 USED_TOKEN |
+| API-AUTH-11 | POST /api/v1/auth/password/reset-requests | 공개+CSRF | email | 202 동일 응답; 발송 여부 노출 안 함 | 429 |
+| API-AUTH-12 | POST /api/v1/auth/password/reset | 단회 token | token,new_password | 204 비밀번호 교체·기존 Web/refresh 폐기 | 410 TOKEN_EXPIRED; 422 |
+| API-AUTH-13 | POST /api/v1/auth/email/verification-requests | 공개+CSRF | email | 202 동일 응답 | 429 |
+| API-AUTH-14 | POST /api/v1/auth/reauthenticate | W | password 또는 기존연결 provider의 단회 ticket | 204 현재 사용자 재인증 시각 갱신 | 401 INVALID_CREDENTIALS;409 IDENTITY_MISMATCH |
+| API-EXT-01 | POST /api/v1/extension-installations | 공개 제한 | executor_id UUID,client_version | 201 {executor_id,installation_proof} 최초1회 | 409 INSTALLATION_EXISTS |
+| API-EXT-02 | POST /api/v1/extension-link-requests | I | executor_id,code_challenge,state,callback_uri | 201 {link_request_id,verification_uri,expires_at} | 422 INVALID_CALLBACK |
+| API-EXT-03 | POST /api/v1/extension-link-requests/{id}/approval | W | approve boolean | 200 승인 상태 | 409 GUEST_SESSION_ACTIVE |
+| API-EXT-04 | POST /api/v1/extension-tokens | I | link_request_id,code,code_verifier | 200 {access_token,refresh_token,expires_in} | 401 INVALID_GRANT |
+| API-EXT-05 | POST /api/v1/extension-tokens/refresh | refresh | refresh_token | 200 회전된 토큰 | 401 TOKEN_REUSE |
+| API-EXT-06 | DELETE /api/v1/extension-installations/{executor_id}/connection | W/E | 없음; 실제 해제 증거 필수 | 204 회원 연결 종료 | 409 RELEASE_UNCONFIRMED |
+| API-EXT-07 | GET /api/v1/extension-installations | W/E | 없음 | 200 Installation[] | 401 |
+| API-SITE-01 | GET /api/v1/sites | W/E | purpose?,cursor?,limit? | 200 List<Site> | 400 INVALID_CURSOR |
+| API-SITE-02 | GET /api/v1/sites/{site_id} | W/E | 없음 | 200 Site + ETag | 404 |
+| API-SITE-03 | POST /api/v1/sites | W/E | SiteWrite | 201 Site | 409 SITE_SCOPE_CONFLICT;422 |
+| API-SITE-04 | PATCH /api/v1/sites/{site_id} | W/E | SiteWrite의 변경 필드 + If-Match | 200 Site | 412 VERSION_CONFLICT;422 |
+| API-SITE-05 | DELETE /api/v1/sites/{site_id} | W/E | If-Match | 204; 과거 스냅샷 유지 | 412 |
+| API-POLICY-01 | GET /api/v1/content-policy | W/E | 없음 | 200 ContentPolicy + ETag | 401 |
+| API-POLICY-02 | PUT /api/v1/content-policy | W/E | ContentPolicyWrite 전체 + If-Match | 200 ContentPolicy | 422 INVALID_SCOPE;412 |
+| API-CAP-01 | GET /api/v1/capabilities | W/E/I | client_version | 200 Capability[] | 422 CLIENT_UNSUPPORTED |
+| API-CAT-01 | GET /api/v1/catalogs/adult-domains | W/E/I | known_version? | 200 Catalog 또는304 | 503 NO_VALID_CATALOG |
+| API-SESSION-01 | POST /api/v1/sessions | W/E | executor_id,duration_minutes | 202 Session STARTING + operation_id | 409 ACTIVE_SESSION_EXISTS; EXECUTOR_OFFLINE |
+| API-SESSION-02 | GET /api/v1/sessions/current | W/E | executor_id? | 200 Session 또는 null | 401 |
+| API-SESSION-03 | GET /api/v1/sessions | W/E | from_date,to_date,status?,cursor | 200 List<Session> | 422 |
+| API-SESSION-04 | GET /api/v1/sessions/{session_id} | W/E | 없음 | 200 Session | 404 |
+| API-SESSION-05 | GET /api/v1/sessions/{session_id}/policy | W/E | 없음 | 200 Snapshot | 404 |
+| API-SESSION-06 | POST /api/v1/sessions/{session_id}/end | W/E | 없음 | 202 Session ENDING + operation_id | 409 INVALID_TRANSITION |
+| API-SESSION-07 | POST /api/v1/sessions/{session_id}/pause | W/E | 없음 | 202 Session PAUSING + operation_id | 409 INVALID_TRANSITION |
+| API-SESSION-08 | POST /api/v1/sessions/{session_id}/resume | W/E | 없음 | 202 Session RESUMING + operation_id | 409 INVALID_TRANSITION; EXECUTOR_OFFLINE |
+| API-NOTE-01 | GET /api/v1/sessions/{session_id}/note | W/E | 없음 | 200 Note (없으면 text 빈값,version0) | 404 SESSION_NOT_FOUND |
+| API-NOTE-02 | PUT /api/v1/sessions/{session_id}/note | W/E | text 0~2000자,If-Match | 200 Note | 412;422 |
+| API-EXEC-01 | GET /api/v1/executors/{executor_id}/commands | E | cursor,known_revision | 200 {commands,next_cursor,server_time} | 403 EXECUTOR_MISMATCH |
+| API-EXEC-02 | POST /api/v1/executors/{executor_id}/reports | E | ExecutionReport | 200 {result,desired_revision} | 409 REPORT_CONFLICT |
+| API-EXEC-03 | POST /api/v1/executors/{executor_id}/reconcile | E | journal_summary,local_actions[] | 200 {desired_state,revision,acknowledged_actions} | 409 RECONCILE_REQUIRED |
+| API-OP-01 | GET /api/v1/operations/{operation_id} | 원요청 주체 | 없음 | 200 {status,resource_id,error} | 404 |
+| API-EVENT-01 | POST /api/v1/events/batch | E | events[] 최대100,1MiB | 200 {items:[event_id,status,error]} | 413;422 |
+| API-EVENT-02 | POST /api/v1/events/status | E | event_ids[] 최대100 | 200 {items:[event_id,status]} | 422 |
+| API-USAGE-01 | POST /api/v1/usage-segments/batch | E | segments[] 최대100 | 200 항목별 accepted/duplicate/rejected | 409 BODY_MISMATCH |
+| API-LOG-01 | GET /api/v1/access-events | W/E | 기간,session_id?,host?,event_type?,cursor | 200 List<Access> | 422 |
+| API-LOG-02 | GET /api/v1/access-events/{event_id} | W/E | 없음 | 200 Access + 당시 정책 | 404 |
+| API-STAT-01 | GET /api/v1/statistics/summary | W/E | from_date,to_date | 200 Metrics | 422 |
+| API-STAT-02 | GET /api/v1/statistics/targets | W/E | from_date,to_date,cursor | 200 List<TargetMetrics> | 422 |
+| API-STAT-03 | GET /api/v1/statistics/hourly | W/E | from_date,to_date | 200 24개 시간대 Metrics | 422 |
+| API-STAT-04 | GET /api/v1/statistics/usage | W/E | from_date,to_date,host? | 200 {total_ms,by_site,quality,as_of} | 422 |
+| API-DASH-01 | GET /api/v1/dashboard | W/E | 없음 | 200 {current_session,recent_sessions,recent_access,summary} | 401 |
+| API-SCHEDULE-01 | GET /api/v1/schedules | W/E | executor_id?,cursor | 200 List<Schedule> | 422 |
+| API-SCHEDULE-02 | POST /api/v1/schedules | W/E | ScheduleWrite | 201 Schedule | 422 INVALID_TIMEZONE |
+| API-SCHEDULE-03 | PATCH /api/v1/schedules/{id} | W/E | 변경 필드,If-Match | 200 Schedule | 412;422 |
+| API-SCHEDULE-04 | DELETE /api/v1/schedules/{id} | W/E | If-Match | 204 미시작 건 취소; 실행 세션 유지 | 412 |
+| API-SCHEDULE-05 | GET /api/v1/schedules/{id}/occurrences | W/E | 기간,cursor | 200 List<Occurrence> | 404 |
+| API-SCHEDULE-06 | POST /api/v1/schedule-occurrences/claim | E | schedule_id,scheduled_start_at,version | 202 Session/기존 결과 또는200 대기·건너뜀 | 409 VERSION_CONFLICT |
+| API-AI-01 | POST /api/v1/analysis-jobs | W/E | from_date,to_date,consent_version | 202 AnalysisJob | 422 INSUFFICIENT_DATA;403 CONSENT_REQUIRED;503 PROVIDER_UNAVAILABLE |
+| API-AI-02 | GET /api/v1/analysis-jobs/{id} | W/E | 없음 | 200 AnalysisJob + Result? | 404 |
+| API-AI-03 | GET /api/v1/analysis-jobs | W/E | 기간,cursor | 200 List<AnalysisJob> | 422 |
+| API-AI-04 | PUT /api/v1/analysis-consent | W | accepted boolean,notice_version | 200 {accepted,notice_version,updated_at} | 422 |
+| API-IMPORT-01 | POST /api/v1/guest-imports | E | manifest:설정·완료 세션 목록,source_installation_id | 202 ImportBatch | 409 SOURCE_BOUND_TO_OTHER_ACCOUNT |
+| API-IMPORT-02 | PUT /api/v1/guest-imports/{batch_id}/items/{source_item_id} | E | ImportItem | 200 항목별 결과 | 409 SOURCE_CONFLICT;422 |
+| API-IMPORT-03 | GET /api/v1/guest-imports/{batch_id} | W/E | 없음 | 200 ImportBatch | 404 |
+| API-IMPORT-04 | GET /api/v1/guest-imports | E | cursor | 200 List<ImportBatch> | 401 |
+
+## 실행 명령과 복구 순서
+
+Server는 소유/활성 잠금을 확인하고 Snapshot·Session·Command·Operation을 한 트랜잭션으로 기록한다. Extension은 명령을 durable journal에 적은 후 실행하고 report를 로컬에 저장한 뒤 전송한다. Server는 desired_revision과 command_id를 대조해 상태를 확정한다. 보고 유실은 같은 report_id로 재전송한다. 늦은 APPLY 결과가 최신 ENDING을 RUNNING으로 바꾸지 않는다.
+
+명령 조회는 활성 UI/세션에서5초 목표 long-poll, 비활성은30초 이상 alarm과 UI·탭 이벤트 재동기화를 사용한다. MV3가 워커를 중단할 수 있으므로 폴링만으로 정시 실행·해제를 보장하지 않는다. 예약·종료 기준시각과 규칙 소유 정보를 로컬에 저장하고 워커 시작/팝업/탐색 시 재평가한다. 모든 APPLY에는 execute_before가 있으며 기한 지난 적용은 해제 보고로 처리한다.
+
+오프라인 중 회원 기존 세션은 고정 스냅샷으로 정지/재개/종료할 수 있으나 새 회원 세션·새 예약 claim은 연결 복구 후만 가능하다. 비회원 로컬 신규 시작은 가능하다. 재접속은 journal 대조가 먼저이고 오래된 서버 APPLY를 먼저 실행하지 않는다. 중복·타계정 실행을 막는 active lock은 실제 해제 보고 전 해제하지 않는다. 오래된 lock 정리는 heartbeat 만료만으로 수행하지 않는다.
+
+## 로컬 메시지 계약
+
+비회원은 API를 호출하지 않고 Extension 내부 메시지로 같은 검증을 수행한다. 공통 {request_id,type,owner_context,payload}; 응답 {request_id,status,data,error}. type=GET_STATE/SAVE_SITE/SAVE_CONTENT_POLICY/START/PAUSE/RESUME/END/SAVE_SCHEDULE/SAVE_NOTE/QUERY_RECORDS/IMPORT_PREVIEW. Core가 실제 발신 extension context·tab/frame·세션을 확인한다. 페이지에서 계정 ID·임의 명령을 보내 실행할 수 없게 한다. Content→Core 관찰은 OBSERVE_ACCESS/USAGE_BOUNDARY/FEATURE_RESULT/IMAGE_RESULT만 허용하고 크기·스키마·세션을 검증한다. 원격 AI·회원 API key는 Content에 전달하지 않는다.
+
+## 외부 adapter 계약
+
+AI provider 인터페이스 generate(집계 JSON,출력 JSON schema,request_id)→Result 또는 PROVIDER_FAILED. 인증·청구·모델 지정은 Server 환경 설정으로 주입한다. provider 미설정 시503, 정상 분석으로 대체 표시하지 않는다. 모델/도메인 목록은 버전·checksum·출처 manifest를 갖는 배포 자산이다. 성인 도메인 출처는 공개 porn 전용 목록만 검토하며 광고/추적/일반 사회관계망 목록 전체를 성인 목록으로 사용하지 않는다. 검증된 배포 목록이 없으면 기능 불가 상태가 명세된 동작이다.
+
+## 공식 기술 근거
+
+- [Chrome alarms](https://developer.chrome.com/docs/extensions/reference/api/alarms): 실행 지연·절전·재생성 조건 때문에 구간 재평가를 설계했다.
+- [Extension worker 수명](https://developer.chrome.com/docs/extensions/develop/concepts/service-workers/lifecycle): 메모리 변수만으로 세션을 보존하지 않는다.
+- [Google OIDC](https://developers.google.com/identity/openid-connect/openid-connect), [카카오 로그인](https://developers.kakao.com/docs/ko/kakaologin/rest-api): 제공자별 인증 검증을 분리한다.
+- [NSFWJS](https://nsfwjs.com/): 학습된 브라우저 분류기 adapter의 후보. FOCURVE 정확도·성능 검증 결과가 아니다.
+
+## 기본값과 경계 보완
+
+신규 ContentPolicy는 version1, keywords/adult_domains/image_blur/usage_tracking enabled=false, rules·예외·custom_hosts 빈 배열, 이미지 민감도/강도 MEDIUM이다. GET은 이 기본 객체를 반환한다. 저장 시 변경한 활성화만 다음 세션에 반영한다. 이용 시간 수집은 ANALYSIS-01에서 명시적으로 켤 수 있고 미활성 구간은 NOT_COLLECTED다.
+
+삭제된 동일 host 재등록은 기존 sites 행을 복원하고 version 증가, 기존 세션 스냅샷은 변경하지 않는다. 비밀번호 재설정으로 인증을 폐기해도 기존 실제 세션 소유자·기록은 유지하고 복구 규칙을 적용한다. 소셜 계정 연결 전 재인증은 API-AUTH-14로 현재 계정임을 검증한다. 최초 가입 약관 동의는 users의 terms_version·terms_accepted_at으로 저장한다.
+
+로그아웃의 연결 해제 대상은 사용자가 확인한 현재 실행 설치다. 다른 설치를 무조건 삭제하지 않는다. 활성 계정 세션의 실제 해제가 확인되어야 종료를 완료한다. AUTH-05가 별도 브라우저의 남은 연결까지 무조건 요구하는 의미는 아니다. 서버가 logout context의 대상 설치와 active lock을 확인한다.
+
+## 예약 상태·사유 직렬화
+
+Occurrence.status는 PENDING/WAITING_CONFLICT/STARTING/RUNNING/FINISHED/SKIPPED를 사용한다. 만료·존재하지 않는 현지 시각은 SKIPPED 상태와 reason=EXPIRED/NONEXISTENT_TIME으로 구분하며 합성 상태 문자열을 사용하지 않는다. 가져오기 항목의 SKIPPED_CONFLICT는 다른 도메인의 결과값이며 예약 상태가 아니다.
