@@ -1,0 +1,22 @@
+{
+  "date": "2026-10-04",
+  "detail_pages": 63,
+  "summary_pages": 8,
+  "preview_files": 71,
+  "missing_html_links": [],
+  "feature_references_checked": 47,
+  "erd_entities_matched": 32,
+  "product_tests": "not run",
+  "sources": [
+    {
+      "file": "FOCURVE_구현전_통합설계.drawio",
+      "sha256": "97a7fc808fbff97ccc754b51982708c494610579b461253cd4712299270adf8d",
+      "identical": true
+    },
+    {
+      "file": "FOCURVE_설계도_요약본.drawio",
+      "sha256": "992eb734c3ff310f1c7fef3f0714698d0b59d6f3b256bd2090aecd5731e7430c",
+      "identical": true
+    }
+  ]
+}
