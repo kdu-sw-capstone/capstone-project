@@ -1,0 +1,3884 @@
+{
+  "features": [
+    {
+      "id": "AUTH-01",
+      "name": "회원가입",
+      "description": "이메일과 비밀번호로 계정을 생성한다",
+      "stage": "필수",
+      "screen": "SIGNUP-01",
+      "role": "Web·Server",
+      "flow": [
+        "TF-12"
+      ],
+      "apis": [
+        "API-AUTH-01",
+        "API-AUTH-02",
+        "API-AUTH-03",
+        "API-AUTH-04",
+        "API-AUTH-06",
+        "API-AUTH-07",
+        "API-AUTH-08",
+        "API-AUTH-09",
+        "API-AUTH-10",
+        "API-AUTH-11",
+        "API-AUTH-12",
+        "API-AUTH-13",
+        "API-AUTH-14"
+      ],
+      "tables": [
+        "users",
+        "auth_identities",
+        "auth_challenges",
+        "web_sessions"
+      ],
+      "cases": [
+        "AC-AUTH-01-01",
+        "AC-AUTH-01-02",
+        "AC-AUTH-01-03"
+      ],
+      "member": "회원 Web·Extension",
+      "guest": "가입·로그인 진입만",
+      "local": "가입·로그인 진입만"
+    },
+    {
+      "id": "AUTH-02",
+      "name": "로그인",
+      "description": "등록된 계정으로 로그인한다",
+      "stage": "필수",
+      "screen": "LOGIN-01",
+      "role": "Web·Server",
+      "flow": [
+        "TF-12"
+      ],
+      "apis": [
+        "API-AUTH-01",
+        "API-AUTH-02",
+        "API-AUTH-03",
+        "API-AUTH-04",
+        "API-AUTH-06",
+        "API-AUTH-07",
+        "API-AUTH-08",
+        "API-AUTH-09",
+        "API-AUTH-10",
+        "API-AUTH-11",
+        "API-AUTH-12",
+        "API-AUTH-13",
+        "API-AUTH-14"
+      ],
+      "tables": [
+        "users",
+        "auth_identities",
+        "auth_challenges",
+        "web_sessions"
+      ],
+      "cases": [
+        "AC-AUTH-02-01",
+        "AC-AUTH-02-02",
+        "AC-AUTH-02-03"
+      ],
+      "member": "회원 Web·Extension",
+      "guest": "가입·로그인 진입만",
+      "local": "가입·로그인 진입만"
+    },
+    {
+      "id": "AUTH-03",
+      "name": "로그아웃",
+      "description": "현재 로그인 상태를 종료한다",
+      "stage": "필수",
+      "screen": "SETTING-01",
+      "role": "Web·Server",
+      "flow": [
+        "TF-13"
+      ],
+      "apis": [
+        "API-SESSION-06",
+        "API-EXEC-02",
+        "API-EXT-06",
+        "API-AUTH-05"
+      ],
+      "tables": [
+        "focus_sessions",
+        "extension_installations",
+        "web_sessions"
+      ],
+      "cases": [
+        "AC-AUTH-03-01",
+        "AC-AUTH-03-02",
+        "AC-AUTH-03-03"
+      ],
+      "member": "회원 Web·Extension",
+      "guest": "전환 결과",
+      "local": "전환 결과"
+    },
+    {
+      "id": "DASH-01",
+      "name": "집중 현황 조회",
+      "description": "최근 세션과 접근 기록 요약을 보여준다",
+      "stage": "필수",
+      "screen": "DASH-01",
+      "role": "Web·Server",
+      "flow": [
+        "TF-10"
+      ],
+      "apis": [
+        "API-STAT-01",
+        "API-STAT-02",
+        "API-DASH-01"
+      ],
+      "tables": [
+        "access_events",
+        "focus_sessions",
+        "session_intervals"
+      ],
+      "cases": [
+        "AC-DASH-01-01",
+        "AC-DASH-01-02",
+        "AC-DASH-01-03"
+      ],
+      "member": "회원 Web·Extension",
+      "guest": "Extension 로컬",
+      "local": "EXT 로컬 동일 검증/owner별 저장"
+    },
+    {
+      "id": "SITE-01",
+      "name": "사이트 목록 조회",
+      "description": "등록된 사이트와 분류·정책을 보여준다",
+      "stage": "필수",
+      "screen": "SITE-01",
+      "role": "Web·Server",
+      "flow": [
+        "TF-01",
+        "TF-02",
+        "TF-03",
+        "TF-04"
+      ],
+      "apis": [
+        "API-SITE-01",
+        "API-SITE-02",
+        "API-SITE-03",
+        "API-SITE-04",
+        "API-SITE-05"
+      ],
+      "tables": [
+        "sites",
+        "site_feature_policies"
+      ],
+      "cases": [
+        "AC-SITE-01-01",
+        "AC-SITE-01-02",
+        "AC-SITE-01-03"
+      ],
+      "member": "회원 Web·Extension",
+      "guest": "Extension 로컬",
+      "local": "EXT 로컬 동일 검증/owner별 저장"
+    },
+    {
+      "id": "SITE-02",
+      "name": "사이트 등록",
+      "description": "URL과 사이트 정보를 입력하여 등록한다",
+      "stage": "필수",
+      "screen": "SITE-02",
+      "role": "Web·Server",
+      "flow": [
+        "TF-01",
+        "TF-02",
+        "TF-03",
+        "TF-04"
+      ],
+      "apis": [
+        "API-SITE-01",
+        "API-SITE-02",
+        "API-SITE-03",
+        "API-SITE-04",
+        "API-SITE-05"
+      ],
+      "tables": [
+        "sites",
+        "site_feature_policies"
+      ],
+      "cases": [
+        "AC-SITE-02-01",
+        "AC-SITE-02-02",
+        "AC-SITE-02-03"
+      ],
+      "member": "회원 Web·Extension",
+      "guest": "Extension 로컬",
+      "local": "EXT 로컬 동일 검증/owner별 저장"
+    },
+    {
+      "id": "SITE-03",
+      "name": "사이트 수정",
+      "description": "등록된 사이트 정보와 정책을 수정한다",
+      "stage": "필수",
+      "screen": "SITE-02",
+      "role": "Web·Server",
+      "flow": [
+        "TF-01",
+        "TF-02",
+        "TF-03",
+        "TF-04"
+      ],
+      "apis": [
+        "API-SITE-01",
+        "API-SITE-02",
+        "API-SITE-03",
+        "API-SITE-04",
+        "API-SITE-05"
+      ],
+      "tables": [
+        "sites",
+        "site_feature_policies"
+      ],
+      "cases": [
+        "AC-SITE-03-01",
+        "AC-SITE-03-02",
+        "AC-SITE-03-03"
+      ],
+      "member": "회원 Web·Extension",
+      "guest": "Extension 로컬",
+      "local": "EXT 로컬 동일 검증/owner별 저장"
+    },
+    {
+      "id": "SITE-04",
+      "name": "사이트 삭제",
+      "description": "등록된 사이트를 삭제한다",
+      "stage": "필수",
+      "screen": "SITE-01",
+      "role": "Web·Server",
+      "flow": [
+        "TF-01",
+        "TF-02",
+        "TF-03",
+        "TF-04"
+      ],
+      "apis": [
+        "API-SITE-01",
+        "API-SITE-02",
+        "API-SITE-03",
+        "API-SITE-04",
+        "API-SITE-05"
+      ],
+      "tables": [
+        "sites",
+        "site_feature_policies"
+      ],
+      "cases": [
+        "AC-SITE-04-01",
+        "AC-SITE-04-02",
+        "AC-SITE-04-03"
+      ],
+      "member": "회원 Web·Extension",
+      "guest": "Extension 로컬",
+      "local": "EXT 로컬 동일 검증/owner별 저장"
+    },
+    {
+      "id": "SITE-05",
+      "name": "사이트 분류",
+      "description": "사이트를 집중·방해·일반으로 분류한다",
+      "stage": "필수",
+      "screen": "SITE-02",
+      "role": "Web·Server",
+      "flow": [
+        "TF-01",
+        "TF-02",
+        "TF-03",
+        "TF-04"
+      ],
+      "apis": [
+        "API-SITE-01",
+        "API-SITE-02",
+        "API-SITE-03",
+        "API-SITE-04",
+        "API-SITE-05"
+      ],
+      "tables": [
+        "sites",
+        "site_feature_policies"
+      ],
+      "cases": [
+        "AC-SITE-05-01",
+        "AC-SITE-05-02",
+        "AC-SITE-05-03"
+      ],
+      "member": "회원 Web·Extension",
+      "guest": "Extension 로컬",
+      "local": "EXT 로컬 동일 검증/owner별 저장"
+    },
+    {
+      "id": "POLICY-01",
+      "name": "차단 정책 설정",
+      "description": "집중 세션 중 사이트 접근을 차단하도록 설정한다",
+      "stage": "필수",
+      "screen": "SITE-02",
+      "role": "Web·Server·Extension",
+      "flow": [
+        "TF-04",
+        "TF-08",
+        "TF-A01"
+      ],
+      "apis": [
+        "API-SITE-04",
+        "API-SESSION-05",
+        "API-EXEC-01",
+        "API-EXEC-02"
+      ],
+      "tables": [
+        "site_feature_policies",
+        "policy_snapshots",
+        "access_events"
+      ],
+      "cases": [
+        "AC-POLICY-01-01",
+        "AC-POLICY-01-02",
+        "AC-POLICY-01-03"
+      ],
+      "member": "회원 Web·Extension",
+      "guest": "Extension 로컬",
+      "local": "EXT 로컬 동일 검증/owner별 저장"
+    },
+    {
+      "id": "POLICY-02",
+      "name": "기록 정책 설정",
+      "description": "사이트 접근을 허용하되 행동을 기록하도록 설정한다",
+      "stage": "필수",
+      "screen": "SITE-02",
+      "role": "Web·Server·Extension",
+      "flow": [
+        "TF-04",
+        "TF-08",
+        "TF-A01"
+      ],
+      "apis": [
+        "API-SITE-04",
+        "API-SESSION-05",
+        "API-EXEC-01",
+        "API-EXEC-02"
+      ],
+      "tables": [
+        "site_feature_policies",
+        "policy_snapshots",
+        "access_events"
+      ],
+      "cases": [
+        "AC-POLICY-02-01",
+        "AC-POLICY-02-02",
+        "AC-POLICY-02-03"
+      ],
+      "member": "회원 Web·Extension",
+      "guest": "Extension 로컬",
+      "local": "EXT 로컬 동일 검증/owner별 저장"
+    },
+    {
+      "id": "POLICY-03",
+      "name": "유튜브 쇼츠 차단",
+      "description": "유튜브 전체가 아닌 Shorts 기능만 제한한다",
+      "stage": "필수",
+      "screen": "SITE-02",
+      "role": "Web·Server·Extension",
+      "flow": [
+        "TF-04",
+        "TF-08",
+        "TF-A01"
+      ],
+      "apis": [
+        "API-SITE-04",
+        "API-SESSION-05",
+        "API-EXEC-01",
+        "API-EXEC-02"
+      ],
+      "tables": [
+        "site_feature_policies",
+        "policy_snapshots",
+        "access_events"
+      ],
+      "cases": [
+        "AC-POLICY-03-01",
+        "AC-POLICY-03-02",
+        "AC-POLICY-03-03"
+      ],
+      "member": "회원 Web·Extension",
+      "guest": "Extension 로컬",
+      "local": "EXT 로컬 동일 검증/owner별 저장"
+    },
+    {
+      "id": "SESSION-01",
+      "name": "세션 시작",
+      "description": "시간과 정책을 선택하여 집중 세션을 시작한다",
+      "stage": "필수",
+      "screen": "SESSION-01",
+      "role": "전체",
+      "flow": [
+        "TF-05",
+        "TF-06",
+        "TF-07"
+      ],
+      "apis": [
+        "API-SESSION-01",
+        "API-SESSION-02",
+        "API-SESSION-03",
+        "API-SESSION-04",
+        "API-SESSION-05",
+        "API-SESSION-06",
+        "API-EXEC-01",
+        "API-EXEC-02",
+        "API-EXEC-03"
+      ],
+      "tables": [
+        "focus_sessions",
+        "policy_snapshots",
+        "active_execution_locks",
+        "session_intervals"
+      ],
+      "cases": [
+        "AC-SESSION-01-01",
+        "AC-SESSION-01-02",
+        "AC-SESSION-01-03"
+      ],
+      "member": "회원 Web·Extension",
+      "guest": "Extension 로컬",
+      "local": "EXT 로컬 동일 검증/owner별 저장"
+    },
+    {
+      "id": "SESSION-02",
+      "name": "세션 종료",
+      "description": "진행 중인 집중 세션을 종료한다",
+      "stage": "필수",
+      "screen": "SESSION-01",
+      "role": "전체",
+      "flow": [
+        "TF-05",
+        "TF-06",
+        "TF-07"
+      ],
+      "apis": [
+        "API-SESSION-01",
+        "API-SESSION-02",
+        "API-SESSION-03",
+        "API-SESSION-04",
+        "API-SESSION-05",
+        "API-SESSION-06",
+        "API-EXEC-01",
+        "API-EXEC-02",
+        "API-EXEC-03"
+      ],
+      "tables": [
+        "focus_sessions",
+        "policy_snapshots",
+        "active_execution_locks",
+        "session_intervals"
+      ],
+      "cases": [
+        "AC-SESSION-02-01",
+        "AC-SESSION-02-02",
+        "AC-SESSION-02-03"
+      ],
+      "member": "회원 Web·Extension",
+      "guest": "Extension 로컬",
+      "local": "EXT 로컬 동일 검증/owner별 저장"
+    },
+    {
+      "id": "SESSION-03",
+      "name": "세션 상태 확인",
+      "description": "진행 시간과 적용 중인 정책을 보여준다",
+      "stage": "필수",
+      "screen": "SESSION-01",
+      "role": "Web·Extension",
+      "flow": [
+        "TF-05",
+        "TF-06",
+        "TF-07"
+      ],
+      "apis": [
+        "API-SESSION-01",
+        "API-SESSION-02",
+        "API-SESSION-03",
+        "API-SESSION-04",
+        "API-SESSION-05",
+        "API-SESSION-06",
+        "API-EXEC-01",
+        "API-EXEC-02",
+        "API-EXEC-03"
+      ],
+      "tables": [
+        "focus_sessions",
+        "policy_snapshots",
+        "active_execution_locks",
+        "session_intervals"
+      ],
+      "cases": [
+        "AC-SESSION-03-01",
+        "AC-SESSION-03-02",
+        "AC-SESSION-03-03"
+      ],
+      "member": "회원 Web·Extension",
+      "guest": "Extension 로컬",
+      "local": "EXT 로컬 동일 검증/owner별 저장"
+    },
+    {
+      "id": "SESSION-04",
+      "name": "사이트 전체 차단 적용",
+      "description": "시작 시 고정한 사이트별 전체 차단 정책을 적용한다. 기록 방식인 사이트까지 일괄 차단하지 않는다.",
+      "stage": "필수",
+      "screen": "SESSION-01",
+      "role": "Server·Extension",
+      "flow": [
+        "TF-05",
+        "TF-06",
+        "TF-07"
+      ],
+      "apis": [
+        "API-SESSION-01",
+        "API-SESSION-02",
+        "API-SESSION-03",
+        "API-SESSION-04",
+        "API-SESSION-05",
+        "API-SESSION-06",
+        "API-EXEC-01",
+        "API-EXEC-02",
+        "API-EXEC-03"
+      ],
+      "tables": [
+        "focus_sessions",
+        "policy_snapshots",
+        "active_execution_locks",
+        "session_intervals"
+      ],
+      "cases": [
+        "AC-SESSION-04-01",
+        "AC-SESSION-04-02",
+        "AC-SESSION-04-03"
+      ],
+      "member": "회원 Web·Extension",
+      "guest": "Extension 로컬",
+      "local": "EXT 로컬 동일 검증/owner별 저장"
+    },
+    {
+      "id": "EVENT-01",
+      "name": "차단 사이트 접근 기록",
+      "description": "사용자가 차단 사이트에 접근한 행동을 자동으로 기록·저장한다",
+      "stage": "필수",
+      "screen": "LOG-01",
+      "role": "Extension·Server",
+      "flow": [
+        "TF-08",
+        "TF-09"
+      ],
+      "apis": [
+        "API-EVENT-01",
+        "API-EVENT-02",
+        "API-LOG-01",
+        "API-LOG-02"
+      ],
+      "tables": [
+        "event_receipts",
+        "access_events",
+        "session_lifecycle_events"
+      ],
+      "cases": [
+        "AC-EVENT-01-01",
+        "AC-EVENT-01-02",
+        "AC-EVENT-01-03"
+      ],
+      "member": "회원 Web·Extension",
+      "guest": "Extension 로컬",
+      "local": "EXT 로컬 동일 검증/owner별 저장"
+    },
+    {
+      "id": "EVENT-02",
+      "name": "기록 대상 접근 저장",
+      "description": "기록 정책 사이트의 접근 행동을 자동으로 기록·저장한다",
+      "stage": "필수",
+      "screen": "LOG-01",
+      "role": "Extension·Server",
+      "flow": [
+        "TF-08",
+        "TF-09"
+      ],
+      "apis": [
+        "API-EVENT-01",
+        "API-EVENT-02",
+        "API-LOG-01",
+        "API-LOG-02"
+      ],
+      "tables": [
+        "event_receipts",
+        "access_events",
+        "session_lifecycle_events"
+      ],
+      "cases": [
+        "AC-EVENT-02-01",
+        "AC-EVENT-02-02",
+        "AC-EVENT-02-03"
+      ],
+      "member": "회원 Web·Extension",
+      "guest": "Extension 로컬",
+      "local": "EXT 로컬 동일 검증/owner별 저장"
+    },
+    {
+      "id": "EVENT-03",
+      "name": "내부 기능 접근 기록",
+      "description": "YouTube Shorts 접근 행동을 자동으로 기록·저장한다",
+      "stage": "필수",
+      "screen": "LOG-01",
+      "role": "Extension·Server",
+      "flow": [
+        "TF-08",
+        "TF-09"
+      ],
+      "apis": [
+        "API-EVENT-01",
+        "API-EVENT-02",
+        "API-LOG-01",
+        "API-LOG-02"
+      ],
+      "tables": [
+        "event_receipts",
+        "access_events",
+        "session_lifecycle_events"
+      ],
+      "cases": [
+        "AC-EVENT-03-01",
+        "AC-EVENT-03-02",
+        "AC-EVENT-03-03"
+      ],
+      "member": "회원 Web·Extension",
+      "guest": "Extension 로컬",
+      "local": "EXT 로컬 동일 검증/owner별 저장"
+    },
+    {
+      "id": "EVENT-04",
+      "name": "반복 접근 구분",
+      "description": "같은 세션에서 동일 대상의 두 번째 이상 접근을 구분한다",
+      "stage": "필수",
+      "screen": "LOG-01",
+      "role": "Server",
+      "flow": [
+        "TF-08",
+        "TF-09"
+      ],
+      "apis": [
+        "API-EVENT-01",
+        "API-EVENT-02",
+        "API-LOG-01",
+        "API-LOG-02"
+      ],
+      "tables": [
+        "event_receipts",
+        "access_events",
+        "session_lifecycle_events"
+      ],
+      "cases": [
+        "AC-EVENT-04-01",
+        "AC-EVENT-04-02",
+        "AC-EVENT-04-03"
+      ],
+      "member": "회원 Web·Extension",
+      "guest": "Extension 로컬",
+      "local": "EXT 로컬 동일 검증/owner별 저장"
+    },
+    {
+      "id": "LOG-01",
+      "name": "기록 목록 조회",
+      "description": "세션별 사이트 접근 기록을 보여준다",
+      "stage": "필수",
+      "screen": "LOG-01",
+      "role": "Web·Server",
+      "flow": [
+        "TF-09"
+      ],
+      "apis": [
+        "API-LOG-01",
+        "API-LOG-02"
+      ],
+      "tables": [
+        "access_events",
+        "policy_snapshots"
+      ],
+      "cases": [
+        "AC-LOG-01-01",
+        "AC-LOG-01-02",
+        "AC-LOG-01-03"
+      ],
+      "member": "회원 Web·Extension",
+      "guest": "Extension 로컬",
+      "local": "EXT 로컬 동일 검증/owner별 저장"
+    },
+    {
+      "id": "LOG-02",
+      "name": "기록 상세 조회",
+      "description": "접근 대상·시각·횟수·정책 정보를 보여준다",
+      "stage": "필수",
+      "screen": "LOG-02",
+      "role": "Web·Server",
+      "flow": [
+        "TF-09"
+      ],
+      "apis": [
+        "API-LOG-01",
+        "API-LOG-02"
+      ],
+      "tables": [
+        "access_events",
+        "policy_snapshots"
+      ],
+      "cases": [
+        "AC-LOG-02-01",
+        "AC-LOG-02-02",
+        "AC-LOG-02-03"
+      ],
+      "member": "회원 Web·Extension",
+      "guest": "Extension 로컬",
+      "local": "EXT 로컬 동일 검증/owner별 저장"
+    },
+    {
+      "id": "STAT-01",
+      "name": "기본 통계 조회",
+      "description": "세션 수·차단 횟수·반복 접근 횟수를 보여준다",
+      "stage": "필수",
+      "screen": "STAT-01",
+      "role": "Web·Server",
+      "flow": [
+        "TF-10"
+      ],
+      "apis": [
+        "API-STAT-01",
+        "API-STAT-02",
+        "API-DASH-01"
+      ],
+      "tables": [
+        "access_events",
+        "focus_sessions",
+        "session_intervals"
+      ],
+      "cases": [
+        "AC-STAT-01-01",
+        "AC-STAT-01-02",
+        "AC-STAT-01-03"
+      ],
+      "member": "회원 Web·Extension",
+      "guest": "Extension 로컬",
+      "local": "EXT 로컬 동일 검증/owner별 저장"
+    },
+    {
+      "id": "STAT-02",
+      "name": "사이트별 통계",
+      "description": "사이트별 접근 및 반복 접근 횟수를 보여준다",
+      "stage": "필수",
+      "screen": "STAT-01",
+      "role": "Web·Server",
+      "flow": [
+        "TF-10"
+      ],
+      "apis": [
+        "API-STAT-01",
+        "API-STAT-02",
+        "API-DASH-01"
+      ],
+      "tables": [
+        "access_events",
+        "focus_sessions",
+        "session_intervals"
+      ],
+      "cases": [
+        "AC-STAT-02-01",
+        "AC-STAT-02-02",
+        "AC-STAT-02-03"
+      ],
+      "member": "회원 Web·Extension",
+      "guest": "Extension 로컬",
+      "local": "EXT 로컬 동일 검증/owner별 저장"
+    },
+    {
+      "id": "SETTING-01",
+      "name": "정책 조정",
+      "description": "기록과 통계를 확인한 후 다음 세션 정책을 변경한다",
+      "stage": "필수",
+      "screen": "SITE-02, STAT-01, LOG-02",
+      "role": "Web·Server",
+      "flow": [
+        "TF-01",
+        "TF-02",
+        "TF-03",
+        "TF-04"
+      ],
+      "apis": [
+        "API-SITE-01",
+        "API-SITE-02",
+        "API-SITE-03",
+        "API-SITE-04",
+        "API-SITE-05"
+      ],
+      "tables": [
+        "sites",
+        "site_feature_policies"
+      ],
+      "cases": [
+        "AC-SETTING-01-01",
+        "AC-SETTING-01-02",
+        "AC-SETTING-01-03"
+      ],
+      "member": "회원 Web·Extension",
+      "guest": "Extension 로컬",
+      "local": "EXT 로컬 동일 검증/owner별 저장"
+    },
+    {
+      "id": "EXT-01",
+      "name": "정책 동기화",
+      "description": "Server에서 현재 세션 정책을 전달받는다",
+      "stage": "필수",
+      "screen": "EXT-01",
+      "role": "Server·Extension",
+      "flow": [
+        "TF-05",
+        "TF-08",
+        "TF-13"
+      ],
+      "apis": [
+        "API-EXT-01",
+        "API-EXT-02",
+        "API-EXT-03",
+        "API-EXT-04",
+        "API-EXT-05",
+        "API-EXT-06",
+        "API-EXT-07",
+        "API-EXEC-01",
+        "API-EXEC-02",
+        "API-EXEC-03",
+        "API-EVENT-01",
+        "API-EVENT-02"
+      ],
+      "tables": [
+        "extension_installations",
+        "execution_commands",
+        "execution_reports"
+      ],
+      "cases": [
+        "AC-EXT-01-01",
+        "AC-EXT-01-02",
+        "AC-EXT-01-03"
+      ],
+      "member": "회원 Web·Extension",
+      "guest": "Extension 로컬",
+      "local": "EXT 로컬 동일 검증/owner별 저장"
+    },
+    {
+      "id": "EXT-02",
+      "name": "접근 제한 적용",
+      "description": "브라우저에서 사이트와 내부 기능 접근을 제한한다",
+      "stage": "필수",
+      "screen": "EXT-01",
+      "role": "Extension",
+      "flow": [
+        "TF-05",
+        "TF-08",
+        "TF-13"
+      ],
+      "apis": [
+        "API-EXT-01",
+        "API-EXT-02",
+        "API-EXT-03",
+        "API-EXT-04",
+        "API-EXT-05",
+        "API-EXT-06",
+        "API-EXT-07",
+        "API-EXEC-01",
+        "API-EXEC-02",
+        "API-EXEC-03",
+        "API-EVENT-01",
+        "API-EVENT-02"
+      ],
+      "tables": [
+        "extension_installations",
+        "execution_commands",
+        "execution_reports"
+      ],
+      "cases": [
+        "AC-EXT-02-01",
+        "AC-EXT-02-02",
+        "AC-EXT-02-03"
+      ],
+      "member": "회원 Web·Extension",
+      "guest": "Extension 로컬",
+      "local": "EXT 로컬 동일 검증/owner별 저장"
+    },
+    {
+      "id": "EXT-03",
+      "name": "이벤트 전송",
+      "description": "발생한 접근 이벤트를 Server로 전송한다",
+      "stage": "필수",
+      "screen": "EXT-01",
+      "role": "Extension·Server",
+      "flow": [
+        "TF-05",
+        "TF-08",
+        "TF-13"
+      ],
+      "apis": [
+        "API-EXT-01",
+        "API-EXT-02",
+        "API-EXT-03",
+        "API-EXT-04",
+        "API-EXT-05",
+        "API-EXT-06",
+        "API-EXT-07",
+        "API-EXEC-01",
+        "API-EXEC-02",
+        "API-EXEC-03",
+        "API-EVENT-01",
+        "API-EVENT-02"
+      ],
+      "tables": [
+        "extension_installations",
+        "execution_commands",
+        "execution_reports"
+      ],
+      "cases": [
+        "AC-EXT-03-01",
+        "AC-EXT-03-02",
+        "AC-EXT-03-03"
+      ],
+      "member": "회원 Web·Extension",
+      "guest": "Extension 로컬",
+      "local": "EXT 로컬 동일 검증/owner별 저장"
+    },
+    {
+      "id": "OPTION-01",
+      "name": "추천 콘텐츠 제한",
+      "description": "YouTube 추천 콘텐츠와 Instagram 추천 피드 영역의 선택적 숨김",
+      "stage": "추가",
+      "screen": "FEATURE-01",
+      "role": "Web·Server·Extension",
+      "flow": [
+        "TF-04",
+        "TF-08",
+        "TF-A01"
+      ],
+      "apis": [
+        "API-SITE-04",
+        "API-SESSION-05",
+        "API-EXEC-01",
+        "API-EXEC-02"
+      ],
+      "tables": [
+        "site_feature_policies",
+        "policy_snapshots",
+        "access_events"
+      ],
+      "cases": [
+        "AC-OPTION-01-01",
+        "AC-OPTION-01-02",
+        "AC-OPTION-01-03"
+      ],
+      "member": "회원 Web·Extension",
+      "guest": "Extension 로컬",
+      "local": "EXT 로컬 동일 검증/owner별 저장"
+    },
+    {
+      "id": "OPTION-02",
+      "name": "댓글 제한",
+      "description": "YouTube 댓글 영역의 선택적 숨김",
+      "stage": "추가",
+      "screen": "FEATURE-01",
+      "role": "Web·Server·Extension",
+      "flow": [
+        "TF-04",
+        "TF-08",
+        "TF-A01"
+      ],
+      "apis": [
+        "API-SITE-04",
+        "API-SESSION-05",
+        "API-EXEC-01",
+        "API-EXEC-02"
+      ],
+      "tables": [
+        "site_feature_policies",
+        "policy_snapshots",
+        "access_events"
+      ],
+      "cases": [
+        "AC-OPTION-02-01",
+        "AC-OPTION-02-02",
+        "AC-OPTION-02-03"
+      ],
+      "member": "회원 Web·Extension",
+      "guest": "Extension 로컬",
+      "local": "EXT 로컬 동일 검증/owner별 저장"
+    },
+    {
+      "id": "OPTION-03",
+      "name": "자동재생 제한",
+      "description": "다음 영상 자동재생 제한",
+      "stage": "추가",
+      "screen": "FEATURE-01",
+      "role": "Web·Server·Extension",
+      "flow": [
+        "TF-04",
+        "TF-08",
+        "TF-A01"
+      ],
+      "apis": [
+        "API-SITE-04",
+        "API-SESSION-05",
+        "API-EXEC-01",
+        "API-EXEC-02"
+      ],
+      "tables": [
+        "site_feature_policies",
+        "policy_snapshots",
+        "access_events"
+      ],
+      "cases": [
+        "AC-OPTION-03-01",
+        "AC-OPTION-03-02",
+        "AC-OPTION-03-03"
+      ],
+      "member": "회원 Web·Extension",
+      "guest": "Extension 로컬",
+      "local": "EXT 로컬 동일 검증/owner별 저장"
+    },
+    {
+      "id": "OPTION-04",
+      "name": "집중 예약",
+      "description": "예약 등록·수정·삭제, 요일·시각·집중 시간 설정",
+      "stage": "추가",
+      "screen": "SCHEDULE-01",
+      "role": "Web·Server·Extension",
+      "flow": [
+        "TF-A02"
+      ],
+      "apis": [
+        "API-SCHEDULE-01",
+        "API-SCHEDULE-02",
+        "API-SCHEDULE-03",
+        "API-SCHEDULE-04",
+        "API-SCHEDULE-05",
+        "API-SCHEDULE-06"
+      ],
+      "tables": [
+        "schedules",
+        "schedule_occurrences",
+        "focus_sessions"
+      ],
+      "cases": [
+        "AC-OPTION-04-01",
+        "AC-OPTION-04-02",
+        "AC-OPTION-04-03"
+      ],
+      "member": "회원 Web·Extension",
+      "guest": "Extension 로컬",
+      "local": "EXT 로컬 동일 검증/owner별 저장"
+    },
+    {
+      "id": "SETTING-02",
+      "name": "화면 모드 전환",
+      "description": "라이트·다크를 선택해 웹 전체에 즉시 적용하고 현재 브라우저에 저장한다. 첫 방문 기본값은 라이트이다.",
+      "stage": "필수",
+      "screen": "SETTING-01",
+      "role": "Web",
+      "flow": [
+        "TF-14"
+      ],
+      "apis": [],
+      "tables": [
+        "로컬 preferences"
+      ],
+      "cases": [
+        "AC-SETTING-02-01",
+        "AC-SETTING-02-02",
+        "AC-SETTING-02-03"
+      ],
+      "member": "Web 로컬",
+      "guest": "Web 공통 테마만",
+      "local": "Web 공통 테마만"
+    },
+    {
+      "id": "OPTION-05",
+      "name": "지원 서비스 확대",
+      "description": "Instagram Reels 등 서비스 내부 기능 제한",
+      "stage": "추가",
+      "screen": "FEATURE-01",
+      "role": "Web·Server·Extension",
+      "flow": [
+        "TF-04",
+        "TF-08",
+        "TF-A01"
+      ],
+      "apis": [
+        "API-SITE-04",
+        "API-SESSION-05",
+        "API-EXEC-01",
+        "API-EXEC-02"
+      ],
+      "tables": [
+        "site_feature_policies",
+        "policy_snapshots",
+        "access_events"
+      ],
+      "cases": [
+        "AC-OPTION-05-01",
+        "AC-OPTION-05-02",
+        "AC-OPTION-05-03"
+      ],
+      "member": "회원 Web·Extension",
+      "guest": "Extension 로컬",
+      "local": "EXT 로컬 동일 검증/owner별 저장"
+    },
+    {
+      "id": "OPTION-06",
+      "name": "사이트 이용 시간",
+      "description": "등록 사이트의 이용 시간을 기간·사이트별 조회",
+      "stage": "추가",
+      "screen": "ANALYSIS-01",
+      "role": "Web·Server·Extension",
+      "flow": [
+        "TF-A03"
+      ],
+      "apis": [
+        "API-USAGE-01",
+        "API-STAT-01",
+        "API-STAT-02",
+        "API-STAT-03",
+        "API-STAT-04",
+        "API-POLICY-01",
+        "API-POLICY-02"
+      ],
+      "tables": [
+        "usage_segments",
+        "session_intervals",
+        "access_events"
+      ],
+      "cases": [
+        "AC-OPTION-06-01",
+        "AC-OPTION-06-02",
+        "AC-OPTION-06-03"
+      ],
+      "member": "회원 Web·Extension",
+      "guest": "Extension 로컬",
+      "local": "EXT 로컬 동일 검증/owner별 저장"
+    },
+    {
+      "id": "OPTION-07",
+      "name": "행동 기반 지표",
+      "description": "반복 비율 및 행동 패턴 지표",
+      "stage": "추가",
+      "screen": "ANALYSIS-01",
+      "role": "Web·Server·Extension",
+      "flow": [
+        "TF-A03"
+      ],
+      "apis": [
+        "API-USAGE-01",
+        "API-STAT-01",
+        "API-STAT-02",
+        "API-STAT-03",
+        "API-STAT-04",
+        "API-POLICY-01",
+        "API-POLICY-02"
+      ],
+      "tables": [
+        "usage_segments",
+        "session_intervals",
+        "access_events"
+      ],
+      "cases": [
+        "AC-OPTION-07-01",
+        "AC-OPTION-07-02",
+        "AC-OPTION-07-03"
+      ],
+      "member": "회원 Web·Extension",
+      "guest": "Extension 로컬",
+      "local": "EXT 로컬 동일 검증/owner별 저장"
+    },
+    {
+      "id": "OPTION-08",
+      "name": "시간대별 패턴·확장 분석",
+      "description": "시간대별 접근·반복 분포와 기간 분석",
+      "stage": "추가",
+      "screen": "STAT-01, ANALYSIS-01",
+      "role": "Web·Server·Extension",
+      "flow": [
+        "TF-A03"
+      ],
+      "apis": [
+        "API-USAGE-01",
+        "API-STAT-01",
+        "API-STAT-02",
+        "API-STAT-03",
+        "API-STAT-04",
+        "API-POLICY-01",
+        "API-POLICY-02"
+      ],
+      "tables": [
+        "usage_segments",
+        "session_intervals",
+        "access_events"
+      ],
+      "cases": [
+        "AC-OPTION-08-01",
+        "AC-OPTION-08-02",
+        "AC-OPTION-08-03"
+      ],
+      "member": "회원 Web·Extension",
+      "guest": "Extension 로컬",
+      "local": "EXT 로컬 동일 검증/owner별 저장"
+    },
+    {
+      "id": "OPTION-09",
+      "name": "키워드 제한",
+      "description": "키워드·검사 위치·예외 사이트 관리",
+      "stage": "추가",
+      "screen": "KEYWORD-01",
+      "role": "Web·Server·Extension",
+      "flow": [
+        "TF-A04"
+      ],
+      "apis": [
+        "API-POLICY-01",
+        "API-POLICY-02",
+        "API-CAP-01",
+        "API-EVENT-01"
+      ],
+      "tables": [
+        "content_policies",
+        "policy_snapshots",
+        "access_events"
+      ],
+      "cases": [
+        "AC-OPTION-09-01",
+        "AC-OPTION-09-02",
+        "AC-OPTION-09-03"
+      ],
+      "member": "회원 Web·Extension",
+      "guest": "Extension 로컬",
+      "local": "EXT 로컬 동일 검증/owner별 저장"
+    },
+    {
+      "id": "OPTION-10",
+      "name": "성인 사이트 제한",
+      "description": "활성화·도메인 목록·예외·제한 결과",
+      "stage": "추가",
+      "screen": "SAFETY-01",
+      "role": "Web·Server·Extension",
+      "flow": [
+        "TF-A05"
+      ],
+      "apis": [
+        "API-POLICY-01",
+        "API-POLICY-02",
+        "API-CAT-01",
+        "API-EVENT-01"
+      ],
+      "tables": [
+        "content_policies",
+        "catalog_versions",
+        "access_events"
+      ],
+      "cases": [
+        "AC-OPTION-10-01",
+        "AC-OPTION-10-02",
+        "AC-OPTION-10-03"
+      ],
+      "member": "회원 Web·Extension",
+      "guest": "Extension 로컬",
+      "local": "EXT 로컬 동일 검증/owner별 저장"
+    },
+    {
+      "id": "OPTION-11",
+      "name": "민감 이미지 블러",
+      "description": "활성화·민감도·일시 확인·오탐 처리",
+      "stage": "추가",
+      "screen": "BLUR-01",
+      "role": "Web·Server·Extension",
+      "flow": [
+        "TF-A06"
+      ],
+      "apis": [
+        "API-POLICY-01",
+        "API-POLICY-02",
+        "API-CAP-01"
+      ],
+      "tables": [
+        "content_policies",
+        "model_profiles"
+      ],
+      "cases": [
+        "AC-OPTION-11-01",
+        "AC-OPTION-11-02",
+        "AC-OPTION-11-03"
+      ],
+      "member": "회원 Web·Extension",
+      "guest": "Extension 로컬",
+      "local": "EXT 로컬 동일 검증/owner별 저장"
+    },
+    {
+      "id": "OPTION-12",
+      "name": "행동 기반 AI 피드백",
+      "description": "기록 요약·패턴 설명·설정 조정 후보 제공",
+      "stage": "추가",
+      "screen": "ANALYSIS-01",
+      "role": "Web·Server·Extension",
+      "flow": [
+        "TF-A07"
+      ],
+      "apis": [
+        "API-AI-01",
+        "API-AI-02",
+        "API-AI-03",
+        "API-AI-04",
+        "API-STAT-04"
+      ],
+      "tables": [
+        "analysis_jobs",
+        "analysis_results",
+        "analysis_consents"
+      ],
+      "cases": [
+        "AC-OPTION-12-01",
+        "AC-OPTION-12-02",
+        "AC-OPTION-12-03"
+      ],
+      "member": "회원 Web·Extension",
+      "guest": "계정 필요; 로컬 기본 분석은 별도",
+      "local": "계정 필요; 로컬 기본 분석은 별도"
+    },
+    {
+      "id": "SESSION-05",
+      "name": "일시정지·재개",
+      "description": "세션 일시정지와 재개",
+      "stage": "추가",
+      "screen": "SESSION-01",
+      "role": "Web·Server·Extension",
+      "flow": [
+        "TF-A08",
+        "TF-07"
+      ],
+      "apis": [
+        "API-SESSION-07",
+        "API-SESSION-08",
+        "API-SESSION-06",
+        "API-EXEC-02"
+      ],
+      "tables": [
+        "focus_sessions",
+        "session_intervals",
+        "execution_commands"
+      ],
+      "cases": [
+        "AC-SESSION-05-01",
+        "AC-SESSION-05-02",
+        "AC-SESSION-05-03"
+      ],
+      "member": "회원 Web·Extension",
+      "guest": "Extension 로컬",
+      "local": "EXT 로컬 동일 검증/owner별 저장"
+    },
+    {
+      "id": "SESSION-06",
+      "name": "세션 메모",
+      "description": "세션별 선택 메모 저장·조회",
+      "stage": "추가",
+      "screen": "SESSION-01",
+      "role": "Web·Server·Extension",
+      "flow": [
+        "TF-A09"
+      ],
+      "apis": [
+        "API-NOTE-01",
+        "API-NOTE-02"
+      ],
+      "tables": [
+        "session_notes"
+      ],
+      "cases": [
+        "AC-SESSION-06-01",
+        "AC-SESSION-06-02",
+        "AC-SESSION-06-03"
+      ],
+      "member": "회원 Web·Extension",
+      "guest": "Extension 로컬",
+      "local": "EXT 로컬 동일 검증/owner별 저장"
+    },
+    {
+      "id": "AUTH-04",
+      "name": "로그인 없이 시작",
+      "description": "계정 없이 설정·세션·접근 기록을 Extension 로컬에 보관한다.",
+      "stage": "필수",
+      "screen": "EXT-01",
+      "role": "Extension",
+      "flow": [
+        "TF-06"
+      ],
+      "apis": [],
+      "tables": [
+        "로컬 sessions",
+        "로컬 owner_settings"
+      ],
+      "cases": [
+        "AC-AUTH-04-01",
+        "AC-AUTH-04-02",
+        "AC-AUTH-04-03"
+      ],
+      "member": "회원 Web·Extension",
+      "guest": "Extension 로컬",
+      "local": "EXT 로컬 동일 검증/owner별 저장"
+    },
+    {
+      "id": "AUTH-05",
+      "name": "소셜 로그인",
+      "description": "지원 제공자 계정으로 인증하고 Web·Extension 계정을 연결한다.",
+      "stage": "필수",
+      "screen": "LOGIN-01, SIGNUP-01, EXT-01",
+      "role": "Web·Server·Extension",
+      "flow": [
+        "TF-12"
+      ],
+      "apis": [
+        "API-AUTH-01",
+        "API-AUTH-02",
+        "API-AUTH-03",
+        "API-AUTH-04",
+        "API-AUTH-06",
+        "API-AUTH-07",
+        "API-AUTH-08",
+        "API-AUTH-09",
+        "API-AUTH-10",
+        "API-AUTH-11",
+        "API-AUTH-12",
+        "API-AUTH-13",
+        "API-AUTH-14"
+      ],
+      "tables": [
+        "users",
+        "auth_identities",
+        "auth_challenges",
+        "web_sessions"
+      ],
+      "cases": [
+        "AC-AUTH-05-01",
+        "AC-AUTH-05-02",
+        "AC-AUTH-05-03"
+      ],
+      "member": "회원 Web·Extension",
+      "guest": "가입·로그인 진입만",
+      "local": "가입·로그인 진입만"
+    },
+    {
+      "id": "IMPORT-01",
+      "name": "가져올 자료 선택",
+      "description": "현재 계정과 로컬 설정·완료 세션을 확인하고 가져올 범위를 직접 선택한다.",
+      "stage": "필수",
+      "screen": "EXT-01, SETTING-01",
+      "role": "Web·Extension·Server",
+      "flow": [
+        "TF-11"
+      ],
+      "apis": [
+        "API-IMPORT-01",
+        "API-IMPORT-02",
+        "API-IMPORT-03",
+        "API-IMPORT-04"
+      ],
+      "tables": [
+        "guest_import_batches",
+        "guest_import_items",
+        "focus_sessions"
+      ],
+      "cases": [
+        "AC-IMPORT-01-01",
+        "AC-IMPORT-01-02",
+        "AC-IMPORT-01-03"
+      ],
+      "member": "회원 Web·Extension",
+      "guest": "Extension 로컬",
+      "local": "EXT 로컬 동일 검증/owner별 저장"
+    },
+    {
+      "id": "IMPORT-02",
+      "name": "가져오기 처리·복구",
+      "description": "저장 확인·부분 실패·결과 미확인을 구분하고 중복 없이 재시도한다.",
+      "stage": "필수",
+      "screen": "EXT-01",
+      "role": "Web·Extension·Server",
+      "flow": [
+        "TF-11"
+      ],
+      "apis": [
+        "API-IMPORT-01",
+        "API-IMPORT-02",
+        "API-IMPORT-03",
+        "API-IMPORT-04"
+      ],
+      "tables": [
+        "guest_import_batches",
+        "guest_import_items",
+        "focus_sessions"
+      ],
+      "cases": [
+        "AC-IMPORT-02-01",
+        "AC-IMPORT-02-02",
+        "AC-IMPORT-02-03"
+      ],
+      "member": "회원 Web·Extension",
+      "guest": "Extension 로컬",
+      "local": "EXT 로컬 동일 검증/owner별 저장"
+    }
+  ],
+  "screens": [
+    "SIGNUP-01",
+    "LOGIN-01",
+    "DASH-01",
+    "SITE-01",
+    "SITE-02",
+    "SESSION-01",
+    "LOG-01",
+    "LOG-02",
+    "STAT-01",
+    "SETTING-01",
+    "EXT-01",
+    "EXT-02",
+    "FEATURE-01",
+    "KEYWORD-01",
+    "SAFETY-01",
+    "BLUR-01",
+    "SCHEDULE-01",
+    "ANALYSIS-01"
+  ],
+  "apis": [
+    {
+      "id": "API-AUTH-01",
+      "method": "GET",
+      "path": "/api/v1/auth/csrf",
+      "auth": "공개",
+      "request": "없음",
+      "response": "200 {csrf_token}",
+      "errors": "503",
+      "tables": [
+        "web_sessions"
+      ]
+    },
+    {
+      "id": "API-AUTH-02",
+      "method": "POST",
+      "path": "/api/v1/auth/signup",
+      "auth": "공개+CSRF",
+      "request": "email,password,display_name,terms_version",
+      "response": "201 {user_id,status:PENDING_VERIFICATION}",
+      "errors": "422 VALIDATION_FAILED; 409 EMAIL_IN_USE",
+      "tables": [
+        "users",
+        "auth_identities",
+        "auth_challenges"
+      ]
+    },
+    {
+      "id": "API-AUTH-03",
+      "method": "POST",
+      "path": "/api/v1/auth/login",
+      "auth": "공개+CSRF",
+      "request": "email,password",
+      "response": "200 User + Web 쿠키",
+      "errors": "401 INVALID_CREDENTIALS; 403 EMAIL_UNVERIFIED",
+      "tables": [
+        "auth_identities",
+        "web_sessions"
+      ]
+    },
+    {
+      "id": "API-AUTH-04",
+      "method": "GET",
+      "path": "/api/v1/auth/me",
+      "auth": "W/E",
+      "request": "없음",
+      "response": "200 User",
+      "errors": "401",
+      "tables": [
+        "users"
+      ]
+    },
+    {
+      "id": "API-AUTH-05",
+      "method": "POST",
+      "path": "/api/v1/auth/logout",
+      "auth": "W",
+      "request": "없음",
+      "response": "204 Web 인증 폐기; 제품 로그아웃의 마지막 단계",
+      "errors": "409 ACTIVE_EXECUTION_OR_LINK; 401",
+      "tables": [
+        "web_sessions"
+      ]
+    },
+    {
+      "id": "API-AUTH-06",
+      "method": "GET",
+      "path": "/api/v1/auth/social/{provider}/authorize",
+      "auth": "공개",
+      "request": "provider=google/kakao; mode=login/link; return_path 내부허용값",
+      "response": "302 제공자; state/nonce 저장",
+      "errors": "422 INVALID_PROVIDER",
+      "tables": [
+        "auth_challenges"
+      ]
+    },
+    {
+      "id": "API-AUTH-07",
+      "method": "GET",
+      "path": "/api/v1/auth/social/{provider}/callback",
+      "auth": "state 검증",
+      "request": "code,state 또는 error",
+      "response": "303 가입 확인/로그인 완료/연결 화면",
+      "errors": "SOCIAL_CANCELED; INVALID_STATE; IDENTITY_CONFLICT",
+      "tables": [
+        "auth_identities",
+        "auth_challenges"
+      ]
+    },
+    {
+      "id": "API-AUTH-08",
+      "method": "POST",
+      "path": "/api/v1/auth/social/complete",
+      "auth": "단회 인증증명+CSRF",
+      "request": "ticket,terms_version,display_name",
+      "response": "201 User + 쿠키; 최초 가입만",
+      "errors": "409 IDENTITY_CONFLICT",
+      "tables": [
+        "users",
+        "auth_identities"
+      ]
+    },
+    {
+      "id": "API-AUTH-09",
+      "method": "POST",
+      "path": "/api/v1/auth/identities/link",
+      "auth": "W+최근5분 재인증",
+      "request": "ticket",
+      "response": "200 User; 두 인증의 동일 사용자 결합",
+      "errors": "409 IDENTITY_ALREADY_LINKED",
+      "tables": [
+        "auth_identities"
+      ]
+    },
+    {
+      "id": "API-AUTH-10",
+      "method": "POST",
+      "path": "/api/v1/auth/email/verify",
+      "auth": "단회 token",
+      "request": "token",
+      "response": "200 verified",
+      "errors": "410 TOKEN_EXPIRED; 409 USED_TOKEN",
+      "tables": [
+        "auth_challenges",
+        "users"
+      ]
+    },
+    {
+      "id": "API-AUTH-11",
+      "method": "POST",
+      "path": "/api/v1/auth/password/reset-requests",
+      "auth": "공개+CSRF",
+      "request": "email",
+      "response": "202 동일 응답; 발송 여부 노출 안 함",
+      "errors": "429",
+      "tables": [
+        "auth_challenges"
+      ]
+    },
+    {
+      "id": "API-AUTH-12",
+      "method": "POST",
+      "path": "/api/v1/auth/password/reset",
+      "auth": "단회 token",
+      "request": "token,new_password",
+      "response": "204 비밀번호 교체·기존 Web/refresh 폐기",
+      "errors": "410 TOKEN_EXPIRED; 422",
+      "tables": [
+        "auth_identities",
+        "web_sessions",
+        "extension_tokens"
+      ]
+    },
+    {
+      "id": "API-AUTH-13",
+      "method": "POST",
+      "path": "/api/v1/auth/email/verification-requests",
+      "auth": "공개+CSRF",
+      "request": "email",
+      "response": "202 동일 응답",
+      "errors": "429",
+      "tables": [
+        "auth_challenges"
+      ]
+    },
+    {
+      "id": "API-AUTH-14",
+      "method": "POST",
+      "path": "/api/v1/auth/reauthenticate",
+      "auth": "W",
+      "request": "password 또는 기존연결 provider의 단회 ticket",
+      "response": "204 현재 사용자 재인증 시각 갱신",
+      "errors": "401 INVALID_CREDENTIALS;409 IDENTITY_MISMATCH",
+      "tables": [
+        "web_sessions",
+        "auth_identities"
+      ]
+    },
+    {
+      "id": "API-EXT-01",
+      "method": "POST",
+      "path": "/api/v1/extension-installations",
+      "auth": "공개 제한",
+      "request": "executor_id UUID,client_version",
+      "response": "201 {executor_id,installation_proof} 최초1회",
+      "errors": "409 INSTALLATION_EXISTS",
+      "tables": [
+        "extension_installations"
+      ]
+    },
+    {
+      "id": "API-EXT-02",
+      "method": "POST",
+      "path": "/api/v1/extension-link-requests",
+      "auth": "I",
+      "request": "executor_id,code_challenge,state,callback_uri",
+      "response": "201 {link_request_id,verification_uri,expires_at}",
+      "errors": "422 INVALID_CALLBACK",
+      "tables": [
+        "link_requests"
+      ]
+    },
+    {
+      "id": "API-EXT-03",
+      "method": "POST",
+      "path": "/api/v1/extension-link-requests/{id}/approval",
+      "auth": "W",
+      "request": "approve boolean",
+      "response": "200 승인 상태",
+      "errors": "409 GUEST_SESSION_ACTIVE",
+      "tables": [
+        "link_requests"
+      ]
+    },
+    {
+      "id": "API-EXT-04",
+      "method": "POST",
+      "path": "/api/v1/extension-tokens",
+      "auth": "I",
+      "request": "link_request_id,code,code_verifier",
+      "response": "200 {access_token,refresh_token,expires_in}",
+      "errors": "401 INVALID_GRANT",
+      "tables": [
+        "extension_tokens",
+        "extension_installations"
+      ]
+    },
+    {
+      "id": "API-EXT-05",
+      "method": "POST",
+      "path": "/api/v1/extension-tokens/refresh",
+      "auth": "refresh",
+      "request": "refresh_token",
+      "response": "200 회전된 토큰",
+      "errors": "401 TOKEN_REUSE",
+      "tables": [
+        "extension_tokens"
+      ]
+    },
+    {
+      "id": "API-EXT-06",
+      "method": "DELETE",
+      "path": "/api/v1/extension-installations/{executor_id}/connection",
+      "auth": "W/E",
+      "request": "없음; 실제 해제 증거 필수",
+      "response": "204 회원 연결 종료",
+      "errors": "409 RELEASE_UNCONFIRMED",
+      "tables": [
+        "extension_installations",
+        "extension_tokens"
+      ]
+    },
+    {
+      "id": "API-EXT-07",
+      "method": "GET",
+      "path": "/api/v1/extension-installations",
+      "auth": "W/E",
+      "request": "없음",
+      "response": "200 Installation[]",
+      "errors": "401",
+      "tables": [
+        "extension_installations"
+      ]
+    },
+    {
+      "id": "API-SITE-01",
+      "method": "GET",
+      "path": "/api/v1/sites",
+      "auth": "W/E",
+      "request": "purpose?,cursor?,limit?",
+      "response": "200 List<Site>",
+      "errors": "400 INVALID_CURSOR",
+      "tables": [
+        "sites"
+      ]
+    },
+    {
+      "id": "API-SITE-02",
+      "method": "GET",
+      "path": "/api/v1/sites/{site_id}",
+      "auth": "W/E",
+      "request": "없음",
+      "response": "200 Site + ETag",
+      "errors": "404",
+      "tables": [
+        "sites"
+      ]
+    },
+    {
+      "id": "API-SITE-03",
+      "method": "POST",
+      "path": "/api/v1/sites",
+      "auth": "W/E",
+      "request": "SiteWrite",
+      "response": "201 Site",
+      "errors": "409 SITE_SCOPE_CONFLICT;422",
+      "tables": [
+        "sites",
+        "site_feature_policies"
+      ]
+    },
+    {
+      "id": "API-SITE-04",
+      "method": "PATCH",
+      "path": "/api/v1/sites/{site_id}",
+      "auth": "W/E",
+      "request": "SiteWrite의 변경 필드 + If-Match",
+      "response": "200 Site",
+      "errors": "412 VERSION_CONFLICT;422",
+      "tables": [
+        "sites",
+        "site_feature_policies"
+      ]
+    },
+    {
+      "id": "API-SITE-05",
+      "method": "DELETE",
+      "path": "/api/v1/sites/{site_id}",
+      "auth": "W/E",
+      "request": "If-Match",
+      "response": "204; 과거 스냅샷 유지",
+      "errors": "412",
+      "tables": [
+        "sites"
+      ]
+    },
+    {
+      "id": "API-POLICY-01",
+      "method": "GET",
+      "path": "/api/v1/content-policy",
+      "auth": "W/E",
+      "request": "없음",
+      "response": "200 ContentPolicy + ETag",
+      "errors": "401",
+      "tables": [
+        "content_policies"
+      ]
+    },
+    {
+      "id": "API-POLICY-02",
+      "method": "PUT",
+      "path": "/api/v1/content-policy",
+      "auth": "W/E",
+      "request": "ContentPolicyWrite 전체 + If-Match",
+      "response": "200 ContentPolicy",
+      "errors": "422 INVALID_SCOPE;412",
+      "tables": [
+        "content_policies"
+      ]
+    },
+    {
+      "id": "API-CAP-01",
+      "method": "GET",
+      "path": "/api/v1/capabilities",
+      "auth": "W/E/I",
+      "request": "client_version",
+      "response": "200 Capability[]",
+      "errors": "422 CLIENT_UNSUPPORTED",
+      "tables": [
+        "catalog_versions",
+        "model_profiles"
+      ]
+    },
+    {
+      "id": "API-CAT-01",
+      "method": "GET",
+      "path": "/api/v1/catalogs/adult-domains",
+      "auth": "W/E/I",
+      "request": "known_version?",
+      "response": "200 Catalog 또는304",
+      "errors": "503 NO_VALID_CATALOG",
+      "tables": [
+        "catalog_versions"
+      ]
+    },
+    {
+      "id": "API-SESSION-01",
+      "method": "POST",
+      "path": "/api/v1/sessions",
+      "auth": "W/E",
+      "request": "executor_id,duration_minutes",
+      "response": "202 Session STARTING + operation_id",
+      "errors": "409 ACTIVE_SESSION_EXISTS; EXECUTOR_OFFLINE",
+      "tables": [
+        "focus_sessions",
+        "policy_snapshots",
+        "execution_commands"
+      ]
+    },
+    {
+      "id": "API-SESSION-02",
+      "method": "GET",
+      "path": "/api/v1/sessions/current",
+      "auth": "W/E",
+      "request": "executor_id?",
+      "response": "200 Session 또는 null",
+      "errors": "401",
+      "tables": [
+        "focus_sessions"
+      ]
+    },
+    {
+      "id": "API-SESSION-03",
+      "method": "GET",
+      "path": "/api/v1/sessions",
+      "auth": "W/E",
+      "request": "from_date,to_date,status?,cursor",
+      "response": "200 List<Session>",
+      "errors": "422",
+      "tables": [
+        "focus_sessions"
+      ]
+    },
+    {
+      "id": "API-SESSION-04",
+      "method": "GET",
+      "path": "/api/v1/sessions/{session_id}",
+      "auth": "W/E",
+      "request": "없음",
+      "response": "200 Session",
+      "errors": "404",
+      "tables": [
+        "focus_sessions"
+      ]
+    },
+    {
+      "id": "API-SESSION-05",
+      "method": "GET",
+      "path": "/api/v1/sessions/{session_id}/policy",
+      "auth": "W/E",
+      "request": "없음",
+      "response": "200 Snapshot",
+      "errors": "404",
+      "tables": [
+        "policy_snapshots"
+      ]
+    },
+    {
+      "id": "API-SESSION-06",
+      "method": "POST",
+      "path": "/api/v1/sessions/{session_id}/end",
+      "auth": "W/E",
+      "request": "없음",
+      "response": "202 Session ENDING + operation_id",
+      "errors": "409 INVALID_TRANSITION",
+      "tables": [
+        "focus_sessions",
+        "execution_commands"
+      ]
+    },
+    {
+      "id": "API-SESSION-07",
+      "method": "POST",
+      "path": "/api/v1/sessions/{session_id}/pause",
+      "auth": "W/E",
+      "request": "없음",
+      "response": "202 Session PAUSING + operation_id",
+      "errors": "409 INVALID_TRANSITION",
+      "tables": [
+        "focus_sessions",
+        "execution_commands"
+      ]
+    },
+    {
+      "id": "API-SESSION-08",
+      "method": "POST",
+      "path": "/api/v1/sessions/{session_id}/resume",
+      "auth": "W/E",
+      "request": "없음",
+      "response": "202 Session RESUMING + operation_id",
+      "errors": "409 INVALID_TRANSITION; EXECUTOR_OFFLINE",
+      "tables": [
+        "focus_sessions",
+        "execution_commands"
+      ]
+    },
+    {
+      "id": "API-NOTE-01",
+      "method": "GET",
+      "path": "/api/v1/sessions/{session_id}/note",
+      "auth": "W/E",
+      "request": "없음",
+      "response": "200 Note (없으면 text 빈값,version0)",
+      "errors": "404 SESSION_NOT_FOUND",
+      "tables": [
+        "session_notes"
+      ]
+    },
+    {
+      "id": "API-NOTE-02",
+      "method": "PUT",
+      "path": "/api/v1/sessions/{session_id}/note",
+      "auth": "W/E",
+      "request": "text 0~2000자,If-Match",
+      "response": "200 Note",
+      "errors": "412;422",
+      "tables": [
+        "session_notes"
+      ]
+    },
+    {
+      "id": "API-EXEC-01",
+      "method": "GET",
+      "path": "/api/v1/executors/{executor_id}/commands",
+      "auth": "E",
+      "request": "cursor,known_revision",
+      "response": "200 {commands,next_cursor,server_time}",
+      "errors": "403 EXECUTOR_MISMATCH",
+      "tables": [
+        "execution_commands"
+      ]
+    },
+    {
+      "id": "API-EXEC-02",
+      "method": "POST",
+      "path": "/api/v1/executors/{executor_id}/reports",
+      "auth": "E",
+      "request": "ExecutionReport",
+      "response": "200 {result,desired_revision}",
+      "errors": "409 REPORT_CONFLICT",
+      "tables": [
+        "execution_reports",
+        "focus_sessions",
+        "session_intervals"
+      ]
+    },
+    {
+      "id": "API-EXEC-03",
+      "method": "POST",
+      "path": "/api/v1/executors/{executor_id}/reconcile",
+      "auth": "E",
+      "request": "journal_summary,local_actions[]",
+      "response": "200 {desired_state,revision,acknowledged_actions}",
+      "errors": "409 RECONCILE_REQUIRED",
+      "tables": [
+        "execution_reports",
+        "focus_sessions"
+      ]
+    },
+    {
+      "id": "API-OP-01",
+      "method": "GET",
+      "path": "/api/v1/operations/{operation_id}",
+      "auth": "원요청 주체",
+      "request": "없음",
+      "response": "200 {status,resource_id,error}",
+      "errors": "404",
+      "tables": [
+        "operations"
+      ]
+    },
+    {
+      "id": "API-EVENT-01",
+      "method": "POST",
+      "path": "/api/v1/events/batch",
+      "auth": "E",
+      "request": "events[] 최대100,1MiB",
+      "response": "200 {items:[event_id,status,error]}",
+      "errors": "413;422",
+      "tables": [
+        "event_receipts",
+        "access_events",
+        "session_lifecycle_events"
+      ]
+    },
+    {
+      "id": "API-EVENT-02",
+      "method": "POST",
+      "path": "/api/v1/events/status",
+      "auth": "E",
+      "request": "event_ids[] 최대100",
+      "response": "200 {items:[event_id,status]}",
+      "errors": "422",
+      "tables": [
+        "event_receipts"
+      ]
+    },
+    {
+      "id": "API-USAGE-01",
+      "method": "POST",
+      "path": "/api/v1/usage-segments/batch",
+      "auth": "E",
+      "request": "segments[] 최대100",
+      "response": "200 항목별 accepted/duplicate/rejected",
+      "errors": "409 BODY_MISMATCH",
+      "tables": [
+        "usage_segments"
+      ]
+    },
+    {
+      "id": "API-LOG-01",
+      "method": "GET",
+      "path": "/api/v1/access-events",
+      "auth": "W/E",
+      "request": "기간,session_id?,host?,event_type?,cursor",
+      "response": "200 List<Access>",
+      "errors": "422",
+      "tables": [
+        "access_events"
+      ]
+    },
+    {
+      "id": "API-LOG-02",
+      "method": "GET",
+      "path": "/api/v1/access-events/{event_id}",
+      "auth": "W/E",
+      "request": "없음",
+      "response": "200 Access + 당시 정책",
+      "errors": "404",
+      "tables": [
+        "access_events",
+        "policy_snapshots"
+      ]
+    },
+    {
+      "id": "API-STAT-01",
+      "method": "GET",
+      "path": "/api/v1/statistics/summary",
+      "auth": "W/E",
+      "request": "from_date,to_date",
+      "response": "200 Metrics",
+      "errors": "422",
+      "tables": [
+        "access_events",
+        "session_intervals"
+      ]
+    },
+    {
+      "id": "API-STAT-02",
+      "method": "GET",
+      "path": "/api/v1/statistics/targets",
+      "auth": "W/E",
+      "request": "from_date,to_date,cursor",
+      "response": "200 List<TargetMetrics>",
+      "errors": "422",
+      "tables": [
+        "access_events",
+        "usage_segments"
+      ]
+    },
+    {
+      "id": "API-STAT-03",
+      "method": "GET",
+      "path": "/api/v1/statistics/hourly",
+      "auth": "W/E",
+      "request": "from_date,to_date",
+      "response": "200 24개 시간대 Metrics",
+      "errors": "422",
+      "tables": [
+        "access_events",
+        "usage_segments"
+      ]
+    },
+    {
+      "id": "API-STAT-04",
+      "method": "GET",
+      "path": "/api/v1/statistics/usage",
+      "auth": "W/E",
+      "request": "from_date,to_date,host?",
+      "response": "200 {total_ms,by_site,quality,as_of}",
+      "errors": "422",
+      "tables": [
+        "usage_segments"
+      ]
+    },
+    {
+      "id": "API-DASH-01",
+      "method": "GET",
+      "path": "/api/v1/dashboard",
+      "auth": "W/E",
+      "request": "없음",
+      "response": "200 {current_session,recent_sessions,recent_access,summary}",
+      "errors": "401",
+      "tables": [
+        "focus_sessions",
+        "access_events"
+      ]
+    },
+    {
+      "id": "API-SCHEDULE-01",
+      "method": "GET",
+      "path": "/api/v1/schedules",
+      "auth": "W/E",
+      "request": "executor_id?,cursor",
+      "response": "200 List<Schedule>",
+      "errors": "422",
+      "tables": [
+        "schedules"
+      ]
+    },
+    {
+      "id": "API-SCHEDULE-02",
+      "method": "POST",
+      "path": "/api/v1/schedules",
+      "auth": "W/E",
+      "request": "ScheduleWrite",
+      "response": "201 Schedule",
+      "errors": "422 INVALID_TIMEZONE",
+      "tables": [
+        "schedules"
+      ]
+    },
+    {
+      "id": "API-SCHEDULE-03",
+      "method": "PATCH",
+      "path": "/api/v1/schedules/{id}",
+      "auth": "W/E",
+      "request": "변경 필드,If-Match",
+      "response": "200 Schedule",
+      "errors": "412;422",
+      "tables": [
+        "schedules"
+      ]
+    },
+    {
+      "id": "API-SCHEDULE-04",
+      "method": "DELETE",
+      "path": "/api/v1/schedules/{id}",
+      "auth": "W/E",
+      "request": "If-Match",
+      "response": "204 미시작 건 취소; 실행 세션 유지",
+      "errors": "412",
+      "tables": [
+        "schedules",
+        "schedule_occurrences"
+      ]
+    },
+    {
+      "id": "API-SCHEDULE-05",
+      "method": "GET",
+      "path": "/api/v1/schedules/{id}/occurrences",
+      "auth": "W/E",
+      "request": "기간,cursor",
+      "response": "200 List<Occurrence>",
+      "errors": "404",
+      "tables": [
+        "schedule_occurrences"
+      ]
+    },
+    {
+      "id": "API-SCHEDULE-06",
+      "method": "POST",
+      "path": "/api/v1/schedule-occurrences/claim",
+      "auth": "E",
+      "request": "schedule_id,scheduled_start_at,version",
+      "response": "202 Session/기존 결과 또는200 대기·건너뜀",
+      "errors": "409 VERSION_CONFLICT",
+      "tables": [
+        "schedule_occurrences",
+        "focus_sessions"
+      ]
+    },
+    {
+      "id": "API-AI-01",
+      "method": "POST",
+      "path": "/api/v1/analysis-jobs",
+      "auth": "W/E",
+      "request": "from_date,to_date,consent_version",
+      "response": "202 AnalysisJob",
+      "errors": "422 INSUFFICIENT_DATA;403 CONSENT_REQUIRED;503 PROVIDER_UNAVAILABLE",
+      "tables": [
+        "analysis_jobs"
+      ]
+    },
+    {
+      "id": "API-AI-02",
+      "method": "GET",
+      "path": "/api/v1/analysis-jobs/{id}",
+      "auth": "W/E",
+      "request": "없음",
+      "response": "200 AnalysisJob + Result?",
+      "errors": "404",
+      "tables": [
+        "analysis_jobs",
+        "analysis_results"
+      ]
+    },
+    {
+      "id": "API-AI-03",
+      "method": "GET",
+      "path": "/api/v1/analysis-jobs",
+      "auth": "W/E",
+      "request": "기간,cursor",
+      "response": "200 List<AnalysisJob>",
+      "errors": "422",
+      "tables": [
+        "analysis_jobs"
+      ]
+    },
+    {
+      "id": "API-AI-04",
+      "method": "PUT",
+      "path": "/api/v1/analysis-consent",
+      "auth": "W",
+      "request": "accepted boolean,notice_version",
+      "response": "200 {accepted,notice_version,updated_at}",
+      "errors": "422",
+      "tables": [
+        "analysis_consents"
+      ]
+    },
+    {
+      "id": "API-IMPORT-01",
+      "method": "POST",
+      "path": "/api/v1/guest-imports",
+      "auth": "E",
+      "request": "manifest:설정·완료 세션 목록,source_installation_id",
+      "response": "202 ImportBatch",
+      "errors": "409 SOURCE_BOUND_TO_OTHER_ACCOUNT",
+      "tables": [
+        "guest_import_batches",
+        "guest_import_items"
+      ]
+    },
+    {
+      "id": "API-IMPORT-02",
+      "method": "PUT",
+      "path": "/api/v1/guest-imports/{batch_id}/items/{source_item_id}",
+      "auth": "E",
+      "request": "ImportItem",
+      "response": "200 항목별 결과",
+      "errors": "409 SOURCE_CONFLICT;422",
+      "tables": [
+        "guest_import_items",
+        "focus_sessions",
+        "sites"
+      ]
+    },
+    {
+      "id": "API-IMPORT-03",
+      "method": "GET",
+      "path": "/api/v1/guest-imports/{batch_id}",
+      "auth": "W/E",
+      "request": "없음",
+      "response": "200 ImportBatch",
+      "errors": "404",
+      "tables": [
+        "guest_import_batches",
+        "guest_import_items"
+      ]
+    },
+    {
+      "id": "API-IMPORT-04",
+      "method": "GET",
+      "path": "/api/v1/guest-imports",
+      "auth": "E",
+      "request": "cursor",
+      "response": "200 List<ImportBatch>",
+      "errors": "401",
+      "tables": [
+        "guest_import_batches"
+      ]
+    }
+  ],
+  "entities": [
+    {
+      "name": "users",
+      "fields": "id BIGINT PK; display_name VARCHAR(40); email VARCHAR(254) NULL; email_verified BOOLEAN; status VARCHAR(24); created_at DATETIME(3); terms_version VARCHAR(40); terms_accepted_at DATETIME(3)",
+      "links": "",
+      "unique": "email(정규화, NULL 허용)",
+      "retention": "회원 영속 보관"
+    },
+    {
+      "name": "auth_identities",
+      "fields": "id BIGINT PK; user_id BIGINT; provider VARCHAR(16); subject VARCHAR(255); password_hash VARCHAR(255) NULL; updated_at DATETIME(3)",
+      "links": "user_id→users.id",
+      "unique": "provider+subject",
+      "retention": "회원 영속 보관"
+    },
+    {
+      "name": "extension_installations",
+      "fields": "id CHAR(36) PK; current_user_id BIGINT NULL; proof_hash VARCHAR(255); client_version VARCHAR(40); last_seen_at DATETIME(3) NULL",
+      "links": "current_user_id→users.id",
+      "unique": "id",
+      "retention": "회원 영속 보관"
+    },
+    {
+      "name": "sites",
+      "fields": "id BIGINT PK; user_id BIGINT; canonical_host VARCHAR(253); display_name VARCHAR(100); include_subdomains BOOLEAN; purpose VARCHAR(16); access_policy VARCHAR(16); version BIGINT; deleted_at DATETIME(3) NULL",
+      "links": "user_id→users.id",
+      "unique": "user_id+canonical_host; 중첩범위는 계정 잠금 아래 검사",
+      "retention": "회원 영속 보관"
+    },
+    {
+      "name": "site_feature_policies",
+      "fields": "site_id BIGINT; feature_code VARCHAR(50); enabled BOOLEAN; PK(site_id,feature_code)",
+      "links": "site_id→sites.id",
+      "unique": "site_id+feature_code",
+      "retention": "회원 영속 보관"
+    },
+    {
+      "name": "content_policies",
+      "fields": "user_id BIGINT PK; version BIGINT; keywords JSON; adult_domains JSON; image_blur JSON; usage_tracking JSON; updated_at DATETIME(3)",
+      "links": "user_id→users.id",
+      "unique": "user_id",
+      "retention": "회원 영속 보관"
+    },
+    {
+      "name": "policy_snapshots",
+      "fields": "id CHAR(36) PK; user_id BIGINT; executor_id CHAR(36); format_version VARCHAR(8); payload JSON; source_version BIGINT; catalog_version VARCHAR(80) NULL; model_profile_version VARCHAR(80) NULL; created_at DATETIME(3)",
+      "links": "user_id→users.id; executor_id→extension_installations.id",
+      "unique": "id+user_id+executor_id; 내용 불변",
+      "retention": "회원 영속 보관"
+    },
+    {
+      "name": "focus_sessions",
+      "fields": "id BIGINT PK; source_session_id CHAR(36); user_id BIGINT; executor_id CHAR(36); policy_snapshot_id CHAR(36); source VARCHAR(16); origin VARCHAR(16); execution_status VARCHAR(24); record_status VARCHAR(24); duration_minutes INT; active_duration_ms BIGINT; overrun_ms BIGINT; desired_revision BIGINT; version BIGINT; started_at DATETIME(3) NULL; planned_end_at DATETIME(3) NULL; ended_at DATETIME(3) NULL; policy_released_at DATETIME(3) NULL; end_reason VARCHAR(40) NULL; last_error_code VARCHAR(80) NULL",
+      "links": "user_id→users.id; executor_id→extension_installations.id; policy_snapshot_id+user_id+executor_id→policy_snapshots(id,user_id,executor_id)",
+      "unique": "user_id+executor_id+source_session_id",
+      "retention": "회원 영속 보관"
+    },
+    {
+      "name": "session_intervals",
+      "fields": "id CHAR(36) PK; session_id BIGINT; kind VARCHAR(8); start_at DATETIME(3); end_at DATETIME(3) NULL; duration_ms BIGINT NULL; quality VARCHAR(20)",
+      "links": "session_id→focus_sessions.id",
+      "unique": "id; session별 구간 중첩 금지",
+      "retention": "회원 영속 보관"
+    },
+    {
+      "name": "session_notes",
+      "fields": "session_id BIGINT PK; text TEXT; version BIGINT; updated_at DATETIME(3)",
+      "links": "session_id→focus_sessions.id",
+      "unique": "session_id; text≤2000자",
+      "retention": "회원 영속 보관"
+    },
+    {
+      "name": "active_execution_locks",
+      "fields": "user_id BIGINT PK; executor_id CHAR(36); session_id BIGINT; revision BIGINT",
+      "links": "user_id→users.id; executor_id→extension_installations.id; session_id→focus_sessions.id",
+      "unique": "executor_id; session_id",
+      "retention": "해제 확인 시 삭제; 기록은 sessions에 유지"
+    },
+    {
+      "name": "event_receipts",
+      "fields": "event_id CHAR(36) PK; owner_user_id BIGINT; executor_id CHAR(36); resolved_session_id BIGINT NULL; schema_version VARCHAR(8); event_type VARCHAR(40); payload_hash CHAR(64); payload JSON; status VARCHAR(24); received_at DATETIME(3)",
+      "links": "owner_user_id→users.id; executor_id→extension_installations.id; resolved_session_id→focus_sessions.id",
+      "unique": "event_id",
+      "retention": "회원 영속 보관"
+    },
+    {
+      "name": "access_events",
+      "fields": "event_id CHAR(36) PK; session_id BIGINT; occurred_at DATETIME(3); access_seq BIGINT; target_kind VARCHAR(16); target_host VARCHAR(253); target_key VARCHAR(320); feature_code VARCHAR(50) NULL; reason VARCHAR(40); navigation_id CHAR(36); policy_snapshot_id CHAR(36)",
+      "links": "event_id→event_receipts.event_id; session_id→focus_sessions.id; policy_snapshot_id→policy_snapshots.id",
+      "unique": "session_id+access_seq; session_id+navigation_id+target_key",
+      "retention": "회원 영속 보관"
+    },
+    {
+      "name": "session_lifecycle_events",
+      "fields": "event_id CHAR(36) PK; session_id BIGINT; occurred_at DATETIME(3); event_type VARCHAR(40); desired_revision BIGINT",
+      "links": "event_id→event_receipts.event_id; session_id→focus_sessions.id",
+      "unique": "event_id",
+      "retention": "회원 영속 보관"
+    },
+    {
+      "name": "usage_segments",
+      "fields": "id CHAR(36) PK; session_id BIGINT; target_host VARCHAR(253); start_at DATETIME(3); end_at DATETIME(3); duration_ms BIGINT; usage_seq BIGINT; quality VARCHAR(20); payload_hash CHAR(64)",
+      "links": "session_id→focus_sessions.id",
+      "unique": "session_id+usage_seq; overlap는 reject/quarantine",
+      "retention": "회원 영속 보관"
+    },
+    {
+      "name": "schedules",
+      "fields": "id CHAR(36) PK; user_id BIGINT; executor_id CHAR(36); name VARCHAR(80); weekdays JSON; start_local CHAR(5); timezone VARCHAR(80); duration_minutes INT; enabled BOOLEAN; version BIGINT; created_at DATETIME(3); deleted_at DATETIME(3) NULL",
+      "links": "user_id→users.id; executor_id→extension_installations.id",
+      "unique": "id",
+      "retention": "회원 영속 보관"
+    },
+    {
+      "name": "schedule_occurrences",
+      "fields": "id CHAR(36) PK; schedule_id CHAR(36); schedule_version BIGINT; scheduled_start_at DATETIME(3); scheduled_end_at DATETIME(3); status VARCHAR(24); reason VARCHAR(80) NULL; session_id BIGINT NULL",
+      "links": "schedule_id→schedules.id; session_id→focus_sessions.id",
+      "unique": "schedule_id+scheduled_start_at; session_id NULL허용",
+      "retention": "회원 영속 보관"
+    },
+    {
+      "name": "analysis_jobs",
+      "fields": "id CHAR(36) PK; user_id BIGINT; from_date DATE; to_date DATE; input_hash CHAR(64); input_snapshot JSON; status VARCHAR(24); consent_version VARCHAR(40); provider VARCHAR(80); model_version VARCHAR(80); created_at DATETIME(3); completed_at DATETIME(3) NULL; error_code VARCHAR(80) NULL",
+      "links": "user_id→users.id",
+      "unique": "id; 캐시키는 user+기간+input_hash+model_version",
+      "retention": "회원 영속 보관"
+    },
+    {
+      "name": "analysis_results",
+      "fields": "job_id CHAR(36) PK; result JSON; generated_at DATETIME(3)",
+      "links": "job_id→analysis_jobs.id",
+      "unique": "job_id",
+      "retention": "회원 영속 보관"
+    },
+    {
+      "name": "analysis_consents",
+      "fields": "user_id BIGINT PK; accepted BOOLEAN; notice_version VARCHAR(40); updated_at DATETIME(3)",
+      "links": "user_id→users.id",
+      "unique": "user_id",
+      "retention": "회원 영속 보관"
+    },
+    {
+      "name": "guest_import_batches",
+      "fields": "id CHAR(36) PK; user_id BIGINT; executor_id CHAR(36); status VARCHAR(24); created_at DATETIME(3); completed_at DATETIME(3) NULL",
+      "links": "user_id→users.id; executor_id→extension_installations.id",
+      "unique": "id",
+      "retention": "회원 영속 보관"
+    },
+    {
+      "name": "guest_import_items",
+      "fields": "id CHAR(36) PK; batch_id CHAR(36); source_executor_id CHAR(36); source_item_id CHAR(36); source_hash CHAR(64); item_type VARCHAR(24); bound_user_id BIGINT; status VARCHAR(24); result_id VARCHAR(80) NULL; error_code VARCHAR(80) NULL",
+      "links": "batch_id→guest_import_batches.id; bound_user_id→users.id",
+      "unique": "source_executor_id+source_item_id; polymorphic result_id는 item_type별 transaction검증",
+      "retention": "회원 영속 보관"
+    },
+    {
+      "name": "execution_commands",
+      "fields": "id CHAR(36) PK; session_id BIGINT; executor_id CHAR(36); desired_revision BIGINT; kind VARCHAR(24); payload JSON; status VARCHAR(20); created_at DATETIME(3); execute_before DATETIME(3) NULL",
+      "links": "session_id→focus_sessions.id; executor_id→extension_installations.id",
+      "unique": "session_id+desired_revision+kind",
+      "retention": "회원 영속 보관"
+    },
+    {
+      "name": "execution_reports",
+      "fields": "id CHAR(36) PK; session_id BIGINT; command_id CHAR(36) NULL; executor_id CHAR(36); desired_revision BIGINT; payload_hash CHAR(64); result VARCHAR(24); observed_at DATETIME(3); payload JSON",
+      "links": "session_id→focus_sessions.id; command_id→execution_commands.id; executor_id→extension_installations.id",
+      "unique": "id",
+      "retention": "회원 영속 보관"
+    },
+    {
+      "name": "operations",
+      "fields": "id CHAR(36) PK; user_id BIGINT; resource_id VARCHAR(80); status VARCHAR(20); error_code VARCHAR(80) NULL; created_at DATETIME(3)",
+      "links": "user_id→users.id",
+      "unique": "id",
+      "retention": "회원 영속 보관"
+    },
+    {
+      "name": "web_sessions",
+      "fields": "id_hash CHAR(64) PK; user_id BIGINT NULL; csrf_hash CHAR(64); expires_at DATETIME(3); reauthenticated_at DATETIME(3) NULL",
+      "links": "user_id→users.id",
+      "unique": "id_hash",
+      "retention": "인증 만료·로그아웃 시 폐기, 기록과 별개"
+    },
+    {
+      "name": "auth_challenges",
+      "fields": "id CHAR(36) PK; user_id BIGINT NULL; kind VARCHAR(24); token_hash CHAR(64); provider VARCHAR(16) NULL; state_hash CHAR(64) NULL; nonce_hash CHAR(64) NULL; payload JSON; expires_at DATETIME(3); consumed_at DATETIME(3) NULL",
+      "links": "user_id→users.id",
+      "unique": "token_hash",
+      "retention": "단회 소비·만료 후 삭제; 비밀번호/원문 token 미보관"
+    },
+    {
+      "name": "link_requests",
+      "fields": "id CHAR(36) PK; executor_id CHAR(36); approved_user_id BIGINT NULL; code_challenge VARCHAR(128); callback_uri VARCHAR(2048); state_hash CHAR(64); code_hash CHAR(64) NULL; expires_at DATETIME(3); consumed_at DATETIME(3) NULL",
+      "links": "executor_id→extension_installations.id; approved_user_id→users.id",
+      "unique": "id",
+      "retention": "만료 후 삭제"
+    },
+    {
+      "name": "extension_tokens",
+      "fields": "id CHAR(36) PK; executor_id CHAR(36); user_id BIGINT; refresh_hash CHAR(64); family_id CHAR(36); expires_at DATETIME(3); revoked_at DATETIME(3) NULL",
+      "links": "executor_id→extension_installations.id; user_id→users.id",
+      "unique": "refresh_hash",
+      "retention": "만료 후 회전/재사용 탐지용30일 보관 후 삭제"
+    },
+    {
+      "name": "catalog_versions",
+      "fields": "version VARCHAR(80) PK; sha256 CHAR(64); source_manifest JSON; artifact_uri VARCHAR(2048); published_at DATETIME(3)",
+      "links": "",
+      "unique": "version",
+      "retention": "참조 Snapshot이 있으면 버전 메타 보존"
+    },
+    {
+      "name": "model_profiles",
+      "fields": "version VARCHAR(80) PK; model_name VARCHAR(80); sha256 CHAR(64); thresholds JSON; license_manifest JSON",
+      "links": "",
+      "unique": "version",
+      "retention": "참조 Snapshot이 있으면 버전 메타 보존"
+    },
+    {
+      "name": "idempotency_keys",
+      "fields": "owner_key VARCHAR(120); method VARCHAR(10); path VARCHAR(255); request_key CHAR(36); body_hash CHAR(64); response JSON; expires_at DATETIME(3)",
+      "links": "",
+      "unique": "owner_key+method+path+request_key",
+      "retention": "7일; 영속 중복 제약과 분리"
+    }
+  ],
+  "flows": [
+    "TF-01",
+    "TF-02",
+    "TF-03",
+    "TF-04",
+    "TF-05",
+    "TF-06",
+    "TF-07",
+    "TF-08",
+    "TF-09",
+    "TF-10",
+    "TF-11",
+    "TF-12",
+    "TF-13",
+    "TF-14",
+    "TF-A01",
+    "TF-A02",
+    "TF-A03",
+    "TF-A04",
+    "TF-A05",
+    "TF-A06",
+    "TF-A07",
+    "TF-A08",
+    "TF-A09"
+  ],
+  "acceptance": [
+    [
+      "AC-AUTH-01-01",
+      "AUTH-01",
+      "정상",
+      "회원가입 화면/실행 경로에서 해당 조건 발생",
+      "인증 성공 후 동일 계정으로 진입하고 최초 소셜은 가입 확인 후 생성",
+      "미실행"
+    ],
+    [
+      "AC-AUTH-01-02",
+      "AUTH-01",
+      "오류·경계",
+      "회원가입 화면/실행 경로에서 해당 조건 발생",
+      "인증 실패·취소·state 불일치 때 회원/세션 생성 안 함",
+      "미실행"
+    ],
+    [
+      "AC-AUTH-01-03",
+      "AUTH-01",
+      "복구·중복",
+      "회원가입 화면/실행 경로에서 해당 조건 발생",
+      "중복 callback·인증 요청 재처리로 계정 중복 생성 안 함",
+      "미실행"
+    ],
+    [
+      "AC-AUTH-02-01",
+      "AUTH-02",
+      "정상",
+      "로그인 화면/실행 경로에서 해당 조건 발생",
+      "인증 성공 후 동일 계정으로 진입하고 최초 소셜은 가입 확인 후 생성",
+      "미실행"
+    ],
+    [
+      "AC-AUTH-02-02",
+      "AUTH-02",
+      "오류·경계",
+      "로그인 화면/실행 경로에서 해당 조건 발생",
+      "인증 실패·취소·state 불일치 때 회원/세션 생성 안 함",
+      "미실행"
+    ],
+    [
+      "AC-AUTH-02-03",
+      "AUTH-02",
+      "복구·중복",
+      "로그인 화면/실행 경로에서 해당 조건 발생",
+      "중복 callback·인증 요청 재처리로 계정 중복 생성 안 함",
+      "미실행"
+    ],
+    [
+      "AC-AUTH-03-01",
+      "AUTH-03",
+      "정상",
+      "로그아웃 화면/실행 경로에서 해당 조건 발생",
+      "회원 세션 해제 확인 후 비회원 전환, 회원 자료 보존",
+      "미실행"
+    ],
+    [
+      "AC-AUTH-03-02",
+      "AUTH-03",
+      "오류·경계",
+      "로그아웃 화면/실행 경로에서 해당 조건 발생",
+      "해제 미확인 시 완료 표시하지 않음",
+      "미실행"
+    ],
+    [
+      "AC-AUTH-03-03",
+      "AUTH-03",
+      "복구·중복",
+      "로그아웃 화면/실행 경로에서 해당 조건 발생",
+      "A 로그아웃→B 로그인에도 A outbox 유지, A 재인증 후만 전송",
+      "미실행"
+    ],
+    [
+      "AC-DASH-01-01",
+      "DASH-01",
+      "정상",
+      "집중 현황 조회 화면/실행 경로에서 해당 조건 발생",
+      "확인된 RUN 시간·접근·반복 표시",
+      "미실행"
+    ],
+    [
+      "AC-DASH-01-02",
+      "DASH-01",
+      "오류·경계",
+      "집중 현황 조회 화면/실행 경로에서 해당 조건 발생",
+      "분모0은 비율null, 미확인은0으로 채우지 않음",
+      "미실행"
+    ],
+    [
+      "AC-DASH-01-03",
+      "DASH-01",
+      "복구·중복",
+      "집중 현황 조회 화면/실행 경로에서 해당 조건 발생",
+      "지연 이벤트를 발생 날짜에 반영",
+      "미실행"
+    ],
+    [
+      "AC-SITE-01-01",
+      "SITE-01",
+      "정상",
+      "사이트 목록 조회 화면/실행 경로에서 해당 조건 발생",
+      "설정 저장 후 목록 반영, 현 세션 스냅샷 유지",
+      "미실행"
+    ],
+    [
+      "AC-SITE-01-02",
+      "SITE-01",
+      "오류·경계",
+      "사이트 목록 조회 화면/실행 경로에서 해당 조건 발생",
+      "중복 도메인·잘못된 정책 조합 거절",
+      "미실행"
+    ],
+    [
+      "AC-SITE-01-03",
+      "SITE-01",
+      "복구·중복",
+      "사이트 목록 조회 화면/실행 경로에서 해당 조건 발생",
+      "응답 유실 재시도는 같은 결과; 삭제 후 과거 기록 유지",
+      "미실행"
+    ],
+    [
+      "AC-SITE-02-01",
+      "SITE-02",
+      "정상",
+      "사이트 등록 화면/실행 경로에서 해당 조건 발생",
+      "설정 저장 후 목록 반영, 현 세션 스냅샷 유지",
+      "미실행"
+    ],
+    [
+      "AC-SITE-02-02",
+      "SITE-02",
+      "오류·경계",
+      "사이트 등록 화면/실행 경로에서 해당 조건 발생",
+      "중복 도메인·잘못된 정책 조합 거절",
+      "미실행"
+    ],
+    [
+      "AC-SITE-02-03",
+      "SITE-02",
+      "복구·중복",
+      "사이트 등록 화면/실행 경로에서 해당 조건 발생",
+      "응답 유실 재시도는 같은 결과; 삭제 후 과거 기록 유지",
+      "미실행"
+    ],
+    [
+      "AC-SITE-03-01",
+      "SITE-03",
+      "정상",
+      "사이트 수정 화면/실행 경로에서 해당 조건 발생",
+      "설정 저장 후 목록 반영, 현 세션 스냅샷 유지",
+      "미실행"
+    ],
+    [
+      "AC-SITE-03-02",
+      "SITE-03",
+      "오류·경계",
+      "사이트 수정 화면/실행 경로에서 해당 조건 발생",
+      "중복 도메인·잘못된 정책 조합 거절",
+      "미실행"
+    ],
+    [
+      "AC-SITE-03-03",
+      "SITE-03",
+      "복구·중복",
+      "사이트 수정 화면/실행 경로에서 해당 조건 발생",
+      "응답 유실 재시도는 같은 결과; 삭제 후 과거 기록 유지",
+      "미실행"
+    ],
+    [
+      "AC-SITE-04-01",
+      "SITE-04",
+      "정상",
+      "사이트 삭제 화면/실행 경로에서 해당 조건 발생",
+      "설정 저장 후 목록 반영, 현 세션 스냅샷 유지",
+      "미실행"
+    ],
+    [
+      "AC-SITE-04-02",
+      "SITE-04",
+      "오류·경계",
+      "사이트 삭제 화면/실행 경로에서 해당 조건 발생",
+      "중복 도메인·잘못된 정책 조합 거절",
+      "미실행"
+    ],
+    [
+      "AC-SITE-04-03",
+      "SITE-04",
+      "복구·중복",
+      "사이트 삭제 화면/실행 경로에서 해당 조건 발생",
+      "응답 유실 재시도는 같은 결과; 삭제 후 과거 기록 유지",
+      "미실행"
+    ],
+    [
+      "AC-SITE-05-01",
+      "SITE-05",
+      "정상",
+      "사이트 분류 화면/실행 경로에서 해당 조건 발생",
+      "설정 저장 후 목록 반영, 현 세션 스냅샷 유지",
+      "미실행"
+    ],
+    [
+      "AC-SITE-05-02",
+      "SITE-05",
+      "오류·경계",
+      "사이트 분류 화면/실행 경로에서 해당 조건 발생",
+      "중복 도메인·잘못된 정책 조합 거절",
+      "미실행"
+    ],
+    [
+      "AC-SITE-05-03",
+      "SITE-05",
+      "복구·중복",
+      "사이트 분류 화면/실행 경로에서 해당 조건 발생",
+      "응답 유실 재시도는 같은 결과; 삭제 후 과거 기록 유지",
+      "미실행"
+    ],
+    [
+      "AC-POLICY-01-01",
+      "POLICY-01",
+      "정상",
+      "차단 정책 설정 화면/실행 경로에서 해당 조건 발생",
+      "대상 기능만 제한하고 전체 차단 우선",
+      "미실행"
+    ],
+    [
+      "AC-POLICY-01-02",
+      "POLICY-01",
+      "오류·경계",
+      "차단 정책 설정 화면/실행 경로에서 해당 조건 발생",
+      "실제 제한 실패는 성공 접근 통계 제외",
+      "미실행"
+    ],
+    [
+      "AC-POLICY-01-03",
+      "POLICY-01",
+      "복구·중복",
+      "차단 정책 설정 화면/실행 경로에서 해당 조건 발생",
+      "정지·종료 시 변경분 복원, 중복 관찰은 한 접근",
+      "미실행"
+    ],
+    [
+      "AC-POLICY-02-01",
+      "POLICY-02",
+      "정상",
+      "기록 정책 설정 화면/실행 경로에서 해당 조건 발생",
+      "대상 기능만 제한하고 전체 차단 우선",
+      "미실행"
+    ],
+    [
+      "AC-POLICY-02-02",
+      "POLICY-02",
+      "오류·경계",
+      "기록 정책 설정 화면/실행 경로에서 해당 조건 발생",
+      "실제 제한 실패는 성공 접근 통계 제외",
+      "미실행"
+    ],
+    [
+      "AC-POLICY-02-03",
+      "POLICY-02",
+      "복구·중복",
+      "기록 정책 설정 화면/실행 경로에서 해당 조건 발생",
+      "정지·종료 시 변경분 복원, 중복 관찰은 한 접근",
+      "미실행"
+    ],
+    [
+      "AC-POLICY-03-01",
+      "POLICY-03",
+      "정상",
+      "유튜브 쇼츠 차단 화면/실행 경로에서 해당 조건 발생",
+      "대상 기능만 제한하고 전체 차단 우선",
+      "미실행"
+    ],
+    [
+      "AC-POLICY-03-02",
+      "POLICY-03",
+      "오류·경계",
+      "유튜브 쇼츠 차단 화면/실행 경로에서 해당 조건 발생",
+      "실제 제한 실패는 성공 접근 통계 제외",
+      "미실행"
+    ],
+    [
+      "AC-POLICY-03-03",
+      "POLICY-03",
+      "복구·중복",
+      "유튜브 쇼츠 차단 화면/실행 경로에서 해당 조건 발생",
+      "정지·종료 시 변경분 복원, 중복 관찰은 한 접근",
+      "미실행"
+    ],
+    [
+      "AC-SESSION-01-01",
+      "SESSION-01",
+      "정상",
+      "세션 시작 화면/실행 경로에서 해당 조건 발생",
+      "실제 적용 후 진행, 해제 후 종료",
+      "미실행"
+    ],
+    [
+      "AC-SESSION-01-02",
+      "SESSION-01",
+      "오류·경계",
+      "세션 시작 화면/실행 경로에서 해당 조건 발생",
+      "중복 시작·미연결 실행 거절, 시작 취소 버튼 없음",
+      "미실행"
+    ],
+    [
+      "AC-SESSION-01-03",
+      "SESSION-01",
+      "복구·중복",
+      "세션 시작 화면/실행 경로에서 해당 조건 발생",
+      "늦은 적용 보고가 종료 의도를 되돌리지 않음",
+      "미실행"
+    ],
+    [
+      "AC-SESSION-02-01",
+      "SESSION-02",
+      "정상",
+      "세션 종료 화면/실행 경로에서 해당 조건 발생",
+      "실제 적용 후 진행, 해제 후 종료",
+      "미실행"
+    ],
+    [
+      "AC-SESSION-02-02",
+      "SESSION-02",
+      "오류·경계",
+      "세션 종료 화면/실행 경로에서 해당 조건 발생",
+      "중복 시작·미연결 실행 거절, 시작 취소 버튼 없음",
+      "미실행"
+    ],
+    [
+      "AC-SESSION-02-03",
+      "SESSION-02",
+      "복구·중복",
+      "세션 종료 화면/실행 경로에서 해당 조건 발생",
+      "늦은 적용 보고가 종료 의도를 되돌리지 않음",
+      "미실행"
+    ],
+    [
+      "AC-SESSION-03-01",
+      "SESSION-03",
+      "정상",
+      "세션 상태 확인 화면/실행 경로에서 해당 조건 발생",
+      "실제 적용 후 진행, 해제 후 종료",
+      "미실행"
+    ],
+    [
+      "AC-SESSION-03-02",
+      "SESSION-03",
+      "오류·경계",
+      "세션 상태 확인 화면/실행 경로에서 해당 조건 발생",
+      "중복 시작·미연결 실행 거절, 시작 취소 버튼 없음",
+      "미실행"
+    ],
+    [
+      "AC-SESSION-03-03",
+      "SESSION-03",
+      "복구·중복",
+      "세션 상태 확인 화면/실행 경로에서 해당 조건 발생",
+      "늦은 적용 보고가 종료 의도를 되돌리지 않음",
+      "미실행"
+    ],
+    [
+      "AC-SESSION-04-01",
+      "SESSION-04",
+      "정상",
+      "사이트 전체 차단 적용 화면/실행 경로에서 해당 조건 발생",
+      "실제 적용 후 진행, 해제 후 종료",
+      "미실행"
+    ],
+    [
+      "AC-SESSION-04-02",
+      "SESSION-04",
+      "오류·경계",
+      "사이트 전체 차단 적용 화면/실행 경로에서 해당 조건 발생",
+      "중복 시작·미연결 실행 거절, 시작 취소 버튼 없음",
+      "미실행"
+    ],
+    [
+      "AC-SESSION-04-03",
+      "SESSION-04",
+      "복구·중복",
+      "사이트 전체 차단 적용 화면/실행 경로에서 해당 조건 발생",
+      "늦은 적용 보고가 종료 의도를 되돌리지 않음",
+      "미실행"
+    ],
+    [
+      "AC-EVENT-01-01",
+      "EVENT-01",
+      "정상",
+      "차단 사이트 접근 기록 화면/실행 경로에서 해당 조건 발생",
+      "전체3·반복2, 반복은 별도 합산하지 않음",
+      "미실행"
+    ],
+    [
+      "AC-EVENT-01-02",
+      "EVENT-01",
+      "오류·경계",
+      "차단 사이트 접근 기록 화면/실행 경로에서 해당 조건 발생",
+      "차단 안내·자동 렌더·다른 계정 이벤트 제외",
+      "미실행"
+    ],
+    [
+      "AC-EVENT-01-03",
+      "EVENT-01",
+      "복구·중복",
+      "차단 사이트 접근 기록 화면/실행 경로에서 해당 조건 발생",
+      "같은 ID 재전송 및 역순 도착 후 동일 집계",
+      "미실행"
+    ],
+    [
+      "AC-EVENT-02-01",
+      "EVENT-02",
+      "정상",
+      "기록 대상 접근 저장 화면/실행 경로에서 해당 조건 발생",
+      "전체3·반복2, 반복은 별도 합산하지 않음",
+      "미실행"
+    ],
+    [
+      "AC-EVENT-02-02",
+      "EVENT-02",
+      "오류·경계",
+      "기록 대상 접근 저장 화면/실행 경로에서 해당 조건 발생",
+      "차단 안내·자동 렌더·다른 계정 이벤트 제외",
+      "미실행"
+    ],
+    [
+      "AC-EVENT-02-03",
+      "EVENT-02",
+      "복구·중복",
+      "기록 대상 접근 저장 화면/실행 경로에서 해당 조건 발생",
+      "같은 ID 재전송 및 역순 도착 후 동일 집계",
+      "미실행"
+    ],
+    [
+      "AC-EVENT-03-01",
+      "EVENT-03",
+      "정상",
+      "내부 기능 접근 기록 화면/실행 경로에서 해당 조건 발생",
+      "전체3·반복2, 반복은 별도 합산하지 않음",
+      "미실행"
+    ],
+    [
+      "AC-EVENT-03-02",
+      "EVENT-03",
+      "오류·경계",
+      "내부 기능 접근 기록 화면/실행 경로에서 해당 조건 발생",
+      "차단 안내·자동 렌더·다른 계정 이벤트 제외",
+      "미실행"
+    ],
+    [
+      "AC-EVENT-03-03",
+      "EVENT-03",
+      "복구·중복",
+      "내부 기능 접근 기록 화면/실행 경로에서 해당 조건 발생",
+      "같은 ID 재전송 및 역순 도착 후 동일 집계",
+      "미실행"
+    ],
+    [
+      "AC-EVENT-04-01",
+      "EVENT-04",
+      "정상",
+      "반복 접근 구분 화면/실행 경로에서 해당 조건 발생",
+      "전체3·반복2, 반복은 별도 합산하지 않음",
+      "미실행"
+    ],
+    [
+      "AC-EVENT-04-02",
+      "EVENT-04",
+      "오류·경계",
+      "반복 접근 구분 화면/실행 경로에서 해당 조건 발생",
+      "차단 안내·자동 렌더·다른 계정 이벤트 제외",
+      "미실행"
+    ],
+    [
+      "AC-EVENT-04-03",
+      "EVENT-04",
+      "복구·중복",
+      "반복 접근 구분 화면/실행 경로에서 해당 조건 발생",
+      "같은 ID 재전송 및 역순 도착 후 동일 집계",
+      "미실행"
+    ],
+    [
+      "AC-LOG-01-01",
+      "LOG-01",
+      "정상",
+      "기록 목록 조회 화면/실행 경로에서 해당 조건 발생",
+      "선택 기간과 당시 정책의 기록 조회",
+      "미실행"
+    ],
+    [
+      "AC-LOG-01-02",
+      "LOG-01",
+      "오류·경계",
+      "기록 목록 조회 화면/실행 경로에서 해당 조건 발생",
+      "0건과 조회 실패·미수집 구분",
+      "미실행"
+    ],
+    [
+      "AC-LOG-01-03",
+      "LOG-01",
+      "복구·중복",
+      "기록 목록 조회 화면/실행 경로에서 해당 조건 발생",
+      "삭제된 사이트도 과거 대상·정책 표시",
+      "미실행"
+    ],
+    [
+      "AC-LOG-02-01",
+      "LOG-02",
+      "정상",
+      "기록 상세 조회 화면/실행 경로에서 해당 조건 발생",
+      "선택 기간과 당시 정책의 기록 조회",
+      "미실행"
+    ],
+    [
+      "AC-LOG-02-02",
+      "LOG-02",
+      "오류·경계",
+      "기록 상세 조회 화면/실행 경로에서 해당 조건 발생",
+      "0건과 조회 실패·미수집 구분",
+      "미실행"
+    ],
+    [
+      "AC-LOG-02-03",
+      "LOG-02",
+      "복구·중복",
+      "기록 상세 조회 화면/실행 경로에서 해당 조건 발생",
+      "삭제된 사이트도 과거 대상·정책 표시",
+      "미실행"
+    ],
+    [
+      "AC-STAT-01-01",
+      "STAT-01",
+      "정상",
+      "기본 통계 조회 화면/실행 경로에서 해당 조건 발생",
+      "확인된 RUN 시간·접근·반복 표시",
+      "미실행"
+    ],
+    [
+      "AC-STAT-01-02",
+      "STAT-01",
+      "오류·경계",
+      "기본 통계 조회 화면/실행 경로에서 해당 조건 발생",
+      "분모0은 비율null, 미확인은0으로 채우지 않음",
+      "미실행"
+    ],
+    [
+      "AC-STAT-01-03",
+      "STAT-01",
+      "복구·중복",
+      "기본 통계 조회 화면/실행 경로에서 해당 조건 발생",
+      "지연 이벤트를 발생 날짜에 반영",
+      "미실행"
+    ],
+    [
+      "AC-STAT-02-01",
+      "STAT-02",
+      "정상",
+      "사이트별 통계 화면/실행 경로에서 해당 조건 발생",
+      "확인된 RUN 시간·접근·반복 표시",
+      "미실행"
+    ],
+    [
+      "AC-STAT-02-02",
+      "STAT-02",
+      "오류·경계",
+      "사이트별 통계 화면/실행 경로에서 해당 조건 발생",
+      "분모0은 비율null, 미확인은0으로 채우지 않음",
+      "미실행"
+    ],
+    [
+      "AC-STAT-02-03",
+      "STAT-02",
+      "복구·중복",
+      "사이트별 통계 화면/실행 경로에서 해당 조건 발생",
+      "지연 이벤트를 발생 날짜에 반영",
+      "미실행"
+    ],
+    [
+      "AC-SETTING-01-01",
+      "SETTING-01",
+      "정상",
+      "정책 조정 화면/실행 경로에서 해당 조건 발생",
+      "설정 저장 후 목록 반영, 현 세션 스냅샷 유지",
+      "미실행"
+    ],
+    [
+      "AC-SETTING-01-02",
+      "SETTING-01",
+      "오류·경계",
+      "정책 조정 화면/실행 경로에서 해당 조건 발생",
+      "중복 도메인·잘못된 정책 조합 거절",
+      "미실행"
+    ],
+    [
+      "AC-SETTING-01-03",
+      "SETTING-01",
+      "복구·중복",
+      "정책 조정 화면/실행 경로에서 해당 조건 발생",
+      "응답 유실 재시도는 같은 결과; 삭제 후 과거 기록 유지",
+      "미실행"
+    ],
+    [
+      "AC-EXT-01-01",
+      "EXT-01",
+      "정상",
+      "정책 동기화 화면/실행 경로에서 해당 조건 발생",
+      "현재 소유자·최신 revision의 명령만 실행",
+      "미실행"
+    ],
+    [
+      "AC-EXT-01-02",
+      "EXT-01",
+      "오류·경계",
+      "정책 동기화 화면/실행 경로에서 해당 조건 발생",
+      "다른 설치 토큰·만료 APPLY 거절",
+      "미실행"
+    ],
+    [
+      "AC-EXT-01-03",
+      "EXT-01",
+      "복구·중복",
+      "정책 동기화 화면/실행 경로에서 해당 조건 발생",
+      "재접속은 journal 대조 후 명령 실행",
+      "미실행"
+    ],
+    [
+      "AC-EXT-02-01",
+      "EXT-02",
+      "정상",
+      "접근 제한 적용 화면/실행 경로에서 해당 조건 발생",
+      "현재 소유자·최신 revision의 명령만 실행",
+      "미실행"
+    ],
+    [
+      "AC-EXT-02-02",
+      "EXT-02",
+      "오류·경계",
+      "접근 제한 적용 화면/실행 경로에서 해당 조건 발생",
+      "다른 설치 토큰·만료 APPLY 거절",
+      "미실행"
+    ],
+    [
+      "AC-EXT-02-03",
+      "EXT-02",
+      "복구·중복",
+      "접근 제한 적용 화면/실행 경로에서 해당 조건 발생",
+      "재접속은 journal 대조 후 명령 실행",
+      "미실행"
+    ],
+    [
+      "AC-EXT-03-01",
+      "EXT-03",
+      "정상",
+      "이벤트 전송 화면/실행 경로에서 해당 조건 발생",
+      "현재 소유자·최신 revision의 명령만 실행",
+      "미실행"
+    ],
+    [
+      "AC-EXT-03-02",
+      "EXT-03",
+      "오류·경계",
+      "이벤트 전송 화면/실행 경로에서 해당 조건 발생",
+      "다른 설치 토큰·만료 APPLY 거절",
+      "미실행"
+    ],
+    [
+      "AC-EXT-03-03",
+      "EXT-03",
+      "복구·중복",
+      "이벤트 전송 화면/실행 경로에서 해당 조건 발생",
+      "재접속은 journal 대조 후 명령 실행",
+      "미실행"
+    ],
+    [
+      "AC-OPTION-01-01",
+      "OPTION-01",
+      "정상",
+      "추천 콘텐츠 제한 화면/실행 경로에서 해당 조건 발생",
+      "대상 기능만 제한하고 전체 차단 우선",
+      "미실행"
+    ],
+    [
+      "AC-OPTION-01-02",
+      "OPTION-01",
+      "오류·경계",
+      "추천 콘텐츠 제한 화면/실행 경로에서 해당 조건 발생",
+      "실제 제한 실패는 성공 접근 통계 제외",
+      "미실행"
+    ],
+    [
+      "AC-OPTION-01-03",
+      "OPTION-01",
+      "복구·중복",
+      "추천 콘텐츠 제한 화면/실행 경로에서 해당 조건 발생",
+      "정지·종료 시 변경분 복원, 중복 관찰은 한 접근",
+      "미실행"
+    ],
+    [
+      "AC-OPTION-02-01",
+      "OPTION-02",
+      "정상",
+      "댓글 제한 화면/실행 경로에서 해당 조건 발생",
+      "대상 기능만 제한하고 전체 차단 우선",
+      "미실행"
+    ],
+    [
+      "AC-OPTION-02-02",
+      "OPTION-02",
+      "오류·경계",
+      "댓글 제한 화면/실행 경로에서 해당 조건 발생",
+      "실제 제한 실패는 성공 접근 통계 제외",
+      "미실행"
+    ],
+    [
+      "AC-OPTION-02-03",
+      "OPTION-02",
+      "복구·중복",
+      "댓글 제한 화면/실행 경로에서 해당 조건 발생",
+      "정지·종료 시 변경분 복원, 중복 관찰은 한 접근",
+      "미실행"
+    ],
+    [
+      "AC-OPTION-03-01",
+      "OPTION-03",
+      "정상",
+      "자동재생 제한 화면/실행 경로에서 해당 조건 발생",
+      "대상 기능만 제한하고 전체 차단 우선",
+      "미실행"
+    ],
+    [
+      "AC-OPTION-03-02",
+      "OPTION-03",
+      "오류·경계",
+      "자동재생 제한 화면/실행 경로에서 해당 조건 발생",
+      "실제 제한 실패는 성공 접근 통계 제외",
+      "미실행"
+    ],
+    [
+      "AC-OPTION-03-03",
+      "OPTION-03",
+      "복구·중복",
+      "자동재생 제한 화면/실행 경로에서 해당 조건 발생",
+      "정지·종료 시 변경분 복원, 중복 관찰은 한 접근",
+      "미실행"
+    ],
+    [
+      "AC-OPTION-04-01",
+      "OPTION-04",
+      "정상",
+      "집중 예약 화면/실행 경로에서 해당 조건 발생",
+      "14~15시 예약을14:20 열면15시까지만 실행",
+      "미실행"
+    ],
+    [
+      "AC-OPTION-04-02",
+      "OPTION-04",
+      "오류·경계",
+      "집중 예약 화면/실행 경로에서 해당 조건 발생",
+      "기존 세션이면 대기,15시 이상이면 건너뜀",
+      "미실행"
+    ],
+    [
+      "AC-OPTION-04-03",
+      "OPTION-04",
+      "복구·중복",
+      "집중 예약 화면/실행 경로에서 해당 조건 발생",
+      "중복 claim·재시작에도 발생당 세션1개",
+      "미실행"
+    ],
+    [
+      "AC-SETTING-02-01",
+      "SETTING-02",
+      "정상",
+      "화면 모드 전환 화면/실행 경로에서 해당 조건 발생",
+      "라이트 기본, 변경 즉시 웹 전체 적용",
+      "미실행"
+    ],
+    [
+      "AC-SETTING-02-02",
+      "SETTING-02",
+      "오류·경계",
+      "화면 모드 전환 화면/실행 경로에서 해당 조건 발생",
+      "저장 불가 시 현 화면 적용·지속 저장 실패 안내",
+      "미실행"
+    ],
+    [
+      "AC-SETTING-02-03",
+      "SETTING-02",
+      "복구·중복",
+      "화면 모드 전환 화면/실행 경로에서 해당 조건 발생",
+      "새로고침 후 저장 테마 복구, 계정 자료 영향 없음",
+      "미실행"
+    ],
+    [
+      "AC-OPTION-05-01",
+      "OPTION-05",
+      "정상",
+      "지원 서비스 확대 화면/실행 경로에서 해당 조건 발생",
+      "대상 기능만 제한하고 전체 차단 우선",
+      "미실행"
+    ],
+    [
+      "AC-OPTION-05-02",
+      "OPTION-05",
+      "오류·경계",
+      "지원 서비스 확대 화면/실행 경로에서 해당 조건 발생",
+      "실제 제한 실패는 성공 접근 통계 제외",
+      "미실행"
+    ],
+    [
+      "AC-OPTION-05-03",
+      "OPTION-05",
+      "복구·중복",
+      "지원 서비스 확대 화면/실행 경로에서 해당 조건 발생",
+      "정지·종료 시 변경분 복원, 중복 관찰은 한 접근",
+      "미실행"
+    ],
+    [
+      "AC-OPTION-06-01",
+      "OPTION-06",
+      "정상",
+      "사이트 이용 시간 화면/실행 경로에서 해당 조건 발생",
+      "활성 탭·포커스·비유휴 RUN 구간만 합산",
+      "미실행"
+    ],
+    [
+      "AC-OPTION-06-02",
+      "OPTION-06",
+      "오류·경계",
+      "사이트 이용 시간 화면/실행 경로에서 해당 조건 발생",
+      "겹친 구간·미수집을 시간이나0으로 합산 안 함",
+      "미실행"
+    ],
+    [
+      "AC-OPTION-06-03",
+      "OPTION-06",
+      "복구·중복",
+      "사이트 이용 시간 화면/실행 경로에서 해당 조건 발생",
+      "자정·시간대 경계 분할 후 총합 보존",
+      "미실행"
+    ],
+    [
+      "AC-OPTION-07-01",
+      "OPTION-07",
+      "정상",
+      "행동 기반 지표 화면/실행 경로에서 해당 조건 발생",
+      "활성 탭·포커스·비유휴 RUN 구간만 합산",
+      "미실행"
+    ],
+    [
+      "AC-OPTION-07-02",
+      "OPTION-07",
+      "오류·경계",
+      "행동 기반 지표 화면/실행 경로에서 해당 조건 발생",
+      "겹친 구간·미수집을 시간이나0으로 합산 안 함",
+      "미실행"
+    ],
+    [
+      "AC-OPTION-07-03",
+      "OPTION-07",
+      "복구·중복",
+      "행동 기반 지표 화면/실행 경로에서 해당 조건 발생",
+      "자정·시간대 경계 분할 후 총합 보존",
+      "미실행"
+    ],
+    [
+      "AC-OPTION-08-01",
+      "OPTION-08",
+      "정상",
+      "시간대별 패턴·확장 분석 화면/실행 경로에서 해당 조건 발생",
+      "활성 탭·포커스·비유휴 RUN 구간만 합산",
+      "미실행"
+    ],
+    [
+      "AC-OPTION-08-02",
+      "OPTION-08",
+      "오류·경계",
+      "시간대별 패턴·확장 분석 화면/실행 경로에서 해당 조건 발생",
+      "겹친 구간·미수집을 시간이나0으로 합산 안 함",
+      "미실행"
+    ],
+    [
+      "AC-OPTION-08-03",
+      "OPTION-08",
+      "복구·중복",
+      "시간대별 패턴·확장 분석 화면/실행 경로에서 해당 조건 발생",
+      "자정·시간대 경계 분할 후 총합 보존",
+      "미실행"
+    ],
+    [
+      "AC-OPTION-09-01",
+      "OPTION-09",
+      "정상",
+      "키워드 제한 화면/실행 경로에서 해당 조건 발생",
+      "선택한 범위 NFKC 부분 일치, 예외 host 허용",
+      "미실행"
+    ],
+    [
+      "AC-OPTION-09-02",
+      "OPTION-09",
+      "오류·경계",
+      "키워드 제한 화면/실행 경로에서 해당 조건 발생",
+      "입력 필드·미지원 프레임은 검사 대상 제외/미지원 표시",
+      "미실행"
+    ],
+    [
+      "AC-OPTION-09-03",
+      "OPTION-09",
+      "복구·중복",
+      "키워드 제한 화면/실행 경로에서 해당 조건 발생",
+      "SPA 변경 시 검사, 같은 탐색 중복 접근 없음",
+      "미실행"
+    ],
+    [
+      "AC-OPTION-10-01",
+      "OPTION-10",
+      "정상",
+      "성인 사이트 제한 화면/실행 경로에서 해당 조건 발생",
+      "해당 도메인 제한, 전용 예외만 적용",
+      "미실행"
+    ],
+    [
+      "AC-OPTION-10-02",
+      "OPTION-10",
+      "오류·경계",
+      "성인 사이트 제한 화면/실행 경로에서 해당 조건 발생",
+      "유효 목록 없으면 사용 불가, 다른 BLOCK은 예외로 해제 안 함",
+      "미실행"
+    ],
+    [
+      "AC-OPTION-10-03",
+      "OPTION-10",
+      "복구·중복",
+      "성인 사이트 제한 화면/실행 경로에서 해당 조건 발생",
+      "갱신 실패 시 마지막 검증 목록 유지",
+      "미실행"
+    ],
+    [
+      "AC-OPTION-11-01",
+      "OPTION-11",
+      "정상",
+      "민감 이미지 블러 화면/실행 경로에서 해당 조건 발생",
+      "분류에 따라 블러, 클릭 보기·재클릭 가림",
+      "미실행"
+    ],
+    [
+      "AC-OPTION-11-02",
+      "OPTION-11",
+      "오류·경계",
+      "민감 이미지 블러 화면/실행 경로에서 해당 조건 발생",
+      "분석 실패는 실패 가림 상태, 안전 판정 아님",
+      "미실행"
+    ],
+    [
+      "AC-OPTION-11-03",
+      "OPTION-11",
+      "복구·중복",
+      "민감 이미지 블러 화면/실행 경로에서 해당 조건 발생",
+      "이미지 교체 시 보기 상태 초기화, 원본 외부 전송 없음",
+      "미실행"
+    ],
+    [
+      "AC-OPTION-12-01",
+      "OPTION-12",
+      "정상",
+      "행동 기반 AI 피드백 화면/실행 경로에서 해당 조건 발생",
+      "사용자 집계의 근거를 표시하고 설정 제안",
+      "미실행"
+    ],
+    [
+      "AC-OPTION-12-02",
+      "OPTION-12",
+      "오류·경계",
+      "행동 기반 AI 피드백 화면/실행 경로에서 해당 조건 발생",
+      "부족·동의없음·provider 실패를 별도 표시",
+      "미실행"
+    ],
+    [
+      "AC-OPTION-12-03",
+      "OPTION-12",
+      "복구·중복",
+      "행동 기반 AI 피드백 화면/실행 경로에서 해당 조건 발생",
+      "재요청 캐시·기존 결과 보존; 자동 설정 변경 없음",
+      "미실행"
+    ],
+    [
+      "AC-SESSION-05-01",
+      "SESSION-05",
+      "정상",
+      "일시정지·재개 화면/실행 경로에서 해당 조건 발생",
+      "해제 확인 후 정지, 같은 정책 재개, 정지시간 제외",
+      "미실행"
+    ],
+    [
+      "AC-SESSION-05-02",
+      "SESSION-05",
+      "오류·경계",
+      "일시정지·재개 화면/실행 경로에서 해당 조건 발생",
+      "해제/재적용 실패를 완료로 표시 안 함",
+      "미실행"
+    ],
+    [
+      "AC-SESSION-05-03",
+      "SESSION-05",
+      "복구·중복",
+      "일시정지·재개 화면/실행 경로에서 해당 조건 발생",
+      "재개·종료 경합 시 종료 우선, 수동/예약 종료시간 구분",
+      "미실행"
+    ],
+    [
+      "AC-SESSION-06-01",
+      "SESSION-06",
+      "정상",
+      "세션 메모 화면/실행 경로에서 해당 조건 발생",
+      "세션별2000자 이내 메모 저장·조회",
+      "미실행"
+    ],
+    [
+      "AC-SESSION-06-02",
+      "SESSION-06",
+      "오류·경계",
+      "세션 메모 화면/실행 경로에서 해당 조건 발생",
+      "다른 계정·초과 입력 거절, 실패 입력 유지",
+      "미실행"
+    ],
+    [
+      "AC-SESSION-06-03",
+      "SESSION-06",
+      "복구·중복",
+      "세션 메모 화면/실행 경로에서 해당 조건 발생",
+      "412에서 최신값과 편집값 보존",
+      "미실행"
+    ],
+    [
+      "AC-AUTH-04-01",
+      "AUTH-04",
+      "정상",
+      "로그인 없이 시작 화면/실행 경로에서 해당 조건 발생",
+      "계정 없이 로컬 세션·결과 사용",
+      "미실행"
+    ],
+    [
+      "AC-AUTH-04-02",
+      "AUTH-04",
+      "오류·경계",
+      "로그인 없이 시작 화면/실행 경로에서 해당 조건 발생",
+      "로컬 저장 불가 시 성공 표시 안 함",
+      "미실행"
+    ],
+    [
+      "AC-AUTH-04-03",
+      "AUTH-04",
+      "복구·중복",
+      "로그인 없이 시작 화면/실행 경로에서 해당 조건 발생",
+      "재시작 후 소유별 journal 복구; 회원 자료 혼입 없음",
+      "미실행"
+    ],
+    [
+      "AC-AUTH-05-01",
+      "AUTH-05",
+      "정상",
+      "소셜 로그인 화면/실행 경로에서 해당 조건 발생",
+      "인증 성공 후 동일 계정으로 진입하고 최초 소셜은 가입 확인 후 생성",
+      "미실행"
+    ],
+    [
+      "AC-AUTH-05-02",
+      "AUTH-05",
+      "오류·경계",
+      "소셜 로그인 화면/실행 경로에서 해당 조건 발생",
+      "인증 실패·취소·state 불일치 때 회원/세션 생성 안 함",
+      "미실행"
+    ],
+    [
+      "AC-AUTH-05-03",
+      "AUTH-05",
+      "복구·중복",
+      "소셜 로그인 화면/실행 경로에서 해당 조건 발생",
+      "중복 callback·인증 요청 재처리로 계정 중복 생성 안 함",
+      "미실행"
+    ],
+    [
+      "AC-IMPORT-01-01",
+      "IMPORT-01",
+      "정상",
+      "가져올 자료 선택 화면/실행 경로에서 해당 조건 발생",
+      "선택 자료만 가져오고 원본은 원래 만료일까지 유지",
+      "미실행"
+    ],
+    [
+      "AC-IMPORT-01-02",
+      "IMPORT-01",
+      "오류·경계",
+      "가져올 자료 선택 화면/실행 경로에서 해당 조건 발생",
+      "로그인만으로 전송 없음, 타계정 재이전 거절",
+      "미실행"
+    ],
+    [
+      "AC-IMPORT-01-03",
+      "IMPORT-01",
+      "복구·중복",
+      "가져올 자료 선택 화면/실행 경로에서 해당 조건 발생",
+      "부분 성공/응답 유실 후 미완료만 재시도·중복 없음",
+      "미실행"
+    ],
+    [
+      "AC-IMPORT-02-01",
+      "IMPORT-02",
+      "정상",
+      "가져오기 처리·복구 화면/실행 경로에서 해당 조건 발생",
+      "선택 자료만 가져오고 원본은 원래 만료일까지 유지",
+      "미실행"
+    ],
+    [
+      "AC-IMPORT-02-02",
+      "IMPORT-02",
+      "오류·경계",
+      "가져오기 처리·복구 화면/실행 경로에서 해당 조건 발생",
+      "로그인만으로 전송 없음, 타계정 재이전 거절",
+      "미실행"
+    ],
+    [
+      "AC-IMPORT-02-03",
+      "IMPORT-02",
+      "복구·중복",
+      "가져오기 처리·복구 화면/실행 경로에서 해당 조건 발생",
+      "부분 성공/응답 유실 후 미완료만 재시도·중복 없음",
+      "미실행"
+    ]
+  ],
+  "edge_cases": [
+    [
+      "BOUND-01",
+      "세션 접근3건, 같은 대상",
+      "전체3, 반복2, 합계5로 표시 금지"
+    ],
+    [
+      "BOUND-02",
+      "기간 안 첫 건이나 세션 전체로는 두 번째",
+      "반복으로 집계; 기간 필터 전에 세션 순서 계산"
+    ],
+    [
+      "BOUND-03",
+      "14~15시 예약,14:20실행",
+      "15시 고정 종료,40분 초과 배정 금지"
+    ],
+    [
+      "BOUND-04",
+      "같은 예약,기존 정지 세션15:01종료",
+      "기존 세션 우선,예약 status=SKIPPED, reason=EXPIRED"
+    ],
+    [
+      "BOUND-05",
+      "30분 수동,10분 진행/5분 정지/20분 재개",
+      "확인 집중30분,정지5분 제외"
+    ],
+    [
+      "BOUND-06",
+      "예약14~15시,14:20~14:30정지",
+      "15시 종료,정지구간 제외"
+    ],
+    [
+      "BOUND-07",
+      "회원A 대기자료 존재,로그아웃 후B 로그인",
+      "A 자료 유지·B에 미노출·미전송"
+    ],
+    [
+      "BOUND-08",
+      "비회원 종료시각+30일 정각",
+      "해당 세션·하위 자료 만료,설정·회원 자료 유지"
+    ],
+    [
+      "BOUND-09",
+      "가져오기 성공·응답만 유실",
+      "재시도 같은 결과,원본 유지,중복 없음"
+    ],
+    [
+      "BOUND-10",
+      "블러 보기 후같은요소 src 변경",
+      "새 이미지 다시 분석·가림,이전 보기 상태 미승계"
+    ],
+    [
+      "BOUND-11",
+      "23:59:50~00:00:10 이용 구간",
+      "각 날짜10초,전체20초"
+    ],
+    [
+      "BOUND-12",
+      "AI 모델이존재하지않는 metric_id 반환",
+      "결과 실패,원본과기존결과 유지"
+    ],
+    [
+      "BOUND-13",
+      "Google·카카오 같은 이메일,다른 subject",
+      "자동 병합 없음,기존계정 재인증 후 연결"
+    ],
+    [
+      "BOUND-14",
+      "원격 로그아웃 요청 시 실행확장 미접속",
+      "해제 미확인 표시,실행 완료라고 주장하지 않음"
+    ],
+    [
+      "BOUND-15",
+      "같은 event_id 다른 payload",
+      "409/격리,기존 정본 덮어쓰기 금지"
+    ],
+    [
+      "BOUND-16",
+      "DST 없는 시각/두 번 있는 시각",
+      "없는 시각 건너뜀/첫 시각1회"
+    ],
+    [
+      "BOUND-17",
+      "저장 공간 부족·서버 실패",
+      "자료 자동 제거 금지,입력·대기 보존과 실패 표시"
+    ],
+    [
+      "BOUND-18",
+      "본문 키워드가 입력창에만 있음",
+      "입력 내용 검사·업로드 하지 않음"
+    ],
+    [
+      "BOUND-19",
+      "사이트 BLOCK+Shorts+성인목록 동시에 해당",
+      "같은 탐색은 가장 우선 이유1건"
+    ],
+    [
+      "BOUND-20",
+      "비회원 원격 AI 버튼",
+      "계정 안내,로컬 자료 자동 전송 없음"
+    ]
+  ]
+}
