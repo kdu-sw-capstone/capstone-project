@@ -90,3 +90,7 @@ FOCURVE_설계_통합본.html
 이전자료\원본보관_개정전.zip
 이전자료\통합개정본_이전도면.zip
 파일목록.txt
+
+02_시스템_테크설계/09_PC_후속확장계획.md
+07_설계도/FOCURVE_개발단계_PC확장.drawio
+07_설계도/FOCURVE_개발단계_PC확장.svg
