@@ -16,7 +16,7 @@ docker compose up -d --wait mysql
 ./scripts/prepare-test-db.sh
 ```
 
-Windows에서는 `.env`를 복사·편집하고 Docker Desktop을 사용한다. `scripts/*.sh`와 `./mvnw` 명령은 Bash/WSL/Git Bash 기준이며 Maven은 Windows용 `mvnw.cmd`도 제공한다. Windows 실행은 이번에 검증하지 않았다.
+Windows에서는 `.env`를 복사·편집하고 Docker Desktop을 사용한다. `scripts/*.sh`와 `./mvnw` 명령은 Bash/WSL/Git Bash 기준이며 Maven은 Windows용 `mvnw.cmd`도 제공한다. Windows에서 아래 별도 절차의 Bash 명령을 사용한 실행·검증을 완료했다. PowerShell의 `mvnw.cmd` 경로와 WSL 별도 환경을 검증했다는 뜻은 아니다.
 
 Compose는 DB를 127.0.0.1:3306에만 노출하고 `focurve` DB·사용자를 만든다. 포트 변경 시 `.env`의 MYSQL_PORT 및 두 JDBC URL을 함께 맞춘다. 비밀번호는 `.env`에만 두고 커밋하지 않는다. 이미 초기화된 볼륨에는 `.env` 수정만으로 기존 DB 비밀번호가 바뀌지 않는다. 기존 자료를 지우지 말고 DB 자격을 별도로 조정한다.
 
@@ -38,6 +38,32 @@ curl --fail http://127.0.0.1:8080/actuator/health
 ```
 
 기대 결과는 HTTP 200과 `{"status":"UP"}`이다. 종료는 서버 셸의 Ctrl+C, DB는 루트에서 `docker compose stop mysql`을 사용한다. 볼륨은 보존한다. 프로세스는 새 Codex 작업에서 다시 시작해야 한다.
+
+## Windows 로컬 검증 절차·결과
+
+검증 기준: `25c4ec75f7d9c506fabace48c2204baf0377f000`. 아래 결과는 사용자가 Windows에서 실행하여 공유한 결과이며, Codex Linux 검증과 구분한다. Docker 29.8.2·Docker Compose v5.5.1·Java 21을 사용했다. 기존 `.env`는 유지하고, 없을 때만 위 예시를 복사해 로컬 비밀번호를 설정한다. `git check-ignore .env`의 결과는 `.env`였다.
+
+저장소 루트의 Git Bash에서:
+
+```bash
+docker compose up -d --wait mysql
+docker compose ps
+bash scripts/prepare-test-db.sh
+bash scripts/with-env.sh bash backend/mvnw -f backend/pom.xml -B -ntp verify
+bash scripts/with-env.sh java -jar backend/target/focurve-server-0.0.1-SNAPSHOT.jar
+```
+
+서버를 실행한 채 별도 셸에서:
+
+```bash
+curl --fail http://127.0.0.1:8080/actuator/health
+```
+
+- MySQL 8.4.8 컨테이너 `capstone-project-mysql-1`: `healthy`, `127.0.0.1:3306` 연결 정상.
+- 테스트 DB `focurve_test` 준비·연결, HikariCP 연결 및 Flyway `V1__create_users.sql` 적용 성공.
+- 실제 MySQL의 `DatabaseIntegrationTest` 포함 테스트: **4건 통과, 실패·오류·스킵 0건**, Maven `BUILD SUCCESS`, 실행 JAR 생성 성공.
+- 실행 JAR에서 개발 DB `focurve` 연결·Flyway v1 적용, Spring Boot 3.5.16·Tomcat 8080 시작 성공. health 응답은 `{"status":"UP"}`.
+- Web 브라우저 버튼을 통한 실제 Server 상태 확인도 성공했다. health 확인은 제품 API·인증·Extension 차단 검증을 대신하지 않는다.
 
 ## Codex 클라우드 초기화
 
@@ -67,4 +93,4 @@ DB는 UTC `DATETIME(3)`와 utf8mb4를 사용하고 email은 정확 비교용 bin
 
 2026-10-07 Codex Linux: 실제 MySQL 8.4.8에서 테스트 **4건 통과, 실패·오류·스킵 0건**. 빈 DB의 V1 적용과 재실행 무변경, UTC·utf8mb4, 한글·이모지 저장·조회, ms 정밀도, 중복 이메일 거절, HTTP 상태 확인을 검증했다. 개발 DB와 테스트 DB는 별도이며 테스트 데이터가 남지 않는지 확인한다. jar 실행 및 Web 프록시 요청은 실제 확인한다.
 
-미검증·남은 설정: Windows/macOS 실행, 실제 브라우저 수동 검증, 인증·메일·Google/카카오 설정, 제품 API·전체 DB 테이블, 운영 HTTPS·백업·성능·Extension 연동. 필수 MVP 기능 완료를 뜻하지 않는다.
+미검증·남은 설정: macOS 및 다른 셸·환경의 실행, 브라우저 레이아웃·접근성, 인증·메일·Google/카카오 설정, 제품 API·전체 DB 테이블, 운영 HTTPS·백업·성능·Extension 연동. 필수 MVP 기능 완료를 뜻하지 않는다.

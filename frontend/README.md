@@ -28,4 +28,16 @@ Codex 클라우드에서 홈 캐시·JDK·프록시 설정이 필요하면 저�
 - `src/main.tsx`, `App.tsx`, `style.css`: 개발 확인 화면.
 - `src/App.test.tsx`, `src/test/setup.ts`: 확인 전·정상·통신 실패·HTTP 실패·비정상 상태의 테스트.
 
-2026-10-07 Codex Linux 환경: `npm ci` 성공, `npm test` **5건 통과**, `npm run build` 성공. 화면 테스트의 HTTP 응답은 **모의 검증**이다. 실제 Vite 문서 요청과 Vite 프록시 → Server → MySQL 상태 요청은 HTTP 200/UP 확인. 실제 브라우저의 버튼 클릭·레이아웃·접근성 수동 검증과 제품 기능·Extension 연동은 미검증이다.
+2026-10-07 Codex Linux 환경: `npm ci` 성공, `npm test` **5건 통과**, `npm run build` 성공. 화면 테스트의 HTTP 응답은 **모의 검증**이다. 실제 Vite 문서 요청과 Vite 프록시 → Server → MySQL 상태 요청은 HTTP 200/UP 확인. 브라우저의 기본 버튼 동작은 아래 Windows 기록으로 별도 확인했다. 레이아웃·접근성 수동 검증과 제품 기능·Extension 연동은 미검증이다.
+
+## Windows 로컬 검증 결과
+
+검증 기준: `25c4ec75f7d9c506fabace48c2204baf0377f000`. 사용자가 Windows에서 위 `frontend` 디렉터리의 `npm ci`, `npm test`, `npm run build`, `npm run dev`를 실제 실행해 공유한 결과다.
+
+- `npm ci`: 정상 완료, 보고된 취약점 0건.
+- `npm test`: 테스트 파일 1개·테스트 **5/5 통과**. HTTP 응답은 모의 검증이다.
+- `npm run build`: TypeScript 검사·Vite production build 성공, `dist/` 생성.
+- `npm run dev`: `127.0.0.1:5173` 실행 및 브라우저 개발 확인 화면 접속 성공.
+- [Server·DB 절차](../backend/README.md)에 따라 MySQL과 Server를 실행한 상태에서 `서버 상태 확인` 버튼 → `정상`. Browser → Web → Server의 실제 통신을 확인했으며, Server의 실제 MySQL 연결은 Backend 검증에서 확인했다.
+
+개발 기반 구축·Windows 검증은 완료했다. 현재 화면은 제품 UI가 아니며 회원가입·사이트 관리·집중 세션·기록·통계 등 제품 기능은 미구현이다. PR·develop 통합은 아직 대기 중이다.
