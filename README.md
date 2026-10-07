@@ -4,7 +4,7 @@
 
 경동대학교 소프트웨어학과 캡스톤 디자인 팀 프로젝트입니다. 이 저장소에서 Web·Server·Chrome 확장프로그램의 소스 코드, 설계 명세와 협업 기록을 함께 관리합니다.
 
-현재는 **Web·Server·DB 개발 기반 구축과 Windows 로컬 검증을 완료하고, 팀 검토·develop 통합을 준비하는 단계**입니다. 필수·추가 MVP 제품 기능은 아직 미착수입니다. 기능별 구현과 검증 결과는 작업카드와 통합 현황에서 관리합니다.
+현재는 **Web·Server·DB 개발 기반 구축·Windows 로컬 검증·PR #16의 팀 리뷰 및 develop 통합을 완료하고, 필수 MVP 기능 구현을 준비하는 단계**입니다. 필수·추가 MVP 제품 기능은 아직 미착수입니다. 기능별 구현과 검증 결과는 작업카드와 통합 현황에서 관리합니다.
 
 [설계 통합본](docs/design/FOCURVE_설계_통합본.md) · [설계도 목록](docs/design/07_설계도/페이지목록.md) · [개발 현황](docs/implementation/통합현황.md) · [협업 규칙](CONTRIBUTING.md)
 
@@ -15,7 +15,7 @@
 | 프로젝트명 | FOCURVE |
 | 소속 | 경동대학교 소프트웨어학과 캡스톤 디자인 |
 | 프로젝트 기간 | 3학년 2학기 ~ 4학년 1학기 |
-| 현재 단계 | 개발 기반·Windows 검증 완료 · 팀 검토·통합 대기 · 제품 기능 미착수 |
+| 현재 단계 | 개발 기반·Windows 검증·develop 통합 완료 · 제품 기능 미착수 |
 | 현재 상세 설계·개발 범위 | Web·Server·Chrome 확장프로그램의 필수·추가 MVP |
 | 후속 개발 | 필수·추가 MVP 완료·검증 후 PC 앱 확장 · 모바일 미정 |
 | 현재 MVP 기능 범위 | 필수 33개 · 추가 14개, 총 47개 기능 |
@@ -144,7 +144,7 @@ AI 작업에는 [AGENTS.md](AGENTS.md), 해당 기능 작업카드와 연결된 
 
 ## 개발 환경과 실행
 
-Web·Server·MySQL 최소 개발 기반의 설치·실행·테스트 명령은 각 영역 README에 기록했습니다. 검증 기준은 `chore/web-server-db-foundation`의 `25c4ec75f7d9c506fabace48c2204baf0377f000`이며 원격 Push와 Windows Pull을 완료했습니다. PR과 develop 병합은 아직 진행하지 않았습니다.
+Web·Server·MySQL 최소 개발 기반의 설치·실행·테스트 명령은 각 영역 README에 기록했습니다. 검증 기준은 `chore/web-server-db-foundation`의 `25c4ec75f7d9c506fabace48c2204baf0377f000`이며 원격 Push와 Windows Pull을 완료했습니다. PR #16은 다른 팀 구성원의 리뷰를 거쳐 develop에 병합했습니다(merge commit `76df34e`).
 
 사용자가 Windows에서 MySQL healthy, Backend 테스트 4/4·빌드·health UP, Frontend 테스트 5/5·빌드·Vite 실행 및 브라우저의 `서버 상태 확인` → `정상`을 확인했습니다. 상세 명령과 결과는 [개발 운영](docs/implementation/개발운영.md)에 기록했습니다. 현재 화면은 개발 확인용이며, 회원가입·사이트 관리·세션·Extension·기록·통계 등 제품 기능과 제품 수용 검증은 미완료입니다.
 

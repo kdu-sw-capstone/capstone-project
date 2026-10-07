@@ -40,4 +40,4 @@ Codex 클라우드에서 홈 캐시·JDK·프록시 설정이 필요하면 저�
 - `npm run dev`: `127.0.0.1:5173` 실행 및 브라우저 개발 확인 화면 접속 성공.
 - [Server·DB 절차](../backend/README.md)에 따라 MySQL과 Server를 실행한 상태에서 `서버 상태 확인` 버튼 → `정상`. Browser → Web → Server의 실제 통신을 확인했으며, Server의 실제 MySQL 연결은 Backend 검증에서 확인했다.
 
-개발 기반 구축·Windows 검증은 완료했다. 현재 화면은 제품 UI가 아니며 회원가입·사이트 관리·집중 세션·기록·통계 등 제품 기능은 미구현이다. PR·develop 통합은 아직 대기 중이다.
+개발 기반 구축·Windows 검증은 완료했다. 현재 화면은 제품 UI가 아니며 회원가입·사이트 관리·집중 세션·기록·통계 등 제품 기능은 미구현이다. PR #16의 팀 리뷰·develop 병합도 완료했다(merge commit `76df34e`).
