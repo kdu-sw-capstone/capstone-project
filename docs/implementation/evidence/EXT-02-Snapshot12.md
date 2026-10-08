@@ -38,3 +38,14 @@ Node 24.19.0/npm 11.9.0 Linux 모의 자동 테스트 69/69, 실패·스킵 0. `
 실패: 최종 자동 실패0; 실제 Chromium 로드 환경 제한은 남아 있음.
 조율 필요: 서버 실제 JSON/버전 협상·미지원 응답, global/Content 규칙 우선순위, Figma 원본 접근 및 팀 재현 원본.
 다음 행동: 사용자 최신 Chrome 검증 → 코드/결과 점검 → 팀 재검토. 회원 연동/EXT-02 전체 완료 및 병합 준비 완료로 표시하지 않음.
+
+### Snapshot 1.2 수정 후 사용자 Chrome 검증 보고
+
+- 사용자: 이번 정책 수정에 대해 안내한 1~6 성공, 7~10 정상 작동, 이어 전체 Chrome 종료/재시작 검증도 모두 정상이라고 보고.
+- 성공 보고 범위: 부모/자식 동시 등록, 양방향 BLOCK/ALLOW 우선순위, 현재 세션 정책 유지/다음 세션 변경, child RECORD, root dot/case 중복, exact child ALLOW와 하위 host 부모 BLOCK, 이미 열린 child ALLOW 탭 유지, 종료 후 해제. 브라우저 재시작 후 INTERRUPTED·해제 및 종료 중 미확인 시간 미포함도 보고.
+- 기준 코드: 안내한 정책 수정 커밋 9b6bace. 사용자 실행 성공 보고이며 실제 로드 SHA/OS/Chrome 버전/로그는 미제공. Codex가 직접 Chrome 실행했거나 DB/DNR 값을 확인한 결과로 확대하지 않는다.
+- 자동 결과: 기존 직접 실행 69/69 모의 테스트 유지. 이번 변경은 검증 기록만이며 제품 코드/테스트 변경 및 새 실행 없음.
+- 미검증: Worker 단독 중단 복구, 실제 Server JSON/API/회원·보고·승인·공유복구·Content 및 전역 제한 연동, 강제 quota/해제 오류, 실제 ID/version DB 값, Figma UI.
+- 실패: 사용자 보고 실패 없음. Codex 환경의 unpacked 확장 로드 제한은 별도로 유지.
+- 조율 필요: 실제 Server 전체 Snapshot/지원 버전·오류, global/Content priority, Figma 프레임 접근·팀 원본 재현자료.
+- 다음 행동: Worker 단독 복구 확인, Figma 자료 확보 및 UI 반영, 서버와 실제 연동 대조 후 사용자 점검·팀 재검토. 팀 담당 병합, Codex 병합 금지. 전체 EXT-02 완료 아님.
