@@ -102,3 +102,22 @@ await chrome.declarativeNetRequest.getSessionRules()
 Windows 재검증은 별도 테스트 프로필에서 현재 `extension/`을 로드한 뒤 BLOCK/RECORD/ALLOW 사이트 등록 → 집중 시작 → BLOCK 차단·RECORD/ALLOW 방문 → 실행 중 설정 수정/삭제 → 현재 스냅샷 유지 → 종료·해제 → 다음 시작에 변경 반영 순서로 수행합니다. 워커 중단 후에는 같은 세션의 journal/규칙 대조, Chrome 완전 종료 후에는 이전 세션 INTERRUPTED·규칙 해제와 사이트 설정 보존을 확인합니다. 각 결과에 코드 기준(`git rev-parse HEAD` 및 미커밋 변경 여부)·Windows/Chrome 버전을 남깁니다. 이번 수정의 기한 경계·잘못된 journal 검증은 자동 모의 결과이며 실사용 DB를 조작해 재현하지 않습니다.
 
 이전 버전의 사용자 Chrome 성공 보고와 이번 Linux Node 24.19.0 자동 결과는 구분합니다. 현재 수정본의 Windows/Chrome·회원/Server 실제 연동은 미검증입니다.
+
+## EXT-02 비회원 도메인 경계 재검증
+
+이번 수정은 `background/session-core.js`의 탐색 host 판별과 DNR 규칙에만 적용됩니다. 저장된 canonical_host·사이트 등록 형식·회원 API·Content Control·LOG-01은 바꾸지 않습니다. 탐색의 마지막 DNS 루트 점 하나를 동일 host로 처리하며 www는 별도 host로 유지합니다. 탐색 URL에 userinfo가 있어도 실제 목적지 host를 판별합니다(등록 URL의 자격정보 거절 규칙은 그대로 유지).
+
+자동 검증은 `extension/`에서 `npm test` → `npm run check`이며 총 42건입니다. 신규 5건은 정확/하위도메인 2개 매트릭스, www/IDNA, 열린 탭·다른 규칙 보존·해제, 현재 스냅샷/다음 세션 반영을 검사합니다. DNR regex는 Node RegExp로 확인했고 실제 Chrome 정규식 지원은 실행 시 `isRegexSupported`로 확인합니다. Linux Chromium 실제 로드는 관리자 정책으로 거부돼 브라우저 검증은 미실행입니다.
+
+Windows Chrome에서는 이번 Push의 `extension/`을 별도 테스트 프로필에서 사용합니다. 먼저 이전 집중을 종료하고, 확장 새로고침 및 팝업/테스트 탭 새로고침 후 새 집중을 시작하세요. 기존 journal/설정 DB를 삭제하지 않습니다. manifest는 계속 0.1.5이므로 버전 숫자만으로 최신 코드 여부를 판별하지 말고 다운로드한 브랜치 커밋도 기록하세요.
+
+| 번호 | 설정·동작 | 기대 결과 |
+|---|---|---|
+| D1 | example.com을 BLOCK, 하위 도메인 포함 해제로 등록. `https://example.com./` 탭을 먼저 열고 집중 시작 | 이미 열린 대상 탭도 FOCURVE 안내로 이동. RUNNING 확인 |
+| D2 | 집중 중 `https://example.com/`, `https://example.com./` 새 탭 접근 | 두 주소 모두 차단 |
+| D3 | 같은 집중에서 `https://www.example.com./`, `https://notexample.com/`, `https://example.com.evil.test/` 접근 | 해당 첫 탐색은 FOCURVE 차단 대상 아님. DNS·TLS 오류는 정책 차단과 구분. 사이트 자체가 등록 host로 redirect하면 그 이후 차단은 정상 |
+| D4 | 집중 중 example.com의 하위 도메인 포함을 켬. 현재 세션에서 하위 도메인 접근 → 종료·해제 → 새 세션 시작 후 다시 접근 | 현재 세션은 기존 exact 범위 유지. 다음 세션은 `www.example.com` 및 `www.example.com.` 차단, 유사 host는 제외 |
+| D5 | 겹치지 않는 example.org를 RECORD, example.net을 GENERAL/ALLOW로 등록하고 다음 집중에서 접근 | 두 사이트는 FOCURVE로 차단되지 않음. 이 항목은 이벤트 수집/집계 전체 검증이 아님 |
+| D6 | 집중 종료 후 example.com과 example.com. 재접근 | 소유 차단 규칙 해제, FOCURVE 안내로 이동하지 않음 |
+
+차단 안내 페이지가 이미 열린 경우 종료만으로 원래 주소가 자동 복원되지는 않으므로 주소를 다시 입력합니다. D1~D6 결과와 Windows/Chrome 버전·대상 커밋·오류 코드만 전달하면 작업카드에 사용자 실행 결과로 기록합니다. 개인 URL·전체 탭 목록·인증 값은 필요 없습니다. 이전 기본 1~6번 성공 보고는 이전 코드 결과로 보존하며 위 신규 항목의 성공으로 자동 처리하지 않습니다.

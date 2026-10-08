@@ -9,11 +9,15 @@ import { randomUUID } from 'node:crypto';
 const sourcePath = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../background/session-core.js');
 const source = await readFile(sourcePath, 'utf8');
 
-function makeCore({ owner, stored = null, rules = [], expireAfterRegexCheck = false, regexAdvanceMs = 0 } = {}) {
+function makeCore({ owner, stored = null, rules = [], expireAfterRegexCheck = false, regexAdvanceMs = 0,
+  sites = [{ canonical_host: 'blocked.example', display_name: 'blocked', include_subdomains: true,
+    purpose: 'DISTRACTION', access_policy: 'BLOCK', feature_policies: [] }], tabs = [] } = {}) {
   let now = Date.now();
   let persisted = stored;
   let currentRules = structuredClone(rules);
   let ruleUpdates = 0;
+  let currentTabs = structuredClone(tabs);
+  const movedTabs = [];
   class ClockDate extends Date {
     constructor(...args) { super(...(args.length ? args : [now])); }
     static now() { return now; }
@@ -28,7 +32,13 @@ function makeCore({ owner, stored = null, rules = [], expireAfterRegexCheck = fa
       runtime: { getURL: value => 'chrome-extension://test/' + value },
       storage: { session: { get: async () => ({ focurve_boot: true }), set: async () => {} } },
       alarms: { create: async () => {}, clear: async () => {} },
-      tabs: { query: async () => [] },
+      tabs: {
+        query: async () => structuredClone(currentTabs),
+        update: async (id, change) => {
+          movedTabs.push(id);
+          currentTabs = currentTabs.map(tab => tab.id === id ? { ...tab, ...change, pendingUrl: undefined } : tab);
+        },
+      },
       declarativeNetRequest: {
         getSessionRules: async () => structuredClone(currentRules),
         isRegexSupported: async () => {
@@ -43,7 +53,7 @@ function makeCore({ owner, stored = null, rules = [], expireAfterRegexCheck = fa
     },
     LocalStore: { guestContext: async () => contextOwner },
     GuestSites: {
-      list: async () => ({ items: [{ canonical_host: 'blocked.example', display_name: 'blocked', include_subdomains: true, purpose: 'DISTRACTION', access_policy: 'BLOCK', feature_policies: [] }], settings_version: 1 }),
+      list: async () => ({ items: sites, settings_version: 1 }),
       validate: () => true,
     },
     SessionDB: {
@@ -55,7 +65,7 @@ function makeCore({ owner, stored = null, rules = [], expireAfterRegexCheck = fa
     AccessStore: {},
   };
   const core = vm.runInNewContext(source + '\nGuestSession;', context);
-  return { core, get persisted() { return persisted; }, get rules() { return currentRules; }, get ruleUpdates() { return ruleUpdates; } };
+  return { core, movedTabs, get persisted() { return persisted; }, get rules() { return currentRules; }, get ruleUpdates() { return ruleUpdates; } };
 }
 
 const site = (canonical_host, include_subdomains = false) => ({ canonical_host, include_subdomains });
@@ -158,4 +168,107 @@ test('worker reconnect releases the session when journal rules do not match', as
   assert.equal(result.session.status, 'INTERRUPTED');
   assert.equal(result.journal.desired, 'RELEASED');
   assert.equal(fixture.rules.length, 0);
+});
+
+const hostCases = [
+  ['https://example.com/', true, true],
+  ['http://EXAMPLE.COM/path?x=1', true, true],
+  ['https://example.com./', true, true],
+  ['http://example.com.:8080/path', true, true],
+  ['https://www.example.com/', false, true],
+  ['https://a.b.example.com./', false, true],
+  ['https://notexample.com/', false, false],
+  ['https://example.com.evil.test/', false, false],
+  ['https://example.com.evil.test./', false, false],
+  ['https://example.com../', false, false],
+  ['https://example.com@evil.test/', false, false],
+  ['https://user:password@example.com./', true, true],
+  ['https://evil.test/path/example.com', false, false],
+  ['file://example.com/path', false, false],
+  ['not a URL', false, false],
+];
+
+for (const includeSubdomains of [false, true]) {
+  test(`guest matcher and generated DNR regex agree on host boundaries (subdomains=${includeSubdomains})`, () => {
+    const core = makeCore().core;
+    const target = { ...site('example.com', includeSubdomains), access_policy: 'BLOCK' };
+    const [rule] = core.buildRules({ session_id: 'boundary', snapshot: { sites: [target] } }, []);
+    const regex = new RegExp(rule.condition.regexFilter, 'i');
+    for (const [raw, exact, subdomains] of hostCases) {
+      const expected = includeSubdomains ? subdomains : exact;
+      assert.equal(core.matches(target, raw), expected, `Core: ${raw}`);
+      let serialized = raw;
+      try { serialized = new URL(raw).href; } catch {}
+      assert.equal(regex.test(serialized), expected, `DNR regex: ${raw}`);
+    }
+    assert.deepEqual(Array.from(rule.condition.resourceTypes), ['main_frame']);
+  });
+}
+
+test('guest domain matching preserves explicit www and uses IDNA ASCII host', () => {
+  const core = makeCore().core;
+  const targets = [
+    [site('www.example.com'), 'https://www.example.com./', 'https://example.com/'],
+    [site('xn--bcher-kva.example'), 'https://bücher.example./', 'https://other.example/'],
+  ];
+  for (const [target, positive, negative] of targets) {
+    const [rule] = core.buildRules({ session_id: 'idna', snapshot: { sites: [{ ...target, access_policy: 'BLOCK' }] } }, []);
+    const regex = new RegExp(rule.condition.regexFilter, 'i');
+    assert.equal(core.matches(target, positive), true);
+    assert.equal(regex.test(new URL(positive).href), true);
+    assert.equal(core.matches(target, negative), false);
+    assert.equal(regex.test(new URL(negative).href), false);
+  }
+});
+
+function policySite(host, policy, includeSubdomains = false) {
+  return { ...site(host, includeSubdomains), display_name: host,
+    purpose: policy === 'ALLOW' ? 'GENERAL' : 'DISTRACTION', access_policy: policy, feature_policies: [] };
+}
+
+test('guest start diverts only BLOCK tabs including trailing dots; end preserves unrelated rules', async () => {
+  const unrelated = { id: 7, priority: 1, action: { type: 'block' }, condition: { urlFilter: 'unrelated.test', resourceTypes: ['main_frame'] } };
+  const fixture = makeCore({
+    sites: [policySite('example.com', 'BLOCK', true), policySite('record.example', 'RECORD'), policySite('allow.example', 'ALLOW')],
+    rules: [unrelated],
+    tabs: [
+      { id: 1, url: 'https://example.com./' },
+      { id: 2, url: 'https://a.example.com./' },
+      { id: 3, url: 'https://notexample.com/' },
+      { id: 4, url: 'https://example.com.evil.test/' },
+      { id: 5, url: 'https://record.example./' },
+      { id: 6, url: 'https://allow.example./' },
+      { id: 7, url: 'https://safe.example/', pendingUrl: 'https://example.com./' },
+    ],
+  });
+  const started = await fixture.core.start(25, randomUUID());
+  assert.equal(started.session.status, 'RUNNING');
+  assert.deepEqual(fixture.movedTabs, [1, 2, 7]);
+  assert.equal(fixture.rules.length, 2);
+  assert.equal(fixture.rules[1].action.type, 'redirect');
+  const ended = await fixture.core.end(started.session.session_id);
+  assert.equal(ended.session.status, 'ENDED');
+  assert.equal(ended.journal.observed, 'RELEASED');
+  assert.deepEqual(fixture.rules, [unrelated]);
+});
+
+test('guest current snapshot stays fixed and the next session uses changed BLOCK/ALLOW settings', async () => {
+  const sites = [policySite('example.com', 'BLOCK')];
+  const fixture = makeCore({ sites });
+  const first = await fixture.core.start(25, randomUUID());
+  const firstRules = structuredClone(fixture.rules);
+  sites.splice(0, 1, policySite('example.com', 'ALLOW'), policySite('next.example', 'BLOCK'));
+  const current = await fixture.core.state();
+  assert.equal(current.session.snapshot.sites.length, 1);
+  assert.equal(current.session.snapshot.sites[0].access_policy, 'BLOCK');
+  assert.deepEqual(fixture.rules, firstRules);
+  await fixture.core.end(first.session.session_id);
+  assert.equal(fixture.rules.length, 0);
+  const second = await fixture.core.start(25, randomUUID());
+  assert.notEqual(second.session.session_id, first.session.session_id);
+  assert.equal(second.session.snapshot.sites.length, 2);
+  assert.equal(fixture.rules.length, 1);
+  const pattern = new RegExp(fixture.rules[0].condition.regexFilter, 'i');
+  assert.equal(pattern.test('https://example.com./'), false);
+  assert.equal(pattern.test('https://next.example./'), true);
 });

@@ -207,3 +207,23 @@
 - 이번 비회원 수정본의 기본 로드·적용·스냅샷 유지·해제·다음 세션 반영·브라우저 재시작은 사용자 성공 보고를 확보했다. 기한 정각·잘못된 journal은 자동 모의 검증만 수행했다.
 - 남음: 구체 환경/로드 코드 기준, 워커만 중단하는 복구, RECORD/ALLOW·유사 host·마지막 점 경계, 실제 저장 실패, 두 실행 모듈 연결 검토, 회원 인증/Server reconcile/report. 원격의 별도 .chrome-harness fixture 재검증을 위 제품 팝업 결과로 대체하지 않는다.
 - 판정: 이번 기한 보완 단위의 자동 검증 및 안내된 기본 Chrome 시나리오 사용자 검증 완료. EXT-02 전체·윤종민 전체 담당 업무·회원 통합 완료는 아님. 추가 기능 자동 착수 없음.
+
+
+## 비회원 도메인 경계 보완 — 착수
+
+- 이번 기능 ID: EXT-02. 담당: 윤종민, 기존 Extension Core 배정 원문(보관 ZIP의 개발계획 v1.3) 및 현행 역할 경계 기준.
+- 브랜치 feature/extension-core-ext-02, 시작 기준 2931b385c99e10ee22c7b278877874275a6d87aa; 시작 전 working tree clean.
+- 이번 목표: 기존 비회원 matches/buildRules의 도메인 판별 일치, 마지막 점·정확 host·하위 도메인·유사 host·ALLOW/RECORD 경계와 스냅샷/해제 회귀 검증.
+- 기준: docs/design/01_UX_기능설계/01_기능범위.md·03_동작규칙.md, 02_시스템_테크설계/04_API_연동.md·05_데이터_복구.md, 04_검수_예시데이터/07_검증기준.md. AC-EXT-02-01/03의 사이트 적용·복구 부분 및 SESSION-04 연관 경계.
+- 범위: 비회원 Core 도메인 판별/차단 규칙 및 관련 테스트·기록. 회원 API·Content Control·LOG-01·공유 계약·두 모듈 전면 통합은 제외. 현재 상태 진행 중, 결과는 아래 후속 기록으로 확정.
+
+### 도메인 경계 보완 결과
+
+- 배정 재확인: 보관 ZIP의 `02_시스템_테크설계/FOCURVE_개발계획_v1.3.md`에서 윤종민의 Core·URL/Domain·사이트 정책 배정을 찾았다. 앞 기록의 “배정표를 찾지 못함”은 당시 탐색 결과이며 이번에는 원문을 확인했다. 보관 문서는 배정 근거에만 사용하고 기술 계약은 현행 설계를 적용했다.
+- 수정: matches는 탐색 hostname의 마지막 DNS 루트 점 하나를 제거, buildRules는 동일한 선택 루트 점과 탐색 userinfo 부분을 허용. 정확 host/하위도메인 경계·www·IDNA ASCII·main_frame·BLOCK만 적용하는 원칙을 유지했다. 등록 URL 자격정보/포트 거절·DB·이벤트 형식·회원 계약 변경 없음.
+- 재현: 변경 전 소스에 신규 테스트를 실행하여 기존 11 PASS/신규 5 FAIL을 확인. 마지막 점 주소의 판별·규칙·열린 탭·다음 세션 차단에서 누락을 검출했다.
+- 수정 후: Node 24.19.0 `npm test` 42/42 PASS, 실패·스킵 0; `npm run check` PASS, `npm run build:harness` PASS. 신규 5건에서 exact/subdomain URL 행렬(각 15개), www/IDNA, BLOCK만 열린 탭 이동, pending URL, 소유 해제 및 unrelated 규칙 보존, 현재 스냅샷 고정/다음 세션 반영 검증. Chrome API/storage는 모의이며 regex는 JS RegExp 검사다.
+- 실제 브라우저 시도: Linux Chromium 151.0.7922.173과 환경 제공 Python Playwright 사용. 기본 확장 로드에서는 worker가 없었고 런처 기본 disable-extensions 옵션을 제외해도 동일했다. 지원 CDP Extensions.loadUnpacked는 `Loading of unpacked extensions is disabled by the administrator.`를 반환했다. 정책 우회·manifest 권한 수정 없이 중단. 실제 Chromium DNR·IndexedDB 기능 검증은 차단/미실행이며 자동 테스트 성공으로 대체하지 않는다.
+- 증거: [변경 전 실패·변경 후 검증·브라우저 제한](../evidence/EXT-02-domain-boundaries.txt).
+- 사용자 검증: README의 D1~D6 Windows Chrome 절차를 등록했고 현재 수정본 결과는 아직 미제공. 앞 1~6 성공 보고는 b60396d 기준 기본 흐름이며 신규 경계 통과로 합산하지 않음.
+- 남음/판정: 도메인 보완 코드·자동 검증 완료, 실제 Chrome 재검증 대기. 회원 설치 인증·Server command/reconcile/report, 저장 실패·제품 연결은 미완료. EXT-02 전체 완료/담당 전체 완료로 표시하지 않음. 이 단위 이후 다른 기능 자동 착수 없음.

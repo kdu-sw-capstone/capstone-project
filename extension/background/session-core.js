@@ -10,14 +10,19 @@ const GuestSession = (() => {
   if(!Number.isFinite(deadline)||Date.now()>=deadline)throw new Error('APPLY_EXPIRED');
  }
  function stable(value){if(Array.isArray(value))return JSON.stringify(value.map(v=>JSON.parse(stable(v))));if(value&&typeof value==='object')return JSON.stringify(Object.fromEntries(Object.keys(value).sort().map(k=>[k,JSON.parse(stable(value[k]))])));return JSON.stringify(value);}
- function matches(site,raw){try{const u=new URL(raw);return ['http:','https:'].includes(u.protocol)&&(u.hostname.toLowerCase()===site.canonical_host||(site.include_subdomains&&u.hostname.toLowerCase().endsWith(`.${site.canonical_host}`)));}catch{return false;}}
+ function matches(site,raw){try{
+  const u=new URL(raw);
+  // 탐색 URL의 DNS 루트 점 하나만 정규화합니다. 저장된 사이트 범위는 바꾸지 않습니다.
+  const host=u.hostname.toLowerCase().replace(/\.$/,'');
+  return ['http:','https:'].includes(u.protocol)&&(host===site.canonical_host||(site.include_subdomains&&host.endsWith(`.${site.canonical_host}`)));
+ }catch{return false;}}
  function blockedUrl(site,session){return chrome.runtime.getURL('blocked/blocked.html')+'?host='+encodeURIComponent(site.canonical_host)+'&session='+encodeURIComponent(session.session_id);}
  function buildRules(session,existing){
   let id=100000;const used=new Set(existing.map(r=>r.id));
   return session.snapshot.sites.filter(s=>s.access_policy==='BLOCK').map(site=>{
    while(used.has(id))id++;used.add(id);
    const host=site.canonical_host.replace(/\./g,'\\.');
-   return {id:id++,priority:100,action:{type:'redirect',redirect:{url:blockedUrl(site,session)}},condition:{regexFilter:'^https?://'+(site.include_subdomains?'([a-z0-9-]+\\.)*':'')+host+'(:[0-9]+)?([/?#]|$)',isUrlFilterCaseSensitive:false,resourceTypes:['main_frame']}};
+   return {id:id++,priority:100,action:{type:'redirect',redirect:{url:blockedUrl(site,session)}},condition:{regexFilter:'^https?://([^/@]*@)?'+(site.include_subdomains?'([a-z0-9-]+\\.)*':'')+host+'\\.?(:[0-9]+)?([/?#]|$)',isUrlFilterCaseSensitive:false,resourceTypes:['main_frame']}};
   });
  }
  async function rulesMatch(state){const actual=await chrome.declarativeNetRequest.getSessionRules();return state.journal.rules.every(rule=>actual.some(r=>r.id===rule.id&&stable(r)===stable(rule)));}
