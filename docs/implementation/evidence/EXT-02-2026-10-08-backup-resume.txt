@@ -1,0 +1,102 @@
+Environment: Codex Linux; branch feature/extension-core-ext-02; base c2bc866cd1848ed0f092c86d67e4ca897dab6e70
+Chrome/IndexedDB/Windows: not exercised; automatic tests use mocks.
+Baseline backup: 7/7 PASS. Before fix: new deadline cases 4 FAIL (RUNNING accepted), baseline 7 PASS.
+
+Command: node --version
+v24.19.0
+
+Exit: 0
+
+Command: npm test
+
+> focurve-extension-core@0.1.0 test
+> node --test tests/*.test.js tests/*.test.mjs
+
+✔ site matching accepts exact host and HTTP(S), and rejects suffix lookalikes (2.260322ms)
+✔ exact-host policy does not match subdomains (1.431276ms)
+✔ rule generation applies BLOCK only and skips existing rule IDs (1.256567ms)
+✔ guest APPLY expires before execution and leaves no blocking rule (6.064851ms)
+✔ guest APPLY at the exact deadline is rejected before installing rules (1.547082ms)
+✔ worker recovery rejects an invalid APPLY deadline: undefined (3.310571ms)
+✔ worker recovery rejects an invalid APPLY deadline: invalid (2.585093ms)
+✔ worker recovery rejects an invalid APPLY deadline:  (2.546565ms)
+✔ guest session from a different installation owner is rejected before recovery (0.956608ms)
+✔ worker reconnect retains a RUNNING session when journal rules match (1.236391ms)
+✔ worker reconnect releases the session when journal rules do not match (1.167247ms)
+✔ site layer: HTTP(S), exact host, subdomain boundary, www preserved, ALLOW/RECORD untouched (3.590915ms)
+✔ reject malformed/overlapping snapshot before constructing rules (0.78584ms)
+✔ AC-EXT-02-01 partial: durable journal precedes DNR, actual rules and open tabs confirmed (3.057198ms)
+✔ AC-EXT-02-01/02 partial: executor, revision, owner, ending and reconciliation reject without mutation (1.20254ms)
+✔ AC-EXT-02-02 partial: expired/missing/invalid APPLY deadline cannot add rules (1.786114ms)
+✔ trusted member owner matches snapshot; payload cannot override context owner (0.787952ms)
+✔ duplicate command and re-created worker do not add new rules (1.22913ms)
+✔ AC-EXT-02-03 partial: missing rules after restart only inspected; old APPLY never reinstalled (0.850197ms)
+✔ snapshot changes with same command rejected; immutable copy kept (0.827062ms)
+✔ BOUND-17 partial: pre-apply persistence failure makes no browser changes (0.546247ms)
+✔ unsupported regex reported; no journal success or rules installed (0.358572ms)
+✔ apply failure cleans only owned rules; never claims APPLIED (1.045332ms)
+✔ partial apply observation rolls back and does not return success (0.47561ms)
+✔ expiry during journal commit prevents late APPLY (0.54125ms)
+✔ termination racing with apply removes rules before reporting failure (0.674732ms)
+✔ release keeps unrelated rules; re-created worker can retry release (1.211614ms)
+✔ rule ID collision does not delete another feature rule (0.725879ms)
+✔ release failure remains unconfirmed; later release retries (0.717436ms)
+✔ failed rollback is surfaced and journal retained (0.411593ms)
+✔ empty BLOCK set and all-ALLOW snapshot perform no DNR additions (0.284371ms)
+✔ open-tab redirect not confirmed: fail and roll back after bounded retries (0.745638ms)
+✔ tab closed during redirect is not a live unprotected target (0.973163ms)
+✔ post-apply storage failure rolls back; storage uncertainty remains explicit (0.533667ms)
+✔ foreign-owner inspection rejected without disclosing journal (0.410862ms)
+✔ release can clean expired apply rules; deadline only limits APPLY (0.486086ms)
+✔ partial rule loss on re-created worker is UNCONFIRMED and not reapplied (0.748703ms)
+ℹ tests 37
+ℹ suites 0
+ℹ pass 37
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 103.269974
+
+Exit: 0
+
+Command: npm run check
+
+> focurve-extension-core@0.1.0 check
+> node scripts/check.js
+
+JavaScript syntax checks passed (not ESLint).
+npm notice
+npm notice New major version of npm available! 11.9.0 -> 12.2.0
+npm notice Changelog: https://github.com/npm/cli/releases/tag/v12.2.0
+npm notice To update run: npm install -g npm@12.2.0
+npm notice
+
+Exit: 0
+
+Command: npm run build:harness
+
+> focurve-extension-core@0.1.0 build:harness
+> node scripts/build-harness.js
+
+Harness built: .chrome-harness/manifest.json (test only, no product build).
+
+Exit: 0
+
+Backup provenance (not a comparison with unavailable original ChatGPT files):
+manifest.json | backup SHA256 9979aa9ecdcd8c39c8d56dfd44b409561ebbccc2a27097520502cd7b139fcb8b | unchanged
+popup/popup.js | backup SHA256 e3e06e7b02f855671895ea47dbe7ae19a09731b62ef88cc4cd30706b913aab7f | unchanged
+popup/popup.html | backup SHA256 67943431ec77adcdaeddd9cf00bf9d53ad094fbdfe30d8e7f467840782fe18d1 | unchanged
+popup/popup.css | backup SHA256 8e735eed5d265084108f7fa740aa222cb36b1f456cc8ee38a6d4e1fa9b70babd | unchanged
+blocked/blocked.js | backup SHA256 1530683c4d1aae98021d23674f350a3ac3cfd08e734d825d0bcba5bb127a1ec7 | unchanged
+blocked/blocked.html | backup SHA256 c1d911803e99907d3b9262192ee735daf5865938c5aad4cc2591c6ad697008f8 | unchanged
+blocked/blocked.css | backup SHA256 a3ae0ee4caee8e648cb0c522a2d518f7cd089a6494072e05c45ba521d7005496 | unchanged
+background/site-store.js | backup SHA256 a0869c157402decd871aeafbc89b7cce9f3d5c47a6a4f6131989a3f109707f04 | unchanged
+background/session-db.js | backup SHA256 f5d1cffcf1622ec3d3c33651f8a253704a0a6f181aea73bbe0a2ea50067e9343 | unchanged
+background/session-core.js | backup SHA256 00c85810f7c6499e3b1d495a00c1c7c68e2a9bbf0f983d7d6d460dbbc017046f | deadline checks changed
+background/service-worker.js | backup SHA256 b2d84f9be926555cdec398a3a296d87659765b47db8c21662230212f2b33fa2b | unchanged
+background/local-store.js | backup SHA256 d55960de2e96cd7988d9a31dc79fb4c194231bcf4ef9dd29b1cb2435b9b7bd18 | unchanged
+background/access-store.js | backup SHA256 1c41e37f233e07b9ce7198cc8853a2147e3bb3fbd7720d2f799197975974698d | unchanged
+.gitkeep | backup SHA256 e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855 | unchanged
+14 baseline files including .gitkeep: 13 byte-identical; session-core.js targeted fix.
+Manifest 0.1.5 entry point existence: PASS (not browser execution).

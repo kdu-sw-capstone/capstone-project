@@ -169,3 +169,22 @@
 - Chrome 사용자 실행 결과는 2026-10-08 fixture에서 `TEST_RUN_FINISHED_USE_NEW_TEST_PROFILE` 오류였다. `cf7910e`가 새 테스트 실행 준비 절차를 보완했으며, 그 수정 이후 Chrome 재실행 결과는 아직 전달되지 않았다. 해당 시나리오는 실패 후 수정·재검증 대기이고 통과가 아니다.
 - 현재 확인한 Chrome 설치 파일 버전은 `154.0.8037.98`; Codex가 Chrome UI를 검증한 것은 아니다. README의 이전 절대 경로 `C:\2221039\capstone-project`는 현재 작업공간과 달라 `C:\FOCURVE\capstone-project` 기준으로 바로잡는다.
 - 다음 행동: 윤종민이 같은 브랜치의 최신 커밋 `cf7910e`로 `extension/README.md` 절차를 수행한다. `새 검증 실행 준비` → READY → 적용 → example.com 차단/example.org 허용/해제 결과와 Chrome 버전을 전달한다. 그 전까지 PR 판정은 B (추가 작업 필요)다.
+
+
+## 2026-10-08 백업 v0.1.5 기반 재개 — Codex Linux
+
+- 담당: 사용자 지시 기준 윤종민의 Extension Core 범위. 다른 기능/담당을 재배정하지 않음. 이번 단위는 비회원 APPLY 기한 검증·STARTING 복구 결함 수정이다.
+- 초기 경로 `/workspace/capstone-project`, 브랜치 `work`, HEAD `1cddbbd0f1e4a1945337f5da5f17662aaad45633`, staged/unstaged/untracked 없음. fetch·원격 조회로 EXT-02 `c2bc866cd1848ed0f092c86d67e4ca897dab6e70`, develop `76df34ea6be1c591be33c29606c24fc654f61932` 확인. 기존 feature/extension-setup은 원격 head 목록에 없고 1af60bc는 로컬 객체에서 확인되지 않았다(원격 전체에 해당 SHA가 없다는 뜻은 아님).
+- 현재 재개 브랜치 `feature/extension-core-ext-02`, 기준 c2bc866. develop은 기준의 조상. 기존 원격 작업을 merge/rebase 없이 재개. Web/Server 파일은 이 브랜치에 이미 포함된 것으로 이번 수정 없음.
+- 입력: 전체 백업 ZIP은 32MiB 전송 한도로 미열람. 이후 사용자 제공 extension.zip(30,769 bytes)의 manifest·background·popup·blocked·README·tests/session-core.test.mjs를 직접 확인. 첨부 텍스트의 Commit/Push/PR 지시를 이번 사용자 요청으로 자동 실행하지 않음.
+- 비교: 원격 src/site-controller.js/검증 fixture와 백업 비회원 구현은 별도 경로다. 없는 파일만 추가 복원하고 원격 코드를 교체하지 않음. 백업 기준 14개 파일(.gitkeep 포함) 중 13개 byte-identical, session-core.js만 기한 보완. 백업 README는 extension/README-guest-backup.md에 원문 보존. 브라우저 ChatGPT의 원래 파일은 미제공이므로 그 파일들과의 동일성은 사용자 보고이며 독립 검증하지 않음.
+- 결함 재현: 기한 정각에도 APPLY 성공; 기한 누락/비정상 값으로 STARTING 복구가 RUNNING 성공 처리. 신규 4건 회귀에서 4 FAIL/기존 7 PASS를 먼저 확인. 이후 실행 전·실제 적용 확인 후·복구에 공통 유효 기한 및 now < execute_before 검사 적용. 기존 APPLY_EXPIRED/START_FAILED 해제 경로를 사용하고 DB/DEV_* 메시지/회원 API/공유 상태 계약 유지.
+- 자동 검증: Linux Node 24.19.0. 백업 기존 7/7 PASS; 수정 후 npm test 37/37 PASS(기존 실행 모듈 26 + 백업 7 + 회귀 4), 실패/스킵 0. npm run check PASS(background/popup/blocked와 .mjs 추가 검사), npm run build:harness PASS. [자동 결과와 백업 해시](../evidence/EXT-02-2026-10-08-backup-resume.txt). Chrome API·저장소는 모의이며 실제 Chrome/IndexedDB transaction/Windows는 미검증.
+- 이전 사용자 실행 결과: 이전 버전에서 사이트 수정/삭제, 현재 스냅샷 유지, 다음 세션 변경 적용, 재시작 저장 유지 성공 보고. 이번 코드의 새 검증 결과로 합산하지 않음. 원격 fixture 오류·수정 후 재검증 대기는 앞 기록대로 유지.
+- LOG-01: 백업에 DEV_ACCESS_LIST 최근 20건 개발용 조회가 이미 존재하여 보존. v0.1.6 기간/필터/페이지네이션은 미추가. LOG-01 상태 변경 없음.
+- 남은 사항: 두 실행 경로는 미연결; 제품 로컬 메시지·회원 설치 인증·서버 명령/reconcile/report와 Windows/Chrome 실제 검증 미완료. 백업의 탐색 host 마지막 점 처리도 별도 경계 보완 필요(원격 모듈의 검증이 백업 검증을 대신하지 않음). EXT-02 전체 완료 아님.
+- 다음: extension/README.md의 복원 비회원 확장 절차로 현재 수정본 Windows/Chrome 재검증 및 사용자 실행 결과 기록. 기존 계약에 맞춘 후속 경계/모듈 연결은 별도 단위로 검토. EXT-01/EXT-03 등 다른 기능 새 구현 없음. Commit/Push/PR는 실행하지 않음.
+
+### Commit·Push 재개 승인
+
+사용자가 첨부 작업 지시의 Commit·Push 허용을 확인한 뒤 “해봐”로 실행을 명시했다. feature/extension-core-ext-02에 이번 백업 복원·기한 수정·회귀 테스트·문서만 Commit·Push한다. 실행 전 원격 tip은 c2bc866으로 로컬 기준과 같았으며 자동 테스트 37/37 및 문법 검사를 재확인했다. main/develop 및 force push는 대상이 아니다. 실제 Push 성공 여부와 커밋 SHA는 실행 후 Git 원격 확인 결과로 보고한다.

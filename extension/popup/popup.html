@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>FOCURVE 개발 확인</title>
+  <link rel="stylesheet" href="popup.css">
+  <script src="popup.js" defer></script>
+</head>
+<body>
+  <main>
+    <h1>FOCURVE</h1>
+    <p>확장프로그램 기본 구조 · 개발 확인</p>
+    <button id="check-core" type="button">Core 연결 확인</button>
+    <p id="result" role="status" aria-live="polite">버튼을 눌러 연결을 확인해주세요.</p>
+    <button id="check-storage" type="button">게스트 저장 확인</button>
+    <p id="storage-result" role="status" aria-live="polite">저장 확인 버튼을 눌러주세요.</p>
+    <section aria-labelledby="focus-title">
+      <h2 id="focus-title">게스트 집중</h2>
+      <label>집중 시간(분) <input id="focus-minutes" type="number" min="1" max="180" step="1" value="25"></label>
+      <button id="start-focus" type="button" disabled>집중 시작</button>
+      <button id="end-focus" type="button" disabled>집중 종료</button>
+      <button id="refresh-focus" type="button">상태 다시 확인</button>
+      <p id="focus-result" role="status" aria-live="polite">실제 집중 상태를 확인하고 있습니다…</p>
+      <p class="note">시작 시 저장된 설정으로 차단하며, 이후 설정은 다음 세션에 적용됩니다. 접근 기록은 아래에서 확인할 수 있습니다.</p>
+    </section>
+    <section aria-labelledby="access-title">
+      <h2 id="access-title">현재·최근 세션 접근 기록</h2>
+      <button id="refresh-access" type="button">접근 기록 확인</button>
+      <p id="access-result" role="status" aria-live="polite">버튼을 눌러 로컬 기록을 확인해주세요.</p>
+      <ul id="access-list"></ul>
+      <p class="note">최신 세션의 최근 20건입니다. 주소 입력·링크·새로고침으로 확인된 최상위 페이지 탐색을 수집합니다. 페이지 내부 이동·실패한 탐색·서버 전송은 후속 단계입니다.</p>
+    </section>
+    <section aria-labelledby="sites-title">
+      <h2 id="sites-title">게스트 사이트</h2>
+      <p id="site-mode">새 사이트 등록</p>
+      <form id="site-form">
+        <label>사이트 주소 <input id="site-url" required maxlength="2048" placeholder="example.com"></label>
+        <label>이름 <input id="site-name" required maxlength="100" placeholder="테스트 사이트"></label>
+        <label class="checkbox"><input id="site-subdomains" type="checkbox" checked> 하위 도메인 포함</label>
+        <label>분류 <select id="site-purpose"><option value="DISTRACTION">방해</option><option value="FOCUS">집중</option><option value="GENERAL">일반</option></select></label>
+        <label>정책 <select id="site-policy"><option value="BLOCK">차단</option><option value="RECORD">기록</option></select></label>
+        <button id="save-site" type="submit">사이트 등록</button>
+        <button id="cancel-edit" type="button" hidden>수정 취소</button>
+      </form>
+      <button id="reload-sites" type="button">목록 다시 확인</button>
+      <p id="site-result" role="status" aria-live="polite">등록한 설정은 이후 집중 세션에 사용됩니다.</p>
+      <ul id="site-list"></ul>
+    </section>
+    <p class="note">게스트 집중·사이트 차단 개발 단계입니다. 회원 연결과 이벤트 서버 전송은 후속 단계입니다.</p>
+  </main>
+</body>
+</html>

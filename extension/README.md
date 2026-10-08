@@ -2,7 +2,7 @@
 
 Manifest V3 기반으로 브라우저 정책 적용·해제, 내부 기능 제한, 접근 이벤트 수집과 비회원 로컬 이용을 구현합니다.
 
-현재 EXT-02의 **사이트 전체 차단 실행 모듈**을 구현했습니다. 제품 팝업·세션·회원 연결은 아직 연결하지 않았습니다. `src/`는 실제 DNR·탭 API를 주입받는 실행 코드이고, `tests/chrome/`과 `.chrome-harness/`는 모의 Core 문맥을 사용하는 검증 전용 확장입니다. 검증용 패키지를 제품 완성본으로 사용하지 않습니다.
+현재 EXT-02의 **사이트 전체 차단 실행 모듈**과 백업에서 복원한 **v0.1.5 비회원 로컬 확장**이 함께 있습니다. 두 구현은 아직 연결하지 않았고 회원 연결도 미구현입니다. `background/`·`popup/`·`blocked/`·`manifest.json`은 기존 비회원 구현입니다. `src/`는 실제 DNR·탭 API를 주입받는 실행 코드이고, `tests/chrome/`과 `.chrome-harness/`는 모의 Core 문맥을 사용하는 검증 전용 확장입니다. 검증용 패키지를 제품 완성본으로 사용하지 않습니다.
 
 [기능·화면 설계](../docs/design/01_UX_기능설계/) · [시스템 설계](../docs/design/02_시스템_테크설계/) · [개발 계획](../docs/implementation/개발운영.md)
 
@@ -30,7 +30,7 @@ PowerShell 실행 정책으로 `npm.ps1`이 차단되면 보안 정책을 바꾸
 
 Node가 PATH에 없으면 공식 Node.js 배포본으로 Node 24.x를 설치하고 위 명령의 `node --version`, `npm --version` 결과를 확인한 뒤 진행합니다. Web 의존성은 설치할 필요가 없습니다.
 
-제품 모듈은 별도 번들 빌드가 없는 ES module입니다. 검증용 패키지 생성 명령은 실제로 존재하는 `npm run build:harness`이며, 생성된 manifest 경로는 `extension/.chrome-harness/manifest.json`입니다. 산출물은 Git 제외입니다. `extension/` 자체에는 제품 manifest가 없으므로 그 폴더를 직접 로드하지 않습니다.
+제품 모듈은 별도 번들 빌드가 없는 ES module입니다. 검증용 패키지 생성 명령은 실제로 존재하는 `npm run build:harness`이며, 생성된 manifest 경로는 `extension/.chrome-harness/manifest.json`입니다. 산출물은 Git 제외입니다. 별도 실행 모듈 검증에는 `.chrome-harness/`를, 복원한 비회원 확장 검증에는 `extension/manifest.json`이 있는 `extension/`을 로드합니다.
 
 ## 이번 실행 모듈의 경계
 
@@ -87,3 +87,18 @@ await chrome.declarativeNetRequest.getSessionRules()
 현재 Server는 health·DB 개발 기반만 있으며 제품 인증·API-EXT-01~07·API-EXEC-01~03이 없습니다. 이 fixture는 Server 응답을 정상으로 가장하거나 회원 API를 호출하지 않습니다. 제품 manifest·신뢰된 Core 문맥·IndexedDB 원자 저장·ExecutionReport/outbox·세션 상태 연결도 필요합니다. 따라서 현재 실행 가능한 회원 연동 명령·순서를 만들지 않습니다.
 
 선행 준비 후 DB → Server → Web → 연결된 제품 Extension 순으로 실행하고 API-EXEC-03 journal 대조 → 명령 조회 → 로컬 journal 저장 → 실제 적용 확인 → 동일 report 저장/전송을 검증해야 합니다. 서비스의 구체 실행 명령과 인증 설정은 해당 담당의 구현·README 확정 후 추가합니다. 기존 개발 기반 README의 health 성공은 제품 API 성공 근거가 아닙니다.
+
+
+## 백업 v0.1.5 재개 — 2026-10-08
+
+사용자 제공 `extension.zip`의 기존 구현을 추가 복원했습니다. 원격 브랜치의 기존 코드·검증 fixture는 보존했습니다. 백업 README 원문은 [README-guest-backup.md](README-guest-backup.md)에 보존하며, 그 문서의 개인 PC 절대 경로는 현재 환경의 경로가 아닙니다.
+
+- 비회원 확장 로드 경로: 현재 저장소의 `extension/` (manifest 버전 0.1.5, 이번 로컬 수정 포함). 기존 팝업·설정 DB·실행 DB 형식을 유지합니다.
+- 자동 검증: `extension/`에서 `npm test`, `npm run check`. 기존 실행 모듈 26건 + 백업 세션 7건 + 기한 회귀 4건 = 37건입니다. Chrome API와 저장소는 모의이며 실제 IndexedDB·Chrome 검증을 대체하지 않습니다.
+- 수정: APPLY 실행 전·실제 적용 확인 후·워커 STARTING 복구에서 기한 누락/비정상 값과 `now >= execute_before`를 거절하고 기존 해제 경로로 정리합니다. 기존 `APPLY_EXPIRED` 오류를 재사용합니다.
+- 비회원 확장은 별도 빌드 없이 로드합니다. `.chrome-harness/`는 별도 모듈의 검증용이며 두 확장을 같은 것으로 해석하지 않습니다.
+- 백업에 이미 있던 `DEV_ACCESS_LIST` 최근 20건 개발용 조회는 보존했습니다. LOG-01 v0.1.6 필터·기간·페이지네이션을 추가하지 않았고 LOG-01 완료로 표시하지 않습니다.
+
+Windows 재검증은 별도 테스트 프로필에서 현재 `extension/`을 로드한 뒤 BLOCK/RECORD/ALLOW 사이트 등록 → 집중 시작 → BLOCK 차단·RECORD/ALLOW 방문 → 실행 중 설정 수정/삭제 → 현재 스냅샷 유지 → 종료·해제 → 다음 시작에 변경 반영 순서로 수행합니다. 워커 중단 후에는 같은 세션의 journal/규칙 대조, Chrome 완전 종료 후에는 이전 세션 INTERRUPTED·규칙 해제와 사이트 설정 보존을 확인합니다. 각 결과에 코드 기준(`git rev-parse HEAD` 및 미커밋 변경 여부)·Windows/Chrome 버전을 남깁니다. 이번 수정의 기한 경계·잘못된 journal 검증은 자동 모의 결과이며 실사용 DB를 조작해 재현하지 않습니다.
+
+이전 버전의 사용자 Chrome 성공 보고와 이번 Linux Node 24.19.0 자동 결과는 구분합니다. 현재 수정본의 Windows/Chrome·회원/Server 실제 연동은 미검증입니다.
