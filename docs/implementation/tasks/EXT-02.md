@@ -366,3 +366,15 @@
 - 실행: Node 24.19.0 Linux, npm --prefix extension test 74/74(기존69+신규5), 실패·스킵0. check/diff 확인 성공. Chrome/IndexedDB는 모의 구현, 실제 Worker stop 결과 아님.
 - 제품 코드 변경 없음. 실제 Chrome에서는 현재 제품 설치로 worker stop 후 상태 재확인 가능. 절차는 evidence/EXT-02-Worker-recovery.md 참조.
 - 미검증: 실제 Chrome Worker 단독 중단, 실제 서버·회원/전송/승인/Content/전역 정책·강제 quota, Figma UI. 실패: 최종 자동0. 조율 필요: 기존 계약 통합/Figma 원본 접근. 다음 행동: 사용자 Worker stop 검증, Figma 프레임 확보·UI 적용, 실제 Server 대조 후 팀 재검토. 전체EXT-02 완료/병합 없음.
+
+### 비회원 제품 팝업 UI 착수
+
+- EXT-02 / 윤종민 Core, 시작 HEAD df646f3, feature/extension-core-ext-02, working tree clean.
+- 기준: 사용자 디자인 retry ZIP의 원본 PNG22/13프레임 속성. 비회원 메인/목록/수정/진행/종료·기록 라이트/다크. 기존 등록폼 유지(독립 디자인 없음), 미구현 Shorts/계정 연결 성공 표시 금지. 차단 안내 목적지 충돌은 별도이며 이번 팝업 단위에서 변경하지 않음.
+
+### 비회원 제품 팝업 UI 구현·모의 검증
+
+- 기존 요청/저장/세션 Core를 유지한 제품 popup 표시 계층과 라이트/다크 전환, 사이트 화면/종료 확인/결과 연결. 디자인 예시 숫자/미구현 기능 성공 표시 없이 실제 응답과 고정 snapshot을 사용. 상세 범위·원본 프레임·차이·수동 절차: [팝업 UI 검증 기록](../evidence/EXT-02-popup-ui.md).
+- Node 제품/adapter 모의74/74, 제품 HTML+모의Chrome API Chromium UI16항목 통과. JS check/검증용 harness 빌드 성공. UI PNG는 모의 API 화면으로 실제 설치 결과와 구분.
+- 이전 사용자 Worker stop 모두 정상 보고 반영. 이전 코드의 사용자 수동 보고이며 이번 UI 검증으로 승계하지 않음.
+- 미검증: 최신 UI 실제 제품 Chrome, Server/회원/Content·보고/승인/통합복구, 차단 안내 및 나머지 디자인. 실패: 최종 자동0. 조율 필요: 차단 안내 비회원 목적지/디자인 누락 자산·폰트/공유 계약. 다음 행동: 사용자 UI 점검 후 별도 차단 안내 반영 및 팀 PR17 재검토. 병합 없음, 전체 EXT-02 완료 아님.

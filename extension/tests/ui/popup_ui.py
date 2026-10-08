@@ -1,0 +1,45 @@
+"""Product popup with mocked chrome.runtime/storage in Chromium; NOT an extension/DNR test.
+Run: python extension/tests/ui/popup_ui.py (requires Python playwright + Chromium).
+"""
+from pathlib import Path
+import http.server, threading, functools, json, shutil
+from playwright.sync_api import sync_playwright, expect
+root=Path(__file__).resolve().parents[2]
+evidence=root.parent/'docs/implementation/evidence/popup-ui'
+evidence.mkdir(parents=True,exist_ok=True)
+class Quiet(http.server.SimpleHTTPRequestHandler):
+    def log_message(self,*args): pass
+server=http.server.ThreadingHTTPServer(('127.0.0.1',0),functools.partial(Quiet,directory=str(root)))
+threading.Thread(target=server.serve_forever,daemon=True).start()
+mock=r'''window.mock={state:null,fail:false,gate:null,calls:[],items:[{site_id:'s1',version:1,canonical_host:'naver.com',display_name:'네이버',purpose:'DISTRACTION',access_policy:'BLOCK',include_subdomains:true}]};window.chrome={storage:{local:{get:async()=>({focurve_ui_theme:'dark'}),set:async data=>{window.savedTheme=data.focurve_ui_theme}}},runtime:{sendMessage:async m=>{mock.calls.push(m);if(mock.failUpdate&&m.type==='DEV_GUEST_SITE_UPDATE')return {request_id:m.request_id,status:'ERROR',data:null,error:{code:'VERSION_CONFLICT'}};let data=null;if(mock.fail&&m.type==='DEV_SESSION_STATE')throw Error('OFFLINE');if(m.type==='DEV_GUEST_SITE_LIST')data={items:mock.items};if(m.type==='DEV_SESSION_STATE')data=mock.state;if(m.type==='DEV_SESSION_START'){await new Promise(resolve=>mock.gate=resolve);mock.state={session_id:'session1',status:'RUNNING',started_at:new Date().toISOString(),planned_end_at:new Date(Date.now()+1500000).toISOString(),snapshot:{sites:structuredClone(mock.items)}};data=mock.state;}if(m.type==='DEV_SESSION_END'){await new Promise(resolve=>mock.gate=resolve);mock.state={...mock.state,status:'ENDED',active_duration_ms:65000};data=mock.state;}if(m.type==='DEV_ACCESS_LIST')data={session_id:mock.state?.session_id,items:[],total_access:0,repeat_access:0};if(m.type==='DEV_GUEST_SITE_UPDATE'){const i=mock.items.findIndex(s=>s.site_id===m.payload.site_id);data={...mock.items[i],...m.payload.site,canonical_host:m.payload.site.url,version:mock.items[i].version+1};mock.items[i]=data;}if(m.type==='DEV_GUEST_SITE_DELETE'){data={site_id:m.payload.site_id,deleted_at:new Date().toISOString()};mock.items=mock.items.filter(s=>s.site_id!==m.payload.site_id);}if(m.type==='DEV_GUEST_SITE_CREATE'){data={...m.payload,canonical_host:m.payload.url,site_id:'s2',version:1};mock.items.push(data);}return {request_id:m.request_id,status:'OK',data,error:null};}}};'''
+checks=[]
+try:
+ with sync_playwright() as pw:
+  browser=pw.chromium.launch(headless=True,executable_path=shutil.which("chromium"))
+  page=browser.new_page(viewport={'width':400,'height':675},device_scale_factor=1)
+  errors=[];page.on('pageerror',lambda error:errors.append(str(error)))
+  page.add_init_script(mock)
+  page.goto(f'http://127.0.0.1:{server.server_port}/popup/popup.html')
+  expect(page.locator('#start-focus')).to_be_enabled();expect(page.locator('#policy-summary')).to_contain_text('차단 1개');checks.append('initial verified state / dynamic policies')
+  page.screenshot(path=str(evidence/'main-dark.png'),full_page=True)
+  page.locator('#preferences').click();page.locator('#theme-mode').select_option('light');expect(page.locator('html')).to_have_attribute('data-theme','light');assert page.evaluate('savedTheme')=='light';page.locator('#preferences summary').click();page.screenshot(path=str(evidence/'main-light.png'),full_page=True);checks.append('theme selection and persistence request')
+  page.locator('nav [data-page=sites]').click();expect(page.locator('#site-list')).to_contain_text('네이버');page.locator('#site-search').fill('missing');expect(page.locator('#site-list li')).to_be_hidden();page.locator('#site-search').fill('');checks.append('site navigation and search')
+  page.locator('#site-list button').filter(has_text='수정').click();expect(page.locator('#site-url')).to_have_value('naver.com');page.locator('#cancel-edit').click();expect(page.locator('#site-editor')).to_be_hidden();checks.append('existing edit and cancel preserved')
+  page.locator('#add-site').click();page.locator('#site-url').fill('example.com');page.locator('#site-name').fill('예시');page.locator('#save-site').click();expect(page.locator('#site-list')).to_contain_text('example.com');checks.append('registration uses existing adapter')
+  page.screenshot(path=str(evidence/'sites-light.png'),full_page=True)
+  page.locator('#site-list li').filter(has_text='example.com').get_by_role('button',name='수정',exact=True).click();page.locator('#site-name').fill('수정한 이름');page.screenshot(path=str(evidence/'edit-light.png'),full_page=True);page.locator('#save-site').click();expect(page.locator('#site-list')).to_contain_text('수정한 이름');assert page.evaluate("mock.calls.find(m=>m.type==='DEV_GUEST_SITE_UPDATE').payload.expected_version")==1;checks.append('edit forwards expected version')
+  page.evaluate('mock.failUpdate=true');page.locator('#site-list li').filter(has_text='example.com').get_by_role('button',name='수정',exact=True).click();page.locator('#site-name').fill('충돌 후 보존');page.locator('#save-site').click();expect(page.locator('#site-result')).to_contain_text('다른 화면');expect(page.locator('#site-name')).to_have_value('충돌 후 보존');page.locator('#cancel-edit').click();page.evaluate('mock.failUpdate=false');checks.append('version conflict preserves unsaved input')
+  row=page.locator('#site-list li').filter(has_text='example.com');row.get_by_role('button',name='삭제',exact=True).click();assert not page.evaluate("mock.calls.some(m=>m.type==='DEV_GUEST_SITE_DELETE')");row.get_by_role('button',name='삭제 확인',exact=True).click();expect(page.locator('#site-list')).not_to_contain_text('example.com');checks.append('delete requires confirmation')
+  page.locator('#sites-page [data-page=focus]').click();page.locator('#start-focus').click();expect(page.locator('#focus-title')).not_to_have_text('집중 진행 중');expect(page.locator('#focus-countdown')).to_be_hidden();checks.append('pending apply never shows running')
+  page.evaluate('mock.gate()');expect(page.locator('#focus-title')).to_have_text('집중 진행 중');expect(page.locator('#focus-countdown')).to_be_visible();page.screenshot(path=str(evidence/'running-light.png'),full_page=True)
+  page.evaluate("mock.items.push({site_id:'later',canonical_host:'later.com',display_name:'다음 세션',purpose:'DISTRACTION',access_policy:'BLOCK'})");page.locator('#focus-page [data-page=sites]').click();page.locator('#reload-sites').click();expect(page.locator('#site-list')).to_contain_text('later.com');page.locator('#sites-page [data-page=focus]').click();expect(page.locator('#policy-summary')).to_contain_text('차단 1개');checks.append('running summary uses frozen snapshot')
+  page.locator('#request-end').click();expect(page.locator('#end-dialog')).to_be_visible();page.locator('#continue-focus').click();expect(page.locator('#end-dialog')).not_to_be_visible();assert not page.evaluate("mock.calls.some(m=>m.type==='DEV_SESSION_END')");checks.append('cancel end sends no end request')
+  page.locator('#request-end').click();page.locator('#end-focus').click();expect(page.locator('#result-page')).to_be_hidden();expect(page.locator('#focus-countdown')).to_be_hidden();checks.append('pending release never shows completed result')
+  page.evaluate('mock.gate()');expect(page.locator('#result-page')).to_be_visible();expect(page.locator('#session-summary')).to_contain_text('1분 5초');expect(page.locator('#recent-result')).to_contain_text('접근 0회');page.screenshot(path=str(evidence/'result-light.png'),full_page=True);checks.append('confirmed release displays confirmed duration')
+  page.locator('#next-session').click();expect(page.locator('#start-focus')).to_be_enabled();page.evaluate('mock.fail=true');page.locator('#preferences summary').click();page.locator('#refresh-focus').click();expect(page.locator('#start-focus')).to_be_disabled();expect(page.locator('#focus-countdown')).to_be_hidden();checks.append('failed refresh prevents start / stale progress')
+  page.evaluate("mock.fail=false;mock.state={session_id:'bad',status:'RUNNING'}");page.locator('#refresh-focus').click();expect(page.locator('#focus-title')).to_have_text('실제 상태를 확인해주세요');expect(page.locator('#focus-countdown')).to_be_hidden();checks.append('malformed running response rejected')
+  page.evaluate("mock.state={session_id:'uncertain',status:'UNKNOWN',snapshot:{sites:mock.items}}");page.locator('#refresh-focus').click();expect(page.locator('#request-end')).to_have_text('차단 해제 다시 확인');expect(page.locator('#start-focus')).to_be_disabled();expect(page.locator('#focus-countdown')).to_be_hidden();checks.append('unconfirmed recovery offers release retry without running')
+  assert not errors,errors
+  browser.close()
+ print(json.dumps({'kind':'product HTML + mocked Chrome API in Chromium','passed':len(checks),'checks':checks},ensure_ascii=False,indent=2))
+finally:server.shutdown();server.server_close()

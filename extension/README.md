@@ -121,3 +121,9 @@ Windows Chrome에서는 이번 Push의 `extension/`을 별도 테스트 프로�
 | D6 | 집중 종료 후 example.com과 example.com. 재접근 | 소유 차단 규칙 해제, FOCURVE 안내로 이동하지 않음 |
 
 차단 안내 페이지가 이미 열린 경우 종료만으로 원래 주소가 자동 복원되지는 않으므로 주소를 다시 입력합니다. D1~D6 결과와 Windows/Chrome 버전·대상 커밋·오류 코드만 전달하면 작업카드에 사용자 실행 결과로 기록합니다. 개인 URL·전체 탭 목록·인증 값은 필요 없습니다. 이전 기본 1~6번 성공 보고는 이전 코드 결과로 보존하며 위 신규 항목의 성공으로 자동 처리하지 않습니다.
+
+## 비회원 제품 팝업 UI 점검
+
+제품은 `popup/popup.html`이며 Figma 전달 자료의 비회원 팝업을 적용했습니다. 기존 API/저장/정책 Core를 재사용합니다. 최신 실제 Chrome 검증은 별도이며 전체 디자인/EXT-02 완료가 아닙니다. [범위·디자인 차이·수동 절차·검증 구분](../docs/implementation/evidence/EXT-02-popup-ui.md)을 확인하세요.
+
+`npm run test:popup-ui`는 Python Playwright와 Chromium이 준비된 환경에서 실행합니다. 실제 제품 HTML을 모의 Chrome API로 검사하며 확장 설치/DNR 검증을 대신하지 않습니다. npm ci는 Python/브라우저를 설치하지 않습니다. `.chrome-harness/`는 검증용이며 제품 설치 폴더는 `extension/`입니다.

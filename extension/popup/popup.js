@@ -76,7 +76,7 @@ const errors = {
  SITE_NOT_FOUND:'이미 삭제됐거나 찾을 수 없는 사이트입니다. 목록을 다시 확인해주세요.',
  LOCAL_DATA_INVALID:'저장된 데이터를 확인할 수 없습니다. 데이터를 삭제하지 말고 오류를 알려주세요.'
 };
-let pendingSave=null, editTarget=null, siteBusy=false, listRevision=0;
+let pendingSave=null, editTarget=null, siteBusy=false, listRevision=0, siteItems=[], sitesVerified=false;
 const pendingDeletes=new Map();
 function updatePolicyOptions(value){
  policy.replaceChildren();
@@ -93,7 +93,8 @@ function setSiteBusy(value){
 }
 function stopEditing(){
  editTarget=null;pendingSave=null;siteForm.reset();updatePolicyOptions();
- siteMode.textContent='새 사이트 등록';saveSite.textContent='사이트 등록';cancelEdit.hidden=true;
+ siteMode.textContent='새 사이트 등록';saveSite.textContent='사이트 등록';cancelEdit.hidden=false;
+ window.FocurvePopupUI?.editor(false);
 }
 function startEditing(site){
  if(siteBusy)return;
@@ -105,7 +106,8 @@ function startEditing(site){
  siteMode.textContent=`수정 중: ${site.display_name} (버전 ${site.version})`;
  saveSite.textContent='수정 저장';cancelEdit.hidden=false;
  siteResult.textContent='변경은 다음 집중 세션부터 적용됩니다.';
- document.querySelector('#site-name').focus();
+ window.FocurvePopupUI?.editor(true);
+ document.querySelector('#site-url').focus();
 }
 cancelEdit.addEventListener('click',()=>{if(!siteBusy){stopEditing();siteResult.textContent='수정을 취소했습니다. 저장된 설정은 그대로입니다.';}});
 async function siteRequest(type,payload,requestId=crypto.randomUUID()){
@@ -133,16 +135,21 @@ async function refreshSites(){
  const revision=++listRevision;const data=await siteRequest('DEV_GUEST_SITE_LIST');
  if(!Array.isArray(data?.items))throw new Error('RESPONSE_UNCONFIRMED');
  if(revision!==listRevision)return;
+ siteItems=data.items;sitesVerified=true;
  siteList.replaceChildren();
  for(const site of data.items){
   const row=document.createElement('li');const description=document.createElement('span');
-  description.textContent=`${site.display_name} · ${site.canonical_host} · ${labels[site.purpose]} / ${labels[site.access_policy]}${site.include_subdomains?' · 하위 도메인 포함':''}`;
+  const name=document.createElement('strong');name.textContent=site.display_name;
+  const metadata=document.createElement('small');metadata.textContent=`${site.canonical_host} · ${labels[site.access_policy]}`;
+  description.title=`${labels[site.purpose]} / ${labels[site.access_policy]}${site.include_subdomains?' · 하위 도메인 포함':' · 정확한 호스트만'}`;
+  description.append(name,metadata);
   const controls=document.createElement('div');controls.className='site-actions';
   controls.append(actionButton('수정',()=>startEditing(site)),actionButton('삭제',()=>confirmDelete(site,row)));
   row.append(description,controls);siteList.append(row);
  }
  if(!data.items.length){const row=document.createElement('li');row.textContent='등록된 사이트가 없습니다.';siteList.append(row);}
  for(const button of siteList.querySelectorAll('button'))button.disabled=siteBusy;
+ window.FocurvePopupUI?.renderSites();
 }
 async function deleteSite(site){
  if(siteBusy)return;setSiteBusy(true);
@@ -170,7 +177,7 @@ siteForm.addEventListener('submit',async event=>{
  try{
   const saved=await siteRequest(type,payload,pendingSave.request_id);
   if(typeof saved?.canonical_host!=='string')throw new Error('RESPONSE_UNCONFIRMED');
-  pendingSave=null;if(editing)stopEditing();
+  pendingSave=null;stopEditing();
   siteResult.textContent=`${editing?'수정':'등록'} 완료: ${saved.canonical_host}. 변경은 다음 집중 세션부터 적용됩니다.`;
   try{await refreshSites();}catch{siteResult.textContent+=' 목록 조회 실패. 목록 다시 확인을 눌러주세요.';}
  }catch(error){siteResult.textContent=errors[error.message]||'저장 결과를 확인하지 못했습니다. 입력을 유지한 채 다시 저장을 눌러주세요.';}
@@ -189,7 +196,7 @@ const endFocus = document.querySelector('#end-focus');
 const refreshFocus = document.querySelector('#refresh-focus');
 const focusMinutes = document.querySelector('#focus-minutes');
 const focusResult = document.querySelector('#focus-result');
-let focusSession = null, focusBusy = false, pendingStart = null;
+let focusSession = null, focusBusy = false, pendingStart = null, focusVerified=false;
 const focusStates = {STARTING:'차단 적용 확인 중',RUNNING:'집중 진행 중',ENDING:'차단 해제 확인 중',ENDED:'집중 종료 · 해제 확인 완료',INTERRUPTED:'재시작 또는 정책 변경으로 중단 · 해제 확인 완료',START_FAILED:'시작 실패 · 해제 확인 완료',UNKNOWN:'결과 미확인 · 해제 재확인 필요'};
 function showFocus(session) {
  focusSession=session;
@@ -199,22 +206,33 @@ function showFocus(session) {
  refreshFocus.disabled=focusBusy;
  const remaining=session?.planned_end_at?Math.max(0,Math.ceil((Date.parse(session.planned_end_at)-Date.now())/60000)):null;
  focusResult.textContent=session?`${focusStates[session.status]||'상태 미확인'}${session.status==='RUNNING'?`\n남은 시간: 약 ${remaining}분`:''}\n세션 ID: ${session.session_id}${session.last_error_code?`\n오류: ${session.last_error_code}`:''}`:'진행 중인 집중 세션이 없습니다.';
+ window.FocurvePopupUI?.renderFocus();
 }
-async function refreshFocusState(){showFocus(await siteRequest('DEV_SESSION_STATE'));}
+function validateFocusSession(session,required=false){
+ if(!session){if(required)throw new Error('RESPONSE_UNCONFIRMED');return;}
+ if(!Object.hasOwn(focusStates,session.status)||typeof session.session_id!=='string'||!session.session_id||session.status==='RUNNING'&&(!Number.isFinite(Date.parse(session.started_at))||!Number.isFinite(Date.parse(session.planned_end_at))))throw new Error('RESPONSE_UNCONFIRMED');
+}
+async function refreshFocusState(){
+ focusVerified=false;window.FocurvePopupUI?.renderFocus();
+ try{const session=await siteRequest('DEV_SESSION_STATE');
+  validateFocusSession(session);
+  focusVerified=true;showFocus(session);
+ }catch(error){focusVerified=false;window.FocurvePopupUI?.renderFocus();throw error;}
+}
 startFocus.addEventListener('click',async()=>{
  const minutes=Number(focusMinutes.value);
- if(!Number.isInteger(minutes)||minutes<1||minutes>180){focusResult.textContent='집중 시간은 1~180분 정수로 입력해주세요.';return;}
+ if(!Number.isInteger(minutes)||minutes<1||minutes>180){focusResult.textContent='집중 시간은 1~180분 정수로 입력해주세요.';document.querySelector('#focus-feedback').textContent=focusResult.textContent;return;}
  if(!pendingStart||pendingStart.minutes!==minutes)pendingStart={minutes,id:crypto.randomUUID()};
  focusBusy=true;showFocus(focusSession);focusResult.textContent='차단을 적용하고 실제 상태를 확인하고 있습니다…';let actionError=null;
- try{const s=await siteRequest('DEV_SESSION_START',{duration_minutes:minutes},pendingStart.id);pendingStart=null;showFocus(s);}
+ try{const s=await siteRequest('DEV_SESSION_START',{duration_minutes:minutes},pendingStart.id);validateFocusSession(s,true);pendingStart=null;focusVerified=true;showFocus(s);}
  catch(error){actionError=`시작 결과 확인 실패 (${error.message}). 현재 상태를 확인해주세요.`;focusResult.textContent=actionError;}
- finally{focusBusy=false;startFocus.disabled=true;endFocus.disabled=true;refreshFocus.disabled=false;try{await refreshFocusState();if(actionError)focusResult.textContent+='\n'+actionError;}catch{focusResult.textContent+='\n상태 조회 실패. 성공으로 확인되지 않았습니다.';}}
+ finally{focusBusy=false;startFocus.disabled=true;endFocus.disabled=true;refreshFocus.disabled=false;try{await refreshFocusState();if(actionError){focusResult.textContent+='\n'+actionError;document.querySelector('#focus-feedback').textContent=actionError;}}catch{focusResult.textContent+='\n상태 조회 실패. 성공으로 확인되지 않았습니다.';}}
 });
 endFocus.addEventListener('click',async()=>{
  if(!focusSession)return;focusBusy=true;showFocus(focusSession);focusResult.textContent='차단 해제를 확인하고 있습니다…';let actionError=null;
- try{showFocus(await siteRequest('DEV_SESSION_END',{session_id:focusSession.session_id}));}
+ try{const s=await siteRequest('DEV_SESSION_END',{session_id:focusSession.session_id});validateFocusSession(s,true);focusVerified=true;showFocus(s);}
  catch(error){actionError=`종료 결과 확인 실패 (${error.message}). 현재 상태를 확인해주세요.`;focusResult.textContent=actionError;}
- finally{focusBusy=false;startFocus.disabled=true;endFocus.disabled=true;refreshFocus.disabled=false;try{await refreshFocusState();if(actionError)focusResult.textContent+='\n'+actionError;}catch{focusResult.textContent+='\n상태 조회 실패. 해제 완료로 확인되지 않았습니다.';}}
+ finally{focusBusy=false;startFocus.disabled=true;endFocus.disabled=true;refreshFocus.disabled=false;try{await refreshFocusState();if(actionError){focusResult.textContent+='\n'+actionError;document.querySelector('#focus-feedback').textContent=actionError;}}catch{focusResult.textContent+='\n상태 조회 실패. 해제 완료로 확인되지 않았습니다.';}}
 });
 refreshFocus.addEventListener('click',()=>{refreshFocusState().catch(()=>{startFocus.disabled=true;endFocus.disabled=true;focusResult.textContent='상태 확인 실패. 다시 확인해주세요.';});});
 refreshFocusState().catch(()=>{focusResult.textContent='상태 확인 실패. 상태 다시 확인을 눌러주세요.';});
@@ -222,11 +240,13 @@ refreshFocusState().catch(()=>{focusResult.textContent='상태 확인 실패. �
 const refreshAccess = document.querySelector('#refresh-access');
 const accessResult = document.querySelector('#access-result');
 const accessList = document.querySelector('#access-list');
+let accessData=null;
 refreshAccess.addEventListener('click', async () => {
  refreshAccess.disabled=true;accessResult.textContent='저장된 접근 기록을 확인하고 있습니다…';
  try{
   const data=await siteRequest('DEV_ACCESS_LIST');
   if(!Array.isArray(data?.items)||!Number.isSafeInteger(data.total_access)||!Number.isSafeInteger(data.repeat_access))throw new Error('INVALID_ACCESS_RESPONSE');
+  accessData=data;window.FocurvePopupUI?.renderRecords();
   accessList.replaceChildren();
   accessResult.textContent=data.session_id?`이 세션의 수집된 전체 ${data.total_access}회 · 반복 ${data.repeat_access}회 (부분 기록)`:'조회할 집중 세션이 없습니다.';
   for(const event of data.items){
@@ -236,6 +256,6 @@ refreshAccess.addEventListener('click', async () => {
    accessList.append(row);
   }
   if(data.session_id&&!data.items.length){const row=document.createElement('li');row.textContent='이 세션에 저장된 접근 기록이 없습니다.';accessList.append(row);}
- }catch{accessResult.textContent='기록을 조회하지 못했습니다. 다시 확인해주세요.';accessList.replaceChildren();}
+ }catch{accessData=null;window.FocurvePopupUI?.renderRecords();accessResult.textContent='기록을 조회하지 못했습니다. 다시 확인해주세요.';accessList.replaceChildren();}
  finally{refreshAccess.disabled=false;}
 });
