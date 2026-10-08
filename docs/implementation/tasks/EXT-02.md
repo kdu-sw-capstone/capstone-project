@@ -152,3 +152,11 @@
 - 실패: 현재 알려진 build/test/syntax 실패 없음. sandbox 네트워크 Push 첫 시도 실패는 승인된 동일 Push로 해결. Chrome 문제는 보고되지 않았으나 무응답을 통과로 해석하지 않는다.
 - 조율 필요: 후속 EXT-01/03 개인별 담당 확인; 제품 인증·EXEC API·transaction·상태/report 연결은 기존 관련 담당 영역의 선행 구현 필요. 이번 독립 계층에 공용 계약 변경·담당 충돌·설계 충돌·develop 충돌 없음.
 - 다음 행동: 1) 윤종민이 Chrome 항목별 결과/검증 버전·코드 기준 전달 → 2) Codex가 사용자 실행 결과 기록, 필요 시 같은 단위 수정·자동/Chrome 재검증·Commit/Push → 3) 필요한 실제 검증 조건 충족 시 develop 대상 같은 브랜치 PR 생성·팀 리뷰 대기. 다른 기능의 구현은 자동 착수하지 않음.
+
+### 2026-10-08 사용자 재검증 오류 및 fixture 보완
+
+- 사용자 실행 결과: 규칙 적용에서 `TEST_RUN_FINISHED_USE_NEW_TEST_PROFILE` 발생. Chrome 오류 기록 화면에서 runner.js의 오류 출력 위치를 확인했으며, DB 삭제 안내를 따라도 동일 오류가 남는다고 보고했다. 이전 기본 Chrome 검증을 통과로 확정하지 않는다.
+- 확인한 코드 원인: fixture가 해제된 고정 session의 journal을 읽으면 재적용을 거절한다. DB 삭제가 완료됐는지·열린 연결/다른 탭이 영향을 줬는지는 직접 확인하지 못했으므로 확정 원인으로 기록하지 않는다.
+- 보완: 검증용 runner에 `새 검증 실행 준비` 추가. 이전 session 규칙 해제를 확인한 뒤 새 UUID session을 선택하고 이전 journal을 보존한다. 제품 모듈·API·공용 계약은 변경하지 않는다. 다른 runner 탭의 이전 session 사용은 새로고침 오류로 차단한다. README의 수동 DB 삭제 절차를 버튼 절차로 교체했다.
+- 실제 Chrome 재검증: 미검증. 패키지 재생성·확장 새로고침·runner 재열기 후 READY → APPLIED와 example.com 차단·허용·해제 결과를 사용자에게 요청한다. PR 판정 B 유지.
+- Codex 자동 재검증: Windows에서 npm.ps1 실행 정책 오류를 확인하고 정책 변경 없이 npm.cmd로 실행했다. 26/26 통과, JS 문법 검사·build:harness 성공. 증거: ../evidence/EXT-02-2026-10-08-fixture-retry.txt. 새 버튼의 Chrome 실제 실행은 미검증이다.

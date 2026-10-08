@@ -25,6 +25,8 @@ npm run check
 npm run build:harness
 ```
 
+PowerShell 실행 정책으로 `npm.ps1`이 차단되면 보안 정책을 바꾸지 말고 위 명령의 `npm` 대신 `npm.cmd`를 사용합니다. 예: `npm.cmd run build:harness`.
+
 이번 환경에서는 전역 Node가 없어 공식 배포 zip의 SHA256 확인 후 저장소 `.tools/node-v24.21.0-win-x64`에만 준비했습니다. 설치 파일·캐시는 Git 제외입니다. 이 환경을 그대로 쓰는 경우 위 명령 전에 현재 PowerShell에서만 다음을 실행합니다. 다른 PC에 해당 폴더가 없다면 설치된 Node 24를 사용합니다.
 
 ```powershell
@@ -69,7 +71,7 @@ Chrome의 session 규칙은 브라우저 종료 시 제거됩니다. 세션 규�
 | 7 / 해제 | 소유 규칙 해제 → example.com 탭 재탐색·새로고침 | observed RELEASED. 해당 session 규칙 제거, example.com 방문 가능. 기존 차단 안내 페이지는 자동 원복하지 않음 | 미검증 |
 | 8 / AC-03 부분 | 규칙 적용 상태에서 Chrome 완전 종료·재실행 → runner 열기·대조 | journal desired APPLIED / actual RELEASED; 이전 APPLY를 자동 재적용하지 않음. INTERRUPTED 제품 상태는 미연결 | 미검증 |
 
-브라우저 재시작(8)은 별도 테스트 실행에서 수행합니다. 한 테스트 실행을 해제하면 같은 session의 재시작은 차단됩니다. 새 검증 실행은 검증용 프로필의 runner DevTools → Application → IndexedDB에서 **`focurve-ext02-test-only`만** 삭제한 뒤 runner를 새로고침합니다. 먼저 소유 규칙 해제를 확인합니다. 다른 DB·프로필 자료는 삭제하지 않습니다.
+브라우저 재시작(8)은 별도 테스트 실행에서 수행합니다. 한 테스트 실행을 해제하면 같은 session의 재시작은 차단됩니다. 새 검증은 다른 runner 탭을 닫고 **새 검증 실행 준비**를 눌러 `result: READY` 확인 후 **규칙 적용**을 누릅니다. 버튼은 이전 소유 규칙의 해제를 확인한 뒤 새 테스트 session을 만들고 이전 journal은 보존합니다. DB를 직접 삭제할 필요가 없습니다. 해제 오류가 나면 새 실행을 준비하지 않으며 오류를 전달합니다. `TEST_PAGE_STALE_RELOAD`는 다른 탭에서 새 실행을 준비한 경우이므로 현재 runner를 새로고침합니다.
 
 코드 수정 후: `npm test`, `npm run check`, `npm run build:harness` → `chrome://extensions`에서 검증용 확장 새로고침 → runner·대상 탭도 새로고침. 확장 새로고침 후 규칙·journal을 대조하고 신규 테스트 실행 여부를 판단합니다.
 

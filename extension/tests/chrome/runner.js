@@ -1,6 +1,7 @@
 import { SiteController } from './src/site-controller.js';
 const executor = '11111111-1111-4111-8111-111111111111';
-const session = '22222222-2222-4222-8222-222222222222';
+const activeSessionKey = 'focurve-ext02-test-active-session';
+let session = localStorage.getItem(activeSessionKey) || '22222222-2222-4222-8222-222222222222';
 const owner = `GUEST:${executor}`;
 const request = indexedDB.open('focurve-ext02-test-only', 1);
 request.onupgradeneeded = () => request.result.createObjectStore('journal', { keyPath: ['owner_key', 'session_id'] });
@@ -34,6 +35,9 @@ function command(revision) {
     } };
 }
 async function refreshContext() {
+  // Another open runner must not use an outdated session after a new test run.
+  const active = localStorage.getItem(activeSessionKey);
+  if (active && active !== session) throw new Error('TEST_PAGE_STALE_RELOAD');
   const entry = await journal.load(owner, session);
   if (entry) context = { ...context, revision: entry.revision, desired: entry.desired };
   return entry;
@@ -48,16 +52,28 @@ async function run(action) {
 document.querySelector('#apply').onclick = () => run(async () => {
   const entry = await refreshContext();
   if (entry?.desired === 'RELEASED') {
-    // New synthetic test execution needs a fresh journal. Preserve the old one;
-    // use reload of unpacked extension / new test profile for a new test run.
-    throw new Error('TEST_RUN_FINISHED_USE_NEW_TEST_PROFILE');
+    throw new Error('TEST_RUN_FINISHED_CLICK_NEW_RUN');
   }
   return controller.apply(command(context.revision));
 });
-document.querySelector('#release').onclick = () => run(async () => {
+async function releaseCurrent() {
   const entry = await refreshContext(); if (!entry) throw new Error('NO_TEST_JOURNAL');
   context = { ...context, revision: entry.desired === 'RELEASED' ? entry.revision : entry.revision + 1, desired: 'RELEASED' };
   return controller.release({ ...command(context.revision), type: 'RELEASE_POLICY' });
+}
+document.querySelector('#release').onclick = () => run(releaseCurrent);
+document.querySelector('#new-run').onclick = () => run(async () => {
+  const entry = await refreshContext();
+  if (entry) await releaseCurrent();
+  // Keep previous test journals. Confirm release before selecting a new session.
+  // Never clear the database or remove rules owned by another session/feature.
+  const nextSession = crypto.randomUUID();
+  localStorage.setItem(activeSessionKey, nextSession);
+  session = nextSession;
+  context = { owner_key: owner, executor_id: executor, session_id: session,
+    revision: 1, desired: 'APPLIED', reconciled: true };
+  return { result: 'READY', previous_rules_released: entry ? true : null,
+    previous_journal_preserved: true, next_action: '규칙 적용' };
 });
 document.querySelector('#inspect').onclick = () => run(async () => {
   await refreshContext(); return controller.inspect(owner, session);
