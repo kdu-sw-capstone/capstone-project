@@ -4,17 +4,17 @@
 
 ## 작업 상태
 
-- 상태: 차단
+- 상태: 진행 중 (사이트 실행 모듈 구현·자동 검증 완료; 사용자 Chrome 결과 세부 확인 중)
 - 실제 담당자: 윤종민 (사용자 제공 작업 지시·가이드 기준; 저장소의 기존 배정표와 EXT-02 카드에는 개인 배정이 미기입되어 있어 팀 기록 확인 필요)
 - 브랜치 / 시작 기준 커밋: `feature/extension-core-ext-02` / `76df34e` (2026-10-07, origin/develop 최신 확인)
 - PR:
-- 선행 작업 / 차단 조건: EXT-01 정책 동기화 및 실제 Extension 명령·정책 스냅샷 연결. 현재 extension/에는 README와 빈 `.gitkeep`만 있고 Manifest V3 실행 코드가 없다. Server에는 개발 기반만 있으며 API-EXEC-01~03 제품 구현이 없다. 기존 코드·실제 명령 payload를 대조할 수 없어 접근 차단 로직을 임의 형식으로 구현하지 않음.
+- 선행 작업 / 차단 조건: 제품 연결은 EXT-01·API-EXT-01~07·API-EXEC-01~03, 제품 IndexedDB transaction·ExecutionReport/outbox·세션 상태 연결이 필요하다. 이번에는 기존 Command/Snapshot 명세로 사이트 차단 실행 모듈만 독립 구현했다. 기존 2026-10-07 차단 기록은 아래에 보존한다.
 
 | 영역 | 담당 | 구현 상태 | 검증 상태 |
 |---|---|---|---|
 | Web | | 미확인 | 미실행 |
 | Server | | 미확인 | 미실행 |
-| Extension | 윤종민* | 미구현 (기존 실행 코드 없음) | 미실행 |
+| Extension | 윤종민* | 사이트 실행 모듈 구현; 제품 세션·회원 연결 제외 | Codex Windows 자동 26/26; 사용자 Chrome 수행 보고, 세부 결과 확인 중 |
 
 \* 담당 기록 근거는 이번 사용자 제공 지시·가이드이며, 저장소 `docs/TEAM_GUIDE.md`와 기존 작업카드에는 개인별 기능 배정이 기록되어 있지 않다. 배정 자체를 재지정한 것은 아니다.
 
@@ -36,9 +36,9 @@
 
 | 기준 ID | 기대 결과(기존 설계) | 코드 위치 | 검증 명령·환경 | 결과 |
 |---|---|---|---|---|
-| AC-EXT-02-01 | 현재 소유자·최신 revision의 명령만 실행 | | | 미실행 |
-| AC-EXT-02-02 | 다른 설치 토큰·만료 APPLY 거절 | | | 미실행 |
-| AC-EXT-02-03 | 재접속은 journal 대조 후 명령 실행 | | | 미실행 |
+| AC-EXT-02-01 | 현재 소유자·최신 revision의 명령만 실행 | extension/src/site-controller.js guard/recheck/apply/release; site-rules.js | extension에서 npm test; Windows Node 24.21.0; trusted context·DNR·tabs·journal 모의 | 사이트 계층 자동 통과; 실제 인증·제품 RUNNING 전이 미검증 |
+| AC-EXT-02-02 | 다른 설치 토큰·만료 APPLY 거절 | site-controller.js guard/apply | npm test; 다른 executor·스냅샷 소유자·만료/누락/잘못된 기한·적용 도중 만료 | 모의 context 기반 설치 ID/기한 부분 통과; 실제 설치 토큰 인증은 미구현·미검증 |
+| AC-EXT-02-03 | 재접속은 journal 대조 후 명령 실행 | site-controller.js inspect/apply; tests/site-controller.test.js | npm test; controller 재생성·누락/부분 규칙·중복 재설치 금지 | 모의 journal·DNR 부분 통과; 실제 Server reconcile·worker lifecycle·브라우저 재시작 세션 확정 미검증 |
 
 기존 수용 기준은 출발점이다. 상세 명세의 실제 입력·출력·오류를 검증하며 이 표의 존재만으로 충분한 테스트라고 판단하지 않는다. 관련 BOUND 사례도 선택하여 아래에 기록한다.
 
@@ -46,7 +46,9 @@
 
 | BOUND 또는 추가 기준 | 실행 방법 | 결과 | 증거 |
 |---|---|---|---|
-| | | 미실행 | |
+| BOUND-17 (저장 실패 부분) | Codex Windows 자동; 모의 journal quota·DNR 실패·rollback 실패·규칙 충돌 주입 | 자동 통과; 실제 IndexedDB quota/Server 실패·원본 보존 전체 경계는 미검증 | extension/tests/site-controller.test.js; ../evidence/EXT-02-2026-10-08-automatic.txt |
+| 사이트 경계·적용/해제·중복 | Codex Windows 자동; HTTP(S), exact/subdomain, www, 마지막 점, ALLOW/RECORD 제외, 열린 탭 미확인·닫힘, unrelated 규칙 보존 | 자동 통과; Chrome 실제 상세 결과 확인 중 | 동일 테스트·증거; extension/README.md 수동 절차 |
+| BOUND-07/14/19 및 제품 재시작·전체 연결 | 회원 전환·원격 로그아웃·다중 제어 이유·Server/Content 통합 필요 | 미실행; 이번 독립 계층의 완료 근거로 사용하지 않음 | 설계 07_검증기준.md |
 
 ## 중단·재개 기록
 
@@ -64,3 +66,76 @@
 - 실제 연동 확인 (모의 응답 제외):
 - 검토·통합 근거:
 - 남은 문제:
+
+## 2026-10-08 재개 기록 — 이번 독립 구현 단위
+
+### 기준·배정·Git
+
+- 담당자: 윤종민. 담당 영역: 사용자 지시와 기존 `5dbaeb5` 카드의 EXT-02 Extension 실행 범위. 저장소의 개인별 원본 배정표는 찾지 못했다. `docs/TEAM_GUIDE.md`는 구성원과 영역 경계만 명시한다. EXT 전체 및 다른 기능을 윤종민에게 재배정하지 않았다.
+- 포함: 사이트 전체 BLOCK의 규칙 생성, 소유/설치/세션/revision/기한 선행 확인, journal 저장 후 실제 규칙 적용·탭 이동 확인, 소유 규칙 해제·실패 정리, 재생성 시 journal/실제 규칙 대조.
+- 제외: EXT-01 동기화·설치 인증, EXT-03/event 수집·전송, 사이트 설정 UI, 제품 세션 상태/시간, Content Control·추가 MVP, Web/Server/DB 제품 코드. 기존 Command/Snapshot/API/이벤트·공용 상태를 변경하지 않았다. 새 내부 주입 인터페이스는 API 계약이 아니다.
+- 최초 시작 기준: `76df34ea6be1c591be33c29606c24fc654f61932`. 현재 재개 기준: `5dbaeb5` (기존 기록 커밋). 브랜치: `feature/extension-core-ext-02`.
+- 실제 작업공간: `C:\2221039\capstone-project`, Windows PowerShell. 이번 착수 시 `feature/extension-setup` / `76df34e`, staged/unstaged/untracked 없음. 예전에 관찰된 untracked 구현은 이번 착수 때 존재하지 않았으며 이번 작업에서 삭제/초기화하지 않았다. `1af60bc` 및 LOG-01 ZIP 적용 근거는 이번 기준에 사용하지 않는다(최신 사용자 지시).
+- `git fetch origin` 성공 후 `origin/develop=76df34e` 확인. 기존 원격 EXT-02 기록 브랜치를 로컬 추적 브랜치로 재개. merge-base는 `76df34e`, 차이는 기존 EXT-02·통합현황 문서만이었다. merge/rebase/reset/clean/stash 미실행.
+- 기존 구현: extension에는 README/.gitkeep뿐, 제품 실행·자동 테스트 없음. 기존 Chrome 검증 커밋은 이 브랜치에 연결되지 않는다. `5dbaeb5`는 점검·차단 기록으로만 인정한다. 기존 중단 기록을 그대로 보존했다.
+- 이번 재개 메타데이터는 점검·구현·자동 검증 후 기록했다. 구현 전에 파일에 시작 기록을 남긴 것으로 주장하지 않는다.
+
+### 읽은 기준 원문
+
+- AGENTS.md, CONTRIBUTING.md, docs/TEAM_GUIDE.md, docs/implementation/개발운영.md, 통합현황.md, tasks/EXT-01.md·EXT-02.md·EXT-03.md, extension/README.md.
+- docs/design/00_문서안내.md, 01_UX_기능설계/01_기능범위.md (실행 환경·담당 경계), 02_IA_화면명세.md (EXT-01/02), 03_동작규칙.md (세션·제한 우선순위·워커/브라우저 복구).
+- docs/design/02_시스템_테크설계/04_API_연동.md (Command/Snapshot·API-EXEC-01~03·로컬 메시지·実행 순서), 05_데이터_복구.md (owner별 journal·원자 저장·규칙 대조·실패), 09_PC_후속확장계획.md.
+- docs/design/04_검수_예시데이터/설계연결.json의 EXT-02 객체, 06_기능별_연결표.md EXT-01~03 행, 07_검증기준.md AC-EXT-02-01~03·BOUND 원문.
+- docs/design/07_설계도/페이지목록.md 및 FOCURVE_구현전_통합설계.drawio의 User Flow 전체, 집중 중, 세션 상태/실패·복구, 시스템 연동, 실행 순서의 원문 cell 내용을 읽었다. 관련 도면·본문 충돌은 발견하지 못했다. 시각 배치/Figma는 이번 코드 단위에서 검증하지 않았다. 하위 별도 AGENTS.md 없음.
+- 찾지 못한 문서: 개인별 세부 배정 원본. 영향: EXT-01/03 및 다른 작업을 윤종민 담당으로 확정할 수 없어 후속 담당 확인만 남긴다. 현행 명세 외 AC/BOUND를 생성하지 않았다.
+
+### 환경 점검
+
+| 항목 | 요구 조건 | 확인 방법·명령 | 실제 결과 | 상태 / 영향 |
+|---|---|---|---|---|
+| Git | 기존 브랜치·fetch 사용 가능 | 절대 경로 git.exe; status/branch/log/worktree/fetch/merge-base | Git PATH 미등록, 절대 경로 정상; fetch 성공; worktree 1개 | 정상(호출 경로 보완); main/develop 변경 없음 |
+| Node/npm | 테스트용 Node 24.x | node --version / npm --version | 전역 PATH 없음; 공식 Node zip SHA256 확인 후 .tools에 준비, 24.21.0 / 11.19.0 | 보완; 현재 셸 PATH 반영 후 npm scripts 성공 |
+| 구현·의존성 | ES module·lock | package/lock·npm ci | 외부 의존성 없음, lock v3; 설치 재현 성공 | 정상; Web/Server 의존성 재설치 안 함 |
+| 빌드 | 검증 패키지 생성 | npm run build:harness | .chrome-harness/manifest.json 생성 확인 | 정상; 제품 build/manifest는 미구현 |
+| 자동 테스트 | Node test / syntax | npm test / npm run check | 26/26, syntax 성공; ESLint 미구성 | 정상; 실제 Chrome 성공 근거 아님 |
+| 비회원/로컬 | 실제 Chrome·IndexedDB | fixture manifest·runner IndexedDB adapter 확인 | 검증용 IDB·DNR/탭 경로 존재; 사용자가 검증 완료 보고, 세부 확인 중 | 부분 확인; 제품 비회원 세션은 미연결 |
+| 회원/Server | 인증·EXT/EXEC API·제품 Core | backend 실제 코드와 기존 기반 README/카드 확인 | 개발 health/DB 기반만 존재 | 미확인/선행 미구현; 제품 연동 보류 |
+| Windows/Chrome | 일반 프로필·Chrome >=120 | chrome.exe VersionInfo, 사용자 수동 절차 | 설치 파일 155.0.8059.40; Codex 직접 UI 검증 미실행 | 사용자 실행 결과와 자동 결과 분리 |
+
+### 설계 / 기존 / 이번 작업 대응
+
+| 설계·AC·BOUND | 기존 코드·검증 | 부족한 부분 | 이번 코드·검증 | 남는 부분 |
+|---|---|---|---|---|
+| 사이트 전체 BLOCK·TF-08 | 실행 코드 없음·미실행 | DNR·열린 탭 적용·해제 | site-rules.js / site-controller.js 및 테스트 | Content 제어·접근 이벤트·제품 상태 |
+| AC-EXT-02-01 | 없음 | 현재 owner/설치/세션/revision 확인 | trusted context 검증·immutable snapshot·실제 관찰 반환 | 제품 인증·활성 잠금·전체 RUNNING 전이 |
+| AC-EXT-02-02 | 없음 | 타 설치/기한 지난 적용 거절 | executor 비교·필수 UTC 기한·await 뒤 재확인 | Bearer/설치 토큰 검증은 EXT/Server 선행 |
+| AC-EXT-02-03 | 없음 | journal/실제 규칙 대조·중복 재설치 방지 | inspect·recreated controller 테스트 | Server reconcile·실제 service worker/세션 복구 |
+| BOUND-17 부분 | 없음 | 저장 실패·정리 미확인 숨기지 않기 | quota/rollback/충돌/실패 주입 테스트 | 실제 storage quota·Server 실패·원본/outbox 통합 |
+
+### 이번 직접 실행 검증
+
+실행 주체 Codex, Windows PowerShell, Node 24.21.0/npm 11.19.0, 실행 디렉터리 `extension`. DNR/tabs/context/journal는 자동 테스트에서 모의 객체이다. 모의 Server 응답은 제품 코드에 넣지 않았다. 테스트 함수 이름에 AC 부분·BOUND-17 부분을 표시했다.
+
+| 명령 | 실제 대상 / 모의 대상 | 결과 / 증거 |
+|---|---|---|
+| npm ci --ignore-scripts --audit=false --fund=false | 실제 lock 재현; 외부 의존성 0 | 성공; evidence/EXT-02-2026-10-08-automatic.txt |
+| npm test | 실제 모듈 / 모의 Chrome·journal·Core context | 26 통과, 실패/스킵 0; 동일 증거 |
+| npm run check | 실제 JS 문법; lint와 구분 | 성공; 동일 증거 |
+| npm run build:harness | 실제 파일 복사·manifest 생성 | 성공; 산출물 .chrome-harness는 Git 제외 |
+| git diff --check | 실제 변경 공백 검사 | 통과 (LF→CRLF 설정 안내만 발생, 공백 오류 없음) |
+
+해결한 실패: 최초 git PATH 미등록·sandbox FETCH_HEAD 쓰기 제한(절대 경로/승인된 fetch로 해결), Node 다운로드 sandbox 네트워크 제한(승인 후 공식 배포 다운로드), npm scripts의 Node PATH 누락(현재 셸 PATH 반영 후 재실행 성공). 테스트 기대값 낮춤·삭제 없음. 현재 알려진 자동 테스트 실패 없음.
+
+### 사용자 실행 결과 / 미검증
+
+- 2026-10-08 사용자가 “검증 완료”라고 전달. 질문에는 Chrome fixture의 example.com 차단·example.org 허용·해제 후 example.com 재접속이 포함됐다. 세 항목의 성공 여부와 추가 경계 검증·Chrome 버전은 후속 질문으로 확인 중. 수행 보고를 항목별 통과/스크린샷 증거로 확대하지 않는다.
+- Windows 상세 절차·manifest 경로·재빌드/확장/탭 새로고침·로그·증거 수집: extension/README.md.
+- 실제 인증 토큰 거절, API-EXEC-03 실제 대조, service worker lifecycle, 브라우저 재시작 INTERRUPTED 전이, 이벤트·Server·다른 담당과의 실제 통합은 미검증.
+
+### 이번 단위 종료 조건·다음 행동
+
+- 이번 단위: 사이트 차단 실행 모듈의 코드·자동 검증·Chrome 기본 적용/허용/해제 검증을 마친 뒤 Commit/Push 및 PR 준비 판단. EXT-02 전체 완료 판정은 하지 않는다.
+- 남은 담당 확인: EXT-01 (필수, tasks/EXT-01.md) 미착수·개인 배정 미확인; 설치 인증·제품 EXEC API 이후 trusted context/저장 연결 권장. EXT-03 (필수, tasks/EXT-03.md) 미착수·개인 배정 미확인; 소유별 durable report/outbox·이벤트 schema 이후 권장. 이번에는 해당 기능에 착수하지 않는다.
+- 제품 연결 조율: EXT-02/EXT-01/SESSION-01~04/EXT-03, 관련 Server·Extension·Web 영역. 현재 독립 모듈·자동 테스트·수동 fixture 검증은 가능. 보류: 신뢰된 소유 context를 payload로 대체, 미구현 reconcile을 완료로 가장, 제품 RUNNING/회원 연동 완료 표시. 권장: 기존 API 객체 그대로 연결하고 owner/session transaction·명령/보고 식별자 대응을 실제 연동 PR에서 검증. 개인별 담당은 확인 필요.
+- 설계 변경·공용 계약 변경·다른 담당 코드 수정·develop merge/rebase·직접 공유 브랜치 Commit/Push 없음. 기준 develop과의 차이는 additive Extension 모듈 및 EXT-02 기록이다.
+- 현재 PR 판정: B. 추가 작업 필요 (Chrome 항목별 사용자 결과 확인·최종 기록·Commit/Push 필요). 팀 리뷰·develop 통합 미실행.
