@@ -111,3 +111,8 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
        ? error.message : "LOCAL_STORAGE_UNAVAILABLE"}}));
   return true;
 });
+
+chrome.webNavigation.onErrorOccurred.addListener(details => {
+  GuestSession.observe("error", {...details, observed_at: Date.now()})
+    .catch(error => console.error("Access failure cleanup failed:", error.message));
+});

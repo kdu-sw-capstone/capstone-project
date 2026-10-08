@@ -1,0 +1,104 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import vm from 'node:vm';
+import { readFile } from 'node:fs/promises';
+import { webcrypto } from 'node:crypto';
+import { IDBFactory } from 'fake-indexeddb';
+
+// 제품 classic scripts와 실제 저장 transaction을 실행하되 Chrome APIs/IndexedDB는 모의입니다.
+async function fixture() {
+ let time = Date.parse('2026-10-08T10:00:00Z');
+ let rules = [], releaseFailures = 0, boot = true;
+ class Clock extends Date { constructor(...args){super(...(args.length ? args : [time]));} static now(){return time;} }
+ const context = vm.createContext({URL, Date:Clock, crypto:webcrypto, TextEncoder, structuredClone,
+  indexedDB:new IDBFactory(), setTimeout,
+  chrome:{runtime:{getURL:path=>'chrome-extension://test/'+path},
+   storage:{session:{get:async()=>({focurve_boot:boot}),set:async()=>{boot=true;}}},
+   alarms:{create:async()=>{},clear:async()=>{}},tabs:{query:async()=>[],update:async()=>{}},
+   declarativeNetRequest:{getSessionRules:async()=>structuredClone(rules),isRegexSupported:async()=>({isSupported:true}),
+    updateSessionRules:async({addRules=[],removeRuleIds=[]})=>{
+     if(removeRuleIds.length && releaseFailures-- > 0)throw new Error('MOCK_RELEASE_FAILURE');
+     rules=rules.filter(r=>!removeRuleIds.includes(r.id)).concat(structuredClone(addRules));
+    }}}});
+ for(const file of ['local-store','site-store','session-db','access-store','session-core'])
+  vm.runInContext(await readFile(new URL('../background/'+file+'.js',import.meta.url),'utf8'), context);
+ const api=vm.runInContext('({sites:GuestSites,core:GuestSession,access:AccessStore,db:SessionDB,local:LocalStore})',context);
+ return {...api,advance:ms=>{time+=ms;},restart:()=>{boot=false;},failRelease:n=>{releaseFailures=n;},
+  get time(){return time;},get rules(){return rules;}};
+}
+const input=(host='example.com',policy='BLOCK')=>({url:host,display_name:host,include_subdomains:true,
+ purpose:policy==='ALLOW'?'GENERAL':'DISTRACTION',access_policy:policy,feature_policies:[]});
+const uuid=()=>webcrypto.randomUUID();
+// 이전 제품에는 onErrorOccurred handler가 없으므로 오류 이벤트가 전달되지 않습니다.
+const failed=(f,details)=>f.access.fail?f.core.observe('error',details):Promise.resolve();
+async function running(f){await f.sites.create(input(),uuid());return f.core.start(25,uuid());}
+const navigation=(f,url,timeStamp=100)=>({tabId:1,frameId:0,url,timeStamp,observed_at:f.time,transitionType:'typed'});
+function blocked(session){return 'chrome-extension://test/blocked/blocked.html?host=example.com&session='+session.session.session_id;}
+
+test('review 1: interrupted release retries retain terminal status and confirmed duration',async()=>{
+ const f=await fixture();const started=await running(f);
+ f.advance(10_000);await f.core.tick();f.advance(50_000);f.restart();f.failRelease(2);
+ await assert.rejects(f.core.tick(),{message:'MOCK_RELEASE_FAILURE'});
+ const pending=await f.db.load();assert.equal(pending.session.status,'UNKNOWN');
+ assert.equal(pending.journal.terminal_intent.status,'INTERRUPTED');
+ f.advance(60_000);await assert.rejects(f.core.tick(),{message:'MOCK_RELEASE_FAILURE'});
+ f.advance(60_000);const ended=await f.core.tick();
+ assert.equal(ended.session.status,'INTERRUPTED');assert.equal(ended.session.active_duration_ms,10_000);
+ assert.equal(ended.journal.terminal_intent.confirmed_end_at,new Date(Date.parse(started.session.started_at)+10_000).toISOString());
+ assert.equal(f.rules.length,0);
+});
+test('review 1: user end failure retries do not add release waiting time',async()=>{
+ const f=await fixture();const started=await running(f);f.advance(10_000);f.failRelease(1);
+ await assert.rejects(f.core.end(started.session.session_id));f.advance(60_000);
+ const ended=await f.core.tick();assert.equal(ended.session.status,'ENDED');assert.equal(ended.session.active_duration_ms,10_000);
+});
+test('review 2: failed navigation cannot turn blocked page reload into access',async()=>{
+ const f=await fixture();const session=await running(f);
+ await f.core.observe('before',navigation(f,'https://example.com/'));
+ await failed(f,navigation(f,'https://example.com/',110));
+ await f.core.observe('commit',{...navigation(f,blocked(session),120),transitionType:'reload'});
+ assert.equal((await f.core.records()).total_access,0);
+});
+test('review 2: late old failure preserves next navigation on the same host',async()=>{
+ const f=await fixture();const session=await running(f);
+ await f.core.observe('before',navigation(f,'https://example.com/old',100));
+ await f.core.observe('before',navigation(f,'https://example.com/new',200));
+ await failed(f,navigation(f,'https://example.com/old',210));
+ await f.core.observe('commit',navigation(f,blocked(session),220));
+ assert.equal((await f.core.records()).total_access,1);
+});
+test('review 2: stale same-URL failure and subframe failure preserve new pending navigation',async()=>{
+ const f=await fixture();const session=await running(f);const url='https://example.com/';
+ await f.core.observe('before',navigation(f,url,200));
+ await failed(f,navigation(f,url,150));
+ await failed(f,{...navigation(f,url,210),frameId:1});
+ await f.core.observe('commit',navigation(f,blocked(session),220));
+ assert.equal((await f.core.records()).total_access,1);
+});
+for(const policy of ['BLOCK','RECORD'])test(`review 3: ${policy} policy and persisted event use canonical trailing-dot host`,async()=>{
+ const f=await fixture();await f.sites.create(input('example.com',policy),uuid());const session=await f.core.start(25,uuid());
+ await f.core.observe('before',navigation(f,'https://EXAMPLE.com./path'));
+ await f.core.observe('commit',navigation(f,policy==='BLOCK'?blocked(session):'https://example.com./path',120));
+ const result=await f.core.records();assert.equal(result.total_access,1);
+ assert.equal(result.items[0].payload.target_host,'example.com');assert.equal(result.items[0].payload.target_key,'SITE:example.com');
+ assert.equal(f.core.normalizeHost('https://bücher.example./'),'xn--bcher-kva.example');
+});
+test('review 4: deleted host restores ID and creation time, increments versions, and replays once',async()=>{
+ const f=await fixture();const original=await f.sites.create(input(),uuid());
+ const removed=await f.sites.remove(original.site_id,original.version,uuid());assert.equal(removed.version,2);
+ f.advance(1000);const request=uuid();const restored=await f.sites.create(input('EXAMPLE.com','RECORD'),request);
+ assert.equal(restored.site_id,original.site_id);assert.equal(restored.created_at,original.created_at);
+ assert.equal(restored.version,3);assert.equal(restored.deleted_at,undefined);assert.equal(restored.access_policy,'RECORD');
+ assert.equal((await f.sites.list()).items.length,1);assert.equal((await f.sites.list()).settings_version,3);
+ const replay=await f.sites.create(input('EXAMPLE.com','RECORD'),request);assert.equal(replay.version,3);
+ assert.equal((await f.sites.list()).settings_version,3);
+ await assert.rejects(f.sites.create(input(),uuid()),{message:'SITE_SCOPE_CONFLICT'});
+ await assert.rejects(f.sites.update(restored.site_id,1,input(),uuid()),{message:'VERSION_CONFLICT'});
+});
+
+test('review 1: legacy release journal without terminal intent recovers conservatively',async()=>{
+ const f=await fixture();await running(f);f.advance(10_000);await f.core.tick();
+ const state=await f.db.load();state.session.status='UNKNOWN';state.session.end_reason='POLICY_MISMATCH';
+ state.journal.desired='RELEASED';await f.db.save(state);f.advance(60_000);
+ const ended=await f.core.tick();assert.equal(ended.session.status,'INTERRUPTED');assert.equal(ended.session.active_duration_ms,10_000);
+});

@@ -10,10 +10,11 @@ const GuestSession = (() => {
   if(!Number.isFinite(deadline)||Date.now()>=deadline)throw new Error('APPLY_EXPIRED');
  }
  function stable(value){if(Array.isArray(value))return JSON.stringify(value.map(v=>JSON.parse(stable(v))));if(value&&typeof value==='object')return JSON.stringify(Object.fromEntries(Object.keys(value).sort().map(k=>[k,JSON.parse(stable(value[k]))])));return JSON.stringify(value);}
+ function normalizeHost(raw){try{const u=new URL(raw);return ['http:','https:'].includes(u.protocol)?u.hostname.toLowerCase().replace(/\.$/,''):null;}catch{return null;}}
  function matches(site,raw){try{
   const u=new URL(raw);
   // 탐색 URL의 DNS 루트 점 하나만 정규화합니다. 저장된 사이트 범위는 바꾸지 않습니다.
-  const host=u.hostname.toLowerCase().replace(/\.$/,'');
+  const host=normalizeHost(raw);
   return ['http:','https:'].includes(u.protocol)&&(host===site.canonical_host||(site.include_subdomains&&host.endsWith(`.${site.canonical_host}`)));
  }catch{return false;}}
  function blockedUrl(site,session){return chrome.runtime.getURL('blocked/blocked.html')+'?host='+encodeURIComponent(site.canonical_host)+'&session='+encodeURIComponent(session.session_id);}
@@ -63,6 +64,12 @@ const GuestSession = (() => {
  }
  async function finish(state,status='ENDED',reason='USER_END'){
   if(terminal.has(state.session.status))return state;
+  // 로컬 journal의 종료 의도와 확인된 시간 경계는 재시도에서 갱신하지 않습니다.
+  if(!state.journal.terminal_intent){
+   const boundary=status==='INTERRUPTED'?state.session.last_confirmed_at:now();
+   state.journal.terminal_intent={status,reason,confirmed_end_at:boundary??state.session.started_at??null};
+  }
+  const intent=state.journal.terminal_intent;status=intent.status;reason=intent.reason;
   state.session.status='ENDING';state.session.end_reason=reason;state.journal.desired='RELEASED';state.journal.revision++;state.journal.action_seq++;
   try { await persist(state); } catch(error) {
    // 저장 실패를 숨기지 않으며, 신규 차단은 남겨두지 않도록 해제를 시도합니다.
@@ -72,7 +79,7 @@ const GuestSession = (() => {
   try{
    await release(state);const at=now();state.session.status=status;state.session.ended_at=at;state.session.policy_released_at=at;if(status!=='START_FAILED'&&reason!=='ACCESS_STORAGE_FAILED')state.session.last_error_code=null;
    state.session.expires_at=new Date(Date.parse(at)+30*86400000).toISOString();state.journal.observed='RELEASED';
-   if(state.session.started_at){const end=status==='INTERRUPTED'?state.session.last_confirmed_at:at;const ms=Math.max(0,Date.parse(end)-Date.parse(state.session.started_at));state.session.active_duration_ms=Math.min(ms,state.session.duration_minutes*60000);state.session.overrun_ms=Math.max(0,ms-state.session.duration_minutes*60000);
+   if(state.session.started_at){const end=intent.confirmed_end_at??state.session.started_at;const ms=Math.max(0,Date.parse(end)-Date.parse(state.session.started_at));state.session.active_duration_ms=Math.min(ms,state.session.duration_minutes*60000);state.session.overrun_ms=Math.max(0,ms-state.session.duration_minutes*60000);
     state.interval={owner_key:state.session.owner_key,session_id:state.session.session_id,interval_id:state.session.interval_id,kind:'RUN',start_at:state.session.started_at,end_at:end,duration_ms:ms,quality:'CONFIRMED'};
    }
    state.session.record_status='PARTIAL';await persist(state,'SESSION_ENDED');await schedule(state);return state;
@@ -87,7 +94,15 @@ const GuestSession = (() => {
    if(state&&!terminal.has(state.session.status))await finish(state,'INTERRUPTED','BROWSER_OR_EXTENSION_RESTART');
    await chrome.storage.session.set({focurve_boot:true});
   }else if(state&&!terminal.has(state.session.status)){
-   if(state.journal.desired==='RELEASED')await finish(state,state.session.end_reason==='APPLY_FAILED'?'START_FAILED':'ENDED',state.session.end_reason||'RECOVERY');
+   if(state.journal.desired==='RELEASED'){
+    // 이전 코드의 미완료 해제도 미확인 시간을 추가하지 않고 보수적으로 복구합니다.
+    if(!state.journal.terminal_intent){
+     const reason=state.session.end_reason||'UNCONFIRMED_RECOVERY';
+     const status=reason==='APPLY_FAILED'?'START_FAILED':['USER_END','TIME_LIMIT'].includes(reason)?'ENDED':'INTERRUPTED';
+     state.journal.terminal_intent={status,reason,confirmed_end_at:state.session.last_confirmed_at??state.session.started_at??null};
+    }
+    await finish(state);
+   }
    else if(state.session.status==='STARTING'){
     try{await completeStart(state);}catch{await finish(state,'START_FAILED','APPLY_FAILED');}
    }else if(state.session.status==='RUNNING'){
@@ -123,7 +138,7 @@ const GuestSession = (() => {
   const state=await SessionDB.load();const owner=await LocalStore.guestContext();
   if(state&&(state.session.owner_key!==owner.owner_key||state.session.executor_id!==owner.installation_id))throw new Error('OWNER_MISMATCH');
   try{
-   return stage==='before'?await AccessStore.begin(state,details):await AccessStore.commit(owner,details);
+   return stage==='before'?await AccessStore.begin(state,details):stage==='error'?await AccessStore.fail(details):await AccessStore.commit(owner,details);
   }catch(error){
    // 저장 실패 시 계속 수집하는 대신 세션 해제를 시도하고 오류를 유지합니다.
    if(state&&state.session.status==='RUNNING'){
@@ -133,5 +148,5 @@ const GuestSession = (() => {
    throw error;
   }
  }
- return Object.freeze({observe:(stage,details)=>serial(()=>collect(stage,details)),records:()=>serial(async()=>{await recover();return AccessStore.list(await LocalStore.guestContext());}),start:(minutes,id)=>serial(()=>begin(minutes,id)),state:()=>serial(recover),end:(sessionId)=>serial(async()=>{const state=await recover();if(!state||state.session.session_id!==sessionId)throw new Error('SESSION_NOT_FOUND');return finish(state);}),tick:()=>serial(recover),matches,buildRules});
+ return Object.freeze({observe:(stage,details)=>serial(()=>collect(stage,details)),records:()=>serial(async()=>{await recover();return AccessStore.list(await LocalStore.guestContext());}),start:(minutes,id)=>serial(()=>begin(minutes,id)),state:()=>serial(recover),end:(sessionId)=>serial(async()=>{const state=await recover();if(!state||state.session.session_id!==sessionId)throw new Error('SESSION_NOT_FOUND');return finish(state);}),tick:()=>serial(recover),normalizeHost,matches,buildRules});
 })();

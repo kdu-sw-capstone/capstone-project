@@ -2,18 +2,20 @@
 const AccessStore = (() => {
  const key=tabId=>`access_pending:${tabId}`;
  const explicit=new Set(['link','typed','auto_bookmark','reload','form_submit','generated','keyword','keyword_generated']);
- function host(raw){try{const url=new URL(raw);return ['http:','https:'].includes(url.protocol)?url.hostname.toLowerCase():null;}catch{return null;}}
+ const host=raw=>GuestSession.normalizeHost(raw);
  function pending(state,details){
   if(!state||state.session.status!=='RUNNING'||details.frameId!==0||!Number.isInteger(details.tabId)||details.tabId<0||!Number.isFinite(details.observed_at)||details.observed_at<Date.parse(state.session.started_at))return null;
   const target=state.session.snapshot.sites.find(site=>GuestSession.matches(site,details.url)&&['BLOCK','RECORD'].includes(site.access_policy));
   if(!target)return null;
-  return {key:key(details.tabId),owner_key:state.session.owner_key,session_id:state.session.session_id,revision:state.journal.revision,navigation_id:crypto.randomUUID(),event_id:crypto.randomUUID(),target_host:host(details.url),target_key:`SITE:${target.canonical_host}`,registered_host:target.canonical_host,policy:target.access_policy,include_subdomains:target.include_subdomains,captured_at:details.observed_at};
+  return {key:key(details.tabId),owner_key:state.session.owner_key,session_id:state.session.session_id,revision:state.journal.revision,navigation_id:crypto.randomUUID(),event_id:crypto.randomUUID(),target_host:host(details.url),target_key:`SITE:${target.canonical_host}`,registered_host:target.canonical_host,policy:target.access_policy,include_subdomains:target.include_subdomains,navigation_started_at:details.timeStamp,captured_at:details.observed_at};
  }
- function begin(state,details){
+ async function fingerprint(raw){return Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(new URL(raw).href)))).map(v=>v.toString(16).padStart(2,'0')).join('');}
+ async function begin(state,details){
   if(details.frameId!==0||!Number.isInteger(details.tabId)||details.tabId<0)return Promise.resolve();
   // DNR 안내 전환의 before 이벤트에서는 원래 탐색 관찰을 유지합니다.
   if(details.url?.startsWith(chrome.runtime.getURL('blocked/blocked.html')))return Promise.resolve();
   const observation=pending(state,details);
+  if(observation)observation.navigation_fingerprint=await fingerprint(details.url);
   return SessionDB.transaction('readwrite',(tx,done)=>{const m=tx.objectStore('metadata');if(observation)m.put(observation);else m.delete(key(details.tabId));done(null);});
  }
  function commit(owner,details){
@@ -68,6 +70,18 @@ const AccessStore = (() => {
    };
   });
  }
+ async function fail(details){
+  if(details.frameId!==0||!Number.isInteger(details.tabId)||details.tabId<0||!Number.isFinite(details.timeStamp))return Promise.resolve();
+  let failedFingerprint;try{failedFingerprint=await fingerprint(details.url);}catch{return;}
+  return SessionDB.transaction('readwrite',(tx,done)=>{
+   const metadata=tx.objectStore('metadata');const request=metadata.get(key(details.tabId));
+   request.onsuccess=()=>{const observation=request.result;
+    // Chrome 이벤트 시각끼리만 비교하여 이전 탐색의 늦은 오류가 다음 탐색을 지우지 않게 합니다.
+    if(observation&&Number.isFinite(observation.navigation_started_at)&&details.timeStamp>=observation.navigation_started_at&&failedFingerprint===observation.navigation_fingerprint)metadata.delete(key(details.tabId));
+    done(null);
+   };
+  });
+ }
  function forget(tabId){return SessionDB.transaction('readwrite',(tx,done)=>{tx.objectStore('metadata').delete(key(tabId));done(null);});}
- return Object.freeze({begin,commit,list,forget,pending});
+ return Object.freeze({begin,commit,fail,list,forget,pending});
 })();

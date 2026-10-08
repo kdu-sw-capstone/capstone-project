@@ -73,8 +73,16 @@ const GuestSites = (() => {
             if (sites.some(site => !site.deleted_at && overlaps(site, normalized))) { fail("SITE_SCOPE_CONFLICT"); return; }
             if (!Number.isSafeInteger(record.version + 1)) { fail("LOCAL_DATA_INVALID"); return; }
             const now = new Date().toISOString();
-            const site = { ...normalized, site_id: crypto.randomUUID(), version: 1, created_at: now, updated_at: now };
-            settings.put({ ...record, version: record.version + 1, payload: { ...record.payload, sites: [...sites, site] } });
+            const index = sites.findIndex(site => site.deleted_at && site.canonical_host === normalized.canonical_host);
+            const original = index >= 0 ? sites[index] : null;
+            if (original && (!Number.isSafeInteger(original.version) || original.version < 1 || !Number.isSafeInteger(original.version + 1))) { fail("LOCAL_DATA_INVALID"); return; }
+            const site = original
+              ? { ...original, ...normalized, version: original.version + 1, updated_at: now }
+              : { ...normalized, site_id: crypto.randomUUID(), version: 1, created_at: now, updated_at: now };
+            delete site.deleted_at;
+            const updated = [...sites];
+            if (index >= 0) updated[index] = site; else updated.push(site);
+            settings.put({ ...record, version: record.version + 1, payload: { ...record.payload, sites: updated } });
             metadata.put({ key: receiptKey, hash, site, expires_at: Date.now() + 7 * 24 * 60 * 60 * 1000 });
             result = site;
           };

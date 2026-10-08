@@ -3,10 +3,15 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "engines": { "node": ">=24 <25" },
+  "engines": {
+    "node": ">=24 <25"
+  },
   "scripts": {
     "test": "node --test tests/*.test.js tests/*.test.mjs",
     "check": "node scripts/check.js",
     "build:harness": "node scripts/build-harness.js"
+  },
+  "devDependencies": {
+    "fake-indexeddb": "6.2.5"
   }
 }

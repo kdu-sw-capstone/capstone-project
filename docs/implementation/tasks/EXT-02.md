@@ -4,10 +4,10 @@
 
 ## 작업 상태
 
-- 상태: 진행 중 — 비회원 기한·도메인 보완 단위 구현 및 사용자 Chrome 안내 시나리오 검증 완료; 회원/전체 연동 미완료, PR #17 Draft·사용자 점검 대기
+- 상태: 진행 중 — PR #17 수정 후 재검토: 오류 4건 수정, 자동 51/51. 정책 1.2 원본·Figma 접근 대기, 최신 실제 Chrome 미검증; 회원/전체 연동 미완료
 - 실제 담당자: 윤종민 — 기존 배정 원문(원본보관 ZIP의 개발계획 v1.3: Extension Core·세션·URL/Domain·사이트 정책·차단 페이지·시작/종료 연동)과 사용자 지시 기준. EXT 전체·Content Control을 재배정하지 않음
 - 브랜치 / 시작 기준 커밋: `feature/extension-core-ext-02` / `76df34e` (2026-10-07, origin/develop 최신 확인)
-- PR: [#17](https://github.com/kdu-sw-capstone/capstone-project/pull/17), develop ← feature/extension-core-ext-02, Draft·사용자 최종 점검 대기. 사용자가 직접 생성했으며 병합하지 않음
+- PR: [#17](https://github.com/kdu-sw-capstone/capstone-project/pull/17), develop ← feature/extension-core-ext-02, 현재 Open(non-draft)·수정 후 재검토 중. 사용자가 직접 생성했으며 병합하지 않음
 - 선행 작업 / 차단 조건: 제품 연결은 EXT-01·API-EXT-01~07·API-EXEC-01~03, 제품 IndexedDB transaction·ExecutionReport/outbox·세션 상태 연결이 필요하다. 이번에는 기존 Command/Snapshot 명세로 사이트 차단 실행 모듈만 독립 구현했다. 기존 2026-10-07 차단 기록은 아래에 보존한다.
 
 | 영역 | 담당 | 구현 상태 | 검증 상태 |
@@ -279,3 +279,32 @@
 - 실패: 현재 실행한 자동 검사 실패 없음; Linux Chromium의 관리자 정책 로드 거절은 미해결 환경 제한. GitHub API 접근은 이번 조회 성공으로 과거 403 차단과 구분.
 - 조율 필요: 회원 설치/Server API 선행 및 Core↔Content 공유 인터페이스/이벤트 전송 세부 담당. 현재 비회원 수정 단위에서 공용 계약 변경·담당 재배정·develop 충돌은 확인되지 않음.
 - 다음 행동: 사용자 PR Files changed/검증 기록 점검 → 문제 있으면 같은 단위 수정 및 필요한 재검증 → 사용자가 리뷰 진행 판단. 리뷰 보류 후 다음 구현을 진행하겠다는 사용자 의도는 유지하되 PR 범위에 새 구현을 섞지 않도록 후속 비회원 저장/해제 실패 검증은 별도 브랜치 권장. 이번 최종 점검에서는 새 구현 착수 없음.
+
+## PR #17 수정 후 재검토 착수
+
+- 이번 기능 ID: EXT-02. 담당: 윤종민, Extension Core.
+- 이번 목표: 사용자 전달 리뷰 오류 4건 회귀 수정, 별도 MOST_SPECIFIC_HOST 정책 및 Figma Extension 디자인 대응.
+- 브랜치: feature/extension-core-ext-02, 시작 기준 b7349717d05c8e660f5c22f98de720d7dd756f42, 착수 전 working tree clean.
+- 보고서/재현 스크립트 원본 및 스냅샷 1.2 문서는 미전달. PR 댓글/리뷰에도 없음. 현재 사용자 증상을 기준으로 독립 재현. 실제 Chrome 결과로 처리하지 않음.
+- 정책 1.2 계약/디자인은 자료 확인 후 반영; 회원 통합 별도, 병합 금지.
+
+### 이번 오류 수정 및 검증 결과
+
+| 사용자 리뷰 사례 | 제품 수정 | 회귀 검증 |
+|---|---|---|
+| 해제 실패 복구 | session-core.js journal.terminal_intent에 목표 종료 상태·이유·확인된 종료 경계를 저장. 재시도/브라우저 재시작에서도 유지. 이전 journal은 마지막 확인 시각으로 보수적 복구 | 중단/정상 종료 해제 실패, 연속 재시도, legacy journal 3건 |
+| 실패 탐색 잔존 | service-worker.js onErrorOccurred → 직렬화된 AccessStore.fail. URL 원문 대신 SHA-256 fingerprint와 Chrome 이벤트 시각을 비교해 해당 임시 기록만 삭제 | 실패 후 안내 reload 0건, 같은 host 다른 경로의 늦은 오류·이전 same-URL timestamp·subframe 보호 3건 |
+| 호스트 불일치 | GuestSession.normalizeHost를 정책 판별/AccessStore 이벤트 저장에서 공용 사용. HTTP(S)·소문자·IDNA·마지막 DNS root 점 하나 제거 | BLOCK/RECORD 이벤트 target_host·target_key 확인 2건. 서버 전송·서버 검증은 미연동 |
+| 삭제 후 재등록 | site-store.js 기존 tombstone ID/created_at 유지, 삭제 필드 제거·version 증가·settings_version 증가·receipt 재시도 보존 | 실제 제품 CRUD 코드를 fake-indexeddb로 실행하는 모의 테스트 1건 |
+
+- 자동: Node 24.19.0/npm 11.9.0, `npm ci --cache /workspace/.npm`, `npm test` 51/51(기존 42+추가 9), fail/skip 0. `npm run check`, `npm run build:harness`, `git diff --check` 성공.
+- 개발 의존성: fake-indexeddb 6.2.5 exact lock. 제품 IndexedDB 코드를 모의 IndexedDB 구현에서 실행하며 실제 Chrome 결과와 구분한다.
+- 수정 전 b734971 제품 scripts에 신규 9건을 적용한 독립 재현: pass 2/fail 7. 원본 팀 재현 스크립트는 아직 제공되지 않아 읽거나 실행했다고 주장하지 않는다.
+- 실제 브라우저: Chromium 151.0.7922.173, Playwright CDP Extensions.loadUnpacked 제품 경로 실행 시 `Loading of unpacked extensions is disabled by the administrator.` 확장 로드 실패, 제품 기능 실행/화면 검증 미실행. 관리 정책을 우회하지 않았다.
+- harness: 생성만 성공; 브라우저 시나리오 미실행. `.chrome-harness/`는 제품 UI가 아니다.
+- 미검증: 최신 제품 Chrome 전 시나리오, 서버 호스트 검증·전송, 회원 연결/ExecutionReport/승인/복구 계약, 실제 저장 quota·강제 종료.
+- 실패: 현재 자동 실패 0. Chrome 제품 로드 실패. Figma HTTPS CONNECT 403, 설치 승인 후에도 도구 미노출.
+- 조율 필요: 검토 보고서·원본 재현 스크립트 위치, 웹·서버 스냅샷 1.2/MOST_SPECIFIC_HOST 정확한 계약, 실제 Extension Figma 프레임 접근. 원격 develop 76df34e에도 정책 1.2 원본을 찾지 못함.
+- 정책 변경/UI: 자료 대기로 아직 구현하지 않음. 기존 1.1 문자열/정책/화면을 변경 완료로 표시하지 않음. 구현 화면 추가/디자인 이미지 없음.
+- 다음 행동: 자료 제공 후 most-specific 선택/등록/DNR 규칙/열린 탭/이벤트 처리 동시 수정, Figma 프레임 적용, 최신 제품 Chrome 수동 검증 및 재검토. 이번 수정은 EXT-02 전체 완료가 아니다.
+- 상세 수동 절차: [PR #17 재검토 기록](../evidence/EXT-02-PR17-revision.md). 사용자 코드·결과 점검 전 병합 금지.
