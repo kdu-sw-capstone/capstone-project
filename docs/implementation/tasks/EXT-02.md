@@ -257,3 +257,13 @@
 - Git 재점검: fetch 성공, origin/develop=76df34ea6be1c591be33c29606c24fc654f61932는 현재 브랜치 조상; 기준 로컬/원격 작업 SHA=52a49eec9e2f2987d978b034d70a5338b519873c, 작업 전 working tree clean, 단일 checkout. 임의 merge/rebase 없이 확인. 이번 변경은 문서만이며 코드/테스트 실행을 새로 했다고 기록하지 않음(최근 직접 결과 42/42 유지).
 - PR 확인: gh pr list --repo kdu-sw-capstone/capstone-project --head feature/extension-core-ext-02 --state all 조회가 Post https://api.github.com/graphql: Forbidden으로 실패. Git fetch/push 성공과 API 권한은 구분한다. 원인은 아직 확정하지 않았고 새 토큰 요구·자격정보 출력·임의 네트워크 설정 변경 없음.
 - 현재 후속 판정 B(추가 작업 필요): 구현 단위의 기록 요약은 정정했으나 PR 전 최종 범위/AC·BOUND 대응·필수 설계 대조/보고 확인을 마무리해야 한다. PR 조회·생성에는 별도로 API 접근 문제 진단이 필요하다. 미검증 회원/전체 기능을 이번 단위의 통과로 처리하지 않는다. 새 기능 착수·팀 메시지 전송·PR/공유 브랜치 병합 없음.
+
+
+### PR 준비 최종 점검
+
+- 이번 사용자 요청에 따라 비회원 기한/도메인 보완 단위를 재점검했다. fetch 성공, 최신 develop 76df34e는 작업 브랜치 조상이며 이 기준 충돌 없음. 점검 시작 로컬/원격 SHA=1d4681ec6781feafcdfd0c9c3909e338ef7793a8, working tree clean. diff --check 통과.
+- 자동 최종 재실행: extension/ npm test 42/42, 실패/스킵 0; check/build:harness 성공. 사용자 기본/경계 6개씩 성공 보고와 미확인 OS/Chrome/실제 로드 SHA 메타데이터를 분리해 유지.
+- A. PR 준비 가능 — 이번 비회원 기한·도메인 단위에 한정. EXT-02 전체·회원 연동·두 모듈 통합·별도 fixture 전체 완료 또는 병합 승인 아님. PR에는 develop 대비 이전 adapter/fixture와 백업 복원도 포함됨을 명시하고 기존 구현 출처를 보존한다.
+- AC-EXT-02-01/02/03은 적용·기한·journal의 부분 대응, BOUND-17은 별도 모듈 모의 저장 실패 부분이며 전체 기준 통과로 확대하지 않는다. 자동 도메인 추가 사례는 새 AC ID를 임의 생성하지 않는다.
+- PR 생성 외부 차단: GraphQL 및 REST API 조회 Forbidden. curl HEAD의 CONNECT tunnel 403/Envoy 응답으로 api.github.com 목적지 프록시 차단을 확인. GH_TOKEN 존재 여부만 확인했으며 값을 출력하지 않았다. Git fetch/push 성공과 API 접근 가능성은 별개다. API 허용 후 기존 PR 조회부터 재개하고 중복 PR을 만들지 않는다.
+- PR 본문은 필요한 변경 범위·AC/BOUND·모의/사용자 결과·실제 회원 연동 미검증·선행 조건을 담아 준비했다. 코드 변경·새 기능 구현·병합은 이번 점검에서 하지 않음. PR 생성 완료로 기록하지 않음.
