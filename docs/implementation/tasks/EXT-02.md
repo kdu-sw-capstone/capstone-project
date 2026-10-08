@@ -4,7 +4,7 @@
 
 ## 작업 상태
 
-- 상태: 진행 중 (사이트 실행 모듈 구현·자동 검증·Commit/Push 완료; 사용자 Chrome 결과 세부 확인 중)
+- 상태: 진행 중 (사이트 실행 모듈 구현·자동 검증·Commit/Push 완료; 사용자 Chrome 재검증 필요)
 - 실제 담당자: 윤종민 (사용자 제공 작업 지시·가이드 기준; 저장소의 기존 배정표와 EXT-02 카드에는 개인 배정이 미기입되어 있어 팀 기록 확인 필요)
 - 브랜치 / 시작 기준 커밋: `feature/extension-core-ext-02` / `76df34e` (2026-10-07, origin/develop 최신 확인)
 - PR:
@@ -14,7 +14,7 @@
 |---|---|---|---|
 | Web | | 미확인 | 미실행 |
 | Server | | 미확인 | 미실행 |
-| Extension | 윤종민* | 사이트 실행 모듈 구현; 제품 세션·회원 연결 제외 | Codex Windows 자동 26/26; 사용자 Chrome 수행 보고, 세부 결과 확인 중 |
+| Extension | 윤종민* | 사이트 실행 모듈 구현; 제품 세션·회원 연결 제외 | Codex Windows 자동 26/26 재실행 통과; 사용자 Chrome 1차 오류 보고, fixture 수정 후 재검증 대기 |
 
 \* 담당 기록 근거는 이번 사용자 제공 지시·가이드이며, 저장소 `docs/TEAM_GUIDE.md`와 기존 작업카드에는 개인별 기능 배정이 기록되어 있지 않다. 배정 자체를 재지정한 것은 아니다.
 
@@ -160,3 +160,12 @@
 - 보완: 검증용 runner에 `새 검증 실행 준비` 추가. 이전 session 규칙 해제를 확인한 뒤 새 UUID session을 선택하고 이전 journal을 보존한다. 제품 모듈·API·공용 계약은 변경하지 않는다. 다른 runner 탭의 이전 session 사용은 새로고침 오류로 차단한다. README의 수동 DB 삭제 절차를 버튼 절차로 교체했다.
 - 실제 Chrome 재검증: 미검증. 패키지 재생성·확장 새로고침·runner 재열기 후 READY → APPLIED와 example.com 차단·허용·해제 결과를 사용자에게 요청한다. PR 판정 B 유지.
 - Codex 자동 재검증: Windows에서 npm.ps1 실행 정책 오류를 확인하고 정책 변경 없이 npm.cmd로 실행했다. 26/26 통과, JS 문법 검사·build:harness 성공. 증거: ../evidence/EXT-02-2026-10-08-fixture-retry.txt. 새 버튼의 Chrome 실제 실행은 미검증이다.
+
+### 2026-10-08 현재 작업공간 재개 및 재검증
+
+- 재개 전 실제 저장소는 `C:\FOCURVE\capstone-project`, 브랜치 `feature/extension-core-ext-02`, HEAD `5dbaeb5`였고 working tree는 clean이었다. 최초 참고 커밋 `1af60bc`와 `feature/extension-setup` 브랜치는 로컬/원격 참조에서 확인되지 않았다. `git fetch origin` 첫 시도는 `.git/FETCH_HEAD` 권한 거부였으나 권한 검토 후 재시도 성공했다. 원격 작업 브랜치에 `b49e985`, `477d411`, `cf7910e` 세 커밋이 있어 같은 브랜치를 fast-forward로 재개했다. 재개 기준은 `cf7910e1acea40d21c3dde3e7d65c14b05e05b53`; origin 작업 브랜치와 일치한다. fetch 시 origin/develop은 `76df34e`였다. develop 통합은 하지 않았다.
+- 이번 실행환경에는 Node/npm이 PATH 및 저장소 내 `.tools`에 없었다. Node 24.21.0 Windows 배포 ZIP의 공식 SHA256 (`158f7685b44de51f6c0df1d153526cbcd3e1bc739a8dfc607721cef75de9e541`)을 대조해 임시 도구로 사용했고 npm 11.19.0을 확인했다. 의존성은 0개이며 `npm ci --ignore-scripts --audit=false --fund=false` 성공. 최초 npm script 시도는 child process PATH 누락으로 시작되지 않았으며 PATH를 바로잡아 재실행했다. 코드나 기대값은 조정하지 않았다.
+- 이번 직접 재검증 (Codex Windows PowerShell, `extension`): `npm test` 26/26 통과, 실패·스킵 0; `npm run check` 성공 (JavaScript 문법 검사, ESLint 아님); `npm run build:harness` 성공, `extension/.chrome-harness/manifest.json` 생성. DNR·tabs·journal·Core context는 자동 테스트 모의 객체다. 상세 결과: `docs/implementation/evidence/EXT-02-2026-10-08-current-workspace.txt`. 회원/Server 실제 연동 및 Chrome UI는 검증하지 않았다. `.npm-cache/`와 `.chrome-harness/`는 Git 무시 대상이며 커밋하지 않는다.
+- Chrome 사용자 실행 결과는 2026-10-08 fixture에서 `TEST_RUN_FINISHED_USE_NEW_TEST_PROFILE` 오류였다. `cf7910e`가 새 테스트 실행 준비 절차를 보완했으며, 그 수정 이후 Chrome 재실행 결과는 아직 전달되지 않았다. 해당 시나리오는 실패 후 수정·재검증 대기이고 통과가 아니다.
+- 현재 확인한 Chrome 설치 파일 버전은 `154.0.8037.98`; Codex가 Chrome UI를 검증한 것은 아니다. README의 이전 절대 경로 `C:\2221039\capstone-project`는 현재 작업공간과 달라 `C:\FOCURVE\capstone-project` 기준으로 바로잡는다.
+- 다음 행동: 윤종민이 같은 브랜치의 최신 커밋 `cf7910e`로 `extension/README.md` 절차를 수행한다. `새 검증 실행 준비` → READY → 적용 → example.com 차단/example.org 허용/해제 결과와 Chrome 버전을 전달한다. 그 전까지 PR 판정은 B (추가 작업 필요)다.

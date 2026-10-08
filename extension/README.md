@@ -8,15 +8,16 @@ Manifest V3 기반으로 브라우저 정책 적용·해제, 내부 기능 제�
 
 ## 개발·자동 검증
 
-실행 위치: `C:\2221039\capstone-project\extension` (다른 PC에서는 해당 저장소의 `extension` 디렉터리).
+실행 위치: 현재 작업공간 기준 `C:\FOCURVE\capstone-project\extension` (다른 PC에서는 해당 저장소의 `extension` 디렉터리).
 
-- Node 24.x와 npm 필요. 이번 Codex Windows 환경: Node 24.21.0, npm 11.19.0. Chrome 파일 버전 155.0.8059.40 확인, 브라우저 동작은 사용자 검증 대기.
+- Node 24.x와 npm 필요. 이번 Codex 자동 검증 환경: Node 24.21.0, npm 11.19.0. Chrome 설치 파일 버전 154.0.8037.98을 확인했지만 Chrome UI 동작은 실행하지 않았으며, 사용자 재검증 대기.
 - 외부 npm 의존성 없음. `package-lock.json`을 사용하며 기존 Web 의존성·버전을 변경하지 않습니다.
 - 환경변수·Web·Server·DB 없이 모듈 자동 테스트와 검증용 확장 실행 가능.
 - `npm run check`는 JavaScript 문법 검사입니다. ESLint는 구성하지 않았습니다.
 
 ```powershell
-Set-Location C:\2221039\capstone-project\extension
+$repoRoot = 'C:\FOCURVE\capstone-project'
+Set-Location (Join-Path $repoRoot 'extension')
 node --version
 npm --version
 npm ci --ignore-scripts --audit=false --fund=false
@@ -27,11 +28,7 @@ npm run build:harness
 
 PowerShell 실행 정책으로 `npm.ps1`이 차단되면 보안 정책을 바꾸지 말고 위 명령의 `npm` 대신 `npm.cmd`를 사용합니다. 예: `npm.cmd run build:harness`.
 
-이번 환경에서는 전역 Node가 없어 공식 배포 zip의 SHA256 확인 후 저장소 `.tools/node-v24.21.0-win-x64`에만 준비했습니다. 설치 파일·캐시는 Git 제외입니다. 이 환경을 그대로 쓰는 경우 위 명령 전에 현재 PowerShell에서만 다음을 실행합니다. 다른 PC에 해당 폴더가 없다면 설치된 Node 24를 사용합니다.
-
-```powershell
-$env:Path=(Resolve-Path ..\.tools\node-v24.21.0-win-x64).Path+';'+$env:Path
-```
+Node가 PATH에 없으면 공식 Node.js 배포본으로 Node 24.x를 설치하고 위 명령의 `node --version`, `npm --version` 결과를 확인한 뒤 진행합니다. Web 의존성은 설치할 필요가 없습니다.
 
 제품 모듈은 별도 번들 빌드가 없는 ES module입니다. 검증용 패키지 생성 명령은 실제로 존재하는 `npm run build:harness`이며, 생성된 manifest 경로는 `extension/.chrome-harness/manifest.json`입니다. 산출물은 Git 제외입니다. `extension/` 자체에는 제품 manifest가 없으므로 그 폴더를 직접 로드하지 않습니다.
 
@@ -57,7 +54,7 @@ Chrome의 session 규칙은 브라우저 종료 시 제거됩니다. 세션 규�
 
 1. 자기 작업 브랜치를 최신으로 맞추되 미커밋 변경을 먼저 확인합니다. 깨끗한 작업공간에서만 `git switch feature/extension-core-ext-02`, `git pull --ff-only origin feature/extension-core-ext-02`, `git rev-parse HEAD`를 실행합니다. 다른 변경이 있으면 초기화하지 말고 보존합니다.
 2. 위 자동 검증·`npm run build:harness`를 `extension`에서 실행합니다.
-3. `chrome://extensions` → 개발자 모드 → **압축해제된 확장 프로그램을 로드합니다** → `C:\2221039\capstone-project\extension\.chrome-harness`를 선택합니다.
+3. `chrome://extensions` → 개발자 모드 → **압축해제된 확장 프로그램을 로드합니다** → `C:\FOCURVE\capstone-project\extension\.chrome-harness`를 선택합니다.
 4. 이름 `FOCURVE EXT-02 검증 전용`을 확인합니다. 확장 아이콘 → 검증 페이지 열기. page runner와 DevTools Console을 확인합니다. Service Worker는 이 fixture에 없습니다.
 
 | 순서 / AC | 설정·수행 동작 | 기대 결과·확인 화면 / 로그 | 현재 상태 |
