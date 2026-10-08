@@ -4,7 +4,7 @@
 
 ## 작업 상태
 
-- 상태: 진행 중 (사이트 실행 모듈 구현·자동 검증 완료; 사용자 Chrome 결과 세부 확인 중)
+- 상태: 진행 중 (사이트 실행 모듈 구현·자동 검증·Commit/Push 완료; 사용자 Chrome 결과 세부 확인 중)
 - 실제 담당자: 윤종민 (사용자 제공 작업 지시·가이드 기준; 저장소의 기존 배정표와 EXT-02 카드에는 개인 배정이 미기입되어 있어 팀 기록 확인 필요)
 - 브랜치 / 시작 기준 커밋: `feature/extension-core-ext-02` / `76df34e` (2026-10-07, origin/develop 최신 확인)
 - PR:
@@ -138,4 +138,17 @@
 - 남은 담당 확인: EXT-01 (필수, tasks/EXT-01.md) 미착수·개인 배정 미확인; 설치 인증·제품 EXEC API 이후 trusted context/저장 연결 권장. EXT-03 (필수, tasks/EXT-03.md) 미착수·개인 배정 미확인; 소유별 durable report/outbox·이벤트 schema 이후 권장. 이번에는 해당 기능에 착수하지 않는다.
 - 제품 연결 조율: EXT-02/EXT-01/SESSION-01~04/EXT-03, 관련 Server·Extension·Web 영역. 현재 독립 모듈·자동 테스트·수동 fixture 검증은 가능. 보류: 신뢰된 소유 context를 payload로 대체, 미구현 reconcile을 완료로 가장, 제품 RUNNING/회원 연동 완료 표시. 권장: 기존 API 객체 그대로 연결하고 owner/session transaction·명령/보고 식별자 대응을 실제 연동 PR에서 검증. 개인별 담당은 확인 필요.
 - 설계 변경·공용 계약 변경·다른 담당 코드 수정·develop merge/rebase·직접 공유 브랜치 Commit/Push 없음. 기준 develop과의 차이는 additive Extension 모듈 및 EXT-02 기록이다.
-- 현재 PR 판정: B. 추가 작업 필요 (Chrome 항목별 사용자 결과 확인·최종 기록·Commit/Push 필요). 팀 리뷰·develop 통합 미실행.
+- 현재 PR 판정: B. 추가 작업 필요 (필요한 Chrome 적용·허용·해제의 항목별 성공 여부와 검증 코드 기준 확인). 코드·현재 가능한 자동 검증·기록·Commit/Push는 완료. 팀 리뷰·develop 통합 미실행. 사용자 보고를 받으면 같은 브랜치에서 결과 기록·필요한 수정/검증 후 PR 여부를 판단한다.
+
+### Commit·Push 및 전체 상태 최종 대조
+
+- 구현 커밋: `b49e985e4d39891ace4fe66f3adecd419815a242`, `feat(extension): implement EXT-02 site rule apply and release adapter`.
+- 포함: site-rules/controller, Node package/lock, 테스트 26건, syntax/build:harness scripts, Chrome fixture, README, EXT-02 카드·통합현황, 자동 증거, 로컬 tooling 제외 규칙. 빌드 산출물·Node zip/cache·node_modules·비밀은 포함하지 않았다.
+- Push 대상: `origin/feature/extension-core-ext-02`. `5dbaeb5..b49e985` Push 성공, `git ls-remote --heads` 결과와 로컬 HEAD 동일. 구현 커밋 직후 staged/unstaged/untracked 없음.
+- 최종 fetch 성공: `origin/develop=76df34ea6be1c591be33c29606c24fc654f61932`. `git merge-base --is-ancestor origin/develop HEAD` exit 0. 해당 기준은 현재 브랜치의 조상이며 충돌 없음. main/develop 직접 수정·Commit/Push·병합 없음.
+- 이 최종 기록을 포함하는 별도 docs 커밋의 식별자는 해당 파일의 최신 `git log`로 확인한다. 자기 커밋 SHA를 본문에 미리 만들어 넣지 않는다. 문서만 바뀌며 검증된 구현은 b49e985와 동일하다.
+- 구현 상태: 이번 사이트 실행 계층 완료; EXT-02 전체 미완료. 자동 검증 완료; Chrome 항목별 결과 확인 중; 회원·Server·Content·다른 담당 영역 실제 통합 미검증; PR 미생성, 팀 리뷰/develop 통합 미실행.
+- 미검증: 기본 Chrome 결과의 상세/코드 대상, 하위 도메인·마지막 점·모의 설치/만료·실제 IDB/규칙 대조·브라우저 전체 재시작, 제품 인증·Server reconcile/report·세션 상태·이벤트/Content 통합. 자동 테스트의 모의 확인은 해당 실제 환경 확인을 대신하지 않는다.
+- 실패: 현재 알려진 build/test/syntax 실패 없음. sandbox 네트워크 Push 첫 시도 실패는 승인된 동일 Push로 해결. Chrome 문제는 보고되지 않았으나 무응답을 통과로 해석하지 않는다.
+- 조율 필요: 후속 EXT-01/03 개인별 담당 확인; 제품 인증·EXEC API·transaction·상태/report 연결은 기존 관련 담당 영역의 선행 구현 필요. 이번 독립 계층에 공용 계약 변경·담당 충돌·설계 충돌·develop 충돌 없음.
+- 다음 행동: 1) 윤종민이 Chrome 항목별 결과/검증 버전·코드 기준 전달 → 2) Codex가 사용자 실행 결과 기록, 필요 시 같은 단위 수정·자동/Chrome 재검증·Commit/Push → 3) 필요한 실제 검증 조건 충족 시 develop 대상 같은 브랜치 PR 생성·팀 리뷰 대기. 다른 기능의 구현은 자동 착수하지 않음.
