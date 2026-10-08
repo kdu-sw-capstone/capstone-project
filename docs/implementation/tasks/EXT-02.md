@@ -353,3 +353,16 @@
 - 실패: 사용자 보고 실패 없음. Codex 환경의 unpacked 확장 로드 제한은 별도로 유지.
 - 조율 필요: 실제 Server 전체 Snapshot/지원 버전·오류, global/Content priority, Figma 프레임 접근·팀 원본 재현자료.
 - 다음 행동: Worker 단독 복구 확인, Figma 자료 확보 및 UI 반영, 서버와 실제 연동 대조 후 사용자 점검·팀 재검토. 팀 담당 병합, Codex 병합 금지. 전체 EXT-02 완료 아님.
+
+### Worker 단독 복구 검증 착수
+
+- EXT-02 / 윤종민 Core. 시작 HEAD c5dae41, 브랜치 feature/extension-core-ext-02, clean.
+- 기준: AC-EXT-02-03, API 실행/복구 순서, 데이터 복구 명세. 이번 목표: 실제 제품 classic script의 새 VM 컨텍스트 생성 시 저장/journal/DNR 대조·종료 의도·접근 pending 보존을 모의 검증. 실제 Chrome Worker 중단은 사용자 검증으로 분리.
+
+### Worker 재생성 모의 검증 결과
+
+- 신규 5건: 새 VM 컨텍스트마다 제품 classic scripts를 다시 로드하되 모의 IndexedDB/Chrome storage.session/DNR을 유지. 같은 GuestSession 객체에서 tick만 재호출하는 검증과 구분한다.
+- 정상1.2 RUNNING·snapshot/rules/ID 유지 및 중복 add 없음, 설정 변경은 다음 세션부터 적용; child allow 실제 모의 규칙 누락 시 INTERRUPTED·잔여 owned 규칙 해제 및 재적용 없음; 해제 실패 후 fresh Worker에서 INTERRUPTED/확인된 시간 유지; pending RECORD 한 번만 commit; 계획 종료 시각 이후 fresh Worker에서 종료·해제.
+- 실행: Node 24.19.0 Linux, npm --prefix extension test 74/74(기존69+신규5), 실패·스킵0. check/diff 확인 성공. Chrome/IndexedDB는 모의 구현, 실제 Worker stop 결과 아님.
+- 제품 코드 변경 없음. 실제 Chrome에서는 현재 제품 설치로 worker stop 후 상태 재확인 가능. 절차는 evidence/EXT-02-Worker-recovery.md 참조.
+- 미검증: 실제 Chrome Worker 단독 중단, 실제 서버·회원/전송/승인/Content/전역 정책·강제 quota, Figma UI. 실패: 최종 자동0. 조율 필요: 기존 계약 통합/Figma 원본 접근. 다음 행동: 사용자 Worker stop 검증, Figma 프레임 확보·UI 적용, 실제 Server 대조 후 팀 재검토. 전체EXT-02 완료/병합 없음.

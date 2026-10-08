@@ -8,9 +8,9 @@ import { IDBFactory } from 'fake-indexeddb';
 // 제품 classic scripts와 실제 저장 transaction을 실행하되 Chrome APIs/IndexedDB는 모의입니다.
 async function fixture() {
  let time = Date.parse('2026-10-08T10:00:00Z');
- let rules = [], releaseFailures = 0, boot = true;
+ let rules = [], releaseFailures = 0, boot = true, ruleUpdates = 0;
  class Clock extends Date { constructor(...args){super(...(args.length ? args : [time]));} static now(){return time;} }
- const context = vm.createContext({URL, Date:Clock, crypto:webcrypto, TextEncoder, structuredClone,
+ const bindings = {URL, Date:Clock, crypto:webcrypto, TextEncoder, structuredClone,
   indexedDB:new IDBFactory(), setTimeout,
   chrome:{runtime:{getURL:path=>'chrome-extension://test/'+path},
    storage:{session:{get:async()=>({focurve_boot:boot}),set:async()=>{boot=true;}}},
@@ -18,13 +18,18 @@ async function fixture() {
    declarativeNetRequest:{getSessionRules:async()=>structuredClone(rules),isRegexSupported:async()=>({isSupported:true}),
     updateSessionRules:async({addRules=[],removeRuleIds=[]})=>{
      if(removeRuleIds.length && releaseFailures-- > 0)throw new Error('MOCK_RELEASE_FAILURE');
+     ruleUpdates++;
      rules=rules.filter(r=>!removeRuleIds.includes(r.id)).concat(structuredClone(addRules));
-    }}}});
+    }}}};
+ async function spawnWorker(){
+ const context=vm.createContext({...bindings});
  for(const file of ['host-policy','local-store','site-store','session-db','access-store','session-core'])
   vm.runInContext(await readFile(new URL('../background/'+file+'.js',import.meta.url),'utf8'), context);
- const api=vm.runInContext('({sites:GuestSites,core:GuestSession,access:AccessStore,db:SessionDB,local:LocalStore})',context);
- return {...api,advance:ms=>{time+=ms;},restart:()=>{boot=false;},failRelease:n=>{releaseFailures=n;},
-  get time(){return time;},get rules(){return rules;}};
+ return vm.runInContext('({sites:GuestSites,core:GuestSession,access:AccessStore,db:SessionDB,local:LocalStore})',context);
+ }
+ const api=await spawnWorker();
+ return {...api,spawnWorker,dropRule:id=>{rules=rules.filter(r=>r.id!==id);},advance:ms=>{time+=ms;},restart:()=>{boot=false;},failRelease:n=>{releaseFailures=n;},
+  get time(){return time;},get rules(){return rules;},get ruleUpdates(){return ruleUpdates;}};
 }
 const input=(host='example.com',policy='BLOCK')=>({url:host,display_name:host,include_subdomains:true,
  purpose:policy==='ALLOW'?'GENERAL':'DISTRACTION',access_policy:policy,feature_policies:[]});
@@ -149,4 +154,49 @@ test('unsupported stored strategy never reports RUNNING and releases owned rules
  const f=await fixture();await running(f);const state=await f.db.load();state.session.snapshot.site_match_strategy='FIRST';await f.db.save(state);
  await assert.rejects(f.core.tick(),{message:'SNAPSHOT_VERSION_UNSUPPORTED'});
  assert.equal((await f.db.load()).session.status,'INTERRUPTED');assert.equal(f.rules.length,0);
+});
+
+test('fresh Worker VM retains 1.2 RUNNING snapshot and rules despite changed settings',async()=>{
+ const f=await fixture();await f.sites.create(input('naver.com'),uuid());
+ const child=await f.sites.create(input('chzzk.naver.com','ALLOW'),uuid());
+ const started=await f.core.start(25,uuid());const snapshot=structuredClone(started.session.snapshot),rules=structuredClone(f.rules),updates=f.ruleUpdates;
+ await f.sites.update(child.site_id,child.version,input('chzzk.naver.com','BLOCK'),uuid());
+ f.advance(10_000);const worker=await f.spawnWorker();assert.notEqual(worker.core,f.core);
+ const recovered=await worker.core.state();assert.equal(recovered.session.status,'RUNNING');
+ assert.equal(recovered.session.session_id,started.session.session_id);
+ assert.deepEqual(recovered.session.snapshot,snapshot);assert.deepEqual(f.rules,rules);assert.equal(f.ruleUpdates,updates);
+ await worker.core.end(started.session.session_id);assert.equal(f.rules.length,0);
+ const next=await worker.core.start(25,uuid());assert.equal(next.session.snapshot.sites[0].access_policy,'BLOCK');
+});
+test('fresh Worker VM with missing child allow releases remaining rules without reapply',async()=>{
+ const f=await fixture();await f.sites.create(input('naver.com'),uuid());await f.sites.create(input('chzzk.naver.com','ALLOW'),uuid());
+ await f.core.start(25,uuid());const updates=f.ruleUpdates;
+ f.dropRule(f.rules.find(r=>r.action.type==='allow').id);f.advance(10_000);
+ const worker=await f.spawnWorker();const recovered=await worker.core.state();
+ assert.equal(recovered.session.status,'INTERRUPTED');assert.equal(recovered.session.end_reason,'POLICY_MISMATCH');
+ assert.equal(f.rules.length,0);assert.equal(f.ruleUpdates,updates+1);
+ assert.equal(recovered.session.active_duration_ms,0);
+});
+test('fresh Worker VM retries failed interrupted release with persisted intention and confirmed boundary',async()=>{
+ const f=await fixture();await running(f);f.advance(10_000);await f.core.tick();
+ f.restart();f.advance(50_000);f.failRelease(1);
+ await assert.rejects(f.core.tick(),{message:'MOCK_RELEASE_FAILURE'});
+ const pending=await f.db.load();f.advance(60_000);
+ const worker=await f.spawnWorker();const recovered=await worker.core.state();
+ assert.equal(recovered.session.status,'INTERRUPTED');assert.equal(recovered.session.active_duration_ms,10_000);
+ assert.deepEqual(recovered.journal.terminal_intent,pending.journal.terminal_intent);assert.equal(f.rules.length,0);
+});
+test('fresh Worker VM commits persisted pending RECORD observation once',async()=>{
+ const f=await fixture();await f.sites.create(input('example.com','RECORD'),uuid());await f.core.start(25,uuid());
+ await f.core.observe('before',navigation(f,'https://example.com./',100));
+ const worker=await f.spawnWorker();await worker.core.tick();
+ await worker.core.observe('commit',navigation(f,'https://example.com./',120));
+ await worker.core.observe('commit',navigation(f,'https://example.com./',120));
+ const result=await worker.core.records();assert.equal(result.total_access,1);
+ assert.equal(result.items[0].payload.target_host,'example.com');
+});
+test('fresh Worker VM after planned end confirms release instead of resuming expired focus',async()=>{
+ const f=await fixture();await running(f);f.advance(26*60_000);
+ const worker=await f.spawnWorker();const recovered=await worker.core.state();
+ assert.equal(recovered.session.status,'ENDED');assert.equal(recovered.session.end_reason,'TIME_LIMIT');assert.equal(f.rules.length,0);
 });
