@@ -4,10 +4,10 @@
 
 ## 작업 상태
 
-- 상태: 진행 중 — 비회원 기한·도메인 보완 단위 구현 및 사용자 Chrome 안내 시나리오 검증 완료; 회원/전체 연동 미완료, PR 미생성
+- 상태: 진행 중 — 비회원 기한·도메인 보완 단위 구현 및 사용자 Chrome 안내 시나리오 검증 완료; 회원/전체 연동 미완료, PR #17 Draft·사용자 점검 대기
 - 실제 담당자: 윤종민 — 기존 배정 원문(원본보관 ZIP의 개발계획 v1.3: Extension Core·세션·URL/Domain·사이트 정책·차단 페이지·시작/종료 연동)과 사용자 지시 기준. EXT 전체·Content Control을 재배정하지 않음
 - 브랜치 / 시작 기준 커밋: `feature/extension-core-ext-02` / `76df34e` (2026-10-07, origin/develop 최신 확인)
-- PR: 이 작업에서 생성하지 않음. 최신 점검의 GitHub API 조회는 Forbidden으로 실패해 외부 PR 존재 여부는 확인하지 못함
+- PR: [#17](https://github.com/kdu-sw-capstone/capstone-project/pull/17), develop ← feature/extension-core-ext-02, Draft·사용자 최종 점검 대기. 사용자가 직접 생성했으며 병합하지 않음
 - 선행 작업 / 차단 조건: 제품 연결은 EXT-01·API-EXT-01~07·API-EXEC-01~03, 제품 IndexedDB transaction·ExecutionReport/outbox·세션 상태 연결이 필요하다. 이번에는 기존 Command/Snapshot 명세로 사이트 차단 실행 모듈만 독립 구현했다. 기존 2026-10-07 차단 기록은 아래에 보존한다.
 
 | 영역 | 담당 | 구현 상태 | 검증 상태 |
@@ -267,3 +267,15 @@
 - AC-EXT-02-01/02/03은 적용·기한·journal의 부분 대응, BOUND-17은 별도 모듈 모의 저장 실패 부분이며 전체 기준 통과로 확대하지 않는다. 자동 도메인 추가 사례는 새 AC ID를 임의 생성하지 않는다.
 - PR 생성 외부 차단: GraphQL 및 REST API 조회 Forbidden. curl HEAD의 CONNECT tunnel 403/Envoy 응답으로 api.github.com 목적지 프록시 차단을 확인. GH_TOKEN 존재 여부만 확인했으며 값을 출력하지 않았다. Git fetch/push 성공과 API 접근 가능성은 별개다. API 허용 후 기존 PR 조회부터 재개하고 중복 PR을 만들지 않는다.
 - PR 본문은 필요한 변경 범위·AC/BOUND·모의/사용자 결과·실제 회원 연동 미검증·선행 조건을 담아 준비했다. 코드 변경·새 기능 구현·병합은 이번 점검에서 하지 않음. PR 생성 완료로 기록하지 않음.
+
+
+### PR #17 Draft 및 사용자 최종 점검 인계
+
+- 최신 사용자 기준: Codex 작업 마지막에 미검증/실패/조율 필요/다음 행동을 확인해 보고 → 사용자 변경/검증 결과 점검 → 사용자가 PR 진행 여부 결정. 과거 PR 자동 생성 지시보다 이 최신 절차를 우선 적용한다. 별도 사용자 요청 없이 Ready for review·리뷰 요청·새 PR·병합을 수행하지 않는다.
+- 실제 확인: PR #17은 이미 Draft=true, open, base=develop, head=feature/extension-core-ext-02. Codex가 이번에 Draft 전환 명령을 실행한 것은 아니다. 사용자 생성 후 main 대상은 앞서 develop으로 수정했다. 이번 점검에서 mergeable=true 확인, Draft/승인 요건으로 blocked이며 코드 충돌 판정과 구분한다.
+- 점검 시작 로컬/원격/PR SHA=8300026e5e955dd1b9a2130610b66aa5208180cd, working tree clean. fetch로 origin/develop=76df34ea6be1c591be33c29606c24fc654f61932가 HEAD의 조상임을 확인; 전체 diff --check 통과.
+- extension/에서 npm test 42/42, 실패·스킵 0; check/build:harness를 이번 점검에서 직접 재실행해 통과. 제품 코드는 변경하지 않고 문서만 최신 PR 상태로 갱신한다. 원격 전체 PR에는 기한/도메인 수정 외 기존 adapter/fixture 및 사용자 백업 복원도 포함된다.
+- 미검증: 실제 회원 인증·EXEC/reconcile/report·Content 통합, 실제 IDB quota/저장 실패·해제 실패 복구, 자동 경계 전체의 Chrome 검증 및 별도 fixture 재검증. 사용자 기본/도메인 각 6건은 성공 보고가 있으나 실제 로드 SHA·Windows/Chrome 버전·화면/로그는 별도 미제공.
+- 실패: 현재 실행한 자동 검사 실패 없음; Linux Chromium의 관리자 정책 로드 거절은 미해결 환경 제한. GitHub API 접근은 이번 조회 성공으로 과거 403 차단과 구분.
+- 조율 필요: 회원 설치/Server API 선행 및 Core↔Content 공유 인터페이스/이벤트 전송 세부 담당. 현재 비회원 수정 단위에서 공용 계약 변경·담당 재배정·develop 충돌은 확인되지 않음.
+- 다음 행동: 사용자 PR Files changed/검증 기록 점검 → 문제 있으면 같은 단위 수정 및 필요한 재검증 → 사용자가 리뷰 진행 판단. 리뷰 보류 후 다음 구현을 진행하겠다는 사용자 의도는 유지하되 PR 범위에 새 구현을 섞지 않도록 후속 비회원 저장/해제 실패 검증은 별도 브랜치 권장. 이번 최종 점검에서는 새 구현 착수 없음.
