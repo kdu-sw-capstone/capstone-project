@@ -5,8 +5,8 @@ const AccessStore = (() => {
  const host=raw=>GuestSession.normalizeHost(raw);
  function pending(state,details){
   if(!state||state.session.status!=='RUNNING'||details.frameId!==0||!Number.isInteger(details.tabId)||details.tabId<0||!Number.isFinite(details.observed_at)||details.observed_at<Date.parse(state.session.started_at))return null;
-  const target=state.session.snapshot.sites.find(site=>GuestSession.matches(site,details.url)&&['BLOCK','RECORD'].includes(site.access_policy));
-  if(!target)return null;
+  const target=GuestSession.select(state.session.snapshot,details.url);
+  if(!target||!['BLOCK','RECORD'].includes(target.access_policy))return null;
   return {key:key(details.tabId),owner_key:state.session.owner_key,session_id:state.session.session_id,revision:state.journal.revision,navigation_id:crypto.randomUUID(),event_id:crypto.randomUUID(),target_host:host(details.url),target_key:`SITE:${target.canonical_host}`,registered_host:target.canonical_host,policy:target.access_policy,include_subdomains:target.include_subdomains,navigation_started_at:details.timeStamp,captured_at:details.observed_at};
  }
  async function fingerprint(raw){return Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(new URL(raw).href)))).map(v=>v.toString(16).padStart(2,'0')).join('');}

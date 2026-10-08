@@ -1,4 +1,4 @@
-import { buildSiteRules, blockedUrl, matchesSite, sameRule } from './site-rules.js';
+import { buildSiteRules, blockedUrl, selectSite, supportedSnapshot, sameRule } from './site-rules.js';
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const timestamp = value => typeof value === 'string' && /^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d(?:\.\d{1,3})?Z$/.test(value)
@@ -34,7 +34,8 @@ export class SiteController {
       if (command.type !== 'APPLY_POLICY' || !timestamp(command.execute_before)
         || Date.parse(command.execute_before) <= this.now()) throw new Error('APPLY_EXPIRED_OR_INVALID');
       const snapshot = command.snapshot;
-      if (!snapshot || snapshot.format_version !== '1.1' || !UUID.test(snapshot.policy_snapshot_id)
+      if (!supportedSnapshot(snapshot)) throw new Error('SNAPSHOT_VERSION_UNSUPPORTED');
+      if (!UUID.test(snapshot.policy_snapshot_id)
         || snapshot.executor_id !== context.executor_id
         || (owner.startsWith('MEMBER:') ? String(snapshot.owner_user_id) !== owner.slice(7) : snapshot.owner_user_id != null)) {
         throw new Error('SNAPSHOT_OWNER_MISMATCH');
@@ -66,8 +67,8 @@ export class SiteController {
 
   async divert(command, context, sites) {
     for (const tab of await this.tabs.query({})) {
-      const site = sites.find(item => item.access_policy === 'BLOCK' && matchesSite(item, tab.pendingUrl || tab.url));
-      if (!site) continue;
+      const site = selectSite(sites, tab.pendingUrl || tab.url);
+      if (site?.access_policy !== 'BLOCK') continue;
       await this.recheck(command, context, 'APPLIED');
       const url = blockedUrl(this.blockedPageUrl, site);
       try {
@@ -104,7 +105,7 @@ export class SiteController {
         return { observed: 'APPLIED', duplicate: true };
       }
       const existing = await this.dnr.getSessionRules();
-      const rules = buildSiteRules(input.snapshot.sites, existing, this.blockedPageUrl);
+      const rules = buildSiteRules(input.snapshot.sites, existing, this.blockedPageUrl, input.snapshot.format_version === '1.1');
       const entry = { owner_key: context.owner_key, session_id: input.session_id,
         executor_id: input.executor_id, command_id: input.command_id,
         revision: input.desired_revision, action_seq: 1, desired: 'APPLIED', observed: 'UNCONFIRMED',

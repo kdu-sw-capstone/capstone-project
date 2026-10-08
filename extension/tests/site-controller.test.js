@@ -55,20 +55,22 @@ test('site layer: HTTP(S), exact host, subdomain boundary, www preserved, ALLOW/
   const rules = buildSiteRules([site(), site('www.sample.org', false), site('allow.test', true, 'ALLOW'), site('record.test', true, 'RECORD')], [{ id: 1 }], page);
   assert.deepEqual(rules.map(rule => rule.id), [2, 3]);
   assert.deepEqual(rules[0].condition.resourceTypes, ['main_frame']);
-  const regex = new RegExp(rules[0].condition.regexFilter, 'i');
+  const rootRule = rules.find(rule => new URL(rule.action.redirect.url).searchParams.get('host') === 'example.com');
+  const wwwRule = rules.find(rule => new URL(rule.action.redirect.url).searchParams.get('host') === 'www.sample.org');
+  const regex = new RegExp(rootRule.condition.regexFilter, 'i');
   for (const url of ['https://example.com', 'https://example.com./', 'http://a.b.example.com/path', 'https://EXAMPLE.COM:443/?secret=x', 'https://user@example.com/path']) assert.equal(regex.test(url), true, url);
   for (const url of ['https://evil-example.com', 'https://example.com.evil.test', 'https://else.test/example.com', 'ftp://example.com']) assert.equal(regex.test(url), false, url);
-  assert.equal(new RegExp(rules[1].condition.regexFilter).test('https://sample.org'), false);
+  assert.equal(new RegExp(wwwRule.condition.regexFilter).test('https://sample.org'), false);
   assert.equal(matchesSite(site('example.com', false), 'https://a.example.com'), false);
   assert.equal(matchesSite(site(), 'https://a.example.com./'), true);
   assert.ok(!rules[0].action.redirect.url.includes('secret'));
 });
 
-test('reject malformed/overlapping snapshot before constructing rules', () => {
+test('reject malformed/duplicate snapshot before constructing rules', () => {
   for (const host of ['EXAMPLE.com', 'localhost', 'a.localhost', '127.0.0.1', 'a.com:80', 'x/y.com', '.example.com', 'a..com', '-bad.com']) {
     assert.throws(() => buildSiteRules([site(host)], [], page), /INVALID_SNAPSHOT_HOST/);
   }
-  assert.throws(() => buildSiteRules([site(), site('sub.example.com')], [], page), /SNAPSHOT_SCOPE_CONFLICT/);
+  assert.throws(() => buildSiteRules([site(), site()], [], page), /SNAPSHOT_SCOPE_CONFLICT/);
 });
 
 test('AC-EXT-02-01 partial: durable journal precedes DNR, actual rules and open tabs confirmed', async () => {
@@ -253,4 +255,19 @@ test('partial rule loss on re-created worker is UNCONFIRMED and not reapplied', 
   assert.equal((await f.newController().inspect(f.context.owner_key, session)).observed, 'UNCONFIRMED');
   await assert.rejects(f.newController().apply(c), /RECONCILE_REQUIRED/);
   assert.equal(f.changes.length, 1);
+});
+
+test('1.2 adapter selects child ALLOW before diverting tabs and verifies/retries owned rules',async()=>{
+ const f=fixture(),c=command();c.snapshot.format_version='1.2';c.snapshot.site_match_strategy='MOST_SPECIFIC_HOST';
+ c.snapshot.sites=[site('naver.com'),site('chzzk.naver.com',true,'ALLOW')];
+ f.tabs=[{id:7,url:'https://chzzk.naver.com/'},{id:8,url:'https://www.naver.com/'}];
+ await f.controller.apply(c);assert.equal(f.tabs[0].url,'https://chzzk.naver.com/');
+ assert.match(f.tabs[1].url,/host=naver.com/);assert.equal(f.rules.length,2);
+ await f.newController().apply(c);assert.equal(f.changes.length,1);
+ await f.controller.release(f.release());assert.equal(f.rules.length,0);
+});
+test('unknown 1.2 strategy rejected before journal or Chrome mutations',async()=>{
+ const f=fixture(),c=command();c.snapshot.format_version='1.2';c.snapshot.site_match_strategy='FIRST';
+ await assert.rejects(f.controller.apply(c),/SNAPSHOT_VERSION_UNSUPPORTED/);
+ assert.equal(f.saved.length,0);assert.equal(f.changes.length,0);
 });

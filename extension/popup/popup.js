@@ -69,7 +69,7 @@ const errors = {
  INVALID_URL:'http/https 주소나 도메인을 입력해주세요. IP·localhost·포트·로그인 정보가 있는 주소는 사용할 수 없습니다.',
  INVALID_SITE:'이름(1~100자)과 입력 내용을 확인해주세요.',
  INVALID_POLICY:'집중·일반은 허용, 방해는 차단·기록 정책을 사용합니다.',
- SITE_SCOPE_CONFLICT:'다른 사이트와 관리 범위가 겹칩니다. 주소와 하위 도메인 설정을 확인해주세요.',
+ SITE_SCOPE_CONFLICT:'같은 호스트가 이미 등록되었거나 삭제 이력에 남아 있습니다. 기존 항목을 확인해주세요.',
  IDEMPOTENCY_CONFLICT:'재시도 요청이 이전 입력과 다릅니다.',
  VERSION_CONFLICT:'다른 화면에서 설정이 변경됐습니다. 입력은 유지됩니다. 목록 다시 확인 후 최신 설정과 비교해주세요.',
  VERSION_REQUIRED:'변경할 설정 버전이 없습니다. 목록을 다시 확인해주세요.',

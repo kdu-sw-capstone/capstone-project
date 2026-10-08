@@ -21,7 +21,7 @@ W=Web HttpOnly Secure SameSite=Lax 쿠키, 변경 요청 CSRF+Origin 검증. E=�
 | ContentPolicyWrite | keywords:{enabled,rules:[{id UUID,text1..80,scopes:[TITLE/URL/BODY]}],exceptions:[Host]},adult_domains:{enabled,custom_hosts:[Host],exceptions:[Host]},image_blur:{enabled,sensitivity:LOW/MEDIUM/HIGH,strength:LOW/MEDIUM/HIGH},usage_tracking:{enabled} |
 | Host | host:소문자 IDNA 정규화≤253,include_subdomains:boolean. 각 목록≤500. 키워드≤200. |
 | ContentPolicy | ContentPolicyWrite + version:int,updated_at |
-| Snapshot | policy_snapshot_id UUID,format_version=1.1,owner_user_id?,executor_id,created_at,sites:[Site],content_policy,catalog_version?,model_profile_version?,source_version |
+| Snapshot | policy_snapshot_id UUID,format_version=1.2,site_match_strategy=MOST_SPECIFIC_HOST,owner_user_id?,executor_id,created_at,sites:[Site],content_policy,catalog_version?,model_profile_version?,source_version |
 | Session | session_id UUID,executor_id UUID,policy_snapshot_id UUID,origin:MEMBER/GUEST_IMPORT,source:MANUAL/SCHEDULE,execution_status,record_status:PENDING/PARTIAL/COMPLETE/REVIEW_REQUIRED,duration_minutes,active_duration_ms,overrun_ms,remaining_ms,started_at?,planned_end_at?,ended_at?,policy_released_at?,end_reason?,version,desired_revision,last_error_code? |
 | Command | command_id UUID,session_id,executor_id,type:APPLY_POLICY/RELEASE_POLICY,desired_revision,snapshot?,reason,created_at,execute_before? |
 | ExecutionReport | report_id UUID,command_id?,session_id,executor_id,desired_revision,result:APPLIED/RELEASED/FAILED/UNCONFIRMED,observed_at,error_code?,rollback_confirmed?,intervals:[Interval],local_action_seq? |
@@ -42,7 +42,7 @@ W=Web HttpOnly Secure SameSite=Lax 쿠키, 변경 요청 CSRF+Origin 검증. E=�
 
 ## 사이트·인증 검증
 
-URL에서 host만 관리 범위로 사용하고 경로·query·fragment는 저장하지 않는다. 자격정보 URL·IP·localhost·명시적 port는 거절한다. www를 임의 제거하지 않는다. 동일하거나 포함관계인 등록 범위는409. 목적 FOCUS/GENERAL은 ALLOW, DISTRACTION은 BLOCK/RECORD다. feature_code는 YOUTUBE_SHORTS/YOUTUBE_RECOMMENDATIONS/YOUTUBE_COMMENTS/YOUTUBE_AUTOPLAY/INSTAGRAM_REELS/INSTAGRAM_RECOMMENDATIONS이며 host와 호환해야 한다.
+URL에서 host만 관리 범위로 사용하고 경로·query·fragment는 저장하지 않는다. 자격정보 URL·IP·localhost·명시적 port는 거절한다. www를 임의 제거하지 않는다. 같은 계정의 정규화된 canonical_host가 정확히 같은 경우만409이며 상위·하위 등록 범위의 겹침은 허용한다. 여러 행이 매칭되면 가장 구체적인 호스트의 정책 전체를 선택한다. include_subdomains는 적용 범위만 결정하고 도메인 경계를 확인한다. 목적 FOCUS/GENERAL은 ALLOW, DISTRACTION은 BLOCK/RECORD다. feature_code는 YOUTUBE_SHORTS/YOUTUBE_RECOMMENDATIONS/YOUTUBE_COMMENTS/YOUTUBE_AUTOPLAY/INSTAGRAM_REELS/INSTAGRAM_RECOMMENDATIONS이며 host와 호환해야 한다.
 
 이메일은 인증 주소를 계정 식별 수단으로 사용한다. 비밀번호는 단방향 해시(Argon2id)를 서버에 저장하고 원문은 로그/이벤트에 남기지 않는다. 이메일 인증24시간, 비밀번호 재설정30분, 단회 사용. 로그인 실패 제한은 계정+IP 각각5회/분, 메일 재발송1분 간격·5회/시간 설계값이다. 로그인 성공 시 세션 ID를 교체한다.
 
@@ -76,8 +76,8 @@ Google은 OIDC의 issuer/audience/expiry/nonce와 서명을 검증한다. 카카
 | API-EXT-07 | GET /api/v1/extension-installations | W/E | 없음 | 200 Installation[] | 401 |
 | API-SITE-01 | GET /api/v1/sites | W/E | purpose?,cursor?,limit? | 200 List<Site> | 400 INVALID_CURSOR |
 | API-SITE-02 | GET /api/v1/sites/{site_id} | W/E | 없음 | 200 Site + ETag | 404 |
-| API-SITE-03 | POST /api/v1/sites | W/E | SiteWrite | 201 Site | 409 SITE_SCOPE_CONFLICT;422 |
-| API-SITE-04 | PATCH /api/v1/sites/{site_id} | W/E | SiteWrite의 변경 필드 + If-Match | 200 Site | 412 VERSION_CONFLICT;422 |
+| API-SITE-03 | POST /api/v1/sites | W/E | SiteWrite | 201 Site | 409 SITE_SCOPE_CONFLICT(정확한 호스트 중복);422 |
+| API-SITE-04 | PATCH /api/v1/sites/{site_id} | W/E | SiteWrite의 변경 필드 + If-Match | 200 Site | 409 SITE_SCOPE_CONFLICT(정확한 호스트 중복);412 VERSION_CONFLICT;422 |
 | API-SITE-05 | DELETE /api/v1/sites/{site_id} | W/E | If-Match | 204; 과거 스냅샷 유지 | 412 |
 | API-POLICY-01 | GET /api/v1/content-policy | W/E | 없음 | 200 ContentPolicy + ETag | 401 |
 | API-POLICY-02 | PUT /api/v1/content-policy | W/E | ContentPolicyWrite 전체 + If-Match | 200 ContentPolicy | 422 INVALID_SCOPE;412 |
@@ -156,3 +156,8 @@ AI provider 인터페이스 generate(집계 JSON,출력 JSON schema,request_id)�
 ## 예약 상태·사유 직렬화
 
 Occurrence.status는 PENDING/WAITING_CONFLICT/STARTING/RUNNING/FINISHED/SKIPPED를 사용한다. 만료·존재하지 않는 현지 시각은 SKIPPED 상태와 reason=EXPIRED/NONEXISTENT_TIME으로 구분하며 합성 상태 문자열을 사용하지 않는다. 가져오기 항목의 SKIPPED_CONFLICT는 다른 도메인의 결과값이며 예약 상태가 아니다.
+
+
+## 2026-10-08 사용자 명시 변경
+
+[호스트별 정책 우선순위](../02_시스템_테크설계/10_호스트_정책우선순위.md)를 적용한다. 부모·자식 동시 등록을 허용하며 정확한 호스트만 중복 거절한다. 새 snapshot1.2, 가장 구체적인 행 선택, 기존 snapshot1.1/기존 사용자 자료 보존. 실제 Extension 연동은 미검증이다.

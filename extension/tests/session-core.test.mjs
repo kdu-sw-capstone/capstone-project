@@ -8,6 +8,7 @@ import { randomUUID } from 'node:crypto';
 
 const sourcePath = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../background/session-core.js');
 const source = await readFile(sourcePath, 'utf8');
+const sharedSource = await readFile(new URL('../background/host-policy.js', import.meta.url), 'utf8');
 
 function makeCore({ owner, stored = null, rules = [], expireAfterRegexCheck = false, regexAdvanceMs = 0,
   sites = [{ canonical_host: 'blocked.example', display_name: 'blocked', include_subdomains: true,
@@ -64,7 +65,7 @@ function makeCore({ owner, stored = null, rules = [], expireAfterRegexCheck = fa
     },
     AccessStore: {},
   };
-  const core = vm.runInNewContext(source + '\nGuestSession;', context);
+  const core = vm.runInNewContext(sharedSource + '\n' + source + '\nGuestSession;', context);
   return { core, movedTabs, get persisted() { return persisted; }, get rules() { return currentRules; }, get ruleUpdates() { return ruleUpdates; } };
 }
 
@@ -146,7 +147,7 @@ test('worker reconnect retains a RUNNING session when journal rules match', asyn
   const rule = { id: 100000, priority: 100, action: { type: 'redirect', redirect: { url: 'chrome-extension://test/blocked/blocked.html?host=blocked.example&session=session-a' } }, condition: { regexFilter: '^https?://blocked\\.example(:[0-9]+)?([/?#]|$)', isUrlFilterCaseSensitive: false, resourceTypes: ['main_frame'] } };
   const owner = { installation_id: 'install-a', owner_key: 'GUEST:install-a' };
   const stored = {
-    session: { owner_key: owner.owner_key, executor_id: owner.installation_id, session_id: 'session-a', status: 'RUNNING', duration_minutes: 25, started_at: new Date().toISOString(), planned_end_at: new Date(Date.now() + 60_000).toISOString(), snapshot: { sites: [] } },
+    session: { owner_key: owner.owner_key, executor_id: owner.installation_id, session_id: 'session-a', status: 'RUNNING', duration_minutes: 25, started_at: new Date().toISOString(), planned_end_at: new Date(Date.now() + 60_000).toISOString(), snapshot: { format_version: '1.1', sites: [] } },
     journal: { owner_key: owner.owner_key, session_id: 'session-a', desired: 'APPLIED', observed: 'APPLIED', rules: [rule] },
   };
   const fixture = makeCore({ owner, stored, rules: [rule] });
@@ -160,7 +161,7 @@ test('worker reconnect releases the session when journal rules do not match', as
   const rule = { id: 100000, priority: 100, action: { type: 'redirect', redirect: { url: 'chrome-extension://test/blocked/blocked.html?host=blocked.example&session=session-b' } }, condition: { regexFilter: '^https?://blocked\\.example(:[0-9]+)?([/?#]|$)', isUrlFilterCaseSensitive: false, resourceTypes: ['main_frame'] } };
   const owner = { installation_id: 'install-a', owner_key: 'GUEST:install-a' };
   const stored = {
-    session: { owner_key: owner.owner_key, executor_id: owner.installation_id, session_id: 'session-b', status: 'RUNNING', duration_minutes: 25, started_at: new Date().toISOString(), planned_end_at: new Date(Date.now() + 60_000).toISOString(), snapshot: { sites: [] } },
+    session: { owner_key: owner.owner_key, executor_id: owner.installation_id, session_id: 'session-b', status: 'RUNNING', duration_minutes: 25, started_at: new Date().toISOString(), planned_end_at: new Date(Date.now() + 60_000).toISOString(), snapshot: { format_version: '1.1', sites: [] } },
     journal: { owner_key: owner.owner_key, session_id: 'session-b', desired: 'APPLIED', observed: 'APPLIED', rules: [rule] },
   };
   const fixture = makeCore({ owner, stored, rules: [] });
@@ -271,4 +272,15 @@ test('guest current snapshot stays fixed and the next session uses changed BLOCK
   const pattern = new RegExp(fixture.rules[0].condition.regexFilter, 'i');
   assert.equal(pattern.test('https://example.com./'), false);
   assert.equal(pattern.test('https://next.example./'), true);
+});
+
+test('1.2 product start preserves child ALLOW tab and diverts only final BLOCK targets', async () => {
+ const fixture=makeCore({sites:[policySite('naver.com','BLOCK',true),policySite('chzzk.naver.com','ALLOW',false)],
+  tabs:[{id:1,url:'https://chzzk.naver.com./'},{id:2,url:'https://live.chzzk.naver.com/'},
+   {id:3,url:'https://www.naver.com/'},{id:4,url:'https://notnaver.com/'}]});
+ const started=await fixture.core.start(25,randomUUID());
+ assert.equal(started.session.snapshot.format_version,'1.2');
+ assert.deepEqual(fixture.movedTabs,[2,3]);
+ assert.equal(fixture.rules.some(r=>r.action.type==='allow'),true);
+ await fixture.core.end(started.session.session_id);assert.equal(fixture.rules.length,0);
 });

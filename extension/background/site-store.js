@@ -13,7 +13,7 @@ const GuestSites = (() => {
     if (!authority || /[:@%]/.test(authority)) throw new Error("INVALID_URL");
     let url;
     try { url = new URL(full); } catch { throw new Error("INVALID_URL"); }
-    const host = url.hostname.toLowerCase();
+    const host = url.hostname.toLowerCase().replace(/\.$/, "");
     if (!["https:", "http:"].includes(url.protocol) || url.username || url.password ||
         url.port || host.length > 253 || host === "localhost" || host.endsWith(".localhost") ||
         /^[0-9.]+$/.test(host) || !host.includes(".") ||
@@ -28,9 +28,7 @@ const GuestSites = (() => {
       access_policy: input.access_policy, feature_policies: [] };
   }
   function overlaps(a, b) {
-    return a.canonical_host === b.canonical_host ||
-      (a.include_subdomains && b.canonical_host.endsWith(`.${a.canonical_host}`)) ||
-      (b.include_subdomains && a.canonical_host.endsWith(`.${b.canonical_host}`));
+    return a.canonical_host === b.canonical_host;
   }
   function open() {
     return new Promise((resolve, reject) => {
@@ -131,7 +129,7 @@ const GuestSites = (() => {
             const original = sites[index];
             if (original.version !== expectedVersion) { fail("VERSION_CONFLICT"); return; }
             if (!Number.isSafeInteger(original.version + 1) || !Number.isSafeInteger(record.version + 1)) { fail("LOCAL_DATA_INVALID"); return; }
-            if (normalized && sites.some(site => !site.deleted_at && site.site_id !== siteId && overlaps(site, normalized))) { fail("SITE_SCOPE_CONFLICT"); return; }
+            if (normalized && sites.some(site => site.site_id !== siteId && overlaps(site, normalized))) { fail("SITE_SCOPE_CONFLICT"); return; }
             const time = new Date().toISOString();
             const site = kind === "UPDATE" ? { ...original, ...normalized, version: original.version + 1, updated_at: time }
               : { ...original, version: original.version + 1, updated_at: time, deleted_at: time };

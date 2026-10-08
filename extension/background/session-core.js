@@ -10,22 +10,11 @@ const GuestSession = (() => {
   if(!Number.isFinite(deadline)||Date.now()>=deadline)throw new Error('APPLY_EXPIRED');
  }
  function stable(value){if(Array.isArray(value))return JSON.stringify(value.map(v=>JSON.parse(stable(v))));if(value&&typeof value==='object')return JSON.stringify(Object.fromEntries(Object.keys(value).sort().map(k=>[k,JSON.parse(stable(value[k]))])));return JSON.stringify(value);}
- function normalizeHost(raw){try{const u=new URL(raw);return ['http:','https:'].includes(u.protocol)?u.hostname.toLowerCase().replace(/\.$/,''):null;}catch{return null;}}
- function matches(site,raw){try{
-  const u=new URL(raw);
-  // 탐색 URL의 DNS 루트 점 하나만 정규화합니다. 저장된 사이트 범위는 바꾸지 않습니다.
-  const host=normalizeHost(raw);
-  return ['http:','https:'].includes(u.protocol)&&(host===site.canonical_host||(site.include_subdomains&&host.endsWith(`.${site.canonical_host}`)));
- }catch{return false;}}
+ const normalizeHost=raw=>FocurveHostPolicy.normalize(raw);
+ const matches=(site,raw)=>FocurveHostPolicy.matches(site,raw);
+ const select=(snapshot,raw)=>FocurveHostPolicy.select(snapshot.sites,raw);
  function blockedUrl(site,session){return chrome.runtime.getURL('blocked/blocked.html')+'?host='+encodeURIComponent(site.canonical_host)+'&session='+encodeURIComponent(session.session_id);}
- function buildRules(session,existing){
-  let id=100000;const used=new Set(existing.map(r=>r.id));
-  return session.snapshot.sites.filter(s=>s.access_policy==='BLOCK').map(site=>{
-   while(used.has(id))id++;used.add(id);
-   const host=site.canonical_host.replace(/\./g,'\\.');
-   return {id:id++,priority:100,action:{type:'redirect',redirect:{url:blockedUrl(site,session)}},condition:{regexFilter:'^https?://([^/@]*@)?'+(site.include_subdomains?'([a-z0-9-]+\\.)*':'')+host+'\\.?(:[0-9]+)?([/?#]|$)',isUrlFilterCaseSensitive:false,resourceTypes:['main_frame']}};
-  });
- }
+ function buildRules(session,existing){return FocurveHostPolicy.rules(session.snapshot.sites,existing,site=>blockedUrl(site,session),100000,session.snapshot.format_version==='1.1');}
  async function rulesMatch(state){const actual=await chrome.declarativeNetRequest.getSessionRules();return state.journal.rules.every(rule=>actual.some(r=>r.id===rule.id&&stable(r)===stable(rule)));}
  async function release(state){
   const actual=await chrome.declarativeNetRequest.getSessionRules();
@@ -40,7 +29,7 @@ const GuestSession = (() => {
  async function schedule(state){if(state.session.status==='RUNNING')await chrome.alarms.create(alarmName,{when:Math.min(Date.parse(state.session.planned_end_at),Date.now()+30000)});else await chrome.alarms.clear(alarmName);}
  async function divertTabs(state){
   const tabs=await chrome.tabs.query({});
-  for(const tab of tabs){const site=state.session.snapshot.sites.find(s=>s.access_policy==='BLOCK'&&matches(s,tab.pendingUrl||tab.url));if(!site)continue;
+  for(const tab of tabs){const site=select(state.session.snapshot,tab.pendingUrl||tab.url);if(site?.access_policy!=='BLOCK')continue;
    try{await chrome.tabs.update(tab.id,{url:blockedUrl(site,state.session)});
     let confirmed=false;
     for(let attempt=0;attempt<30;attempt++){
@@ -77,7 +66,7 @@ const GuestSession = (() => {
    throw error;
   }
   try{
-   await release(state);const at=now();state.session.status=status;state.session.ended_at=at;state.session.policy_released_at=at;if(status!=='START_FAILED'&&reason!=='ACCESS_STORAGE_FAILED')state.session.last_error_code=null;
+   await release(state);const at=now();state.session.status=status;state.session.ended_at=at;state.session.policy_released_at=at;if(status!=='START_FAILED'&&!['ACCESS_STORAGE_FAILED','SNAPSHOT_VERSION_UNSUPPORTED'].includes(reason))state.session.last_error_code=null;
    state.session.expires_at=new Date(Date.parse(at)+30*86400000).toISOString();state.journal.observed='RELEASED';
    if(state.session.started_at){const end=intent.confirmed_end_at??state.session.started_at;const ms=Math.max(0,Date.parse(end)-Date.parse(state.session.started_at));state.session.active_duration_ms=Math.min(ms,state.session.duration_minutes*60000);state.session.overrun_ms=Math.max(0,ms-state.session.duration_minutes*60000);
     state.interval={owner_key:state.session.owner_key,session_id:state.session.session_id,interval_id:state.session.interval_id,kind:'RUN',start_at:state.session.started_at,end_at:end,duration_ms:ms,quality:'CONFIRMED'};
@@ -90,6 +79,11 @@ const GuestSession = (() => {
   const marker=await chrome.storage.session.get('focurve_boot');const state=await SessionDB.load();
   const owner=await LocalStore.guestContext();
   if(state&&(state.session.owner_key!==owner.owner_key||state.session.executor_id!==owner.installation_id||state.journal.owner_key!==owner.owner_key||state.journal.session_id!==state.session.session_id))throw new Error('OWNER_MISMATCH');
+  if(state&&!terminal.has(state.session.status)&&!FocurveHostPolicy.supported(state.session.snapshot)){
+   state.session.last_error_code='SNAPSHOT_VERSION_UNSUPPORTED';
+   await finish(state,'INTERRUPTED','SNAPSHOT_VERSION_UNSUPPORTED');
+   throw new Error('SNAPSHOT_VERSION_UNSUPPORTED');
+  }
   if(!marker.focurve_boot){
    if(state&&!terminal.has(state.session.status))await finish(state,'INTERRUPTED','BROWSER_OR_EXTENSION_RESTART');
    await chrome.storage.session.set({focurve_boot:true});
@@ -122,7 +116,7 @@ const GuestSession = (() => {
   const owner=await LocalStore.guestContext();const siteList=await GuestSites.list();const sites=siteList.items;
   for(const site of sites)GuestSites.validate({url:site.canonical_host,display_name:site.display_name,include_subdomains:site.include_subdomains,purpose:site.purpose,access_policy:site.access_policy,feature_policies:site.feature_policies});
   if(sites.some(s=>s.feature_policies?.some(p=>p.enabled)))throw new Error('FEATURE_NOT_IMPLEMENTED');
-  const sessionId=crypto.randomUUID();const session={owner_key:owner.owner_key,session_id:sessionId,executor_id:owner.installation_id,start_request_id:requestId,interval_id:crypto.randomUUID(),duration_minutes:minutes,last_local_seq:0,last_access_seq:0,status:'STARTING',started_at:null,ended_at:null,expires_at:null,active_duration_ms:0,overrun_ms:0,record_status:'PENDING',snapshot:{policy_snapshot_id:crypto.randomUUID(),format_version:'1.1',executor_id:owner.installation_id,created_at:now(),source_version:siteList.settings_version,sites:structuredClone(sites)},last_error_code:null};
+  const sessionId=crypto.randomUUID();const session={owner_key:owner.owner_key,session_id:sessionId,executor_id:owner.installation_id,start_request_id:requestId,interval_id:crypto.randomUUID(),duration_minutes:minutes,last_local_seq:0,last_access_seq:0,status:'STARTING',started_at:null,ended_at:null,expires_at:null,active_duration_ms:0,overrun_ms:0,record_status:'PENDING',snapshot:{policy_snapshot_id:crypto.randomUUID(),format_version:'1.2',site_match_strategy:'MOST_SPECIFIC_HOST',executor_id:owner.installation_id,created_at:now(),source_version:siteList.settings_version,sites:structuredClone(FocurveHostPolicy.sort(sites))},last_error_code:null};
   const rules=buildRules(session,await chrome.declarativeNetRequest.getSessionRules());
   const state={session,journal:{owner_key:owner.owner_key,session_id:sessionId,revision:1,action_seq:1,desired:'APPLIED',observed:'UNCONFIRMED',rules,execute_before:new Date(Date.now()+30000).toISOString()}};
   await persist(state);
@@ -148,5 +142,5 @@ const GuestSession = (() => {
    throw error;
   }
  }
- return Object.freeze({observe:(stage,details)=>serial(()=>collect(stage,details)),records:()=>serial(async()=>{await recover();return AccessStore.list(await LocalStore.guestContext());}),start:(minutes,id)=>serial(()=>begin(minutes,id)),state:()=>serial(recover),end:(sessionId)=>serial(async()=>{const state=await recover();if(!state||state.session.session_id!==sessionId)throw new Error('SESSION_NOT_FOUND');return finish(state);}),tick:()=>serial(recover),normalizeHost,matches,buildRules});
+ return Object.freeze({observe:(stage,details)=>serial(()=>collect(stage,details)),records:()=>serial(async()=>{await recover();return AccessStore.list(await LocalStore.guestContext());}),start:(minutes,id)=>serial(()=>begin(minutes,id)),state:()=>serial(recover),end:(sessionId)=>serial(async()=>{const state=await recover();if(!state||state.session.session_id!==sessionId)throw new Error('SESSION_NOT_FOUND');return finish(state);}),tick:()=>serial(recover),normalizeHost,matches,select,buildRules});
 })();

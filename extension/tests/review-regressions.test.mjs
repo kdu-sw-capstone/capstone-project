@@ -20,7 +20,7 @@ async function fixture() {
      if(removeRuleIds.length && releaseFailures-- > 0)throw new Error('MOCK_RELEASE_FAILURE');
      rules=rules.filter(r=>!removeRuleIds.includes(r.id)).concat(structuredClone(addRules));
     }}}});
- for(const file of ['local-store','site-store','session-db','access-store','session-core'])
+ for(const file of ['host-policy','local-store','site-store','session-db','access-store','session-core'])
   vm.runInContext(await readFile(new URL('../background/'+file+'.js',import.meta.url),'utf8'), context);
  const api=vm.runInContext('({sites:GuestSites,core:GuestSession,access:AccessStore,db:SessionDB,local:LocalStore})',context);
  return {...api,advance:ms=>{time+=ms;},restart:()=>{boot=false;},failRelease:n=>{releaseFailures=n;},
@@ -101,4 +101,52 @@ test('review 1: legacy release journal without terminal intent recovers conserva
  const state=await f.db.load();state.session.status='UNKNOWN';state.session.end_reason='POLICY_MISMATCH';
  state.journal.desired='RELEASED';await f.db.save(state);f.advance(60_000);
  const ended=await f.core.tick();assert.equal(ended.session.status,'INTERRUPTED');assert.equal(ended.session.active_duration_ms,10_000);
+});
+
+test('1.2 guest registration normalizes root dot, allows nested hosts, and rejects exact duplicates',async()=>{
+ const f=await fixture();const parent=await f.sites.create(input('NAVER.com.'),uuid());
+ const child=await f.sites.create(input('chzzk.naver.com','ALLOW'),uuid());
+ assert.equal(parent.canonical_host,'naver.com');assert.notEqual(child.site_id,parent.site_id);
+ await assert.rejects(f.sites.create(input('naver.com/path'),uuid()),{message:'SITE_SCOPE_CONFLICT'});
+ await assert.rejects(f.sites.create(input('user:pass@naver.com'),uuid()),{message:'INVALID_URL'});
+ await assert.rejects(f.sites.create(input('naver.com:443'),uuid()),{message:'INVALID_URL'});
+ await assert.rejects(f.sites.update(child.site_id,child.version,input('naver.com'),uuid()),{message:'SITE_SCOPE_CONFLICT'});
+ await f.sites.remove(parent.site_id,parent.version,uuid());
+ await assert.rejects(f.sites.update(child.site_id,child.version,input('naver.com'),uuid()),{message:'SITE_SCOPE_CONFLICT'});
+ assert.equal((await f.sites.create(input('naver.com'),uuid())).site_id,parent.site_id);
+});
+test('1.2 guest snapshots are sorted/immutable; ALLOW overrides parent BLOCK without generating access',async()=>{
+ const f=await fixture();await f.sites.create(input('naver.com'),uuid());
+ const child=await f.sites.create(input('chzzk.naver.com','ALLOW'),uuid());
+ const started=await f.core.start(25,uuid());const snapshot=structuredClone(started.session.snapshot);
+ assert.equal(snapshot.format_version,'1.2');assert.equal(snapshot.site_match_strategy,'MOST_SPECIFIC_HOST');
+ assert.deepEqual(Array.from(snapshot.sites,s=>s.canonical_host),['chzzk.naver.com','naver.com']);
+ await f.core.observe('before',navigation(f,'https://chzzk.naver.com./'));
+ await f.core.observe('commit',navigation(f,'https://chzzk.naver.com./',120));
+ assert.equal((await f.core.records()).total_access,0);
+ await f.sites.update(child.site_id,child.version,input('chzzk.naver.com','BLOCK'),uuid());
+ assert.deepEqual((await f.core.state()).session.snapshot,snapshot);
+ await f.core.end(started.session.session_id);const next=await f.core.start(25,uuid());
+ assert.equal(next.session.snapshot.sites[0].access_policy,'BLOCK');
+ assert.equal(f.rules.every(r=>r.action.type==='redirect'),true);
+});
+test('1.2 child RECORD event wins over parent BLOCK and uses child target',async()=>{
+ const f=await fixture();await f.sites.create(input('naver.com'),uuid());
+ await f.sites.create(input('chzzk.naver.com','RECORD'),uuid());await f.core.start(25,uuid());
+ await f.core.observe('before',navigation(f,'https://live.chzzk.naver.com./'));
+ await f.core.observe('commit',navigation(f,'https://live.chzzk.naver.com./',120));
+ const {items,total_access}=await f.core.records();assert.equal(total_access,1);
+ assert.equal(items[0].event_type,'RECORDED_ACCESS');assert.equal(items[0].schema_version,'1.1');
+ assert.equal(items[0].payload.target_host,'live.chzzk.naver.com');assert.equal(items[0].payload.target_key,'SITE:chzzk.naver.com');
+});
+test('existing 1.1 guest recovery preserves original snapshot and rule IDs',async()=>{
+ const f=await fixture();await running(f);const state=await f.db.load();state.session.snapshot.format_version='1.1';
+ delete state.session.snapshot.site_match_strategy;await f.db.save(state);
+ const old=structuredClone(state.session.snapshot),rules=structuredClone(f.rules);
+ await f.core.tick();assert.deepEqual((await f.db.load()).session.snapshot,old);assert.deepEqual(f.rules,rules);
+});
+test('unsupported stored strategy never reports RUNNING and releases owned rules',async()=>{
+ const f=await fixture();await running(f);const state=await f.db.load();state.session.snapshot.site_match_strategy='FIRST';await f.db.save(state);
+ await assert.rejects(f.core.tick(),{message:'SNAPSHOT_VERSION_UNSUPPORTED'});
+ assert.equal((await f.db.load()).session.status,'INTERRUPTED');assert.equal(f.rules.length,0);
 });

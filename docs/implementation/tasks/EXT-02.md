@@ -322,3 +322,23 @@
 - 차단 조건: 정확한 1.2 JSON 필드/문서 및 Figma 프레임 접근 미확보. 사용자 지시대로 실제 형식을 확인하기 전 공유 계약을 추정 변경하거나 임의 화면을 만들지 않는다. 담당 재배정/회원 통합/병합 없음.
 - 이번 기록 갱신은 문서만 변경. 기존 자동 51/51 결과를 유지하며 새로운 코드 검증을 수행했다고 표시하지 않는다.
 - 다음 행동: 정책 문서·재현 스크립트 저장소 경로/링크 및 Figma Extension 프레임 자료 확보 → 정책/규칙/기록 회귀 수정 → 디자인 반영 → 최신 Chrome 추가 검증 → 사용자 재검토.
+
+### Snapshot 1.2 구현 착수
+
+- 시작 HEAD 2812def, working tree clean. 사용자 전달 ZIP의 10_호스트_정책우선순위.md 및 04_API_연동.md 기준. 기능 EXT-02 / 윤종민 Core.
+- 목표: 정확한 host만 중복 거절, most-specific 전체 행 선택, 자식 ALLOW/RECORD의 부모 BLOCK 예외 규칙, 새 세션 1.2/기존 1.1 보존. 공유 승인/전송/Content/전역 정책 통합은 별도.
+
+### Snapshot 1.2 구현 결과
+
+- 문서 기준: 사용자 Windows 전달 ZIP의 정책 우선순위/API 연동. 두 문서를 PR에 반영; develop에 반영됐다고 주장하지 않음. 기존 상세 도면 중 중첩 거절 문구는 새 10_호스트_정책우선순위.md에서 대체 대상 지정.
+- 제품: background/host-policy.js 공용 정규화·정렬·선택·규칙 생성, site-store.js exact host 중복/삭제 host PATCH 충돌/마지막 점 등록 정규화, session-core.js 신규 1.2 스냅샷/열린 탭 최종 정책 선택/미지원 전략 해제·오류, access-store.js 최종 선택 RECORD/BLOCK 기록, service-worker.js 공유 script 로드.
+- 별도 adapter: src/site-rules.js 동일 공용 규칙 사용, site-controller.js 1.2 전략 검증/열린 탭 최종 선택 및 기존 1.1 지원. 제품과 adapter 연결·회원 API 미완료 상태 유지.
+- DNR: 사이트별 host 레이블 수에 따른 priority(100+레이블 수), 부모 BLOCK 아래 자식 ALLOW/RECORD에 main_frame allow만 생성. include=false 예외는 exact regex만 적용하여 더 깊은 호스트에는 부모 정책이 남는다. 더 구체적인 BLOCK은 allow 예외보다 높은 priority. allowAllRequests 사용 안 함. 소유 규칙 해제/검증에 예외 규칙도 포함.
+- legacy: 기존 1.1 snapshot/실제 journal 규칙은 재작성/재설치하지 않음. 별도 adapter 1.1 적용은 기존 중첩 금지 검증 유지. 1.2는 전략 누락/미지원 시 적용 성공으로 표시하지 않음. 이벤트 schema_version=1.1 유지.
+- 다음 세션 규칙: 실행 중 설정 수정/삭제/재등록은 active snapshot과 rules에 반영하지 않음. 다음 세션에서 새 settings_version/sorted sites 사용.
+- 미검증: 새 코드의 실제 Chrome(이전 사용자 1~9 성공은 33119ee 수정 단위), 실제 Server JSON/API/회원 연결, 실제 DNR 우선순위·worker/브라우저 재시작, Content 기능 정책.
+- 조율 필요: 실제 Server 전체 필드 포함 JSON 및 지원 버전 협상/미지원 응답, 전역 성인·키워드 제한/Content 규칙의 DNR priority 통합. 사이트 allow는 전역 예외가 아니므로 전역 제한은 사이트 priority보다 높아야 함. 테스트의 priority1000 global BLOCK은 모의 검증이며 실제 전역 기능 구현 아님.
+- Figma UI는 원본 접근 대기. 팀 보고서/원본 스크립트 미제공, 기존 사용자 증상 회귀 테스트는 유지. 회원 연결·실행보고·승인·공유 복구 계약을 완료로 처리하지 않음.
+- 병합 담당은 팀 담당자이며 사용자 점검/팀 재검토 뒤 병합. Codex 병합 없음.
+
+- 최종 모의 자동 검증: npm test 69/69, 실패·스킵 0. 기존 오류 회귀 9건 포함 유지. npm run check / build:harness / git diff --check 성공. 상세 사례·Chrome 절차: ../evidence/EXT-02-Snapshot12.md.

@@ -1,6 +1,8 @@
 import { cpSync, mkdirSync, writeFileSync } from 'node:fs';
 // Separate unpacked extension: test fixture state is never a member API response.
 mkdirSync('.chrome-harness', { recursive: true });
+mkdirSync('.chrome-harness/background', { recursive: true });
+cpSync('background/host-policy.js', '.chrome-harness/background/host-policy.js');
 cpSync('src', '.chrome-harness/src', { recursive: true });
 cpSync('tests/chrome', '.chrome-harness', { recursive: true });
 writeFileSync('.chrome-harness/manifest.json', JSON.stringify({

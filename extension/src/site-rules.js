@@ -1,3 +1,5 @@
+import '../background/host-policy.js';
+const policy = globalThis.FocurveHostPolicy;
 // This layer receives normalized snapshots; it does not edit site settings.
 export function validateHost(host) {
   if (typeof host !== 'string' || host.length > 253 || host !== host.toLowerCase()
@@ -8,7 +10,7 @@ export function validateHost(host) {
   }
 }
 
-export function validateSites(sites) {
+export function validateSites(sites, legacy = false) {
   if (!Array.isArray(sites)) throw new Error('INVALID_SNAPSHOT_SITES');
   for (const site of sites) {
     validateHost(site?.canonical_host);
@@ -21,23 +23,17 @@ export function validateSites(sites) {
     for (const other of sites.slice(i + 1)) {
       const site = sites[i];
       if (site.canonical_host === other.canonical_host
-        || (site.include_subdomains && other.canonical_host.endsWith(`.${site.canonical_host}`))
-        || (other.include_subdomains && site.canonical_host.endsWith(`.${other.canonical_host}`))) {
+        || (legacy && site.include_subdomains && other.canonical_host.endsWith(`.${site.canonical_host}`))
+        || (legacy && other.include_subdomains && site.canonical_host.endsWith(`.${other.canonical_host}`))) {
         throw new Error('SNAPSHOT_SCOPE_CONFLICT');
       }
     }
   }
 }
 
-export function matchesSite(site, rawUrl) {
-  try {
-    const url = new URL(rawUrl);
-    const host = url.hostname.replace(/\.$/, '');
-    return ['http:', 'https:'].includes(url.protocol)
-      && (host === site.canonical_host
-        || (site.include_subdomains && host.endsWith(`.${site.canonical_host}`)));
-  } catch { return false; }
-}
+export const matchesSite = (site,raw) => policy.matches(site,raw);
+export const selectSite = (sites,raw) => policy.select(sites,raw);
+export const supportedSnapshot = snapshot => policy.supported(snapshot);
 
 export function blockedUrl(baseUrl, site) {
   const url = new URL(baseUrl);
@@ -46,24 +42,9 @@ export function blockedUrl(baseUrl, site) {
   return url.href;
 }
 
-export function buildSiteRules(sites, existing, baseUrl) {
-  validateSites(sites);
-  const used = new Set(existing.map(rule => rule.id));
-  let id = 1;
-  return sites.filter(site => site.access_policy === 'BLOCK').map(site => {
-    while (used.has(id)) id++;
-    if (id > 2147483647) throw new Error('RULE_IDS_EXHAUSTED');
-    used.add(id);
-    const host = site.canonical_host.replaceAll('.', '\\.');
-    return {
-      id: id++, priority: 100,
-      action: { type: 'redirect', redirect: { url: blockedUrl(baseUrl, site) } },
-      condition: {
-        regexFilter: `^https?://(?:[^/@]*@)?${site.include_subdomains ? '(?:[a-z0-9-]+\\.)*' : ''}${host}\\.?(?::[0-9]+)?(?:[/?#]|$)`,
-        isUrlFilterCaseSensitive: false, resourceTypes: ['main_frame'],
-      },
-    };
-  });
+export function buildSiteRules(sites, existing, baseUrl, legacy = false) {
+  validateSites(sites, legacy);
+  return policy.rules(sites,existing,site=>blockedUrl(baseUrl,site),1,legacy);
 }
 
 function stable(value) {
