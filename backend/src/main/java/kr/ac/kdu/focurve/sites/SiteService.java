@@ -128,6 +128,7 @@ public class SiteService {
     if (old != null) return old;
     var r = row(owner, id, true);
     match(r, version);
+    kr.ac.kdu.focurve.execution.SafeVersion.requireIncrementable(r.get("version"));
     Set<String> allowed =
         Set.of(
             "url",
@@ -174,6 +175,7 @@ public class SiteService {
     if (old != null) return;
     var r = row(owner, id, true);
     match(r, version);
+    kr.ac.kdu.focurve.execution.SafeVersion.requireIncrementable(r.get("version"));
     db.update(
         "UPDATE sites SET deleted_at=UTC_TIMESTAMP(3),updated_at=UTC_TIMESTAMP(3),version=version+1"
             + " WHERE id=?",
@@ -207,6 +209,8 @@ public class SiteService {
   }
 
   private void save(long id, SiteInput.Validated v) {
+    var storedVersion = db.queryForObject("SELECT version FROM sites WHERE id=? FOR UPDATE", Long.class, id);
+    kr.ac.kdu.focurve.execution.SafeVersion.requireIncrementable(storedVersion);
     db.update(
         "UPDATE sites SET"
             + " canonical_host=?,display_name=?,include_subdomains=?,purpose=?,access_policy=?,version=version+1,updated_at=UTC_TIMESTAMP(3),deleted_at=NULL"

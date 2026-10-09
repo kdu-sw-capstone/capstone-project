@@ -1,5 +1,7 @@
 # API 및 시스템 연동
 
+> 2026-10-09 D-01~D-10 사용자 확정 정책 반영: [최종 공용계약](FOCURVE_D01_D10_최종공용계약.md). 정책과 현재 제품 구현/검증을 구분한다. 아래 역사 JSON·현행 API는 보존하며 신규 복구 API가 구현된 것으로 해석하지 않는다.
+
 ## 공통 계약
 
 기존 /api/v1 경로·기본 식별자 체계를 유지한다. 기능/화면 ID와 API ID는 별개다. 여기의 API- 접두어는 문서상의 구분이며 URL 일부가 아니다. JSON UTF-8, snake_case. 내부 bigint는 십진 문자열, 외부 세션·이벤트·설치·작업은 UUID. 시각은 UTC RFC3339, 기간은 ms 정수, 화면 집계 기본 Asia/Seoul이다.
@@ -22,10 +24,10 @@ W=Web HttpOnly Secure SameSite=Lax 쿠키, 변경 요청 CSRF+Origin 검증. E=�
 | Host | host:소문자 IDNA 정규화≤253,include_subdomains:boolean. 각 목록≤500. 키워드≤200. |
 | ContentPolicy | ContentPolicyWrite + version:int,updated_at |
 | Snapshot | policy_snapshot_id UUID,format_version=1.2,site_match_strategy=MOST_SPECIFIC_HOST,owner_user_id?,executor_id,created_at,sites:[Site],content_policy,catalog_version?,model_profile_version?,source_version |
-| Session | session_id UUID,executor_id UUID,policy_snapshot_id UUID,origin:MEMBER/GUEST_IMPORT,source:MANUAL/SCHEDULE,execution_status,record_status:PENDING/PARTIAL/COMPLETE/REVIEW_REQUIRED,duration_minutes,active_duration_ms,overrun_ms,remaining_ms,started_at?,planned_end_at?,ended_at?,policy_released_at?,end_reason?,version,desired_revision,last_error_code? |
+| Session | session_id UUID,executor_id UUID,policy_snapshot_id UUID,origin:MEMBER/GUEST_IMPORT,source:MANUAL/SCHEDULE,automatic_recovery_supported:boolean=false,time_accounting_mode:LEGACY_WALL_CLOCK,execution_status,record_status:PENDING/PARTIAL/COMPLETE/REVIEW_REQUIRED,duration_minutes,active_duration_ms,overrun_ms,remaining_ms,started_at?,planned_end_at?,ended_at?,policy_released_at?,end_reason?,version,desired_revision,last_error_code? |
 | Command | command_id UUID,session_id,executor_id,type:APPLY_POLICY/RELEASE_POLICY,desired_revision,snapshot?,reason,created_at,execute_before? |
 | ExecutionReport | report_id UUID,command_id?,session_id,executor_id,desired_revision,result:APPLIED/RELEASED/FAILED/UNCONFIRMED,observed_at,error_code?,rollback_confirmed?,intervals:[Interval],local_action_seq? |
-| Interval | interval_id UUID,kind:RUN/PAUSE,start_at,end_at?,duration_ms?,quality:CONFIRMED/UNCONFIRMED; RUN 종료는 실제 해제 시각 |
+| Interval | interval_id UUID,kind:RUN/PAUSE,start_at,end_at?,duration_ms?,quality:CONFIRMED/UNCONFIRMED; RUN 끝은 마지막 신뢰 가능한 실행 경계; 실제 해제 시각은 policy_released_at 별도 |
 | Note | session_id,text:0..2000,version:int≥0,updated_at? |
 | Access | event_id,session_id,executor_id,occurred_at,event_type,target_kind,target_host,feature_code?,target_key,access_seq,target_access_index,is_repeat,policy_snapshot_id,quality |
 | Metrics | total_access,repeat_access,blocked_access,active_duration_ms,repeat_ratio?,quality:COMPLETE/PARTIAL/NO_DATA/NOT_COLLECTED,as_of; TargetMetrics는 host 추가 |
@@ -189,3 +191,45 @@ SIGNUP_CODE 메일 제목 FOCURVE 회원가입 이메일 인증. multipart HTML 
 Event1.2의 FEATURE 포함 복수사유는 BLOCKED_FEATURE_ACCESS/FEATURE + feature_code=YOUTUBE_SHORTS로 보내고 대표 reason은 사유 우선순위로 정한다. TYPE와 대표 reason을 동일값으로 강제하지 않는다. FEATURE가 없는 차단은 BLOCKED_SITE_ACCESS/SITE이며 feature_code를 포함하지 않는다. 잘못된 조합은 INVALID_SCHEMA, 미설정 기능·비활성 전역정책·예외와 충돌하는 사유는 POLICY_MISMATCH다. 1.1은 기존 타입·대표 사유 검사 유지. 세부 조건은 [정책 계약](12_정책계약_이벤트12_호환성게이트.md)의 PR18 리뷰 수정 절을 따른다.
 
 기록 목록/상세의 추가 응답 blocked_reasons:string[], matched_policy_host:string|null, repeat_count:number를 Web에서 사용한다. 구형 응답에 메타데이터가 없으면 실제 사유를 추측하지 않고 미확인으로 표시한다. RECORDED_ACCESS의 legacy RECORD는 차단 사유가 아니다. API 경로·인증·소유권·페이지네이션 변경 없음.
+
+## D-01~D-10 정책 개정과 현행 API 한계
+
+신규 교환 숫자 version은 1..9007199254740991 정수이며 0/음수/소수/string/null/bool 거절. UUID·문자열 catalog/model metadata와 구분. 현재 Server signed64 검사 강화는 후속 구현이다. Note 부재 version0는 충돌 검토 대상이며 값 재작성 금지.
+
+duration은 확인 누적 RUN 목표, remaining은 목표−확인 누적. 복구 대기에서 고정 planned_end_at−현재시각으로 남은 시간을 차감하지 않는다. 현행 최초 APPLY/END/reconcile은 비종료 중단·재개를 지원하지 않으며 새로운 API/상태는 별도 설계·구현 대상이다. Journal1.1 END-only는 유지한다.
+
+HTTP200≠이벤트 전체성공. PENDING_DEPENDENCY는 저장·최종처리 추적, REJECTED는 원문/오류 격리,503·응답유실은 상태조회/동일원문 재전송. D06 메시지와 D09 token 응답유실 절차는 최종계약의 미확정 기술안을 따른다.
+
+## 2026-10-09 로컬 병합 차단 수정 — 현재 지원 경계
+
+로컬 제품 코드만 수정했으며 원격 PR18 HEAD b05d9a0은 변경되지 않았다. 신규 Snapshot source_version/sites[].version/content_policy.version에 SafeVersion(1..9007199254740991)을 공통 적용했다. 가져오기 canonical JSON은 이전에도 safe 정수 초과를 INVALID_SCHEMA로 거절했으며, 새 Snapshot/ImportedSession 공통 guard로 직접 경로도 보완했다. 사이트 생성1·수정/복원/삭제와 메모 저장의 버전 증가는 VERSION_LIMIT으로 상한 초과를 원자 거절한다. 미작성 Note version0는 그대로다. 역사 Snapshot 원문을 무조건 재검증/재작성하지 않는다.
+
+Session 조회는 automatic_recovery_supported=false, time_accounting_mode=LEGACY_WALL_CLOCK을 추가 반환한다. 현재 고정 planned_end_at·기존 END/RELEASED·Journal1.1은 유지하며, 비종료 RESUME action은 기존처럼 거절한다. Web은 자동복구·중단 중 잔여 보존이 미지원임을 명확히 안내한다. D01/D05의 승인 정책은 유지하고 전체 구현은 후속 Server/Core 공동 작업으로 분리한다. 이 필드가 새로운 recovery API나 capability handshake는 아니다.
+
+남은 기술 경계: 일반 focus_sessions.version의 극단 상한에서는 신규 교환 숫자 상한과 필수 종료/해제 가능성이 충돌한다. 종료/보고에 무조건 VERSION_LIMIT을 적용하면 잠금을 유지하게 되므로 기존 종료 경로를 보존했다. 일반 세션 version의 legacy/교환 표현·상한 처리 정책은 후속 합의·독립 리뷰 필요이며 D03 전체 구현 완료로 표시하지 않는다. revision/seq 의미·범위도 자동 재정의하지 않는다.
+
+D06 메시지·규칙 ID/priority/freeze 및 D09 응답유실 추가 API는 계속 미확정/미검증이다. 실제 Chrome·회원 Extension 통합 NOT RUN, 신규 Snapshot1.2 운영 발급 OFF 유지. 새 migration/기존 DB·환경 변경 없음.
+
+## 2026-10-09 D-03 session.version 최종 호환 처리
+
+사용자 확정 정책에 따른 로컬 구현. 기준 HEAD b05d9a095b229efe310d5c791189eefb0d30300b, 김다훈 담당 Server/API/DB·연결 Web, codex/server-event12-integration. 기존 이력의 session.version 조율 필요/B-01은 당시 판정이며 아래 결과로 갱신한다.
+
+- 생성(start/guest import)은 version1. 새 APPLY→RUNNING 증가는 양의 안전 정수만 가능하고 MAX−1→MAX까지 허용한다. MAX/초과/잘못된 버전의 실제 APPLIED 보고는 사실 접수하되 RUNNING으로 확정하지 않고 UNKNOWN/VERSION_LIMIT 및 RELEASE_POLICY를 발행한다. 보고 HTTP ACCEPTED는 실행 성공이 아니다. 실제 해제 확인 전 잠금을 유지한다.
+- 종료/RELEASED/FAILED/UNCONFIRMED/reconcile END 등 안전 처리에서 기존 version이 1..MAX−1이면 정상 증가, MAX 또는 역사 초과이면 값을 그대로 보존하고 증가하지 않는다. 새 초과 값을 생성하거나 기존 값을 clamp/초기화하지 않는다. MAX는 9007199254740991. Session version은 이 예외에서 상태 변경 감지용 단독 validator로 사용할 수 없다.
+- Session 응답의 version은 정상 범위 number, 역사 초과는 정확한 십진 string(number|string). version_increment_blocked:boolean은 증가 불가 여부이며 종료 금지나 해제 완료를 뜻하지 않는다. get/current/list/start/end/멱등 재전송에 적용한다. 과거 응답 캐시의 DB 원문도 보존하고 응답 표현만 정규화한다. Web은 Number/parseInt로 변환하지 않는다.
+- session resource version과 desired_revision/known_revision/local_action_seq는 별개다. 현재 Session 종료 API는 If-Match session.version에 의존하지 않으며 소유권/설치 인증/행 잠금/명령 revision/보고 hash·중복/행동 sequence 검사를 그대로 사용한다. Event1.1/1.2, Snapshot1.1/1.2, Journal1.1 및 frozen payload는 변경하지 않는다. 독립 revision/seq 극단값의 별도 확대 변경은 이번 범위가 아니다.
+- 실제 HTTP/격리 MySQL에서 1/MAX−1/MAX/MAX+1/Long.MAX_VALUE의 명령 종료·UNCONFIRMED·RELEASED와 오프라인 Journal END/reconcile, 중복·잘못된 revision·다른 소유자 거절을 확인한다. 역사 version/Snapshot 불변, 잠금 해제 및 확인된 500ms 집계 유지. Backend 최종127/127·패키징(21:01:59 KST), Frontend114/114·빌드 PASS. mail/OAuth/실제 Chrome·회원 Core·Content는 NOT RUN. 상세 증거는 PR18_D03_session버전_최종호환_수정검증보고서.md.
+- Snapshot1.2 신규 발급 기본 OFF, 테스트 profile만 합성 검증 gate 사용. 전체 자동복구는 후속이며 전체 AC/MVP 완료로 승격하지 않는다. 이번 로컬 수정은 독립 재리뷰가 필요하다. Commit/Push/PR 변경/병합 없음.
+
+최종 추가 경합 검증: 미전달 APPLY는 상한 검사 후 해제 명령으로 전환한다. 이미 적용된 APPLY가 상한 감지/해제 명령과 경합하면 유효 실행 구간 증거만 보존하며 현재 revision·UNKNOWN을 되돌리지 않는다. 실제 RELEASED 뒤 구간을 닫고 잠금을 해제한다. 최신 보고서와 session-version-backend.log 참조.
+
+
+## 2026-10-09 RELEASED 보고 순서 의존성 로컬 수정·검증
+
+독립 재리뷰의 High R-D03-01(당시 RELEASED 선행 409/잠금 유지)을 후속 로컬 수정했다. 과거 판정·이력은 보존한다. 기준 HEAD b05d9a095b229efe310d5c791189eefb0d30300b, codex/server-event12-integration, 김다훈 Server/API/DB 담당. 제품 변경은 ExecutionService의 RELEASED 구간 복구 및 실제 HTTP 회귀 테스트이며 새 상태/API/마이그레이션은 없다.
+
+- 인증된 설치·소유자·세션·현재 명령/revision 검증을 통과한 RELEASED의 닫힌 RUN 증거를, 선행 APPLY 보고가 없고 DB 구간도 없을 때 원래 APPLY 명령·frozen Snapshot에 결속해 복구한다. APPLY 발급 시각(기존 60초 허용)·실행 기한·시작/종료/관측 시각·duration·interval ID를 검증한다. 기존 구간은 덮어쓰지 않고 알려진 RUN의 누락/열린 증거·잘못된 원문은 거절한다. 해제 확인은 인증된 Core의 RELEASED/observed_at 보고 계약이며 Server가 Chrome DNR을 직접 관측한 의미가 아니다.
+- 동일 트랜잭션에서 구간 종료·확인된 시간 집계·ENDED 또는 START_FAILED·명령 ACK·잠금 해제를 수행한다. 늦은 구 revision APPLY는 감사 기록만 남기며 종료 상태/시간/버전을 되돌리지 않는다. 동일 report_id/동일 원문은 DUPLICATE, 다른 원문은 REPORT_CONFLICT이다.
+- Codex 실행: Backend138/138·패키징, Frontend114/114·빌드 PASS. 추가 HTTP/MySQL 테스트10개(복수 하위 사례 포함), 별도 독립 HTTP 재현 probe PASS. 격리 MySQL8.4.8 127.0.0.1:60046/focurve_contract_test, 합성 회원/설치/보고 사용. 실제 Chrome·회원 Core/Content 통합 NOT RUN. 응답 유실은 클라이언트가 첫 결과를 무시하고 재전송한 모의 사례이며 Server 프로세스 강제 중단은 NOT RUN.
+- MAX/MAX+1/Long.MAX_VALUE 버전 원본·frozen Snapshot 보존 및 잠금 해제 확인. 운영 Snapshot1.2 기본 OFF 유지(테스트 프로필만 ON). D01/D05 자동복구 전체 미구현 경계 유지. AC-SESSION-02/03/04의 -01/-03 중 Server 합성 보고 부분만 검증했으며 실제 적용/해제·전체 AC·MVP 완료로 승격하지 않는다.
+- 증거: C:\Users\dahun\capstone-project\.reviews\pr18-20261009\PR18_RELEASED_보고순서_수정검증보고서.md 및 released-order 로그. 후속: 독립 재리뷰, 실제 Core 해제 증거·역순/재전송 통합. 이번 Commit/Push/PR 업데이트/병합 없음.

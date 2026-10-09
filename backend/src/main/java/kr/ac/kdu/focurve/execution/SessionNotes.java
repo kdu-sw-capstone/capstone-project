@@ -29,6 +29,7 @@ public class SessionNotes {
     if(match==null)throw new ApiFailure(428,"PRECONDITION_REQUIRED");
     if(!match.equals("\""+old.get("version")+"\""))throw new ApiFailure(412,"VERSION_CONFLICT");
     if(!input.keySet().equals(Set.of("text"))||!(input.get("text") instanceof String text)||text.codePointCount(0,text.length())>2000)throw new ApiFailure(422,"VALIDATION_FAILED");
+    if (((Number)old.get("version")).longValue() != 0) SafeVersion.requireIncrementable(old.get("version"));
     db.update("INSERT INTO session_notes(session_id,text,version,updated_at) VALUES (?,?,1,UTC_TIMESTAMP(3)) ON DUPLICATE KEY UPDATE text=?,version=version+1,updated_at=UTC_TIMESTAMP(3)",id,text,text);
     return get(owner,uuid);
   }

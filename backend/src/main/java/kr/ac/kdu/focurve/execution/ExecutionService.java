@@ -220,7 +220,7 @@ public class ExecutionService {
       long revision = ((Number) r.get("desired_revision")).longValue() + 1;
       db.update(
           "UPDATE focus_sessions SET"
-              + " execution_status='ENDING',desired_revision=?,version=version+1,end_reason='MANUAL'"
+              + " execution_status='ENDING',desired_revision=?,version=CASE WHEN version BETWEEN 1 AND 9007199254740990 THEN version+1 ELSE version END,end_reason='MANUAL'"
               + " WHERE id=?",
           revision,
           id);
@@ -235,6 +235,17 @@ public class ExecutionService {
 
   @Transactional
   public Object commands(MemberLinks.Principal p) {
+    db.queryForList("SELECT id FROM users WHERE id=? FOR UPDATE", p.user());
+    // Never deliver a new APPLY for a session whose next resource version is exhausted.
+    for (var session : db.queryForList(
+        "SELECT s.* FROM focus_sessions s JOIN execution_commands c ON c.session_id=s.id"
+            + " AND c.desired_revision=s.desired_revision WHERE s.user_id=? AND s.executor_id=?"
+            + " AND c.kind='APPLY_POLICY' AND c.status='PENDING'"
+            + " AND s.execution_status IN ('STARTING','UNKNOWN') FOR UPDATE", p.user(), p.executor())) {
+      if (!SafeVersion.valid(session.get("version"))
+          || ((Number) session.get("version")).longValue() == SafeVersion.MAX)
+        releaseAfterFailure(session, ((Number) session.get("id")).longValue(), "VERSION_LIMIT");
+    }
     heartbeat(p);
     var rows =
         db.queryForList(
@@ -334,6 +345,13 @@ public class ExecutionService {
         result,
         Timestamp.from(observed),
         json.encoded(report));
+    // A limit-triggered release can race with an already-delivered APPLY report.
+    // Retain validated evidence, without changing current intent/revision or acknowledging old APPLY.
+    if (revision < desired && result.equals("APPLIED")
+        && "APPLY_POLICY".equals(cmd.getFirst().get("kind"))
+        && "VERSION_LIMIT".equals(r.get("last_error_code"))
+        && Set.of("UNKNOWN", "ENDING").contains(r.get("execution_status")))
+      preserveCleanupApplyInterval(id, cmd.getFirst(), observed, intervals);
     if (revision == desired) {
       String kind = cmd.getFirst().get("kind").toString(),
           state = r.get("execution_status").toString();
@@ -341,7 +359,12 @@ public class ExecutionService {
           && kind.equals("APPLY_POLICY")
           && Set.of("STARTING", "UNKNOWN").contains(state)) {
         Object deadline = cmd.getFirst().get("execute_before");
-        if (deadline != null && observed.isAfter(kr.ac.kdu.focurve.api.DbTime.instant(deadline))) {
+        if (!SafeVersion.valid(r.get("version"))
+            || ((Number) r.get("version")).longValue() == SafeVersion.MAX) {
+          preserveCleanupApplyInterval(id, cmd.getFirst(), observed, intervals);
+          // Accept the observed fact, but never authorize new RUN at an exhausted version.
+          releaseAfterFailure(r, id, "VERSION_LIMIT");
+        } else if (deadline != null && observed.isAfter(kr.ac.kdu.focurve.api.DbTime.instant(deadline))) {
           releaseAfterFailure(r, id, "APPLY_EXPIRED");
         } else {
           if (intervals.size() != 1 || intervals.getFirst().get("end_at") != null)
@@ -370,11 +393,12 @@ public class ExecutionService {
       } else if (result.equals("RELEASED")
           && (kind.equals("RELEASE_POLICY")
               || (kind.equals("APPLY_POLICY") && Set.of("STARTING", "UNKNOWN").contains(state)))) {
+        recoverReleasedInterval(r, cmd.getFirst(), observed, intervals);
         closeIntervals(id, observed, intervals);
         String finalState = state.equals("ENDING") ? "ENDED" : "START_FAILED";
         db.update(
             "UPDATE focus_sessions SET"
-                + " execution_status=?,ended_at=?,policy_released_at=?,record_status='PARTIAL',version=version+1"
+                + " execution_status=?,ended_at=?,policy_released_at=?,record_status='PARTIAL',version=CASE WHEN version BETWEEN 1 AND 9007199254740990 THEN version+1 ELSE version END"
                 + " WHERE id=?",
             finalState,
             Timestamp.from(observed),
@@ -391,7 +415,7 @@ public class ExecutionService {
         db.update(
             "UPDATE focus_sessions SET"
                 + " execution_status=IF(execution_status='STARTING','UNKNOWN',execution_status),"
-                + " last_error_code=?,record_status='REVIEW_REQUIRED',version=version+1 WHERE id=?",
+                + " last_error_code=?,record_status='REVIEW_REQUIRED',version=CASE WHEN version BETWEEN 1 AND 9007199254740990 THEN version+1 ELSE version END WHERE id=?",
             Objects.toString(report.get("error_code"), "UNCONFIRMED"),
             id);
       }
@@ -410,6 +434,26 @@ public class ExecutionService {
         "desired_revision",
         db.queryForObject(
             "SELECT desired_revision FROM focus_sessions WHERE id=?", Long.class, id));
+  }
+
+  private void preserveCleanupApplyInterval(long id, Map<String, Object> command,
+      Instant observed, List<Map<String, Object>> intervals) {
+    // Existing intervals remain authoritative; a stale report never rewrites them.
+    if (db.queryForObject("SELECT COUNT(*) FROM session_intervals WHERE session_id=?", Long.class, id) > 0)
+      return;
+    if (intervals.size() != 1 || intervals.getFirst().get("end_at") != null)
+      throw new ApiFailure(422, "INVALID_INTERVAL");
+    var interval = intervals.getFirst();
+    Instant began = instant(interval, "start_at");
+    Instant issued = kr.ac.kdu.focurve.api.DbTime.instant(command.get("created_at"));
+    Instant deadline = kr.ac.kdu.focurve.api.DbTime.instant(command.get("execute_before"));
+    if (began.isAfter(observed) || began.isBefore(issued.minusSeconds(60)) || began.isAfter(deadline))
+      throw new ApiFailure(422, "INVALID_INTERVAL");
+    db.update("INSERT INTO session_intervals VALUES (?,?,'RUN',?,NULL,NULL,?)",
+        interval.get("interval_id"), id, Timestamp.from(began), interval.get("quality"));
+    long minutes = db.queryForObject("SELECT duration_minutes FROM focus_sessions WHERE id=?", Long.class, id);
+    db.update("UPDATE focus_sessions SET started_at=?,planned_end_at=? WHERE id=?",
+        Timestamp.from(began), Timestamp.from(began.plusSeconds(minutes * 60)), id);
   }
 
   private List<Map<String, Object>> intervals(Map<String, Object> report) {
@@ -439,13 +483,51 @@ public class ExecutionService {
     long revision = ((Number) r.get("desired_revision")).longValue() + 1;
     db.update(
         "UPDATE focus_sessions SET"
-            + " execution_status='UNKNOWN',last_error_code=?,desired_revision=?,version=version+1"
+            + " execution_status='UNKNOWN',last_error_code=?,desired_revision=?,version=CASE WHEN version BETWEEN 1 AND 9007199254740990 THEN version+1 ELSE version END"
             + " WHERE id=?",
         error,
         revision,
         id);
     db.update("UPDATE active_execution_locks SET revision=? WHERE session_id=?", revision, id);
     command(id, r.get("executor_id").toString(), revision, "RELEASE_POLICY", null);
+  }
+
+  private void recoverReleasedInterval(Map<String, Object> session, Map<String, Object> release,
+      Instant observed, List<Map<String, Object>> reports) {
+    long id = ((Number) session.get("id")).longValue();
+    // Existing intervals remain authoritative. Empty evidence cannot replace a known RUN.
+    if (reports.isEmpty() || db.queryForObject(
+        "SELECT COUNT(*) FROM session_intervals WHERE session_id=?", Long.class, id) > 0) return;
+    if (reports.size() != 1) throw new ApiFailure(422, "INVALID_INTERVAL");
+    var interval = reports.getFirst();
+    if (interval.get("end_at") == null) throw new ApiFailure(422, "INVALID_INTERVAL");
+    // Bind recovered evidence to the actual frozen session, installation, owner and issued APPLY.
+    var applies = db.queryForList(
+        "SELECT c.* FROM execution_commands c JOIN focus_sessions s ON s.id=c.session_id"
+            + " JOIN policy_snapshots p ON p.id=s.policy_snapshot_id AND p.user_id=s.user_id"
+            + " AND p.executor_id=s.executor_id WHERE s.id=? AND s.user_id=? AND s.executor_id=?"
+            + " AND c.executor_id=s.executor_id AND c.kind='APPLY_POLICY' AND c.desired_revision<=?"
+            + " ORDER BY c.desired_revision DESC LIMIT 1", id, session.get("user_id"),
+        session.get("executor_id"), release.get("desired_revision"));
+    if (applies.isEmpty()) throw new ApiFailure(409, "REPORT_CONFLICT");
+    var apply = applies.getFirst();
+    Instant began = instant(interval, "start_at"), ended = instant(interval, "end_at");
+    Instant issued = kr.ac.kdu.focurve.api.DbTime.instant(apply.get("created_at"));
+    Instant deadline = kr.ac.kdu.focurve.api.DbTime.instant(apply.get("execute_before"));
+    if (deadline == null || began.isBefore(issued.minusSeconds(60)) || began.isAfter(deadline)
+        || ended.isBefore(began) || ended.isAfter(observed))
+      throw new ApiFailure(422, "INVALID_INTERVAL");
+    long duration = Duration.between(began, ended).toMillis();
+    if (interval.get("duration_ms") != null && number(interval, "duration_ms") != duration)
+      throw new ApiFailure(409, "REPORT_CONFLICT");
+    if (!db.queryForList("SELECT id FROM session_intervals WHERE id=?", interval.get("interval_id")).isEmpty())
+      throw new ApiFailure(409, "REPORT_CONFLICT");
+    db.update("INSERT INTO session_intervals VALUES (?,?,'RUN',?,NULL,NULL,?)",
+        interval.get("interval_id"), id, Timestamp.from(began), interval.get("quality"));
+    db.update("UPDATE focus_sessions SET started_at=?,planned_end_at=? WHERE id=?",
+        Timestamp.from(began), Timestamp.from(began.plusSeconds(
+            ((Number) session.get("duration_minutes")).longValue() * 60)), id);
+    // closeIntervals validates/closes this evidence and aggregates it in the same transaction.
   }
 
   private void closeIntervals(long id, Instant observed, List<Map<String, Object>> reports) {
@@ -649,7 +731,7 @@ public class ExecutionService {
       String finalState = intervalCount == 0 ? "START_FAILED" : "ENDED";
       db.update(
           "UPDATE focus_sessions SET"
-              + " execution_status=?,ended_at=?,policy_released_at=?,end_reason=?,record_status='PARTIAL',desired_revision=desired_revision+1,version=version+1"
+              + " execution_status=?,ended_at=?,policy_released_at=?,end_reason=?,record_status='PARTIAL',desired_revision=desired_revision+1,version=CASE WHEN version BETWEEN 1 AND 9007199254740990 THEN version+1 ELSE version END"
               + " WHERE id=?",
           finalState,
           Timestamp.from(released),
@@ -845,6 +927,9 @@ public class ExecutionService {
   private Map<String, Object> view(Map<String, Object> r) {
     var out = new LinkedHashMap<String, Object>();
     out.put("session_id", r.get("source_session_id"));
+    // Explicit support boundary: legacy wall-clock sessions, not active-time auto recovery.
+    out.put("automatic_recovery_supported", false);
+    out.put("time_accounting_mode", "LEGACY_WALL_CLOCK");
     for (String name :
         List.of(
             "executor_id",
@@ -860,6 +945,7 @@ public class ExecutionService {
             "desired_revision",
             "end_reason",
             "last_error_code")) out.put(name, r.get(name));
+    sessionVersionView(out);
     for (String name : List.of("started_at", "planned_end_at", "ended_at", "policy_released_at"))
       out.put(
           name,
@@ -875,6 +961,25 @@ public class ExecutionService {
     return out;
   }
 
+  private void sessionVersionView(Map<String, Object> response) {
+    Object version = response.get("version");
+    // Never truncate floating-point, overflowed, missing or malformed historical cache values.
+    // Refetch the authoritative session/commands and reconcile instead of claiming success.
+    long value;
+    if (version instanceof Integer || version instanceof Long) {
+      value = ((Number) version).longValue();
+    } else if (version instanceof String text && text.matches("[1-9][0-9]*")) {
+      try { value = Long.parseLong(text); }
+      catch (NumberFormatException e) { throw new ApiFailure(409, "RECONCILE_REQUIRED"); }
+    } else {
+      throw new ApiFailure(409, "RECONCILE_REQUIRED");
+    }
+    if (value < 1) throw new ApiFailure(409, "RECONCILE_REQUIRED");
+    // Normalize only the outgoing representation; retain DB/cache bytes exactly.
+    response.put("version", value > SafeVersion.MAX ? Long.toString(value) : (Object) value);
+    response.put("version_increment_blocked", value >= SafeVersion.MAX);
+  }
+
   private Map<String, Object> replay(long owner, String path, String key, Object body) {
     var rows =
         db.queryForList(
@@ -886,7 +991,9 @@ public class ExecutionService {
     if (rows.isEmpty()) return null;
     if (!rows.getFirst().get("body_hash").equals(AuthSupport.hash(json.encoded(body))))
       throw new ApiFailure(409, "IDEMPOTENCY_CONFLICT");
-    return json.decoded(rows.getFirst().get("response").toString());
+    var response = json.decoded(rows.getFirst().get("response").toString());
+    sessionVersionView(response);
+    return response;
   }
 
   private void remember(long owner, String path, String key, Object body, Object result) {

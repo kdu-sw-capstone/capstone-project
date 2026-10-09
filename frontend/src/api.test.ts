@@ -142,3 +142,10 @@ describe("API 재전송 계약 (HTTP 모의 검증)", () => {
     await expect(request("/auth/email/verify","POST",{token:"test-only"},{challenge:true})).rejects.toMatchObject({status:403});
     expect(fetch).toHaveBeenCalledTimes(1);
   });
+
+it("historical session version remains an exact decimal string", async () => {
+  vi.stubGlobal("fetch",vi.fn(async()=>json({session_id:"history",version:"9223372036854775807",version_increment_blocked:true})));
+  const session=await request<{version:number|string;version_increment_blocked:boolean}>("/sessions/history");
+  expect(session.version).toBe("9223372036854775807");
+  expect(session.version_increment_blocked).toBe(true);
+});

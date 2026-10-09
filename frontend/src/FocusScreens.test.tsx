@@ -44,3 +44,9 @@ it("상태 조회 실패 뒤에는 마지막 화면을 유지해도 시작 요�
  await screen.findByRole("alert");expect(screen.getByRole("button",{name:"▶ 집중 시작"})).toBeDisabled();
  expect(screen.getByRole("region",{name:"집중 타이머"})).toBeInTheDocument();
 });
+
+it("자동 복구 미지원 경계를 진행 화면에서도 명시한다",async()=>{
+ sessionFixture("RUNNING");render(<Sessions settings={()=>{}} records={()=>{}}/>);
+ await screen.findByText("집중 세션 진행");
+ expect(screen.getByRole("note")).toHaveTextContent("자동 복구를 지원하지 않습니다");
+});

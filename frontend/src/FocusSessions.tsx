@@ -33,6 +33,7 @@ export default function FocusSessions({settings,records}:{settings:()=>void;reco
   const recordLink=(s:Session)=>records(s.session_id,s.started_at?seoulDay(new Date(s.started_at)):seoulDay(),s.ended_at?seoulDay(new Date(s.ended_at)):seoulDay());
   return <section className="page focus-session" aria-busy={!loaded}>
     <header className="focus-heading"><h3>{title}</h3><p>{ready?"집중 시간과 저장된 정책을 확인한 뒤 시작하세요.":ended?"이번 집중의 결과를 살펴보고 다음 세션을 준비하세요.":"남은 시간과 이번 세션의 정책을 확인하세요."}</p></header>
+    <p className="notice" role="note">현재 버전은 Chrome 재시작 후 집중 세션 자동 복구를 지원하지 않습니다. 진행 시간은 기존 종료 예정 시각 기준이며, 자동 복구·중단 중 남은 시간 보존은 후속 통합에서 제공됩니다.</p>
     <div className="focus-kpis three"><Kpi title={ended?"이번 세션 결과":"종료한 세션"} value={!loaded?"—":ended?endLabel:`${today.length}회`} hint={ended?"실제 정책 해제 확인":"오늘 · 진행 세션 제외"}/><Kpi title={ended?"이번 세션 집중 시간":"오늘 집중 시간"} value={!loaded?"—":`${Math.floor((ended?session!.active_duration_ms:today.reduce((n,s)=>n+s.active_duration_ms,0))/60000)}분`} hint="종료한 세션의 확인된 진행 시간"/><Kpi title="확장 프로그램" value={!loaded?"확인 중":installations.length?"회원 연결됨":"미연결"} hint={status==="RUNNING"?"이번 세션의 정책 적용 확인":status==="ENDING"?"정책 해제 결과 확인 중":"회원 연결과 실제 실행 확인은 별도"}/></div>
     <div className="focus-columns">
       <section className="focus-card timer-card" aria-label="집중 타이머">

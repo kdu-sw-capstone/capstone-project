@@ -49,6 +49,14 @@ class ExecutionRecoveryIntegrationTest {
   void applied(Fixture f) { service.report(f.principal(),report(f,"APPLIED",1,f.apply(),true)); }
   void conflict(Runnable action) { assertThatThrownBy(action::run).isInstanceOfSatisfying(ApiFailure.class,e->{assertThat(e.status).isEqualTo(409);assertThat(e.code).isEqualTo("REPORT_CONFLICT");}); }
 
+  @Test void sessionExplicitlyDeclaresLegacyTimeAndNoAutomaticRecovery() {
+    var f=start();var before=service.current(f.owner());
+    assertThat(before.get("automatic_recovery_supported")).isEqualTo(false);
+    assertThat(before.get("time_accounting_mode")).isEqualTo("LEGACY_WALL_CLOCK");
+    applied(f);var running=service.current(f.owner());
+    assertThat(running.get("automatic_recovery_supported")).isEqualTo(false);
+    assertThat(Instant.parse(running.get("planned_end_at").toString())).isEqualTo(f.began().plusSeconds(60));
+  }
   @Test void completedReleaseCannotRewriteEndedSessionWithNewReportId() {
     var f=start(); applied(f); service.end(f.owner(),f.session(),key());
     var release=report(f,"RELEASED",2,command(f.id()),true);
@@ -95,4 +103,107 @@ class ExecutionRecoveryIntegrationTest {
     assertThat(db.queryForObject("SELECT COUNT(*) FROM session_intervals WHERE session_id=?",Integer.class,f.id())).isZero();
     assertThat(db.queryForObject("SELECT kind FROM execution_commands WHERE id=?",String.class,command(f.id()))).isEqualTo("RELEASE_POLICY");
   }
+  @Test void historicalHighSessionVersionDoesNotPreventConfirmedEndAndRelease() {
+    var f=start();applied(f);db.update("UPDATE focus_sessions SET version=? WHERE id=?",SafeVersion.MAX,f.id());
+    service.end(f.owner(),f.session(),key());service.report(f.principal(),report(f,"RELEASED",2,command(f.id()),true));
+    assertThat(service.get(f.owner(),f.id()).get("execution_status")).isEqualTo("ENDED");
+    assertThat(service.current(f.owner())).isNull();
+  }
+
+
+  @Test void exhaustedApplyIsAcceptedForCleanupButNeverBecomesRunning() {
+    for(long version:List.of(SafeVersion.MAX,SafeVersion.MAX+1,Long.MAX_VALUE)) {
+      var f=start();db.update("UPDATE focus_sessions SET version=? WHERE id=?",version,f.id());
+      applied(f);var state=service.current(f.owner());
+      assertThat(state.get("execution_status")).isEqualTo("UNKNOWN");
+      assertThat(state.get("last_error_code")).isEqualTo("VERSION_LIMIT");
+      assertThat(Instant.parse(state.get("started_at").toString())).isEqualTo(f.began());
+      assertThat(db.queryForObject("SELECT version FROM focus_sessions WHERE id=?",Long.class,f.id())).isEqualTo(version);
+      service.report(f.principal(),report(f,"RELEASED",2,command(f.id()),true));
+      assertThat(service.get(f.owner(),f.id()).get("execution_status")).isEqualTo("START_FAILED");
+      assertThat(service.current(f.owner())).isNull();
+    }
+  }
+  @Test void ordinaryApplyMayReachButNeverExceedSafeBoundary() {
+    var f=start();db.update("UPDATE focus_sessions SET version=? WHERE id=?",SafeVersion.MAX-1,f.id());
+    applied(f);assertThat(service.current(f.owner()).get("version")).isEqualTo(SafeVersion.MAX);
+    service.end(f.owner(),f.session(),key());
+    assertThat(service.current(f.owner()).get("version")).isEqualTo(SafeVersion.MAX);
+  }
+
+
+  @Test void historicalFailureReportsRetainVersionUntilReleaseConfirmed() {
+    var f=start();db.update("UPDATE focus_sessions SET version=? WHERE id=?",Long.MAX_VALUE,f.id());
+    service.report(f.principal(),report(f,"UNCONFIRMED",1,f.apply(),false));
+    assertThat(service.current(f.owner()).get("version")).isEqualTo(Long.toString(Long.MAX_VALUE));
+    service.report(f.principal(),report(f,"FAILED",1,f.apply(),false));
+    assertThat(service.current(f.owner()).get("execution_status")).isEqualTo("UNKNOWN");
+    service.report(f.principal(),report(f,"RELEASED",2,command(f.id()),false));
+    assertThat(service.current(f.owner())).isNull();
+    assertThat(db.queryForObject("SELECT version FROM focus_sessions WHERE id=?",Long.class,f.id())).isEqualTo(Long.MAX_VALUE);
+  }
+
+
+  @Test void historicalIdempotencyResponseIsLosslessWithoutRewritingStoredCache() {
+    var f=start();applied(f);db.update("UPDATE focus_sessions SET version=? WHERE id=?",Long.MAX_VALUE,f.id());
+    String requestKey=key();var result=service.end(f.owner(),f.session(),requestKey);
+    var historical=new LinkedHashMap<>(result);historical.put("version",Long.MAX_VALUE);
+    var encoded=new com.fasterxml.jackson.databind.ObjectMapper();
+    try {
+      String payload=encoded.writeValueAsString(historical);
+      db.update("UPDATE idempotency_keys SET response=? WHERE owner_key=? AND request_key=?",payload,"MEMBER:"+f.owner(),requestKey);
+      String before=db.queryForObject("SELECT response FROM idempotency_keys WHERE owner_key=? AND request_key=?",String.class,"MEMBER:"+f.owner(),requestKey);
+      assertThat(service.end(f.owner(),f.session(),requestKey).get("version")).isEqualTo(Long.toString(Long.MAX_VALUE));
+      assertThat(db.queryForObject("SELECT response FROM idempotency_keys WHERE owner_key=? AND request_key=?",String.class,"MEMBER:"+f.owner(),requestKey)).isEqualTo(before);
+    } catch(com.fasterxml.jackson.core.JsonProcessingException e) {throw new AssertionError(e);}
+  }
+
+
+  @Test void exhaustedVersionCannotDeliverNewApplyCommand() {
+    for(long version:List.of(SafeVersion.MAX,SafeVersion.MAX+1,Long.MAX_VALUE)) {
+      var f=start();db.update("UPDATE focus_sessions SET version=? WHERE id=?",version,f.id());
+      var response=(Map<?,?>)service.commands(f.principal());var commands=(List<?>)response.get("commands");
+      assertThat(commands).hasSize(1);assertThat(((Map<?,?>)commands.getFirst()).get("type")).isEqualTo("RELEASE_POLICY");
+      assertThat(service.current(f.owner()).get("execution_status")).isEqualTo("UNKNOWN");
+      service.report(f.principal(),report(f,"RELEASED",2,command(f.id()),false));
+      assertThat(service.current(f.owner())).isNull();
+      assertThat(db.queryForObject("SELECT version FROM focus_sessions WHERE id=?",Long.class,f.id())).isEqualTo(version);
+    }
+  }
+
+
+  @Test void inFlightOldApplyAfterLimitReleasePreservesEvidenceWithoutRevertingRevision() {
+    var f=start();db.update("UPDATE focus_sessions SET version=? WHERE id=?",Long.MAX_VALUE,f.id());
+    service.commands(f.principal());applied(f);
+    var current=service.current(f.owner());assertThat(current.get("execution_status")).isEqualTo("UNKNOWN");
+    assertThat(current.get("desired_revision")).isEqualTo(2L);
+    assertThat(db.queryForObject("SELECT status FROM execution_commands WHERE id=?",String.class,f.apply())).isEqualTo("PENDING");
+    service.report(f.principal(),report(f,"RELEASED",2,command(f.id()),true));
+    assertThat(service.current(f.owner())).isNull();
+    assertThat(service.get(f.owner(),f.id()).get("active_duration_ms")).isEqualTo(2000L);
+    assertThat(db.queryForObject("SELECT version FROM focus_sessions WHERE id=?",Long.class,f.id())).isEqualTo(Long.MAX_VALUE);
+  }
+
+
+  @Test void lossyHistoricalCacheRequiresReconciliationButDoesNotBlockActualRelease() throws Exception {
+    var f=start();applied(f);db.update("UPDATE focus_sessions SET version=? WHERE id=?",Long.MAX_VALUE,f.id());
+    String requestKey=key();var result=service.end(f.owner(),f.session(),requestKey);
+    var codec=new com.fasterxml.jackson.databind.ObjectMapper();
+    for(Object value:Arrays.asList(1.5, "1.5", "9007199254740992.0", "9223372036854775808",
+        new java.math.BigInteger("9223372036854775808"), null, "unknown", true, 0, -1)) {
+      var historical=new LinkedHashMap<>(result);historical.put("version",value);
+      String payload=codec.writeValueAsString(historical);
+      db.update("UPDATE idempotency_keys SET response=? WHERE owner_key=? AND request_key=?",payload,"MEMBER:"+f.owner(),requestKey);
+      String before=db.queryForObject("SELECT response FROM idempotency_keys WHERE owner_key=? AND request_key=?",String.class,"MEMBER:"+f.owner(),requestKey);
+      assertThatThrownBy(()->service.end(f.owner(),f.session(),requestKey))
+          .isInstanceOfSatisfying(ApiFailure.class,e->{assertThat(e.status).isEqualTo(409);assertThat(e.code).isEqualTo("RECONCILE_REQUIRED");});
+      assertThat(db.queryForObject("SELECT response FROM idempotency_keys WHERE owner_key=? AND request_key=?",String.class,"MEMBER:"+f.owner(),requestKey)).isEqualTo(before);
+      assertThat(service.current(f.owner()).get("execution_status")).isEqualTo("ENDING");
+      assertThat(service.current(f.owner()).get("version")).isEqualTo(Long.toString(Long.MAX_VALUE));
+    }
+    service.report(f.principal(),report(f,"RELEASED",2,command(f.id()),true));
+    assertThat(service.current(f.owner())).isNull();
+    assertThat(db.queryForObject("SELECT version FROM focus_sessions WHERE id=?",Long.class,f.id())).isEqualTo(Long.MAX_VALUE);
+  }
+
 }

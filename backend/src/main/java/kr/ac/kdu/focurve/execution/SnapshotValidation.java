@@ -20,7 +20,7 @@ public final class SnapshotValidation {
     }
     try {java.time.Instant.parse((String)value.get("created_at"));}
     catch(RuntimeException error){fail();}
-    if(!value.containsKey("owner_user_id")||!(value.get("source_version") instanceof Number n)||n.longValue()<1) fail();
+    if(!value.containsKey("owner_user_id")||!positiveVersion(value.get("source_version"))) fail();
     if(value.get("owner_user_id")!=null && (!(value.get("owner_user_id") instanceof String owner)||!owner.matches("[1-9][0-9]*"))) fail();
     if(!(value.get("source_version") instanceof Integer||value.get("source_version") instanceof Long)) fail();
     if(!(value.get("sites") instanceof List<?>)) fail();
@@ -74,7 +74,7 @@ public final class SnapshotValidation {
     if (!positiveVersion(value)) fail();
   }
   private static boolean positiveVersion(Object value) {
-    return (value instanceof Integer || value instanceof Long) && ((Number)value).longValue() > 0;
+    return SafeVersion.valid(value);
   }
   private static void fail(){throw new ApiFailure(422,"INVALID_SNAPSHOT");}
 }
