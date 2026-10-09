@@ -4,13 +4,13 @@
 
 - 저장소: https://github.com/kdu-sw-capstone/capstone-project
 - 브랜치: `codex/server-event12-integration`, 대상 `develop`.
-- 검증된 Server 코드 커밋: `SERVER_CODE_SHA_PENDING`
-- PR: PR_URL_PENDING
+- 검증된 Server 코드 커밋: `c2a8ad0dba835547de22fb85419f7b5d9068d5c9`
+- PR: https://github.com/kdu-sw-capstone/capstone-project/pull/18
 - 최신 문서 커밋은 위 코드 커밋 이후일 수 있다. 아래 SHA는 실제 테스트한 제품 코드를 고정한다.
 
 ```bash
 git fetch origin codex/server-event12-integration
-git switch --detach SERVER_CODE_SHA_PENDING
+git switch --detach c2a8ad0dba835547de22fb85419f7b5d9068d5c9
 # 문서 최신본까지 필요하면 별도 작업 복사본에서 원격 브랜치로 전환한다.
 ```
 
