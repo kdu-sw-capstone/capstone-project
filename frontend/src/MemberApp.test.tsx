@@ -23,6 +23,7 @@ beforeEach(() => {
 afterEach(async () => {
   cleanup();
   clearCsrf();
+  vi.restoreAllMocks();
   vi.useRealTimers();
   vi.unstubAllGlobals();
   await new Promise(resolve => setTimeout(resolve, 0));
@@ -150,8 +151,11 @@ describe("회원 Web 입력 및 실패 처리 (HTTP 모의 검증)", () => {
       fetch.mock.calls.some(([url]) => url.endsWith("/password/reset")),
     ).toBe(true);
   });
-  it("가입 통신 실패 후 입력과 동일 멱등 키를 유지한다", async () => {
-    const calls: RequestInit[] = [];
+  it.each([false, true])("가입 통신 실패 후 입력과 동일 멱등 키를 유지한다 (독립 GET: %s)", async (backgroundRead) => {
+    const signupCalls: RequestInit[] = [];
+    const otherCalls: { path: string; method: string }[] = [];
+    // Fix only this test's jitter, not the production retry policy.
+    const jitter = vi.spyOn(Math, "random").mockReturnValue(0.5);
     const fetch = vi.fn(async (url: string, init?: RequestInit) => {
       if (url.endsWith("/csrf")) return json({ csrf_token: "test-csrf" });
       if (url.endsWith("/me"))
@@ -159,9 +163,15 @@ describe("회원 Web 입력 및 실패 처리 (HTTP 모의 검증)", () => {
       if (url.includes("/social/")) return json({ error: { code: "PROVIDER_UNAVAILABLE" } }, 503);
       if (url.endsWith('/signup-code-requests')) return json({request_id:'test-code-request',expires_at:new Date(Date.now()+600000).toISOString(),resend_after_seconds:60},202);
       if (url.endsWith('/signup-code-verifications')) return json({verification_proof:'synthetic-proof',proof_expires_at:new Date(Date.now()+600000).toISOString()});
-      calls.push(init!);
-      if (calls.length <= 7) throw new TypeError("offline");
-      return json({ user_id: "1", status: "ACTIVE",email_verified:true }, 201);
+      const method = init?.method ?? "GET";
+      if (url === "/api/v1/auth/signup" && method === "POST") {
+        signupCalls.push(init!);
+        if (signupCalls.length <= 7) throw new TypeError("offline");
+        return json({ user_id: "1", status: "ACTIVE",email_verified:true }, 201);
+      }
+      otherCalls.push({ path: url, method });
+      if (url === "/api/v1/dashboard" && method === "GET") return json({});
+      throw new Error("Unexpected request in signup retry scenario");
     });
     vi.stubGlobal("fetch", fetch);
     await refreshCsrf();
@@ -193,18 +203,37 @@ describe("회원 Web 입력 및 실패 처리 (HTTP 모의 검증)", () => {
     vi.useFakeTimers();
     await act(async () => {
       fireEvent.click(screen.getByRole("button", { name: "회원가입" }));
+      if (backgroundRead) {
+        // A separate read must not consume the signup failure budget.
+        await fetch("/api/v1/dashboard", { method: "GET" });
+      }
       await vi.advanceTimersByTimeAsync(80000);
     });
     vi.useRealTimers();
     expect(await screen.findByRole("alert")).toHaveTextContent("입력을 보존");
     expect(screen.getByLabelText("이메일")).toHaveValue("test@example.invalid");
+    expect(signupCalls).toHaveLength(7);
     fireEvent.click(screen.getByRole("button", { name: "회원가입" }));
     await screen.findByText(
       "가입 완료",
     );
-    expect(calls).toHaveLength(8);
-    expect(calls[0].headers).toEqual(calls[7].headers);
-    expect(calls[0].body).toBe(calls[7].body);
+    expect(signupCalls).toHaveLength(8);
+    const original = signupCalls[0];
+    const originalHeaders = original.headers as Record<string,string>;
+    expect(originalHeaders["Idempotency-Key"]).toBeTruthy();
+    expect(signupCalls.every(call =>
+      (call.headers as Record<string,string>)["Idempotency-Key"] === originalHeaders["Idempotency-Key"] &&
+      (call.headers as Record<string,string>)["X-CSRF-Token"] === originalHeaders["X-CSRF-Token"] &&
+      call.body === original.body
+    )).toBe(true);
+    const payload = JSON.parse(original.body as string);
+    expect(payload.email).toBe("test@example.invalid");
+    expect(payload.display_name).toBe("검증");
+    expect(payload.terms_version).toBe("dev-v1");
+    expect(typeof payload.password === "string" && payload.password.length >= 12).toBe(true);
+    expect(typeof payload.verification_proof === "string" && payload.verification_proof.length > 0).toBe(true);
+    expect(otherCalls).toEqual(backgroundRead ? [{path:"/api/v1/dashboard",method:"GET"}] : []);
+    jitter.mockRestore();
   });
   it("비밀번호 확인 불일치는 가입 API를 호출하지 않는다", async () => {
     const fetch = vi.fn(async (_url: string) =>
