@@ -21,7 +21,7 @@ W=Web HttpOnly Secure SameSite=Lax 쿠키, 변경 요청 CSRF+Origin 검증. E=�
 | ContentPolicyWrite | keywords:{enabled,rules:[{id UUID,text1..80,scopes:[TITLE/URL/BODY]}],exceptions:[Host]},adult_domains:{enabled,custom_hosts:[Host],exceptions:[Host]},image_blur:{enabled,sensitivity:LOW/MEDIUM/HIGH,strength:LOW/MEDIUM/HIGH},usage_tracking:{enabled} |
 | Host | host:소문자 IDNA 정규화≤253,include_subdomains:boolean. 각 목록≤500. 키워드≤200. |
 | ContentPolicy | ContentPolicyWrite + version:int,updated_at |
-| Snapshot | policy_snapshot_id UUID,format_version=1.1,owner_user_id?,executor_id,created_at,sites:[Site],content_policy,catalog_version?,model_profile_version?,source_version |
+| Snapshot | policy_snapshot_id UUID,format_version=1.2,site_match_strategy=MOST_SPECIFIC_HOST,owner_user_id?,executor_id,created_at,sites:[Site],content_policy,catalog_version?,model_profile_version?,source_version |
 | Session | session_id UUID,executor_id UUID,policy_snapshot_id UUID,origin:MEMBER/GUEST_IMPORT,source:MANUAL/SCHEDULE,execution_status,record_status:PENDING/PARTIAL/COMPLETE/REVIEW_REQUIRED,duration_minutes,active_duration_ms,overrun_ms,remaining_ms,started_at?,planned_end_at?,ended_at?,policy_released_at?,end_reason?,version,desired_revision,last_error_code? |
 | Command | command_id UUID,session_id,executor_id,type:APPLY_POLICY/RELEASE_POLICY,desired_revision,snapshot?,reason,created_at,execute_before? |
 | ExecutionReport | report_id UUID,command_id?,session_id,executor_id,desired_revision,result:APPLIED/RELEASED/FAILED/UNCONFIRMED,observed_at,error_code?,rollback_confirmed?,intervals:[Interval],local_action_seq? |
@@ -42,7 +42,7 @@ W=Web HttpOnly Secure SameSite=Lax 쿠키, 변경 요청 CSRF+Origin 검증. E=�
 
 ## 사이트·인증 검증
 
-URL에서 host만 관리 범위로 사용하고 경로·query·fragment는 저장하지 않는다. 자격정보 URL·IP·localhost·명시적 port는 거절한다. www를 임의 제거하지 않는다. 동일하거나 포함관계인 등록 범위는409. 목적 FOCUS/GENERAL은 ALLOW, DISTRACTION은 BLOCK/RECORD다. feature_code는 YOUTUBE_SHORTS/YOUTUBE_RECOMMENDATIONS/YOUTUBE_COMMENTS/YOUTUBE_AUTOPLAY/INSTAGRAM_REELS/INSTAGRAM_RECOMMENDATIONS이며 host와 호환해야 한다.
+URL에서 host만 관리 범위로 사용하고 경로·query·fragment는 저장하지 않는다. 자격정보 URL·IP·localhost·명시적 port는 거절한다. www를 임의 제거하지 않는다. 같은 계정의 정규화된 canonical_host가 정확히 같은 경우만409이며 상위·하위 등록 범위의 겹침은 허용한다. 여러 행이 매칭되면 가장 구체적인 호스트의 정책 전체를 선택한다. include_subdomains는 적용 범위만 결정하고 도메인 경계를 확인한다. 목적 FOCUS/GENERAL은 ALLOW, DISTRACTION은 BLOCK/RECORD다. feature_code는 YOUTUBE_SHORTS/YOUTUBE_RECOMMENDATIONS/YOUTUBE_COMMENTS/YOUTUBE_AUTOPLAY/INSTAGRAM_REELS/INSTAGRAM_RECOMMENDATIONS이며 host와 호환해야 한다.
 
 이메일은 인증 주소를 계정 식별 수단으로 사용한다. 비밀번호는 단방향 해시(Argon2id)를 서버에 저장하고 원문은 로그/이벤트에 남기지 않는다. 이메일 인증24시간, 비밀번호 재설정30분, 단회 사용. 로그인 실패 제한은 계정+IP 각각5회/분, 메일 재발송1분 간격·5회/시간 설계값이다. 로그인 성공 시 세션 ID를 교체한다.
 
@@ -76,8 +76,8 @@ Google은 OIDC의 issuer/audience/expiry/nonce와 서명을 검증한다. 카카
 | API-EXT-07 | GET /api/v1/extension-installations | W/E | 없음 | 200 Installation[] | 401 |
 | API-SITE-01 | GET /api/v1/sites | W/E | purpose?,cursor?,limit? | 200 List<Site> | 400 INVALID_CURSOR |
 | API-SITE-02 | GET /api/v1/sites/{site_id} | W/E | 없음 | 200 Site + ETag | 404 |
-| API-SITE-03 | POST /api/v1/sites | W/E | SiteWrite | 201 Site | 409 SITE_SCOPE_CONFLICT;422 |
-| API-SITE-04 | PATCH /api/v1/sites/{site_id} | W/E | SiteWrite의 변경 필드 + If-Match | 200 Site | 412 VERSION_CONFLICT;422 |
+| API-SITE-03 | POST /api/v1/sites | W/E | SiteWrite | 201 Site | 409 SITE_SCOPE_CONFLICT(정확한 호스트 중복);422 |
+| API-SITE-04 | PATCH /api/v1/sites/{site_id} | W/E | SiteWrite의 변경 필드 + If-Match | 200 Site | 409 SITE_SCOPE_CONFLICT(정확한 호스트 중복);412 VERSION_CONFLICT;422 |
 | API-SITE-05 | DELETE /api/v1/sites/{site_id} | W/E | If-Match | 204; 과거 스냅샷 유지 | 412 |
 | API-POLICY-01 | GET /api/v1/content-policy | W/E | 없음 | 200 ContentPolicy + ETag | 401 |
 | API-POLICY-02 | PUT /api/v1/content-policy | W/E | ContentPolicyWrite 전체 + If-Match | 200 ContentPolicy | 422 INVALID_SCOPE;412 |
@@ -156,3 +156,30 @@ AI provider 인터페이스 generate(집계 JSON,출력 JSON schema,request_id)�
 ## 예약 상태·사유 직렬화
 
 Occurrence.status는 PENDING/WAITING_CONFLICT/STARTING/RUNNING/FINISHED/SKIPPED를 사용한다. 만료·존재하지 않는 현지 시각은 SKIPPED 상태와 reason=EXPIRED/NONEXISTENT_TIME으로 구분하며 합성 상태 문자열을 사용하지 않는다. 가져오기 항목의 SKIPPED_CONFLICT는 다른 도메인의 결과값이며 예약 상태가 아니다.
+
+
+## 2026-10-08 사용자 명시 변경
+
+[호스트별 정책 우선순위](../02_시스템_테크설계/10_호스트_정책우선순위.md)를 적용한다. 부모·자식 동시 등록을 허용하며 정확한 호스트만 중복 거절한다. 새 snapshot1.2, 가장 구체적인 행 선택, 기존 snapshot1.1/기존 사용자 자료 보존. 실제 Extension 연동은 미검증이다.
+
+
+## 2026-10-08 인증·복구·가져오기 구체화
+사용자 지시에 따른 인증 연락처·명시 연결·메일 환경, link proof polling, reconcile END/watermark, ImportItem 및 Web 조회 확장은 [연결 계약](11_인증_실행복구_가져오기_연결계약.md)을 따른다. Server 구현 기준이며 Extension 팀 합의·실제 통합 완료가 아니다. V7 인증 버전, V8 link_evidence/execution_reconciliations/session_watermarks, V9 batch-item 연결/검증 payload 보존은 기존 자료를 삭제하지 않는 추가 migration이다. API-IMPORT-04 GET list는 W/E로 확장한다. 기존 자료와 snapshot1.1을 일괄 변환하지 않는다.
+
+## 2026-10-09 사용자 확정: 일반 이메일 가입 인증번호
+일반 이메일 가입은 가입 화면에서 6자리 번호를 확인한 후 계정을 생성한다. Google·카카오 가입/연결 및 소셜 이메일 보완 흐름은 유지한다. 기존 PENDING 회원의 링크 인증은 호환 경로로 유지한다. 사용자 화면에 Mailpit 링크를 표시하지 않는다.
+
+- POST `/api/v1/auth/email/signup-code-requests`: `{email}` → 202 `{request_id, expires_at, resend_after_seconds:60, max_attempts:5}`. 유효 익명 세션 쿠키·Origin·CSRF 필수. 번호는 응답에 반환하지 않는다.
+- POST `/api/v1/auth/email/signup-code-verifications`: `{request_id,email,code}` → 200 `{verified:true,verification_proof,proof_expires_at}`. 현재 세션과 이메일에 바인딩한다.
+- POST `/api/v1/auth/signup`: 기존 필드에 `verification_proof` 필수. 성공 ACTIVE·email_verified=true. 동일 멱등 키 재요청은 동일 결과, 새 요청으로 증명 재사용은 거절. 기존 입력·약관·CSRF 검증 유지.
+- 번호 6자리(앞자리 0 포함), 10분 만료. 이메일당 60초 간격·시간당 5회, IP 발송 시간당 20회·번호 확인 분당 30회. 오입력 5회 후 번호 잠금. 번호 및 검증 증명 일회용, 증명 10분 유효. 같은 세션·이메일 재발송 성공 시 이전 번호/증명 무효. SMTP 실패 시 새 번호 저장 롤백·기존 번호 보존, 시도 제한 유지.
+- 오류: 422 CODE_FORMAT_INVALID/CODE_INVALID; 410 CODE_EXPIRED; 409 CODE_SUPERSEDED/CODE_USED; 429 RATE_LIMITED/CODE_ATTEMPTS_EXCEEDED; 403 EMAIL_CODE_REQUIRED; 503 MAIL_UNAVAILABLE.
+- 저장 V10 email_signup_codes: 원문 저장 금지, 세션 쿠키를 키로 한 코드 HMAC·증명 SHA-256. 회원·인증 ID·증명 소비·멱등 결과 동일 트랜잭션.
+- 새로고침은 탭 sessionStorage에 이메일·요청·증명 유지, 비밀번호·입력 번호 미저장.
+- 실제 외부 발송: MAIL_MODE=external + 암호화 SMTP. 현재 인증정보 미제공: Gmail·네이버 실제 수신 미검증. 로컬 SMTP/모의 발송과 구분.
+
+### 2026-10-09 메일 표시 계약 보완
+SIGNUP_CODE 메일 제목 FOCURVE 회원가입 이메일 인증. multipart HTML + 일반 텍스트, 로고/번호/안내는 외부 이미지에 의존하지 않음. 본문 표시만 변경, API·번호 6자리·10분·일회용·재발송/오입력 제한·증명/계정 규칙 유지. Gmail 실제 수신/PC 라이트 HTML 정상 사용자 확인; 네이버/모바일/다크/가입흐름 미검증. html-mail-report.md에 구분 기록.
+
+## 2026-10-09 확정 정책 우선 적용
+이 문서의 기존 Event1.1·단일사유·Snapshot1.2 무조건발급 설명과 다른 최신사용자 정책은 [정책 계약·이벤트1.2·호환성 게이트](12_정책계약_이벤트12_호환성게이트.md)를 적용한다. 기존1.1 원문/이력은 보존한다. Server 구현·자동 통과와 실제Core/Content/Chrome 통합은 별도 상태다.

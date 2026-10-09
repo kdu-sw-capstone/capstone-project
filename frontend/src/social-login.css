@@ -1,0 +1,39 @@
+@font-face {
+  font-family: "Google Sans Login";
+  src: url("/social/google-sans-login.ttf") format("truetype");
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+}
+.social-auth .social-intro { font-size: 14px; line-height: 1.6; margin: 8px 0 16px; color: var(--secondary); }
+.social-buttons { display: grid; grid-template-columns: minmax(0,1fr); gap: 12px; }
+.social-option { min-width: 0; }
+.social-auth .social-login-button {
+  display: flex; align-items: center; justify-content: center; gap: 10px;
+  width: 100%; height: 48px; min-height: 48px; padding: 0 12px;
+  margin: 0; border-radius: 12px; border: 1px solid transparent;
+  font-size: 14px; line-height: 20px; font-weight: 500; letter-spacing: 0;
+}
+.social-auth .social-google { background: #fff; border-color: #747775; color: #1f1f1f; font-family: "Google Sans Login", "Noto Sans KR", sans-serif; }
+.social-auth .social-kakao { background: #fee500; color: rgb(0 0 0 / 85%); font-family: system-ui, "Noto Sans KR", sans-serif; }
+.social-auth .social-login-button:hover:not(:disabled) { box-shadow: inset 0 0 0 100px rgb(0 0 0 / 4%); }
+.social-auth .social-google:hover:not(:disabled) { border-color: #747775; }
+.social-auth .social-kakao:hover:not(:disabled) { border-color: transparent; }
+.social-auth .social-login-button:focus-visible { outline: 3px solid var(--brand); outline-offset: 3px; }
+.social-auth .social-login-button:disabled { opacity: .6; cursor: not-allowed; }
+.social-symbol { display: inline-block; position: relative; overflow: hidden; flex: 0 0 20px; width: 20px; height: 20px; }
+/* The official 40px asset has a 20px G at (10,10). Only its unmodified logo is shown. */
+.social-symbol-google img { position: absolute; max-width: none; width: 40px; height: 40px; left: -10px; top: -10px; }
+.social-symbol-kakao img { display: block; width: 20px; height: 20px; }
+.social-provider-status:not(.sr-only) { display: block; margin: 6px 0 0; font-size: 12px; line-height: 1.6; color: var(--secondary); overflow-wrap: anywhere; }
+.social-auth [role=status], .social-auth [role=alert] { font-size: 14px; line-height: 1.6; overflow-wrap: anywhere; margin: 12px 0 0; }
+.social-auth .social-retry { margin: 12px 0 0; }
+.social-link .social-buttons { grid-template-columns: repeat(2,minmax(0,1fr)); }
+.social-auth .social-link-button { width: 100%; margin: 0; white-space: normal; }
+@media (max-width: 760px) {
+  .auth-page { padding: 24px 16px; }
+  .auth-page .auth-columns { grid-template-columns: minmax(0,1fr); gap: 24px; margin-top: 24px; }
+  .auth-page .auth-card { min-width: 0; width: 100%; padding: 24px; }
+  .auth-page .auth-forest { display: none; }
+  .social-link .social-buttons { grid-template-columns: minmax(0,1fr); }
+}
