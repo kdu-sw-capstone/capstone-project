@@ -94,3 +94,21 @@ DB는 UTC `DATETIME(3)`와 utf8mb4를 사용하고 email은 정확 비교용 bin
 2026-10-07 Codex Linux: 실제 MySQL 8.4.8에서 테스트 **4건 통과, 실패·오류·스킵 0건**. 빈 DB의 V1 적용과 재실행 무변경, UTC·utf8mb4, 한글·이모지 저장·조회, ms 정밀도, 중복 이메일 거절, HTTP 상태 확인을 검증했다. 개발 DB와 테스트 DB는 별도이며 테스트 데이터가 남지 않는지 확인한다. jar 실행 및 Web 프록시 요청은 실제 확인한다.
 
 미검증·남은 설정: macOS 및 다른 셸·환경의 실행, 브라우저 레이아웃·접근성, 인증·메일·Google/카카오 설정, 제품 API·전체 DB 테이블, 운영 HTTPS·백업·성능·Extension 연동. 필수 MVP 기능 완료를 뜻하지 않는다.
+
+## 이번 필수 MVP Server·DB 구현·검증
+
+기반 준비 기록은 `25c4ec7` 기준이다. 현재 새 코드는 미커밋 상태이며 전체 기능 완료를 뜻하지 않는다.
+
+- 새 패키지: `api`, `auth`, `sites`, `execution`, `events`, `records`, `imports`. API·쿠키/CSRF·소유권·정책·보고 기반 상태·기록/반복 집계 및 가져오기 조회를 구현했다.
+- 의존성 추가: Spring Security crypto/oauth2-jose(기존 Boot BOM 관리), Bouncy Castle1.83, Spring Mail. 전체 Security 자동 설정 대신 명시적 쿠키/Bearer/Origin/CSRF 검증을 사용한다.
+- Argon2id 최소 설정: salt16bytes/hash32bytes/memory19456KiB/iterations2/parallelism1. OWASP의19MiB·2회·병렬1 최소 권고에 따른 개발 초기 설정이며 실제 장비 지연·운영 용량은 미측정이다.
+- V1 수정 없음. V2 인증·V3 사이트·V4 회원 실행/보고/기록·V5 가져오기 원본 추적을 **새 migration으로 추가**했다. 이미 시험 DB/개발 DB에 적용했으므로 V2~V5도 수정하지 않고 이후 변경은 V6 이상으로 추가한다.
+- API가 정의한 사이트 created_at/updated_at, 토큰 재시작 검증용 hashed access token, 영속 요청 제한 테이블은 기술 구현에 필요해 추가했다. 설계상 제품 범위·담당·기존 필드/정책은 유지한다.
+- 환경변수 이름과 비밀 없는 예시는 루트 `.env.example`에 있다. 기존 `.env`를 복사·덮어쓰지 않는다. AUTH_COOKIE_SECURE=false는 loopback HTTP 개발 전용이며 HTTPS 운영에서는true다. Web 세션24시간은 환경변수로 조정 가능한 개발 기본값이다.
+- 메일과 OAuth가 없을 때 성공으로 대체하지 않는다. 회원 인증 메일은 SMTP 실패 시 가입 트랜잭션을 롤백한다. 재발송/재설정 요청은 계정 유무를 노출하지 않는202이며 발송 실패는 DB challenge에 FAILED로 기록한다.
+- 미확정 Extension 승인/복구/가져오기 업로드는503으로 명시적으로 보류한다. 이 실패 응답은 임시 안전 장치이며 합의된 성공 계약 구현이 아니다. [조율 초안](../docs/implementation/공용계약_조율초안.md)을 참조한다.
+- 실제 MySQL 자동 검증30/30·Maven BUILD SUCCESS. 소셜 ticket/실행 보고/이벤트의 테스트 입력은 합성 fixture이며 실제 제공자·Extension 인증이 아니다. SMTP 어댑터 시험2개(실제 로컬 TCP 수신1개·미설정 실패1개)와 HTTP 시험4개를 구분한다.
+
+기존 `verify`/jar 실행 명령을 사용한다. **실행 중인 같은 jar 파일을 재빌드하지 말고 Server를 종료한 뒤 verify→새 jar 실행** 순서로 진행한다. Linux 재검증에서는 별도 jar 복사본·8091/5174를 사용해 기존8080 서비스를 보존했다. Windows 새 기능 절차와 미검증은 [검증 절차](../docs/implementation/Windows_필수MVP_검증.md)에 있다.
+
+가입 멱등 fingerprint는 원 요청 SHA 대신 원문을 DB에 보관하지 않는 고엔트로피 Web 세션 credential을 키로 사용하는 HMAC-SHA256이다. 비밀번호 추측을 빠르게 검증하는 별도 DB hash가 생기지 않도록 한다. 비밀번호 자체는 Argon2id만 저장한다. 소셜 callback 성공/취소는 Server root가 아닌 AUTH_PUBLIC_URL의 Web 화면으로 이동하며 OAuth callback 등록 URL과 Web 주소를 구분한다.

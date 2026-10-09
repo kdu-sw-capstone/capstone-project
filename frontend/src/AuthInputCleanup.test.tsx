@@ -1,0 +1,23 @@
+import {afterEach,expect,it,vi} from 'vitest';
+import {cleanup,fireEvent,render,screen,waitFor} from '@testing-library/react';
+import {Login,TokenForm} from './AuthFlow';
+const api=vi.hoisted(()=>({request:vi.fn()}));vi.mock('./api',async original=>({...await original<typeof import('./api')>(),request:api.request}));
+afterEach(()=>{cleanup();api.request.mockReset();});
+it('로그인 성공 시 분리된 이전 폼에도 인증 입력값이 남지 않는다',async()=>{
+ api.request.mockResolvedValue({});const done=vi.fn(async()=>{});render(<Login starting={()=>{}} done={done} unverified={()=>{}}/>);const email=screen.getByLabelText('이메일'),password=screen.getByLabelText('비밀번호');fireEvent.change(email,{target:{value:'test@example.invalid'}});fireEvent.change(password,{target:{value:'synthetic-login-password'}});fireEvent.click(screen.getByRole('button',{name:'이메일 로그인'}));await waitFor(()=>expect(done).toHaveBeenCalled());expect(email).toHaveValue('');expect(password).toHaveValue('');expect(password).toHaveAttribute('autocomplete','current-password');
+});
+it('로그인 화면을 닫으면 이전 폼 입력을 지우고 다시 열면 빈 입력으로 시작한다',()=>{
+ const props={starting:()=>{},done:async()=>{},unverified:()=>{}};const view=render(<Login {...props}/>);const email=screen.getByLabelText('이메일'),password=screen.getByLabelText('비밀번호');fireEvent.change(email,{target:{value:'test@example.invalid'}});fireEvent.change(password,{target:{value:'synthetic-login-password'}});view.unmount();expect(email).toHaveValue('');expect(password).toHaveValue('');render(<Login {...props}/>);expect(screen.getByLabelText('이메일')).toHaveValue('');expect(screen.getByLabelText('비밀번호')).toHaveValue('');expect(api.request).not.toHaveBeenCalled();
+});
+it('닫힌 로그인 폼의 늦은 응답은 화면 인증 상태를 다시 설정하지 않는다',async()=>{
+ let finish!:(value:unknown)=>void;api.request.mockImplementation(()=>new Promise(resolve=>{finish=resolve;}));const done=vi.fn(async()=>{});const view=render(<Login starting={()=>{}} done={done} unverified={()=>{}}/>);const password=screen.getByLabelText('비밀번호');fireEvent.change(screen.getByLabelText('이메일'),{target:{value:'test@example.invalid'}});fireEvent.change(password,{target:{value:'synthetic-login-password'}});fireEvent.click(screen.getByRole('button',{name:'이메일 로그인'}));view.unmount();expect(password).toHaveValue('');await import('@testing-library/react').then(async({act})=>{await act(async()=>{finish({});});});expect(done).not.toHaveBeenCalled();
+});
+it('재설정 성공 시 완료 화면 콜백보다 먼저 두 비밀번호 입력을 지운다',async()=>{
+ api.request.mockResolvedValue({});let password:HTMLElement,confirmation:HTMLElement;const done=vi.fn(()=>{expect(password).toHaveValue('');expect(confirmation).toHaveValue('');});render(<TokenForm reset token="synthetic-reset-token" done={done}/>);password=screen.getByLabelText('새 비밀번호');confirmation=screen.getByLabelText('새 비밀번호 확인');fireEvent.change(password,{target:{value:'synthetic-reset-password'}});fireEvent.change(confirmation,{target:{value:'synthetic-reset-password'}});fireEvent.click(screen.getByRole('button',{name:'새 비밀번호 저장하기'}));await waitFor(()=>expect(done).toHaveBeenCalled());expect(password).toHaveAttribute('autocomplete','new-password');expect(confirmation).toHaveAttribute('autocomplete','new-password');
+});
+it('재설정 실패에서는 입력을 보존하지만 화면을 닫으면 두 값을 정리한다',async()=>{
+ api.request.mockRejectedValue(new Error('synthetic failure'));const done=vi.fn();const view=render(<TokenForm reset token="synthetic-reset-token" done={done}/>);const password=screen.getByLabelText('새 비밀번호'),confirmation=screen.getByLabelText('새 비밀번호 확인');fireEvent.change(password,{target:{value:'synthetic-reset-password'}});fireEvent.change(confirmation,{target:{value:'synthetic-reset-password'}});fireEvent.click(screen.getByRole('button',{name:'새 비밀번호 저장하기'}));await screen.findByRole('alert');expect(password).toHaveValue('synthetic-reset-password');expect(done).not.toHaveBeenCalled();view.unmount();expect(password).toHaveValue('');expect(confirmation).toHaveValue('');
+});
+it('재설정 화면을 닫은 뒤의 늦은 응답은 완료 화면으로 이동시키지 않는다',async()=>{
+ let finish!:(value:unknown)=>void;api.request.mockImplementation(()=>new Promise(resolve=>{finish=resolve;}));const done=vi.fn();const view=render(<TokenForm reset token="synthetic-reset-token" done={done}/>);const password=screen.getByLabelText('새 비밀번호');fireEvent.change(password,{target:{value:'synthetic-reset-password'}});fireEvent.change(screen.getByLabelText('새 비밀번호 확인'),{target:{value:'synthetic-reset-password'}});fireEvent.click(screen.getByRole('button',{name:'새 비밀번호 저장하기'}));view.unmount();expect(password).toHaveValue('');await import('@testing-library/react').then(async({act})=>{await act(async()=>{finish({});});});expect(done).not.toHaveBeenCalled();
+});
