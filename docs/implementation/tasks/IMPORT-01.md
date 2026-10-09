@@ -67,3 +67,7 @@
 담당 김다훈(Server/API/DB·연결Frontend), 브랜치 codex/server-event12-integration, 시작develop76df34ea6be1c591be33c29606c24fc654f61932. 기존 담당 배정 유지. 상태: 담당 구현 검토 대기 / 실제Extension통합 미검증. 최신 사용자 지시로 담당 코드 전달용Commit·Push·develop PR을 진행하며 전체MVP완료나 병합으로 처리하지 않는다.
 
 [게시 검증·실행환경·주체·남은 조건](../Server_최신수정본_게시검증_2026-10-09.md) · [실제 API·Event1.2·구형 호환·Core 절차](../Extension_Server_연동가이드.md). Backend 최종107/107(기존106+실제HTTP합성1), Frontend104/104·build PASS. 설치/APPLIED는합성, 실제Chrome/회원Core통합/Content감지는미검증. Snapshot1.2 신규발급OFF. 전체AC를 통과로 승격하지 않는다.
+
+## 2026-10-09 PR18 F2/N1 로컬 수정·회귀
+
+김다훈(Server/API/DB), codex/server-event12-integration, 시작HEAD7dd7abce2bdb7f2d3dfda99c9874c4efb9cd041d 및 기존18파일 미커밋수정 보존. 상태: 가져오기 버전 결함 수정·HTTP/MySQL 재검증 통과, 독립 재리뷰/실제Extension 통합 대기. ImportedSession의 site/source/content 버전 guard·공통검사 및 새HTTP5개. Backend114/114·Frontend112/112·양쪽build PASS. Windows/Java21/MySQL3308repair_test, 합성 계정·이력; 실제 제품Chrome 아님. item 단위 rollback/별도item 부분성공/재요청 중복 방지·통계 회귀 확인. [위치·명령·증거·미검증](../PR18_F2_가져오기_수정검증_2026-10-09.md). 신규1.2발급OFF 유지. 전체AC/전체MVP 완료 아님, Commit/Push/PR변경 없음. 이전 이력 보존.

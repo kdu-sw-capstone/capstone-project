@@ -156,3 +156,7 @@ Extension manifest host_permissions는 로컬 Server URL, 외부 Web origin 연�
 6. naver/www.naver/chzzk/www.youtube/example.org 경계·most-specific·global독립예외·복수사유1건; 잘못된host/seq/version/owner·중복변조·동시요청·오래된명령·적용실패·release·reconcile·재시작/절전. 최신SHA/Chrome버전/OS·DB/API증거를 남긴다.
 
 즉시 시작 가능: Server 실행·정상회원인증·설치/링크/토큰 API 구현·Event1.2 HTTP fixture시험. 차단: PR17 회원 실행루프/새이벤트형식/Core↔Content message/실제Chrome증거. Core↔Content 접근식별자·늦은사유annotation·capability handshake 세부 구현은 별도 조율. global 설정 저장/감지 실제경로, OAuth외부 실패9개/STAT02시간배분3개는 미완료 유지. 사이트별 집중시간을 임의배분하지 않는다.
+
+## 2026-10-09 PR18 로컬 리뷰 수정본 주의
+
+PR head 7dd7abce2bdb7f2d3dfda99c9874c4efb9cd041d 이후 미커밋 로컬 수정이며 아직 GitHub에는 반영하지 않았다. FEATURE를 포함한1.2 복수사유의 타입은 BLOCKED_FEATURE_ACCESS/FEATURE이고 대표 reason은 우선순위에 따라 KEYWORD/ADULT_DOMAIN/USER_SITE일 수 있다. FEATURE 없는 차단에는 SITE 타입을 사용한다. Core·Content는 최종 한 접근의 이미 확인된 이유와 feature 문맥을 함께 전달해야 한다. 1.1 변경 없음. [변경된 계약](../design/02_시스템_테크설계/12_정책계약_이벤트12_호환성게이트.md) 및 [로컬 재검증](PR18_리뷰수정_재검증_2026-10-09.md) 참조. 실제Chrome/제품Extension 연결 성공이 아니며 신규Snapshot1.2 OFF를 유지한다.

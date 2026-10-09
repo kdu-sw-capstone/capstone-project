@@ -102,6 +102,7 @@ public class ImportedSession {
         || ("1.2".equals(snapshot.get("format_version"))
             && !"MOST_SPECIFIC_HOST".equals(snapshot.get("site_match_strategy"))))
       throw new ApiFailure(422, "INVALID_SCHEMA");
+    SnapshotValidation.requirePositiveVersion(snapshot.get("source_version"));
     var hosts = new HashSet<String>();
     for (var policy : list(snapshot.get("sites"), 1000)) {
       keys(
@@ -118,6 +119,7 @@ public class ImportedSession {
               "created_at",
               "updated_at",
               "deleted_at"));
+      SnapshotValidation.requirePositiveVersion(policy.get("version"));
       var fields = new LinkedHashMap<>(policy);
       fields.put("url", fields.remove("canonical_host"));
       for (String k : List.of("site_id", "version", "created_at", "updated_at", "deleted_at"))
@@ -135,6 +137,7 @@ public class ImportedSession {
     // Additional content-policy and usage collectors are not implemented by the required-MVP
     // importer.
     var content = object(snapshot.get("content_policy"));
+    SnapshotValidation.requirePositiveVersion(content.get("version"));
     if (!json.encoded(content).equals(json.encoded(ExecutionService.defaultContent())))
       throw new ApiFailure(422, "IMPORT_TYPE_UNSUPPORTED");
     if (payload.get("usage_segments") != null

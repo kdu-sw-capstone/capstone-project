@@ -183,3 +183,9 @@ SIGNUP_CODE 메일 제목 FOCURVE 회원가입 이메일 인증. multipart HTML 
 
 ## 2026-10-09 확정 정책 우선 적용
 이 문서의 기존 Event1.1·단일사유·Snapshot1.2 무조건발급 설명과 다른 최신사용자 정책은 [정책 계약·이벤트1.2·호환성 게이트](12_정책계약_이벤트12_호환성게이트.md)를 적용한다. 기존1.1 원문/이력은 보존한다. Server 구현·자동 통과와 실제Core/Content/Chrome 통합은 별도 상태다.
+
+## 2026-10-09 PR18 리뷰 수정의 Event/조회 형식
+
+Event1.2의 FEATURE 포함 복수사유는 BLOCKED_FEATURE_ACCESS/FEATURE + feature_code=YOUTUBE_SHORTS로 보내고 대표 reason은 사유 우선순위로 정한다. TYPE와 대표 reason을 동일값으로 강제하지 않는다. FEATURE가 없는 차단은 BLOCKED_SITE_ACCESS/SITE이며 feature_code를 포함하지 않는다. 잘못된 조합은 INVALID_SCHEMA, 미설정 기능·비활성 전역정책·예외와 충돌하는 사유는 POLICY_MISMATCH다. 1.1은 기존 타입·대표 사유 검사 유지. 세부 조건은 [정책 계약](12_정책계약_이벤트12_호환성게이트.md)의 PR18 리뷰 수정 절을 따른다.
+
+기록 목록/상세의 추가 응답 blocked_reasons:string[], matched_policy_host:string|null, repeat_count:number를 Web에서 사용한다. 구형 응답에 메타데이터가 없으면 실제 사유를 추측하지 않고 미확인으로 표시한다. RECORDED_ACCESS의 legacy RECORD는 차단 사유가 아니다. API 경로·인증·소유권·페이지네이션 변경 없음.

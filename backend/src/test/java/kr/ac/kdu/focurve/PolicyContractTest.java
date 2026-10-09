@@ -53,4 +53,21 @@ class PolicyContractTest {
   final var invalid=snapshot("1.2","INVALID");assertThatThrownBy(()->SnapshotValidation.validate(invalid)).isInstanceOf(ApiFailure.class);
   var c=new LinkedHashMap<>(ExecutionService.defaultContent());c.put("keywords",Map.of("enabled","true","rules",List.of(),"exceptions",List.of()));var s=snapshot("1.2","BLOCK");s.put("content_policy",c);assertThatThrownBy(()->SnapshotValidation.validate(s)).isInstanceOf(ApiFailure.class);
  }
+
+ @Test @SuppressWarnings("unchecked") void siteAndContentVersionsArePositiveIntegralInBothFormats() {
+  for(String format:List.of("1.1","1.2")) {
+   for(Object invalid:Arrays.asList(0,-1,1.5,1.0,"1",null,true,Double.POSITIVE_INFINITY)) {
+    for(String field:List.of("site","content")) {
+     var s=snapshot(format,"BLOCK");s.put("content_policy",new LinkedHashMap<>((Map<String,Object>)s.get("content_policy")));
+     var value=field.equals("site")?(Map<String,Object>)((List<?>)s.get("sites")).getFirst():(Map<String,Object>)s.get("content_policy");
+     value.put("version",invalid);
+     assertThatThrownBy(()->SnapshotValidation.validate(s)).as(format+" "+field+" "+invalid).isInstanceOf(ApiFailure.class);
+    }
+   }
+   for(Object valid:List.of(1,2L,Long.MAX_VALUE)) {
+    var s=snapshot(format,"BLOCK");s.put("content_policy",new LinkedHashMap<>((Map<String,Object>)s.get("content_policy")));((Map<String,Object>)((List<?>)s.get("sites")).getFirst()).put("version",valid);
+    ((Map<String,Object>)s.get("content_policy")).put("version",valid);SnapshotValidation.validate(s);
+   }
+  }
+ }
 }

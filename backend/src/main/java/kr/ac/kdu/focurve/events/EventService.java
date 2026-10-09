@@ -177,7 +177,7 @@ public class EventService {
       if (kind.equals("SITE") && payload.get("feature_code") != null)
         throw new ApiFailure(422, "INVALID_SCHEMA");
       if (type.equals("BLOCKED_FEATURE_ACCESS")
-          && (!reason.equals("FEATURE")
+          && ((!modern && !reason.equals("FEATURE"))
               || !(host.equals("youtube.com") || host.endsWith(".youtube.com"))))
         throw new ApiFailure(422, "INVALID_SCHEMA");
       if (type.equals("BLOCKED_FEATURE_ACCESS")

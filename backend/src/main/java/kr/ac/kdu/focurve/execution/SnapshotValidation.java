@@ -28,7 +28,7 @@ public final class SnapshotValidation {
     for(Object item:(List<?>)value.get("sites")) {
       if(!(item instanceof Map<?,?>)) fail(); var site=(Map<?,?>)item;
       if(!(site.get("site_id") instanceof String id)||!id.matches("[1-9][0-9]*")
-          ||!(site.get("version") instanceof Number v)||v.longValue()<1
+          ||!positiveVersion(site.get("version"))
           ||!(site.get("display_name") instanceof String name)||name.isBlank()||name.length()>100) fail();
       for(String field:List.of("created_at","updated_at")) {
         if(!(site.get(field) instanceof String)) fail();
@@ -46,7 +46,7 @@ public final class SnapshotValidation {
     }
     if(!(value.get("content_policy") instanceof Map<?,?>)) fail();
     var content=(Map<?,?>)value.get("content_policy");
-    if(!(content.get("version") instanceof Number)) fail();
+    if(!positiveVersion(content.get("version"))) fail();
     for(String field:List.of("keywords","adult_domains","image_blur","usage_tracking")) {
       if(!(content.get(field) instanceof Map<?,?> p)||!(p.get("enabled") instanceof Boolean)) fail();
     }
@@ -68,6 +68,13 @@ public final class SnapshotValidation {
   private static void hostEntry(Object item) {
     if(!(item instanceof Map<?,?> entry)||!(entry.get("host") instanceof String host)||!(entry.get("include_subdomains") instanceof Boolean)) fail();
     var entry=(Map<?,?>)item;String host=(String)entry.get("host");if(!host.equals(SiteInput.host(host))) fail();
+  }
+  /** Shared incoming-version guard; guest IDs need not use server-issued site IDs. */
+  public static void requirePositiveVersion(Object value) {
+    if (!positiveVersion(value)) fail();
+  }
+  private static boolean positiveVersion(Object value) {
+    return (value instanceof Integer || value instanceof Long) && ((Number)value).longValue() > 0;
   }
   private static void fail(){throw new ApiFailure(422,"INVALID_SNAPSHOT");}
 }

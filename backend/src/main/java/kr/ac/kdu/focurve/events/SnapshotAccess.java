@@ -75,13 +75,22 @@ public final class SnapshotAccess {
     var order=List.of("USER_SITE","ADULT_DOMAIN","KEYWORD","FEATURE");
     if(reasons.isEmpty()||!order.containsAll(reasons)||!primary.equals(order.stream().filter(reasons::contains).findFirst().orElse("")))
       throw new ApiFailure(422,"INVALID_SCHEMA");
+    // In 1.2 event type carries feature context; primary reason follows independent priority.
+    if (reasons.contains("FEATURE") != type.equals("BLOCKED_FEATURE_ACCESS"))
+      throw new ApiFailure(422,"INVALID_SCHEMA");
     for(Object reason:reasons) {
       if(reason.equals("USER_SITE")) {
         if(selected==null||!"BLOCK".equals(selected.get("access_policy"))) throw new ApiFailure(422,"POLICY_MISMATCH");
       } else if(reason.equals("FEATURE")) {
-        var legacy=new LinkedHashMap<String,Object>(payload);
-        legacy.put("target_key","FEATURE:"+host+":"+payload.get("feature_code"));
-        validate(snapshot,"BLOCKED_FEATURE_ACCESS",legacy);
+        if (!"FEATURE".equals(payload.get("target_kind"))
+            || !"YOUTUBE_SHORTS".equals(payload.get("feature_code"))
+            || !(host.equals("youtube.com") || host.endsWith(".youtube.com"))
+            || selected == null
+            || !(selected.get("feature_policies") instanceof List<?> features)
+            || features.stream().noneMatch(f -> f instanceof Map<?,?> feature
+                && "YOUTUBE_SHORTS".equals(feature.get("feature_code"))
+                && Boolean.TRUE.equals(feature.get("enabled"))))
+          throw new ApiFailure(422,"POLICY_MISMATCH");
       } else {
         String key=reason.equals("ADULT_DOMAIN")?"adult_domains":"keywords";
         var content=(Map<?,?>)snapshot.get("content_policy");var policy=(Map<?,?>)content.get(key);
