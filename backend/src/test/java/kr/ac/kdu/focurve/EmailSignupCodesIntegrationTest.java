@@ -15,6 +15,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 @ActiveProfiles("test") @SpringBootTest
 class EmailSignupCodesIntegrationTest {
  @Autowired JdbcTemplate db; @Autowired EmailSignupCodes codes; @Autowired AuthService auth;
+ @Autowired AuthRateLimits rates;
  @MockitoBean MailDelivery mail;
  String credential,owner,email,ip,id; AtomicReference<String> code=new AtomicReference<>();
  @BeforeEach void prepare(){
@@ -35,6 +36,28 @@ class EmailSignupCodesIntegrationTest {
  void expect(String error,Runnable action){assertThatThrownBy(action::run).isInstanceOfSatisfying(ApiFailure.class,e->assertThat(e.code).isEqualTo(error));}
  String verify(){return codes.verify(id,email,code.get(),credential,ip).get("verification_proof").toString();}
  void allowResend(){db.update("UPDATE auth_rate_limits SET last_attempt=DATE_SUB(UTC_TIMESTAMP(3),INTERVAL 61 SECOND) WHERE bucket_hash=?",AuthSupport.hash("SIGNUP-CODE-MAIL:"+email));}
+ void seed(String bucket,int count,int elapsed,int lastElapsed){
+  db.update("INSERT INTO auth_rate_limits VALUES (?,DATE_SUB(UTC_TIMESTAMP(3),INTERVAL ? SECOND),?,DATE_SUB(UTC_TIMESTAMP(3),INTERVAL ? SECOND)) ON DUPLICATE KEY UPDATE window_start=VALUES(window_start),attempts=VALUES(attempts),last_attempt=VALUES(last_attempt)",AuthSupport.hash(bucket),elapsed,count,lastElapsed);
+ }
+ @Test void combinedRetryUsesLaterEmailDeadlineAndPreservesIpAccounting(){
+  seed("SIGNUP-CODE-IP:"+ip,20,3000,61);seed("SIGNUP-CODE-MAIL:"+email,5,60,61);
+  assertThatThrownBy(()->codes.request(email,credential,ip)).isInstanceOfSatisfying(ApiFailure.class,e->assertThat(e.retryAfterSeconds).isBetween(3538L,3540L));
+  assertThat(db.queryForObject("SELECT attempts FROM auth_rate_limits WHERE bucket_hash=?",Integer.class,AuthSupport.hash("SIGNUP-CODE-IP:"+ip))).isEqualTo(20);
+ }
+ @Test void combinedRetryIncludesIpJustConsumedToItsLimit(){
+  seed("SIGNUP-CODE-IP:"+ip,19,60,61);seed("SIGNUP-CODE-MAIL:"+email,5,3000,61);
+  assertThatThrownBy(()->codes.request(email,credential,ip)).isInstanceOfSatisfying(ApiFailure.class,e->assertThat(e.retryAfterSeconds).isBetween(3538L,3540L));
+  assertThat(db.queryForObject("SELECT attempts FROM auth_rate_limits WHERE bucket_hash=?",Integer.class,AuthSupport.hash("SIGNUP-CODE-IP:"+ip))).isEqualTo(20);
+ }
+ @Test void fifthSuccessfulIssueReturnsHourlyResendDeadline(){
+  seed("SIGNUP-CODE-MAIL:"+email,4,60,61);
+  assertThat(((Number)codes.request(email,credential,ip).get("resend_after_seconds")).longValue()).isBetween(3538L,3540L);
+ }
+ @Test void expiredWindowCanIssueAndRejectedGapDoesNotConsumeEmail(){
+  seed("SIGNUP-CODE-MAIL:"+email,5,3601,61);send();
+  expect("RATE_LIMITED",()->codes.request(email,credential,ip));
+  assertThat(db.queryForObject("SELECT attempts FROM auth_rate_limits WHERE bucket_hash=?",Integer.class,AuthSupport.hash("SIGNUP-CODE-MAIL:"+email))).isEqualTo(1);
+ }
  @Test void activeSignupRequiresProofAndIsSingleUseAndIdempotent(){
   send();expect("EMAIL_CODE_REQUIRED",()->auth.signup(new AuthService.Signup(email,"test-password-1234","test","dev-v1"),credential,UUID.randomUUID().toString()));
   String proof=verify(); expect("CODE_USED",()->verify());

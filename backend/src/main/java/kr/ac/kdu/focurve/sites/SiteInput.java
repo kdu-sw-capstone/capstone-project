@@ -11,7 +11,7 @@ public record SiteInput(
     String purpose,
     String access_policy,
     List<Feature> feature_policies) {
-  public record Feature(String feature_code, boolean enabled) {}
+  public record Feature(String feature_code, Boolean enabled) {}
 
   public record Validated(
       String host,
@@ -23,9 +23,7 @@ public record SiteInput(
 
   public Validated validate() {
     String host = host(url);
-    if (display_name == null
-        || display_name.isBlank()
-        || display_name.codePointCount(0, display_name.length()) > 100) invalid();
+    if (!validDisplayName(display_name)) invalid();
     if (!Set.of("FOCUS", "GENERAL", "DISTRACTION").contains(Objects.toString(purpose, "")))
       invalid();
     if ((purpose.equals("DISTRACTION")
@@ -36,6 +34,7 @@ public record SiteInput(
     for (var feature : features) {
       // Only the required-MVP Shorts policy is editable in this implementation.
       if (feature == null
+          || feature.enabled() == null
           || !"YOUTUBE_SHORTS".equals(feature.feature_code())
           || !codes.add(feature.feature_code())
           || !(host.equals("youtube.com") || host.endsWith(".youtube.com"))) invalid();
@@ -47,6 +46,20 @@ public record SiteInput(
         purpose,
         access_policy,
         features);
+  }
+
+  /** Same Unicode scalar limit for writes and frozen Snapshot validation. */
+  public static boolean validDisplayName(String value) {
+    if (value == null || value.isBlank() || value.codePointCount(0, value.length()) > 100)
+      return false;
+    // An unpaired UTF-16 surrogate is not valid Unicode and cannot round-trip as UTF-8.
+    for (int i = 0; i < value.length(); i++) {
+      char c = value.charAt(i);
+      if (Character.isHighSurrogate(c)) {
+        if (++i >= value.length() || !Character.isLowSurrogate(value.charAt(i))) return false;
+      } else if (Character.isLowSurrogate(c)) return false;
+    }
+    return true;
   }
 
   public static String host(String value) {

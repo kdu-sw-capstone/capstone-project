@@ -1,11 +1,35 @@
 import {beforeEach,describe,expect,it,vi} from 'vitest';
-import {render,screen,fireEvent,waitFor,cleanup} from '@testing-library/react';
+import {render,screen,fireEvent,waitFor,cleanup,act} from '@testing-library/react';
 import EmailSignup from './EmailSignup';
 import {ApiError} from './api';
 const api=vi.hoisted(()=>({request:vi.fn()}));
 vi.mock('./api',async importOriginal=>({...await importOriginal<typeof import('./api')>(),request:api.request}));
 const expiry=()=>new Date(Date.now()+600000).toISOString();
 beforeEach(()=>{cleanup();sessionStorage.clear();api.request.mockReset();});
+
+it('첫 요청의 시간당 제한을 분·초로 안내하고 입력창을 만들지 않는다',async()=>{
+ api.request.mockRejectedValueOnce(new ApiError('RATE_LIMITED',429,true,3540));render(<EmailSignup terms={null}/>);
+ fireEvent.change(screen.getByLabelText('이메일'),{target:{value:'test@example.invalid'}});fireEvent.click(screen.getByRole('button',{name:'인증번호 받기'}));
+ expect(await screen.findByRole('status')).toHaveTextContent('59분 0초 후');expect(screen.queryByLabelText('인증번호')).not.toBeInTheDocument();expect(screen.getByRole('button',{name:'인증번호 받기'})).toBeDisabled();
+});
+it('한도에 도달한 성공 응답도 긴 재발송 대기를 표시한다',async()=>{
+ api.request.mockResolvedValueOnce({request_id:'fixture',expires_at:expiry(),resend_after_seconds:3540});render(<EmailSignup terms={null}/>);
+ fireEvent.change(screen.getByLabelText('이메일'),{target:{value:'test@example.invalid'}});fireEvent.click(screen.getByRole('button',{name:'인증번호 받기'}));
+ expect(await screen.findByRole('button',{name:/재발송 59분 0초 후/})).toBeDisabled();expect(screen.getByLabelText('인증번호')).toBeInTheDocument();
+});
+it('번호 확인IP 제한이 긴 발송 제한을 덮어쓰지 않는다',async()=>{
+ api.request.mockResolvedValueOnce({request_id:'fixture',expires_at:expiry(),resend_after_seconds:3540}).mockRejectedValueOnce(new ApiError('RATE_LIMITED',429,true,30));render(<EmailSignup terms={null}/>);
+ fireEvent.change(screen.getByLabelText('이메일'),{target:{value:'test@example.invalid'}});fireEvent.click(screen.getByRole('button',{name:'인증번호 받기'}));fireEvent.change(await screen.findByLabelText('인증번호'),{target:{value:'001234'}});fireEvent.click(screen.getByRole('button',{name:'확인'}));
+ expect(await screen.findByRole('alert')).toHaveTextContent('0분 30초 후 인증번호를 다시 확인');expect(screen.getByRole('button',{name:/재발송 59분 0초 후/})).toBeDisabled();
+});
+it('남은1초를60초로 늘리지 않고 제한이 끝나면 다시 요청할 수 있다',async()=>{
+ vi.useFakeTimers();try {
+ api.request.mockRejectedValueOnce(new ApiError('RATE_LIMITED',429,true,1));render(<EmailSignup terms={null}/>);
+ fireEvent.change(screen.getByLabelText('이메일'),{target:{value:'test@example.invalid'}});fireEvent.click(screen.getByRole('button',{name:'인증번호 받기'}));
+ await act(async()=>{await Promise.resolve();});expect(screen.getByRole('status')).toHaveTextContent('0분 1초 후');expect(screen.getByRole('button',{name:'인증번호 받기'})).toBeDisabled();
+ await act(async()=>{vi.advanceTimersByTime(1000);});expect(screen.getByRole('button',{name:'인증번호 받기'})).toBeEnabled();expect(screen.queryByRole('status')).not.toBeInTheDocument();
+ } finally {vi.useRealTimers();}
+});
 describe('이메일 가입 인증번호',()=>{
  it('검증 전 가입을 막고 Mailpit 링크를 표시하지 않는다',()=>{render(<EmailSignup terms={null}/>);expect(screen.getByRole('button',{name:'회원가입'})).toBeDisabled();expect(screen.queryByRole('link',{name:/Mailpit/})).not.toBeInTheDocument();});
  it('요청·확인 후 가입 증명을 보내고 완료 화면으로 전환한다',async()=>{

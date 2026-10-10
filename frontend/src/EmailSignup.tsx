@@ -20,7 +20,14 @@ export default function EmailSignup({terms,social}:{terms:ReactNode;social?:Reac
     try{await work();}catch(e){
       if(emailAction)setEmailError(message(e));else setFormError(message(e));
       if(e instanceof ApiError&&['CODE_EXPIRED','CODE_SUPERSEDED','CODE_USED','EMAIL_CODE_REQUIRED'].includes(e.code))setProgress(p=>({...p,verification_proof:undefined,proof_expires_at:undefined}));
-      if(emailAction&&e instanceof ApiError&&e.status===429&&e.code==='RATE_LIMITED')setProgress(p=>({...p,resend_at:Date.now()+Math.max(60,e.retryAfter)*1000}));
+      if(emailAction&&e instanceof ApiError&&e.status===429&&e.code==='RATE_LIMITED') {
+        const retry=Math.max(1,e.retryAfter||60);
+        if(action==='인증번호 발송 중') {
+          const receivedAt=Date.now();setNow(receivedAt);
+          setProgress(p=>({...p,resend_at:receivedAt+retry*1000}));
+        }
+        else setEmailError(`${message(e)} ${Math.floor(retry/60)}분 ${retry%60}초 후 인증번호를 다시 확인하세요.`);
+      }
     }finally{lock.current=false;setBusy(false);}
   }
   async function sendCode(){
@@ -28,7 +35,7 @@ export default function EmailSignup({terms,social}:{terms:ReactNode;social?:Reac
     const email=emailField.current.value.trim();
     await run(async()=>{
       const result=await request<{request_id:string;expires_at:string;resend_after_seconds:number}>('/auth/email/signup-code-requests','POST',{email});
-      setNow(Date.now());setProgress({email,...result,resend_at:Date.now()+result.resend_after_seconds*1000});setCode('');setKey(crypto.randomUUID());setNotice('인증번호를 보냈습니다. 스팸함도 확인해주세요.');
+      const receivedAt=Date.now();setNow(receivedAt);setProgress({email,...result,resend_at:receivedAt+result.resend_after_seconds*1000});setCode('');setKey(crypto.randomUUID());setNotice('인증번호를 보냈습니다. 스팸함도 확인해주세요.');
     },'인증번호 발송 중');
   }
   async function verify(){
@@ -61,8 +68,9 @@ export default function EmailSignup({terms,social}:{terms:ReactNode;social?:Reac
         <div id={`${id}-email-status`} className="signup-email-feedback" aria-live="polite">
           {verified?<p className="signup-verified" role="status">✓ 이메일 인증 완료</p>:<>
             {progress.request_id&&<><label className="signup-code-label" htmlFor={`${id}-code`}>인증번호</label><div className="signup-input-row signup-code-row"><input id={`${id}-code`} className="signup-code-input" name="verification_code" value={code} onChange={e=>{setCode(e.target.value.replace(/[\s-]/g,''));setEmailError('');}} inputMode="numeric" autoComplete="one-time-code" maxLength={12} pattern="[0-9]{6}" placeholder="6자리 인증번호" disabled={busy} aria-invalid={!!emailError} onKeyDown={e=>{if(e.key==='Enter'){e.preventDefault();if(!busy&&!expired)void verify();}}}/><button className="signup-secondary" type="button" disabled={busy||expired} onClick={()=>void verify()}>{busy&&phase==='이메일 인증 중'?'확인 중…':'확인'}</button></div>
-              <div className="signup-code-meta"><span>{expired?'인증번호가 만료되었습니다.':`남은 시간 ${Math.floor(remaining/60)}:${String(remaining%60).padStart(2,'0')}`}</span><button type="button" className="signup-text-button" disabled={busy||wait>0} onClick={()=>void sendCode()}>{wait>0?`재발송 ${wait}초 후`:'인증번호 다시 받기'}</button></div>
+              <div className="signup-code-meta"><span>{expired?'인증번호가 만료되었습니다.':`남은 시간 ${Math.floor(remaining/60)}:${String(remaining%60).padStart(2,'0')}`}</span><button type="button" className="signup-text-button" disabled={busy||wait>0} onClick={()=>void sendCode()}>{wait>0?`재발송 ${Math.floor(wait/60)}분 ${wait%60}초 후`:'인증번호 다시 받기'}</button></div>
               </>}
+            {!progress.request_id&&wait>0&&<p className="signup-helper" role="status">인증번호 요청은 {Math.floor(wait/60)}분 {wait%60}초 후 다시 할 수 있습니다.</p>}
             {emailError&&<p className="signup-field-error" role="alert">{emailError}</p>}{notice&&!emailError&&!expired&&!busy&&<p className="signup-helper" role="status">{notice}</p>}
           </>}
         </div>

@@ -29,7 +29,7 @@ public final class SnapshotValidation {
       if(!(item instanceof Map<?,?>)) fail(); var site=(Map<?,?>)item;
       if(!(site.get("site_id") instanceof String id)||!id.matches("[1-9][0-9]*")
           ||!positiveVersion(site.get("version"))
-          ||!(site.get("display_name") instanceof String name)||name.isBlank()||name.length()>100) fail();
+          ||!(site.get("display_name") instanceof String name)||!SiteInput.validDisplayName(name)) fail();
       for(String field:List.of("created_at","updated_at")) {
         if(!(site.get(field) instanceof String)) fail();
         try {java.time.Instant.parse((String)site.get(field));}catch(RuntimeException error){fail();}
