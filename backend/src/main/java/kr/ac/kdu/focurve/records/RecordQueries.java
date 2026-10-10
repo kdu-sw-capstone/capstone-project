@@ -27,6 +27,12 @@ public class RecordQueries {
 
   public static Range range(String from, String to) {
     try {
+      // Public date-only input: Gregorian years 0001..9999. Keep ordinary
+      // four-digit dates (including 9999) compatible; reject extended ISO years.
+      for (String value : Arrays.asList(from, to)) {
+        if (value != null && (!value.matches("[0-9]{4}-[0-9]{2}-[0-9]{2}")
+            || value.startsWith("0000-"))) throw new ApiFailure(422, "INVALID_DATE_RANGE");
+      }
       ZoneId zone = ZoneId.of("Asia/Seoul");
       LocalDate end = to == null ? LocalDate.now(zone) : LocalDate.parse(to),
           start = from == null ? end.minusDays(6) : LocalDate.parse(from);
@@ -34,7 +40,7 @@ public class RecordQueries {
       if (days < 1 || days > 366) throw new ApiFailure(422, "INVALID_DATE_RANGE");
       return new Range(
           start.atStartOfDay(zone).toInstant(), end.plusDays(1).atStartOfDay(zone).toInstant());
-    } catch (java.time.format.DateTimeParseException e) {
+    } catch (DateTimeException e) {
       throw new ApiFailure(422, "INVALID_DATE_RANGE");
     }
   }

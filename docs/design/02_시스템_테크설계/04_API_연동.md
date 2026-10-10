@@ -173,10 +173,15 @@ Occurrence.status는 PENDING/WAITING_CONFLICT/STARTING/RUNNING/FINISHED/SKIPPED�
 ## 2026-10-09 사용자 확정: 일반 이메일 가입 인증번호
 일반 이메일 가입은 가입 화면에서 6자리 번호를 확인한 후 계정을 생성한다. Google·카카오 가입/연결 및 소셜 이메일 보완 흐름은 유지한다. 기존 PENDING 회원의 링크 인증은 호환 경로로 유지한다. 사용자 화면에 Mailpit 링크를 표시하지 않는다.
 
-- POST `/api/v1/auth/email/signup-code-requests`: `{email}` → 202 `{request_id, expires_at, resend_after_seconds:60, max_attempts:5}`. 유효 익명 세션 쿠키·Origin·CSRF 필수. 번호는 응답에 반환하지 않는다.
+- POST `/api/v1/auth/email/signup-code-requests`: `{email}` → 202 `{request_id, expires_at, resend_after_seconds, max_attempts:5}`. resend_after_seconds는 현재 발송 제한에 따른 남은 초다. 유효 익명 세션 쿠키·Origin·CSRF 필수. 번호는 응답에 반환하지 않는다.
 - POST `/api/v1/auth/email/signup-code-verifications`: `{request_id,email,code}` → 200 `{verified:true,verification_proof,proof_expires_at}`. 현재 세션과 이메일에 바인딩한다.
 - POST `/api/v1/auth/signup`: 기존 필드에 `verification_proof` 필수. 성공 ACTIVE·email_verified=true. 동일 멱등 키 재요청은 동일 결과, 새 요청으로 증명 재사용은 거절. 기존 입력·약관·CSRF 검증 유지.
 - 번호 6자리(앞자리 0 포함), 10분 만료. 이메일당 60초 간격·시간당 5회, IP 발송 시간당 20회·번호 확인 분당 30회. 오입력 5회 후 번호 잠금. 번호 및 검증 증명 일회용, 증명 10분 유효. 같은 세션·이메일 재발송 성공 시 이전 번호/증명 무효. SMTP 실패 시 새 번호 저장 롤백·기존 번호 보존, 시도 제한 유지.
+
+### 2026-10-10 제한 안내 정합성 수정 (AUTH-01, 로컬 검증)
+위 발급 한도·간격은 변경하지 않는다. 발송 성공의 `resend_after_seconds`는 고정60이 아니라 현재 이메일·IP bucket에 다음 요청이 허용되는 가장 늦은 시각까지 남은 초(올림)다. 한도에 도달하지 않은 일반 발송은60초 이하이며 SMTP 처리 시간만큼 차감된다. 5번째 이메일/20번째 IP 허용 시도처럼 다음 요청이 시간당 한도에 걸리면 시간당 window 잔여시간을 반환한다.
+429 `RATE_LIMITED`의 `Retry-After`도 적용되는 시간당 제한과 단기 간격의 최대 해제 시각을 반영한다. 오류 코드·상태·JSON 필드 이름은 유지한다. window는 `window_start+window_seconds`에 도달하면 만료한다. 발송의 IP→이메일 순서별 기존 시도 소비 규칙과 SMTP 실패 시 제한 유지도 보존한다.
+Frontend는 최초 발송 거절에서도 입력창을 성공처럼 열지 않고 남은 분·초를 안내한다. 번호 확인IP 제한은 발송 재시도 제한과 별개이며 발송 타이머를 덮어쓰지 않는다. 후속 동시 요청이 quota를 추가 소비할 수 있으므로 안내 시각 도달은 무조건 성공 보장이 아니며 Server가 재검사한다. 실제 브라우저·외부SMTP 검증과 자동/격리 검증을 구분한다.
 - 오류: 422 CODE_FORMAT_INVALID/CODE_INVALID; 410 CODE_EXPIRED; 409 CODE_SUPERSEDED/CODE_USED; 429 RATE_LIMITED/CODE_ATTEMPTS_EXCEEDED; 403 EMAIL_CODE_REQUIRED; 503 MAIL_UNAVAILABLE.
 - 저장 V10 email_signup_codes: 원문 저장 금지, 세션 쿠키를 키로 한 코드 HMAC·증명 SHA-256. 회원·인증 ID·증명 소비·멱등 결과 동일 트랜잭션.
 - 새로고침은 탭 sessionStorage에 이메일·요청·증명 유지, 비밀번호·입력 번호 미저장.
@@ -239,3 +244,25 @@ D06 메시지·규칙 ID/priority/freeze 및 D09 응답유실 추가 API는 계�
 ## 2026-10-10 APPLY 기간 전달 사용자 확정·로컬 구현
 
 이전 ‘APPLY 명령에 기간 없음’ 설명은 develop 기준의 과거 구현 이력이다. 새 회원 APPLY_POLICY는 root duration_minutes(JSON 정수1~180)를 저장된 focus_sessions 목표값에서 생성해 포함한다. 조회/멱등·기존Snapshot/보고/Journal은 유지한다. 구형 저장명령은 다시 쓰지 않으며 기간 없는 APPLY를 Core가 기본시간으로 실행하지 않는다. RELEASE는 기간 필수화하지 않는다. 실제 Core 회원 adapter·Chrome 검증 및 자동복구는 미완료; 기본Snapshot1.2OFF 유지. 상세 규칙은 [APPLY 기간 전달 확정 계약](FOCURVE_APPLY_POLICY_기간전달_확정계약.md)을 따른다.
+
+
+## 2026-10-10 1단계 입력 경계 결함 수정 — 로컬 검증
+
+기준 develop b45a680a9f2262bd9725619e9643df3bb9b91164, 작업 브랜치 fix/email-code-retry-after. 이 절은 기존 이력을 보존하며 현재 로컬 수정본의 입력 검증을 명확히 한다. 배포·실제 Extension 통합 완료를 의미하지 않는다.
+
+- 사이트 display_name은 공백만인 이름을 제외한 1~100 Unicode code point다. 등록·수정·가져오기 및 Snapshot 1.1/1.2에서 동일한 검사를 사용한다. 정상 surrogate pair(이모지)는 한 code point이며 짝 없는 surrogate는 잘못된 Unicode로 거절한다. 기존 문자열·Snapshot을 자르거나 변환하지 않는다.
+- feature_policies 항목의 enabled는 필수 JSON boolean true/false다. 항목 내부 필드 누락·명시적 null은 422 VALIDATION_FAILED; 문자열·숫자·객체·배열은 기존 엄격 역직렬화 오류로 거절한다. feature_policies 자체 생략의 기존 빈 목록 동작과 include_subdomains의 기존 기본값은 유지한다.
+- 기록·통계 날짜 입력은 YYYY-MM-DD, Gregorian 0001~9999년, 유효한 달력 날짜 및 포함 기간 1~366일이다. Asia/Seoul 자정부터 종료 날짜 다음날 자정 직전까지 조회한다. 네 자리 정상 날짜 9999-12-31은 유지하며 확장 연도(+10000/+999999999), 0000년, 잘못된 날짜는 422 INVALID_DATE_RANGE다. 이 검사는 조회 입력에 한정하며 실제 DB·Server 내부 오류를 일괄 4xx로 바꾸지 않는다.
+- 이메일 발송 횟수·오입력·만료·일회용 정책은 그대로 유지한다. RATE_LIMITED Retry-After는 함께 적용된 이메일·IP 제한의 가장 늦은 해제 시점까지의 초(올림)이다. 사용자 안내와 재요청 가능 시점을 일치시킨 기존 로컬 F1 수정본을 재사용한다.
+
+Backend154/154, Frontend121/121, HTTP131 PASS/1계약 BLOCKED. 실제 Chrome·Edge·OAuth·회원 Extension은 이번 범위에서 NOT RUN. Snapshot1.2 기본 신규 발급 OFF. 자세한 증거는 .reviews/stage1-fixes-20261010/FOCURVE_1단계_결함4건_수정검증보고서.md 참조.
+
+
+## 2026-10-10 F1~F4 게시용 최신 develop 재검증
+
+- 담당 김다훈 Web·Server·API·DB. 브랜치 `fix/stage1-boundary-regressions`, 기준 develop `3d105b05753844ceff28a235751ede4e959b3ef6`(PR #19 병합). 기존 로컬 수정/사용자 확인 이력은 당시 근거로 보존한다.
+- 독립 재리뷰 통과 F1~F4만 선별했다. 제품 코드·테스트 12파일은 리뷰 해시와 일치하며 원본 20파일을 보존했다. PR #19의 APPLY_POLICY.duration_minutes 및 공통 Command 표·기간 계약을 유지한다.
+- 게시용 작업본 재실행: Backend160/160(실패·오류·스킵0) 및 패키징, Frontend121/121 및 빌드, 실제 HTTP·격리 MySQL8.4.8·Mailpit1.27 156개 검사 PASS. Backend verify 확인까지 합한 harness 검사 157개 PASS.
+- 검증 주체는 Codex 자동·HTTP·실제 임시 DB/메일 수신·합성 설치/실행 보고다. 시간 제한 경계는 격리 DB 시각을 조절한 재현이며 실제 한 시간 대기가 아니다. 실제 Chrome·Edge·외부 OAuth·외부 SMTP·회원 Core/Content 통합은 이번 검증 NOT RUN이다.
+- 과거 기간 미전달 BLOCKED는 당시 Server 상태이며 PR #19로 Server 전달은 해결됐다. Core의 소수점9자리 시각 파싱·기간 검증/영속 결속 및 실제 회원 실행은 후속 통합 대기다. D-01·D-05 자동복구 전체는 미구현, Snapshot1.2 신규 발급 기본 OFF를 유지한다.
+- 상태: 검증된 결함 수정본 Draft PR 게시 준비/팀 리뷰·통합 대기. 전체 작업카드·93개 수용 기준·필수 MVP를 완료로 변경하지 않는다. 실행 로그와 게시 결과는 `FOCURVE_1단계_F1_F4_게시검증보고서.md`에 남긴다. develop 병합은 수행하지 않는다.
