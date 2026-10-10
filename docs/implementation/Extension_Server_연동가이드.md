@@ -1,119 +1,125 @@
-# Extension–Server 연동 가이드 — 실제 공유 저장소 점검
+# Extension ↔ Server 연동 가이드
 
-확인일: 2026-10-09 (Asia/Seoul). 담당: 윤종민 Extension Core / 김다훈 Server·API·DB / 채지민 Content Control. 최신 사용자 전달의 역할을 유지한다.
+## A. 연동 기준
 
-**판정: 다훈의 최신 정책 수정본이 접근 가능한 공유 브랜치에서 확인되지 않아 제품 Server 연동은 차단 상태다.** 이 문서는 현재 확인 가능한 코드와 필요한 자료를 정리한 것이며 Event1.2 통합 완료/실제 JSON 계약 확정을 뜻하지 않는다. 이번 작업에서는 기존 미커밋 변경을 보존하고 문서만 추가했다. 브랜치 전환/fetch/merge/Commit/Push/PR 갱신·생성/병합, DB 초기화, 서버 시작 또는 테스트 재실행을 하지 않았다. GitHub 조회와 localhost health GET만 수행했다.
+- 저장소: https://github.com/kdu-sw-capstone/capstone-project
+- 브랜치: `codex/server-event12-integration`, 대상 `develop`.
+- 현재 기준 Server 코드 커밋: `b05d9a095b229efe310d5c791189eefb0d30300b` (이전 c2a8ad0은 과거 검증 이력)
+- PR: https://github.com/kdu-sw-capstone/capstone-project/pull/18
+- 최신 문서 커밋은 위 코드 커밋 이후일 수 있다. 아래 SHA는 실제 테스트한 제품 코드를 고정한다.
 
-## 1. 최신 브랜치·커밋 및 공유 여부
-
-실제 GitHub API로 원격 브랜치와 전체 PR을 조회하고 해당 commit의 recursive tree를 대조했다. 로컬 remote-tracking ref만 최신이라고 가정하지 않았다.
-
-| 확인 대상 | 실제 SHA | 확인 내용 |
-|---|---|---|
-| local feature/extension-core-ext-02 / PR17 head | e79ef3034e3951a20c735de714debab830006284 | 제품 비회원/adapter/UI. 방문-host 수정 및 후속 문서는 미커밋. PR17 open |
-| origin develop (GitHub 조회) | 76df34ea6be1c591be33c29606c24fc654f61932 | 개발 기반 포함. 최신 Event1.2 제품 API 없음 |
-| chore/web-server-db-foundation | d38cde49ebe5caee9bad663dbdfca0677bbf0c60 | health·users V1·Backend4/Frontend5 기본 테스트 코드. PR16 merged, merge commit=develop SHA |
-| main | 1cddbbd0f1e4a1945337f5da5f17662aaad45633 | 해당 Backend/Frontend 제품 소스 없음 |
-| docs/foundation-merge-status | 7ca409cc0bff6dc29f6ec9efcc03e9e7bd85d839 | 개발 기반 소스만 존재 |
-| docs/pc-expansion-plan | 5327f8d1197d3c36ba2855215125aeac0c1acf98 | 제품 API 코드 없음 |
-
-로컬 `/workspace`에서 별도 최신 Server 소스 작업 디렉터리는 찾지 못했다. 다훈의 Windows 로컬 디렉터리는 이 환경에 연결되어 있지 않아 조회할 수 없다. 따라서 다훈 수정본의 정확한 branch/SHA/Commit·Push·PR 여부는 **미확인**이다. 다른 저장소/비공유 ref에 있을 가능성을 부정하지 않는다.
-
-다훈 보고 Backend106/106·Frontend104/104·실제 MySQL/HTTP 합성 데이터 통과는 **다훈의 보고 결과**로 보존하지만 해당 소스/출력/수신 JSON은 확보하지 못해 직접 대조하지 못했다. 현재 공유 코드의 Backend4/Frontend5를 해당106/104 결과와 혼동하지 않는다. 기존 문서의 개발 기반 성공은 과거 결과이며 이번 실행 성공으로 재사용하지 않는다.
-
-## 2. 실제 구현·호출 가능한 API
-
-소스: backend/src/main/java에는 FocurveApplication.java만 존재. RestController/제품 service/DTO/인증 filter/이벤트 검증기는 없다. README도 제품 API·인증·세션 부재를 명시한다. Spring Boot Actuator 설정만 health를 노출한다.
-
-| 경로 | 현재 공유 코드 판정 | 이번 실행 근거 |
-|---|---|---|
-| GET /actuator/health | **구현 완료(개발 기반)** / 현재 호출 성공 미검증 | localhost8080 GET은 connection refused. 서비스를 시작하지 않았음 |
-| Event1.2 수신·저장·조회 | **공유 코드 미구현 / 최신 수정본 미확인** | events controller/validator/DTO 및 DB 테이블 없음 |
-| Snapshot 발급·조회·검증 | **공유 코드 미구현 / 최신 수정본 미확인** | Server Snapshot 코드/발급 flag 없음. 다훈의 신규1.2 OFF는 보고 상태이며 config 미확인 |
-| 회원 로그인/Extension 설치 인증 | **공유 코드 미구현** | users 테이블만 있고 로그인/토큰/설치연결 코드 없음 |
-| 명령 조회/보고/reconcile | **공유 코드 미구현** | 제품 API/보고/outbox전송/reconcile 구현 없음 |
-
-다음 경로는 `docs/design/02_시스템_테크설계/04_API_연동.md`의 **설계 경로**이며 호출 가능한 API 목록이 아니다. 최신 Server에서 같은 경로인지 확인 필요:
-
-| 목적 | 설계 메서드·경로 | 인증(설계) |
-|---|---|---|
-| 이벤트 배치 | POST /api/v1/events/batch | 설치·계정 결박 Bearer E |
-| 이벤트 접수 상태 | POST /api/v1/events/status | E |
-| Snapshot 조회 | GET /api/v1/sessions/{session_id}/policy | W/E |
-| 집중 시작/Snapshot 생성 연결 | POST /api/v1/sessions | W/E |
-| 설치 등록 | POST /api/v1/extension-installations | 공개 제한 |
-| 설치 연결 요청 | POST /api/v1/extension-link-requests | 설치 증명 I |
-| 사용자 연결 승인 | POST /api/v1/extension-link-requests/{id}/approval | Web W |
-| 설치 토큰/갱신 | POST /api/v1/extension-tokens, /api/v1/extension-tokens/refresh | I / refresh |
-| 명령 조회 | GET /api/v1/executors/{executor_id}/commands | E |
-| 실행 보고 | POST /api/v1/executors/{executor_id}/reports | E |
-| 재조정 | POST /api/v1/executors/{executor_id}/reconcile | E |
-
-회원 로그인과 기록 Web 조회의 실제 지원 endpoint 또한 최신 source 확인 전에는 확정하지 않는다. 응답 코드/에러/Idempotency header를 기존 문서만 보고 실제 구현이라고 안내하지 않는다.
-
-## 3. 실제 JSON·버전·계약 차이
-
-### 확인할 수 있는 JSON
-
-health의 **설정/기존 테스트상 기대 응답**은 다음과 같다. 이번 GET은 연결 실패했으므로 새로 받은 실제 응답이 아니다:
-
-```json
-{"status":"UP"}
+```bash
+git fetch origin codex/server-event12-integration
+git switch --detach b05d9a095b229efe310d5c791189eefb0d30300b
+# 문서 최신본까지 필요하면 별도 작업 복사본에서 원격 브랜치로 전환한다.
 ```
 
-현재 제품 `access-store.js` 및 사용자 IndexedDB 원본 캡처에서 확인한 신규 RECORD 이벤트 payload 발췌(전체 HTTP 요청 아님):
+PR17(e79ef3034e3951a20c735de714debab830006284)은 별도의 Extension Core 변경이다. 이번 PR은 그 제품 코드를 복사·병합하지 않는다. PR17의74개 mock 시험은 본 Server와의 실제 Chrome 연동 증거가 아니다.
+
+## B. 실제 API와 인증
+
+일반 개발 Base URL `http://127.0.0.1:8080/api/v1`; 기존 수정본 `http://127.0.0.1:8082/api/v1`(Web localhost5175/DB3308). localhost는 호출하는 PC 자신이다. 팀원 PC에서 다훈 PC의 localhost를 호출할 수 없다. 우선 각자 로컬 Server를 실행한다. 외부 공개/CORS 완화는 이번에 설정하지 않았다.
+
+W=HttpOnly Web 쿠키. W 변경 요청은 허용 Origin + X-CSRF-Token 필요. E=해당 설치/회원의 `Authorization: Bearer <access_token>`. P=설치 증명 `X-Installation-Proof`. 토큰은 파일·콘솔·PR·일반 Web storage에 노출하지 않는다.
+
+|메서드 / 경로|인증·목적|상태|
+|---|---|---|
+|GET /auth/csrf, POST /auth/login, GET /auth/me, POST /auth/logout|W 초기화/이메일 로그인/조회/로그아웃|구현·Server 자동 검증. 로그인은 이메일 인증된 계정 필요|
+|POST /auth/email/signup-code-requests, /auth/email/signup-code-verifications, /auth/signup|W, 6자리 번호→proof→가입|구현. 실제메일은 발신 환경 필요. 비회원 업로드와 무관|
+|POST /extension-installations|executor_id/client_version→installation_proof|구현·합성 설치 자동 검증|
+|POST /extension-link-requests, /{id}/evidence, /{id}/claim|P, PKCE/state/정지 상태 증거/승인 코드 조회|구현·합성 검증. 실제 Core의 관찰·통합 미검증|
+|POST /extension-link-requests/{id}/approval|W 사용자 명시 승인, Bearer 단독 승인 거절|구현. evidence 이후 Web /#link 화면|
+|POST /extension-tokens, /extension-tokens/refresh|P+단일사용code+PKCE 교환 / refresh rotation|구현·자동 검증. 실제 설치 연결 미검증|
+|GET /extension-installations; DELETE /extension-installations/{executor}/connection|W 설치목록 / 명시해제|구현. 활성실행 해제증거 조건 유지|
+|POST /sessions|W/E, Idempotency-Key, executor_id/duration_minutes|구현. **현재1.2 신규발급 OFF→503**|
+|GET /sessions, /sessions/current, /sessions/{uuid}, /sessions/{uuid}/policy, /operations/{id}|W/E 소유권 검사; policy는 저장된 frozen JSON|구현·자동/DB 검증. 독립 snapshot-create API 없음|
+|POST /sessions/{uuid}/end|W/E+Idempotency-Key|구현. 요청 접수는 해제완료가 아님|
+|GET /executors/{executor}/commands|E. heartbeat, 현재 revision PENDING 명령|구현·모의 적용 검증. 실제 Chrome 실행 미검증|
+|POST /executors/{executor}/reports, /reconcile|E. 실행 관찰·interval·journal 대조|구현·합성/DB 검증. Core journal 연동 필요|
+|POST /events/batch, /events/status|E.1.1/1.2 저장/재전송조회|구현·**실제HTTP+MySQL 시험**. 설치/APPLIED evidence는 합성|
+|GET /access-events, /access-events/{event_id}, /statistics/summary, /statistics/targets, /dashboard|W/E 자기회원 기록·집계|구현. 실제 Extension 수집 아님. 사이트별 집중시간 null 유지|
+
+컨트롤러 경로 원문: backend/src/main/java/kr/ac/kdu/focurve/{auth,execution,events,records}/*Controller.java. GET /executors/.../snapshot 등 별도 API를 만들지 않는다. 명령의 snapshot 및 GET /sessions/{uuid}/policy 사용.
+
+## C. 실제 계약 JSON 예시
+
+예시는 합성 구조이며 실제 값/토큰이 아니다. UUID·회원ID·시각·revision은 서버가 발급한 세션/설치/명령에 맞춰 교체한다. 임의 UUID만 바꿔 전송하면404/403/422로 거절되는 것이 정상이다.
+
+Event1.2: 부모 RECORD 정책을 적용받는 CHZZK 접근. payload target_key는 접두사 없는 actual hostname이다.
 
 ```json
-{
-  "access_seq": 3,
-  "target_kind": "SITE",
-  "target_host": "chzzk.naver.com",
-  "target_key": "SITE:chzzk.naver.com",
-  "matched_policy_host": "naver.com",
-  "reason": "RECORD"
-}
+{"events":[{"schema_version":"1.2","event_id":"11111111-1111-4111-8111-111111111111","executor_id":"22222222-2222-4222-8222-222222222222","session_id":"33333333-3333-4333-8333-333333333333","policy_snapshot_id":"44444444-4444-4444-8444-444444444444","event_type":"RECORDED_ACCESS","occurred_at":"2026-10-09T08:00:01Z","local_seq":1,"payload":{"access_seq":1,"navigation_id":"55555555-5555-4555-8555-555555555555","target_kind":"SITE","target_host":"chzzk.naver.com","target_key":"chzzk.naver.com","matched_policy_host":"naver.com","reason":"RECORD","blocked_reasons":[]}}]}
 ```
 
-네이버 접근은 target_host=www.naver.com / target_key=SITE:www.naver.com / matched_policy_host=naver.com. 실제 로컬 envelope.schema_version은 **1.1**이다. 새로운 필드 저장 성공이 Event1.2 HTTP 수용 성공을 뜻하지 않는다.
+응답: `{"items":[{"event_id":"...","status":"ACCEPTED"}]}`. 동일 ID/동일 envelope 재전송은 `DUPLICATE`; 내용이 다르면 item `REJECTED/error=EVENT_CONFLICT`. item별 transaction. HTTP200이어도 모든 items 상태를 확인한다. 한 batch 최대100개/1MiB. status 요청 `{"event_ids":["..."]}`→items event_id/status (ACCEPTED/PENDING_DEPENDENCY/NOT_RECEIVED). 다른 owner/설치 자료 접근 금지.
 
-### 확보되지 않은 실제 JSON
+사이트 BLOCK은 event_type BLOCKED_SITE_ACCESS/reason USER_SITE/blocked_reasons [USER_SITE]. 사이트 ALLOW라도 전역 제한이 적용되면 같은 type에 reason ADULT_DOMAIN 또는 KEYWORD. 복수 이유는 [ADULT_DOMAIN,KEYWORD]처럼 저장하며 대표reason은 USER_SITE→ADULT_DOMAIN→KEYWORD→FEATURE 순서 첫 항목. 실제 감지된 이유만 전송. 미등록 사이트에 global만 매칭되면 matched_policy_host:null. enabled/각 exceptions는 frozen content_policy와 일치해야 한다. 여러 detector를 별도 접근으로 중복 발행하지 않는다. 확정 차단을 더 많은 감지 대기 때문에 지연하지 않는다.
 
-| 객체 | 현재 확인 가능한 범위 | 확보해야 할 자료 |
-|---|---|---|
-| Event1.2 요청/수신/조회 | 최신 전달 메시지의 의미 규칙만 존재. Extension은1.1 envelope/single reason | 실제 DTO/검증기·필수 필드/형식/버전·배치 envelope·성공/duplicate/422 HTTP JSON |
-| Snapshot1.1/1.2 | Extension 버전 선택/사이트 규칙 및 설계 문서. Server 발급본 없음 | 전체 Server JSON, 필수 필드, 전역 policy 구조, 발급OFF 설정명, 미지원/잘못된 데이터 오류 |
-| 회원/설치 인증 | 설계 흐름만 존재 | 실제 cookie/CSRF/설치proof/토큰 발급·검증·갱신 JSON/테스트 절차 |
-| 명령/실행 보고/reconcile | internal SiteController guard 존재, 실제 API 없음 | command/ExecutionReport/reconcile request-response 원문, revision/ack/기한/error 계약 |
+Snapshot1.2 (저장/명령에서 반환되는 구조):
 
-자료가 없는 실제 요청·응답을 만들어 curl 예시로 제공하지 않는다. 새 문서/소스를 받은 뒤 해당 section을 실제 DTO와 테스트/HTTP 결과로 채운다.
+```json
+{"policy_snapshot_id":"44444444-4444-4444-8444-444444444444","format_version":"1.2","site_match_strategy":"MOST_SPECIFIC_HOST","owner_user_id":"1","executor_id":"22222222-2222-4222-8222-222222222222","created_at":"2026-10-09T08:00:00Z","source_version":1,"sites":[{"site_id":"1","canonical_host":"naver.com","display_name":"NAVER","include_subdomains":true,"purpose":"DISTRACTION","access_policy":"RECORD","feature_policies":[],"version":1,"created_at":"2026-10-09T08:00:00Z","updated_at":"2026-10-09T08:00:00Z"}],"content_policy":{"version":1,"keywords":{"enabled":false,"rules":[],"exceptions":[]},"adult_domains":{"enabled":false,"custom_hosts":[],"exceptions":[]},"image_blur":{"enabled":false,"sensitivity":"MEDIUM","strength":"MEDIUM"},"usage_tracking":{"enabled":false}}}
+```
 
-### 구현 전에 확정해야 할 차이
+Snapshot1.1은 기존 저장 JSON을 그대로 해석하며 새 발급·재저장용이 아니다. 빈 정책 예시:
 
-1. **Event1.2 버전**: 현재1.1을 문자열만1.2로 바꾸지 않는다. 실제 envelope/DTO/필수 fields·수신 header 확인 필요.
-2. **target_key 형식**: 현재 `SITE:<actual_host>`. 다훈 메시지의 '실제 방문 host'가 이 접두사를 유지하는지 실제 JSON으로 확인한다. www 유지·마지막 점·소문자 IDNA는 기존 Host 규칙이다.
-3. **반복 숫자**: 현 로컬 target_access_index는1,2,3이고 is_repeat는false,true,true. 다훈의 반복 횟수0,1,2와 의미를 구분해야 한다. 반복 횟수=rank−1이지만 Server 필드 이름·소유/조회 계산 여부는 미확인. total repeat_access는 첫 방문 제외 횟수다.
-4. **동일 event_id**: Server unique receipt/hash/duplicate 응답·재전송 멱등성은 미확인. events 로컬 저장만으로 Server 중복집계 방지를 통과 처리하지 않는다.
-5. **복수 차단 사유**: 현재 reason은 USER_SITE 또는 RECORD 단일 값이다. 새 reasons 표현·우선순위·하나의 탐색에 한 event_id를 공유하는 Core↔Content 연결 계약과 실제 감지 구현이 필요하다. 배열/필드명은 추측하지 않는다.
-6. **부분 정책**: Guest는 사이트 정책 실행 경로다. SiteController도 사이트 계층 adapter이며 전역 성인/키워드 적용을 검증하지 않는다. 지원하지 않는 정책을 무시하고 전체 APPLIED로 보고하면 안 된다. 필수 Snapshot fields/지원 capabilities/전체 확인·실패 rollback을 실제 contract와 연결한다.
-7. **Snapshot 발급**: 기존1.1 보존, 신규1.2 발급OFF 유지라는 다훈 기준을 적용한다. 현재 Guest가 로컬1.2를 생성하는 것이 Server 신규 발급 활성화 증거는 아니다.
-8. **우선순위**: 사이트 MOST_SPECIFIC_HOST와 전역 성인·키워드 독립 제한/제한별 예외/유효조건 하나라도BLOCK을 함께 확인해야 한다. 사이트 allow가 전역 block을 해제하지 않도록 Core/Content actual rules priority를 통합해야 한다.
+```json
+{"policy_snapshot_id":"44444444-4444-4444-8444-444444444444","format_version":"1.1","owner_user_id":"1","executor_id":"22222222-2222-4222-8222-222222222222","created_at":"2026-10-09T08:00:00Z","source_version":1,"sites":[],"content_policy":{"version":1,"keywords":{"enabled":false,"rules":[],"exceptions":[]},"adult_domains":{"enabled":false,"custom_hosts":[],"exceptions":[]},"image_blur":{"enabled":false,"sensitivity":"MEDIUM","strength":"MEDIUM"},"usage_tracking":{"enabled":false}}}
+```
 
-## 4. 로컬 실행 명령·포트·DB·환경변수
+1.2 whole-validator는 필수 자료형·UUID·호스트·열거값을 검사한다. Core는 전체 필수 규칙 적용 후에만 APPLIED를 보고하며 미지원·불량·부분 적용 실패를 정상 처리하지 않는다. 기존1.1을1.2로 다시 쓰지 않는다.
 
-아래는 **현재 공유 개발 기반 코드의 재현 명령**이다. 다훈 정책 수정본 실행 명령은 미확인. 이번 점검에서 실행하지 않았으며, 실행해도 Event1.2 제품 endpoint가 생성되지 않는다.
+Web 인증 예시: 먼저 GET /auth/csrf로 쿠키와 csrf_token을 얻고, 허용 Origin/X-CSRF-Token을 포함해 POST /auth/login `{"email":"<verified-test-email>","password":"<private>"}`. 응답은 AuthService.user의 회원 객체이며 인증은 Set-Cookie로 발급된다. 사용자 비밀번호·로그인 세션을 E token으로 취급하지 않는다. 가입번호 proof 및 소셜 동의는 별도 기존 흐름을 사용한다.
 
-전제: JDK21(javac 포함), Docker Desktop Linux 엔진/Compose, Git Bash, Node24.x. 저장소 루트에서 기존 `.env`를 보존한다. 없을 때만 `.env.example`을 복사하여 로컬 값을 설정한다.
+아래는 MemberLinks/ExecutionController의 구현된 요청이다. 비밀값은 placeholder다.
 
-| 변수 | 코드상 용도 |
-|---|---|
-| DB_URL | JDBC 개발DB focurve, 기본127.0.0.1:3306·UTC |
-| DB_USERNAME / DB_PASSWORD | 개발DB 자격. 실제 값은 공유/기록하지 않음 |
-| MYSQL_ROOT_PASSWORD | 개발 Compose 초기 자격 |
-| MYSQL_PORT | 기본3306, Compose127.0.0.1 바인딩 |
-| TEST_DB_URL | 별도 focurve_test DB; 운영/개발자료 테스트 대상 금지 |
-| SERVER_ADDRESS / SERVER_PORT | application.yml 기본127.0.0.1 / 8080 |
+```json
+{"executor_id":"22222222-2222-4222-8222-222222222222","client_version":"ext-development"}
+```
 
-Windows Git Bash에서:
+install 응답 executor_id/installation_proof. proof는 새 설치 secret이며 client_version만으로 호환성을 증명하지 않는다.
+
+```json
+{"executor_id":"22222222-2222-4222-8222-222222222222","code_challenge":"<S256-base64url-43chars>","state":"<random-state>","callback_uri":"<exact-allowlisted-uri>"}
+```
+
+link 응답 link_request_id/verification_uri/expires_at(5분). Core가 자신의 실제 상태를 읽고 P로 evidence 전송:
+
+```json
+{"observation_id":"66666666-6666-4666-8666-666666666666","link_request_id":"77777777-7777-4777-8777-777777777777","owner_context":"GUEST:22222222-2222-4222-8222-222222222222","transition":"LINK_PENDING","active_session_id":null,"owned_rule_ids":[],"pending_action_count":0,"observed_at":"2026-10-09T08:00:00Z"}
+```
+
+관찰시각30초 이내/미래5초 이내, 실제 비회원실행 해제된 idle만 승인 가능. Web W POST approval `{"approve":true}`. 승인 결과는 EXTENSION_POLL. P claim `{"state":"<same-state>"}`→status PENDING 또는 APPROVED/code/state. P POST /extension-tokens `{"link_request_id":"...","code":"<one-time-code>","code_verifier":"<original-PKCE-verifier>"}`→access_token/refresh_token/expires_in900. refresh `{"refresh_token":"<private>"}`. 회원이메일 일치 자동연결과 무관한 명시 설치 승인이다.
+
+GET commands 응답은 commands 배열, next_cursor 빈 문자열, server_time UTC 필드를 포함한다; command 구조:
+
+```json
+{"command_id":"88888888-8888-4888-8888-888888888888","session_id":"33333333-3333-4333-8333-333333333333","executor_id":"22222222-2222-4222-8222-222222222222","type":"APPLY_POLICY","desired_revision":1,"created_at":"2026-10-09T08:00:00Z","execute_before":"2026-10-09T08:01:00Z","snapshot":"<위 Snapshot 객체; 실제로는 문자열이 아닌 객체>","reason":"MANUAL"}
+```
+
+RELEASE_POLICY 명령은 snapshot 없음/execute_before:null. 위 snapshot placeholder는 설명용이며 그대로 호출하지 않는다.
+
+실제적용 후 report (서버접수만으로 만들어 보내면 안 됨):
+
+```json
+{"report_id":"99999999-9999-4999-8999-999999999999","command_id":"88888888-8888-4888-8888-888888888888","session_id":"33333333-3333-4333-8333-333333333333","executor_id":"22222222-2222-4222-8222-222222222222","desired_revision":1,"result":"APPLIED","observed_at":"2026-10-09T08:00:00Z","intervals":[{"interval_id":"aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa","kind":"RUN","start_at":"2026-10-09T08:00:00Z","quality":"CONFIRMED"}]}
+```
+
+종료 report는 서버 RELEASE_POLICY의 command_id/revision, result RELEASED, 동일 interval_id/start_at+end_at+일치하는duration_ms/quality. 선택필드 error_code/rollback_confirmed/local_action_seq는 아래11번 계약 참조. 동일 report ID/내용은 DUPLICATE; 다른 내용409 REPORT_CONFLICT. 오래된 revision 보고는 감사자료와 현재상태를 구분하며 현재의도를 덮어쓰지 않는다.
+
+reconcile 요청: snapshot/event와 별개 journal format1.1 유지.
+
+```json
+{"journal_summary":{"format_version":"1.1","session_id":"33333333-3333-4333-8333-333333333333","known_revision":1,"last_report_id":null,"last_access_seq":0,"last_local_seq":0,"observed_at":"2026-10-09T08:00:00Z","observed_state":"UNCONFIRMED","final":false},"local_actions":[]}
+```
+
+local END/EXPIRED 보고와 response 판단은 기존 [11번 계약](../design/02_시스템_테크설계/11_인증_실행복구_가져오기_연결계약.md)과 ExecutionService.reconcile을 기준으로 구현한다. journal1.2 API를 임의로 만들지 않는다.
+
+오류 envelope `{"error":{"code":"SNAPSHOT_COMPATIBILITY_REQUIRED","message":"SNAPSHOT_COMPATIBILITY_REQUIRED","field_errors":[],"retryable":true},"request_id":"<UUID>"}`. 실제 retryable은 ApiErrors/호출처 기준이며 모든409/422를 자동재시도하지 않는다. HTTP401 INVALID_TOKEN,403 EXECUTOR_MISMATCH,409 EVENT_CONFLICT/REPORT_CONFLICT/RECONCILE_REQUIRED,422 INVALID_SCHEMA/INVALID_TARGET_KEY/POLICY_MISMATCH/INVALID_SNAPSHOT,503 EVENT_RETRY_REQUIRED 또는 SNAPSHOT_COMPATIBILITY_REQUIRED를 구분한다.
+
+## D. 로컬 실행·환경
+
+Java21 JDK, Node24.19.x, MySQL8.4, Docker Desktop. 새 개발환경은 `.env.example`를 개인 .env에 복사하고 비밀값을 직접 설정한다. 기존 .env는 덮어쓰지 않는다. Compose 신규기동은 새 개인 환경에서만, 기존 환경은 올바른 프로젝트의 기존컨테이너를 사용한다. docker compose down -v/Flyway clean 사용 금지.
 
 ```bash
 docker compose up -d --wait mysql
@@ -122,63 +128,82 @@ bash scripts/with-env.sh bash backend/mvnw -f backend/pom.xml -B -ntp verify
 bash scripts/with-env.sh java -jar backend/target/focurve-server-0.0.1-SNAPSHOT.jar
 ```
 
-서버 실행 후 별도 셸:
+prepare-test-db는 기본 Compose의 focurve_test 생성/그 DB 권한용이며 이미 관리된 다른 DB에 임의 적용하지 않는다. PowerShell에서 환경을 이미 안전하게 로드했다면 `backend\mvnw.cmd -f backend/pom.xml -B -ntp verify`와 `java -jar backend/target/focurve-server-0.0.1-SNAPSHOT.jar`를 사용한다. 개발 DB와 TEST_DB_URL은 반드시 분리한다. `npm ci; npm test; npm run build; npm run dev`는 frontend에서 순서대로 실행. 기본 Web5173→Server8080 proxy.
 
-```bash
-curl --fail --max-time 5 http://127.0.0.1:8080/actuator/health
-```
+필수 이름: DB_URL/TEST_DB_URL/DB_USERNAME/DB_PASSWORD; MYSQL_ROOT_PASSWORD/MYSQL_PORT(Compose); SERVER_ADDRESS/SERVER_PORT; AUTH_COOKIE_SECURE/ALLOWED_ORIGINS/PUBLIC_URL/SESSION_HOURS; EXTENSION_CALLBACK_URIS. 메일 MAIL_MODE/HOST/PORT/FROM/USERNAME/PASSWORD/TLS/SSL, OAuth GOOGLE_CLIENT_ID/SECRET,KAKAO_CLIENT_ID/SECRET,OAUTH_CALLBACK_BASE는 필요기능에만 설정한다. Mailpit1025/8025, 검토환경1026/8026은 구분. Web VITE_DEV_MAILBOX_URL/VITE_MAIL_MODE/VITE_EXTENSION_ID는 공개설정뿐이다.
 
-이번 직접 GET 결과: `curl (7) Failed to connect to 127.0.0.1 port 8080`. Server가 현재 실행 중이라고 확인되지 않았다. DB를 새로 시작/초기화/검증데이터 INSERT하지 않았다.
+**SNAPSHOT_1_2_ENABLED=false**, SNAPSHOT_1_2_VERIFIED_EXECUTORS 빈 값 유지. 실제Server/Core 호환성 시험 완료 후 검증된 executor UUID만 허용목록에 지정. 런타임 wildcard는 허용되지 않는다(test profile만허용). 별도 합의된 테스트환경에서만 gate-on 시험을 하며 기존 실행차단을 성공으로 우회하지 않는다.
 
-MySQL8.4.8 LTS digest 고정, 개발3306·Server8080·Web5173. migrations에는 **users V1만** 존재하고 이벤트/설치/명령/보고 테이블은 없다. 기존 DB/볼륨 삭제나 적용된 V1 수정 금지. 새 Server 수정본 migration·test data·env/flag 목록 확보 필요.
+Extension manifest host_permissions는 로컬 Server URL, 외부 Web origin 연결은 정확한 개발Origin/Extension ID로 제한해야 한다. 일반 Web 쿠키/CSRF 흐름과 E Bearer를 혼용하지 않는다. callback URI는 MemberLinks의 정확한 allowlist에 등록한다. 실제 external message approval/import가 PR17에 없으므로 링크·명령 단계만 Server 존재로 제품 완료를 선언하지 않는다.
 
-Web 기존 개발 기반:
+테스트 회원은 Web의 정상 이메일 가입/인증 또는 별도 자동 test profile fixture로 준비. 개인 계정/DB 자료를 fixtures로 복사하지 않는다. 설치 증명·실제 APPLIED 관찰 없이는 운영회원 세션/이벤트를 임의 생성하지 않는다.
 
-```bash
-cd frontend
-npm ci
-npm run dev
-```
+## E. 구형 이벤트·조회
 
-Vite5173에서 /api 및 /actuator/health를8080으로 proxy한다. Extension은 Vite proxy를 자동 사용하지 않는다. 현재 manifest의 http/https host_permissions는 localhost 접근 권한만 뜻하며 실제 전송 코드/API 인증이 존재한다는 의미가 아니다. 제품 service-worker에 Server fetch 경로가 없다. 최신 Server의 origin/CORS/cookie/설치 Bearer 조건을 확인한 후 전송을 구현한다.
+1.1 target_key=SITE:actual-host 또는 FEATURE:actual-host:feature_code. 1.1에는 새 matched_policy_host/blocked_reasons를 보내면 거절. 등록된 부모호스트를 actual-host 대신 보내는 Core 구형 구현은 계약 불일치이며 기존1.1 호환성 허용과 다르다.
 
-## 5. 회원·Extension 설치 인증 준비
+1.2 target_key=actual normalized hostname. matched_policy_host는 필수 key/값 null허용, blocked_reasons는 필수 배열. snapshot과 type/reason 일치 필수. www 및 subdomain 유지, port/path/query 집계 제외. repeat_count0/1/2, 기존 target_access_index1/2/3와 is_repeat 유지. 동일ID envelope 변경으로 추가 사유 보강 금지.
 
-**실제 준비 절차 미검증/공유 코드 미구현.** 기존 설치 UUID/GUEST owner를 회원 token으로 취급하지 않는다. 설치 ID 비교를 token 인증으로 처리하지 않는다. SiteController.getContext의 reconciled=true는 주입 context 조건이며 실제 Server reconcile 결과가 아니다.
+기존JSON/DB행 재작성 없음. 구형 receipt payload가 없으면 matched_policy_host:null/blocked_reasons는 기존primary reason에서 조회용으로 보완. legacy {} receipt 조회500 회귀 수정. 1.1 반복 partition은 기존target_key,1.2는actual-host. 새 조회필드는 additive이며 오래된 정확한 match를 추정해 채우지 않는다.
 
-아래는 설계상 체크리스트이지 실행 가능한 현행 로그인 recipe가 아니다:
+## F. 연동 검증 순서
 
-1. 다훈의 실제 회원 가입/로그인 방법·테스트 계정 생성·cookie/token/CSRF 조건 확보.
-2. 설치 등록/설치 proof 발급 확인.
-3. Extension link request→Web 승인→code 교환 및 계정/설치 결박 token 발급.
-4. 인증 상태/refresh/만료·회수·잘못된 설치 rejection 확인.
-5. reconcile 성공→현재 owner/executor/revision의 명령 확인→durable journal→전체정책 적용 확인→실행보고→Server ack/조회 순서 확인.
-6. Worker 재생성·인증 변경/다른 설치/만료명령·실제 DB quota·Server 장애 때 기존 자료/규칙과 실패 표시 확인.
+1. 지정 SHA checkout→환경 로드→106개 기존 Backend+새 실제HTTP1개, Frontend104개·build 실행. 새 Event12HttpIntegrationTest는 임의포트 실제Tomcat HTTP+실제MySQL이며 설치/APPLIED는 합성이다. Chrome 결과 아님.
+2. 정상회원 로그인→Core 설치등록/PKCE/evidence→Web명시승인→claim/token→commands조회 heartbeat. 실제설치 proof는 로그에 남기지 않음.
+3. 별도 통합환경에서 해당 executor의1.2호환성 먼저확인→게이트허용→POST sessions(Idempotency-Key)→APPLY_POLICY→전체검증/실제적용→journal→APPLIED report→RUNNING 조회.
+4. 실제 CHZZK 접근→Event1.2 batch→items ACCEPTED 확인→동일 envelope재전송 DUPLICATE→DB receipt/access_events1행 확인→Web기록/통계 actual-host·matched-host·repeat_count 대조.
+5. SQL은 테스트DB에서 `SELECT schema_version,status,JSON_EXTRACT(payload,'$.payload.target_key'),JSON_EXTRACT(payload,'$.payload.matched_policy_host'),JSON_EXTRACT(payload,'$.payload.blocked_reasons') FROM event_receipts WHERE event_id=?` 및 access_events의동일ID행수 확인. owner/executor/session/snapshot을 함께 대조, 전체사용자자료출력 금지.
+6. naver/www.naver/chzzk/www.youtube/example.org 경계·most-specific·global독립예외·복수사유1건; 잘못된host/seq/version/owner·중복변조·동시요청·오래된명령·적용실패·release·reconcile·재시작/절전. 최신SHA/Chrome버전/OS·DB/API증거를 남긴다.
 
-다훈: API/인증/테스트 계정·설치 준비/DB·수신 검증. 윤종민: token/context/전송/명령·보고·journal/outbox/reconcile 연결과 실제 Chrome 검증. 지민: 전역/Content 감지·예외 및 복수 사유 동시 처리. 선행 준비 부재 기준은 차단, 실행 없는 기준은 미검증으로 관리한다.
+즉시 시작 가능: Server 실행·정상회원인증·설치/링크/토큰 API 구현·Event1.2 HTTP fixture시험. 차단: PR17 회원 실행루프/새이벤트형식/Core↔Content message/실제Chrome증거. Core↔Content 접근식별자·늦은사유annotation·capability handshake 세부 구현은 별도 조율. global 설정 저장/감지 실제경로, OAuth외부 실패9개/STAT02시간배분3개는 미완료 유지. 사이트별 집중시간을 임의배분하지 않는다.
 
-## 6. 구형 이벤트 저장·조회 호환성
+## 2026-10-09 PR18 로컬 리뷰 수정본 주의
 
-| 범위 | 확인 결과 |
-|---|---|
-| Extension 신규 로컬 SITE | actual host key + matched_policy_host 저장,1.1 envelope. source/모의79·사용자 RECORD DB 캡처 확인 |
-| 과거 로컬 policy-host key | raw event/event_id 불변; 조회 repeat grouping은 actual target_host로 계산. 모의 regression으로 원본 불변 확인 |
-| old Worker pending | commit시 actual target_host로 key 확정. 모의 fresh Worker regression 확인 |
-| Server 구형 key/필드 누락 수용·보존 | **미확인** — 최신 validator/DTO/migration/HTTP/조회 코드 부재 |
-| Server 반복·Web 표시 | **미확인** — 다훈 보고 실제 합성검증과 사용자 실제 Extension 수신을 구분 |
+PR head 7dd7abce2bdb7f2d3dfda99c9874c4efb9cd041d 이후 미커밋 로컬 수정이며 아직 GitHub에는 반영하지 않았다. FEATURE를 포함한1.2 복수사유의 타입은 BLOCKED_FEATURE_ACCESS/FEATURE이고 대표 reason은 우선순위에 따라 KEYWORD/ADULT_DOMAIN/USER_SITE일 수 있다. FEATURE 없는 차단에는 SITE 타입을 사용한다. Core·Content는 최종 한 접근의 이미 확인된 이유와 feature 문맥을 함께 전달해야 한다. 1.1 변경 없음. [변경된 계약](../design/02_시스템_테크설계/12_정책계약_이벤트12_호환성게이트.md) 및 [로컬 재검증](PR18_리뷰수정_재검증_2026-10-09.md) 참조. 실제Chrome/제품Extension 연결 성공이 아니며 신규Snapshot1.2 OFF를 유지한다.
 
-과거 matched_policy_host를 실제 방문 host나 상위 host로 추정하여 채우지 않는다. legacy schema1.1 receipts와 Event1.2 지원 협상, raw body hash 불일치/동일ID 재전송, 과거반복 재계산/조회범위·quality 처리 규칙은 다훈 수정본과 합의가 필요하다. 현 source만으로 기존 이벤트를 임의 변환·재전송하지 않는다.
+## D-01~D-10 확정 정책·아직 없는 실행 경로
 
-## 즉시 가능한 범위 / 추가 구현 / 통합 전제
+[최종공용계약](../design/02_시스템_테크설계/FOCURVE_D01_D10_최종공용계약.md)이 신규 정책 원본이다. 이 문서의 API/JSON은 b05d9a0 현행 코드 기준이며 새로운 자동복구/안전정수 상한 구현 완료를 의미하지 않는다. Journal1.1 END-only를 새 재개 요청으로 사용하지 않는다.
 
-- **즉시 가능:** 기존 비회원 로컬 실행/사이트·Snapshot 정책/host 이벤트 생성 검증 유지. 전달된1~25 사용자 Chrome 성공 및 원본 RECORD key 확인은 보존. 코드/계약 차이 검토와 테스트 계획 작성. 현재 공유기반의 health 실행 준비 가능하나 제품 이벤트 연동은 불가.
-- **추가 구현:** 실제 Event1.2 DTO 변환·검증/복수사유·event_id/outbox/재전송·ack, 인증된 회원 context·명령/전체정책 적용·실행보고·reconcile, 실제 Content/전역 감지와 priority. 어떤 모듈이 다훈 수정본에서 이미 준비됐는지는 source 확보 후 다시 나눈다.
-- **실통합 전제:** 최신 Server branch/SHA/소스·106/104 테스트/실HTTP 증거; 실행/env/migration/test 계정·설치 인증; Event/Snapshot 실제 JSON/지원·미지원·legacy 처리; Server1.2 발급OFF 상태 확인; Windows 실제 Extension 로드hash/버전·실quota/장애와 end-to-end 수신·DB·Web 근거.
+- 신규1.2 Snapshot은 member/guest 문맥별 전체 필드, 숫자 version1..9007199254740991. Server 현재 signed64 범위 및 Core guest 필드/파서는 보완 필요. 정상1.1원문·자료보존.
+- APPLY 명령에 duration은 현재 없다. GET session의 duration/executor/snapshot/revision 확인은 가능하지만 누적시간 자동복구 API는 없다. 현재 start+duration planned_end를 새 복구 마감으로 사용하지 않는다.
+- 실제 Core 회원 네트워크 어댑터 미구현, Content message/priority/freeze 미합의. 실제 Chrome·회원 통합 NOT RUN.
+- D09 code/refresh 응답유실은 자동 token 재발급 API 없음. 현행 claim 재조회·유효 token의 E /auth/me만 구분, 오류시 인증복구/사용자 조치. 비밀은background접근통제,refresh직렬화.
+- batch item별 상태를 확인하고 PENDING은저장 추적/최종 확인, REJECTED격리, NOT_RECEIVED같은원문 재송신. HTTP200을성공일괄ACK하지 않음.
+- 신규 Snapshot1.2 기본OFF/exact검증설치만허용. 자동handshake 없음. 기존세션조회/보고/해제는gate와별개.
 
-### 다훈에게 필요한 추가 전달
+최신 정책 문서는 로컬 미커밋 상태이며 원격 b05d9a0의 정책 구현이 바뀐 것은 아니다. 제품 구현·테스트·문서 갱신 PR은 별도 요청 후 진행한다.
 
-현재 공유 저장소에서는 수정본을 찾지 못했으므로 **정확한 저장소 URL + 브랜치 + 커밋 SHA** 또는 Windows 수정본 파일이 필요하다. 기존 코드를 덮어쓰지 않고 해당 source 기준으로 위6개 항목을 다시 대조한다. 106/104 테스트 출력과 실제 수신 JSON, 준비된 API만 표시한 목록·인증/실행 가이드도 함께 필요하다. 이번 사용자 지시의 Git 동결은 유지하며 공유 반영은 다훈 쪽 진행 상태를 확인한다.
+## 2026-10-09 로컬 병합 차단 수정 — 현재 지원 경계
 
-## 최종 판정
+로컬 제품 코드만 수정했으며 원격 PR18 HEAD b05d9a0은 변경되지 않았다. 신규 Snapshot source_version/sites[].version/content_policy.version에 SafeVersion(1..9007199254740991)을 공통 적용했다. 가져오기 canonical JSON은 이전에도 safe 정수 초과를 INVALID_SCHEMA로 거절했으며, 새 Snapshot/ImportedSession 공통 guard로 직접 경로도 보완했다. 사이트 생성1·수정/복원/삭제와 메모 저장의 버전 증가는 VERSION_LIMIT으로 상한 초과를 원자 거절한다. 미작성 Note version0는 그대로다. 역사 Snapshot 원문을 무조건 재검증/재작성하지 않는다.
 
-미검증: 최신 Server6개 기술정보·회원/설치/보고/reconcile·Event1.2 실제 HTTP/DB/Web·legacy·복수사유·실quota. 실패: 이번 localhost health 연결 실패(제품API 실패/Server 새 코드 결함으로 확대하지 않음). 조율 필요: 다훈 소스·실JSON/지원범위·인증·전역/Content 계약. 다음 행동: 실제 최신 수정본 확보→준비된 Event1.2 API부터 연결→DB/반복/Web→회원/명령/보고/reconcile→Content→Windows 전체 검증→Server Snapshot1.2 발급 활성화 판단. 전체 EXT-02 완료와 팀 Git 갱신은 보류한다.
+Session 조회는 automatic_recovery_supported=false, time_accounting_mode=LEGACY_WALL_CLOCK을 추가 반환한다. 현재 고정 planned_end_at·기존 END/RELEASED·Journal1.1은 유지하며, 비종료 RESUME action은 기존처럼 거절한다. Web은 자동복구·중단 중 잔여 보존이 미지원임을 명확히 안내한다. D01/D05의 승인 정책은 유지하고 전체 구현은 후속 Server/Core 공동 작업으로 분리한다. 이 필드가 새로운 recovery API나 capability handshake는 아니다.
+
+남은 기술 경계: 일반 focus_sessions.version의 극단 상한에서는 신규 교환 숫자 상한과 필수 종료/해제 가능성이 충돌한다. 종료/보고에 무조건 VERSION_LIMIT을 적용하면 잠금을 유지하게 되므로 기존 종료 경로를 보존했다. 일반 세션 version의 legacy/교환 표현·상한 처리 정책은 후속 합의·독립 리뷰 필요이며 D03 전체 구현 완료로 표시하지 않는다. revision/seq 의미·범위도 자동 재정의하지 않는다.
+
+D06 메시지·규칙 ID/priority/freeze 및 D09 응답유실 추가 API는 계속 미확정/미검증이다. 실제 Chrome·회원 Extension 통합 NOT RUN, 신규 Snapshot1.2 운영 발급 OFF 유지. 새 migration/기존 DB·환경 변경 없음.
+
+## 2026-10-09 D-03 session.version 최종 호환 처리
+
+사용자 확정 정책에 따른 로컬 구현. 기준 HEAD b05d9a095b229efe310d5c791189eefb0d30300b, 김다훈 담당 Server/API/DB·연결 Web, codex/server-event12-integration. 기존 이력의 session.version 조율 필요/B-01은 당시 판정이며 아래 결과로 갱신한다.
+
+- 생성(start/guest import)은 version1. 새 APPLY→RUNNING 증가는 양의 안전 정수만 가능하고 MAX−1→MAX까지 허용한다. MAX/초과/잘못된 버전의 실제 APPLIED 보고는 사실 접수하되 RUNNING으로 확정하지 않고 UNKNOWN/VERSION_LIMIT 및 RELEASE_POLICY를 발행한다. 보고 HTTP ACCEPTED는 실행 성공이 아니다. 실제 해제 확인 전 잠금을 유지한다.
+- 종료/RELEASED/FAILED/UNCONFIRMED/reconcile END 등 안전 처리에서 기존 version이 1..MAX−1이면 정상 증가, MAX 또는 역사 초과이면 값을 그대로 보존하고 증가하지 않는다. 새 초과 값을 생성하거나 기존 값을 clamp/초기화하지 않는다. MAX는 9007199254740991. Session version은 이 예외에서 상태 변경 감지용 단독 validator로 사용할 수 없다.
+- Session 응답의 version은 정상 범위 number, 역사 초과는 정확한 십진 string(number|string). version_increment_blocked:boolean은 증가 불가 여부이며 종료 금지나 해제 완료를 뜻하지 않는다. get/current/list/start/end/멱등 재전송에 적용한다. 과거 응답 캐시의 DB 원문도 보존하고 응답 표현만 정규화한다. Web은 Number/parseInt로 변환하지 않는다.
+- session resource version과 desired_revision/known_revision/local_action_seq는 별개다. 현재 Session 종료 API는 If-Match session.version에 의존하지 않으며 소유권/설치 인증/행 잠금/명령 revision/보고 hash·중복/행동 sequence 검사를 그대로 사용한다. Event1.1/1.2, Snapshot1.1/1.2, Journal1.1 및 frozen payload는 변경하지 않는다. 독립 revision/seq 극단값의 별도 확대 변경은 이번 범위가 아니다.
+- 실제 HTTP/격리 MySQL에서 1/MAX−1/MAX/MAX+1/Long.MAX_VALUE의 명령 종료·UNCONFIRMED·RELEASED와 오프라인 Journal END/reconcile, 중복·잘못된 revision·다른 소유자 거절을 확인한다. 역사 version/Snapshot 불변, 잠금 해제 및 확인된 500ms 집계 유지. Backend 최종127/127·패키징(21:01:59 KST), Frontend114/114·빌드 PASS. mail/OAuth/실제 Chrome·회원 Core·Content는 NOT RUN. 상세 증거는 PR18_D03_session버전_최종호환_수정검증보고서.md.
+- Snapshot1.2 신규 발급 기본 OFF, 테스트 profile만 합성 검증 gate 사용. 전체 자동복구는 후속이며 전체 AC/MVP 완료로 승격하지 않는다. 이번 로컬 수정은 독립 재리뷰가 필요하다. Commit/Push/PR 변경/병합 없음.
+
+최종 추가 경합 검증: 미전달 APPLY는 상한 검사 후 해제 명령으로 전환한다. 이미 적용된 APPLY가 상한 감지/해제 명령과 경합하면 유효 실행 구간 증거만 보존하며 현재 revision·UNKNOWN을 되돌리지 않는다. 실제 RELEASED 뒤 구간을 닫고 잠금을 해제한다. 최신 보고서와 session-version-backend.log 참조.
+
+
+## 2026-10-09 RELEASED 보고 순서 의존성 로컬 수정·검증
+
+독립 재리뷰의 High R-D03-01(당시 RELEASED 선행 409/잠금 유지)을 후속 로컬 수정했다. 과거 판정·이력은 보존한다. 기준 HEAD b05d9a095b229efe310d5c791189eefb0d30300b, codex/server-event12-integration, 김다훈 Server/API/DB 담당. 제품 변경은 ExecutionService의 RELEASED 구간 복구 및 실제 HTTP 회귀 테스트이며 새 상태/API/마이그레이션은 없다.
+
+- 인증된 설치·소유자·세션·현재 명령/revision 검증을 통과한 RELEASED의 닫힌 RUN 증거를, 선행 APPLY 보고가 없고 DB 구간도 없을 때 원래 APPLY 명령·frozen Snapshot에 결속해 복구한다. APPLY 발급 시각(기존 60초 허용)·실행 기한·시작/종료/관측 시각·duration·interval ID를 검증한다. 기존 구간은 덮어쓰지 않고 알려진 RUN의 누락/열린 증거·잘못된 원문은 거절한다. 해제 확인은 인증된 Core의 RELEASED/observed_at 보고 계약이며 Server가 Chrome DNR을 직접 관측한 의미가 아니다.
+- 동일 트랜잭션에서 구간 종료·확인된 시간 집계·ENDED 또는 START_FAILED·명령 ACK·잠금 해제를 수행한다. 늦은 구 revision APPLY는 감사 기록만 남기며 종료 상태/시간/버전을 되돌리지 않는다. 동일 report_id/동일 원문은 DUPLICATE, 다른 원문은 REPORT_CONFLICT이다.
+- Codex 실행: Backend138/138·패키징, Frontend114/114·빌드 PASS. 추가 HTTP/MySQL 테스트10개(복수 하위 사례 포함), 별도 독립 HTTP 재현 probe PASS. 격리 MySQL8.4.8 127.0.0.1:60046/focurve_contract_test, 합성 회원/설치/보고 사용. 실제 Chrome·회원 Core/Content 통합 NOT RUN. 응답 유실은 클라이언트가 첫 결과를 무시하고 재전송한 모의 사례이며 Server 프로세스 강제 중단은 NOT RUN.
+- MAX/MAX+1/Long.MAX_VALUE 버전 원본·frozen Snapshot 보존 및 잠금 해제 확인. 운영 Snapshot1.2 기본 OFF 유지(테스트 프로필만 ON). D01/D05 자동복구 전체 미구현 경계 유지. AC-SESSION-02/03/04의 -01/-03 중 Server 합성 보고 부분만 검증했으며 실제 적용/해제·전체 AC·MVP 완료로 승격하지 않는다.
+- 증거: C:\Users\dahun\capstone-project\.reviews\pr18-20261009\PR18_RELEASED_보고순서_수정검증보고서.md 및 released-order 로그. 후속: 독립 재리뷰, 실제 Core 해제 증거·역순/재전송 통합. 이번 Commit/Push/PR 업데이트/병합 없음.

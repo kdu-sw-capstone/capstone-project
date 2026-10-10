@@ -440,3 +440,21 @@
 - 최신 사용자 지시로 단계별 구현/검증/Commit/Push/PR17 갱신 허용. develop 병합은 리뷰/CI 후 별도이며 Codex가 수행하지 않음. 기존 Git 동결 이력은 당시 지시이며 이번부터 대체.
 - 시작 feature/extension-core-ext-02 HEAD e79ef30 + 보존된 방문host/Chrome 검증·가이드 미커밋 파일. 최신 Server develop b45a680a9f2262bd9725619e9643df3bb9b91164 / Server branch5a018fb 확인 및 fetch. 로컬origin/develop ref는 stale76df34e라 GitHub 조회의 실제SHA로 읽음.
 - 기준 FOCURVE_D01_D10_최종공용계약/12_정책계약_이벤트12_호환성게이트/Server EventController·EventService·연동가이드. 첫 단위: 신규SITE Event1.2/기존원본보존 및 member 전송adapter의 개별ACK·status/동일본문 재시도·격리. 회원 인증/명령loop·D01/D05 자동복구·Content 복수사유는 분리하며 미완료 유지.
+
+## 2026-10-09 최신 Server 전달·통합 준비
+
+담당 김다훈(Server/API/DB·연결Frontend), 브랜치 codex/server-event12-integration, 시작develop76df34ea6be1c591be33c29606c24fc654f61932. 기존 담당 배정 유지. 상태: 담당 구현 검토 대기 / 실제Extension통합 미검증. 최신 사용자 지시로 담당 코드 전달용Commit·Push·develop PR을 진행하며 전체MVP완료나 병합으로 처리하지 않는다.
+
+[게시 검증·실행환경·주체·남은 조건](../Server_최신수정본_게시검증_2026-10-09.md) · [실제 API·Event1.2·구형 호환·Core 절차](../Extension_Server_연동가이드.md). Backend 최종107/107(기존106+실제HTTP합성1), Frontend104/104·build PASS. 설치/APPLIED는합성, 실제Chrome/회원Core통합/Content감지는미검증. Snapshot1.2 신규발급OFF. 전체AC를 통과로 승격하지 않는다.
+
+## 2026-10-09 D-01~D-10 정책 확정·문서 반영 기록
+
+담당 배정/기존 상태/과거 검증 이력 유지. 기준 Server b05d9a095b229efe310d5c791189eefb0d30300b / Core e79ef3034e3951a20c735de714debab830006284. [최종공용계약](../../design/02_시스템_테크설계/FOCURVE_D01_D10_최종공용계약.md) 및 [검증 체크리스트](../FOCURVE_D01_D10_검증체크리스트.md) 참조. 정책은 확정됐으나 신규 자동복구/기간·Journal adapter/실제 회원 통합은 미구현 또는 미검증. 기존 AC 통과 상태를 올리지 않는다. 후속: 담당별 구현 영향 문서에 따라 계약 세부 합의·코드 변경·R-T01~12/기능 AC 실제 검증. 이번 제품 코드/DB 변경 없음. 문서 working tree 변경만 있으며 Commit·Push·PR 변경·병합 없음.
+
+## 2026-10-09 로컬 경계 수정 검증
+
+Snapshot/가져오기 safe 상한과 사이트·메모 증가 방어, API 자동복구 미지원/legacy시간 metadata·Web 안내를 반영했다. 기존 시작/종료/구간 집계·Event1.1/1.2·역사 Snapshot 무변환·미지원 RESUME 무변경 회귀를 격리 MySQL로 검증한다. 전체 자동복구/회원 Core실제통합은 후속·미검증이며 기존 AC를 전체 통과/완료로 올리지 않는다. 일반 session.version 극단 경계의 교환 정책은 조율 필요. 최종 실제 실행 결과는 PR18_병합차단_로컬수정_검증보고서.md 참조. Commit/Push/PR변경/병합 없음.
+
+### 최종 로컬 실행 결과 — 2026-10-09
+
+Backend 전체120/120·패키징 PASS, Frontend113/113·빌드 PASS. 격리 MySQL57490의 실제 HTTP/DB import8·execution7·note4·policy6 및 기존 Event1.2 HTTP2 시험 통과. 실제 Chrome/회원 Extension NOT RUN. 일반 session.version 극단 경계 계약은 조율 필요하므로 전체 D03/MVP/병합 완료로 바꾸지 않는다. 증거: C:\Users\dahun\capstone-project\.reviews\pr18-20261009\PR18_병합차단_로컬수정_검증보고서.md 및 merge-boundary 로그.

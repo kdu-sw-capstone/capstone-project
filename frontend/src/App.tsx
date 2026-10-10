@@ -1,6 +1,9 @@
-import { useState } from 'react';
+import { useLayoutEffect, useState } from 'react';
+
+import MemberApp from './MemberApp';
 
 export default function App() {
+  useLayoutEffect(() => { try { document.documentElement.dataset.theme = localStorage.getItem("focurve.preferences.theme") === "dark" ? "dark" : "light"; } catch { document.documentElement.dataset.theme = "light"; } }, []);
   const [status, setStatus] = useState('확인 전');
   const [checking, setChecking] = useState(false);
   async function checkServer() {
@@ -18,10 +21,12 @@ export default function App() {
       setChecking(false);
     }
   }
-  return <main>
+  return <main><MemberApp />{import.meta.env.DEV && <details className="development-tools"><summary>개발 진단 도구</summary>
     <h1>FOCURVE 개발 준비</h1>
-    <p>Web·Server·Database 개발 기반 확인 화면입니다. 제품 기능은 아직 구현되지 않았습니다.</p>
+    <p>Web·Server·Database 개발 기반 확인 화면입니다. 제품 기능을 개발 중이며 실제 Extension 통합 검증은 별도로 진행합니다.</p>
     <button onClick={checkServer} disabled={checking}>서버 상태 확인</button>
     <p role="status" aria-live="polite">{status}</p>
-  </main>;
+
+
+  </details>}</main>;
 }

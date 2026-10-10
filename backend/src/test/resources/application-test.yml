@@ -1,3 +1,5 @@
 spring:
   datasource:
     url: ${TEST_DB_URL}
+SNAPSHOT_1_2_ENABLED: true
+SNAPSHOT_1_2_VERIFIED_EXECUTORS: "*"
