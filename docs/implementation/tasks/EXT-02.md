@@ -2,6 +2,10 @@
 
 단계: 필수 MVP · 설계 담당 영역: Extension
 
+## 최신 작업 — 회원 명령 조회·실행 보고 통신 단위
+
+윤종민 / feature/extension-core-ext-02 / 시작 b674693. 기존 commands/reports API의 설치·회원 결속 조회, 별도 IndexedDB 보고 원문 저장·같은 ID 재전송·확정 거절 격리 구현. Extension139/139·Backend163/163/package·실제 Chromium Worker/IndexedDB 시험 통과. 실제 HTTP/MySQL에서 SiteController와 보고 adapter를 연결해 적용/보고 유실 재전송/종료/해제를 확인했으나 DNR·인증·trusted context는 합성이다. **제품 Worker 회원 loop·타이머·reconcile는 미연결, 실제 회원 Chrome 및 전체 AC 미검증**. [코드·검증·초기 SQL 실패·다음 단계](../evidence/EXT-02-2026-10-10-member-execution-client.md). Content D06 미합의·develop 병합 금지 유지.
+
 ## 최신 작업 — Server 명령 시각·기간 기반
 
 최신 develop90ad32b를1de73ee로작업브랜치에merge하고연동가이드양쪽기록보존. 내부SiteController의9자리UTC시각/기간1~180검증·명령/세션결박·회원별도IDBjournal·중복timer보존구현. Extension124/124·Backend162/162·Web121/121·buildPASS. **제품Worker회원명령loop/타이머/보고는아직미연결**. [근거·실패이력·다음단위](../evidence/EXT-02-2026-10-10-command-duration.md). 실제Chrome이번기간검증미실행,EXT02전체미완료.
