@@ -55,10 +55,10 @@ const MemberExecutionRuntime = (() => {
         const identity = await MemberAuthRuntime.status();
         const owner = 'MEMBER:' + identity.owner_user_id;
         const originals = await loop.access.store.originals(owner,identity.executor_id,server);
-        for (const original of originals) await accessDelivery.enqueue(JSON.parse(original.body),{owner_key:original.owner_key,executor_id:original.executor_id});
+        const transferred = originals.length ? await FocurveMemberEvents.transferOriginals(originals,loop.access.store,accessDelivery) : [];
         const receipts = await accessDelivery.flush();
-        loop.accessPending = receipts.filter(r=>!['ACKED','REJECTED'].includes(r.status)).length;
-        for (const original of originals) if (receipts.some(r=>r.event_id===original.event_id&&['ACKED','REJECTED'].includes(r.status)))
+        loop.accessPending = receipts.filter(r=>!['ACKED','REJECTED','LOCAL_REVIEW_REQUIRED'].includes(r.status)).length;
+        for (const original of transferred) if (receipts.some(r=>r.event_id===original.event_id&&['ACKED','REJECTED'].includes(r.status)))
           await loop.access.store.acknowledged(original.scope,original.event_id);
       } while (deliveryAgain);
     })().finally(()=>{delivering=null;if(deliveryAgain)deliverAccess().catch(()=>{});});

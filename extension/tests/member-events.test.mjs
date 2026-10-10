@@ -215,3 +215,21 @@ test('Retry-After on status lookup persists without replay; other owners are not
   fetch:async(_,options)=>{calls++;return response(JSON.parse(options.body).events.map(e=>({event_id:e.event_id,status:'ACCEPTED'})));}});
  await sender.enqueue(f.event());await sender.flush();assert.equal(calls,1);
 });
+
+test('damaged queued original is preserved for local review while healthy events are delivered unchanged',async()=>{
+ const sent=[];
+ const f=fixture(async(_,options)=>{const events=JSON.parse(options.body).events;sent.push(...events);return response(events.map(e=>({event_id:e.event_id,status:'ACCEPTED'})));});
+ const good=f.event();await f.delivery.enqueue(good);
+ const badId=randomUUID();await f.store.put({owner_key:f.credentials.owner_key,executor_id:f.credentials.executor_id,event_id:badId,
+  body:'broken original bytes',status:'QUEUED',attempts:0,next_attempt_at:0,error:null});
+ await f.delivery.flush();assert.deepEqual(sent,[good]);
+ const damaged=await f.store.get(f.credentials.owner_key,badId);assert.equal(damaged.status,'LOCAL_REVIEW_REQUIRED');assert.equal(damaged.body,'broken original bytes');
+ await f.delivery.flush();assert.equal(sent.length,1);assert.equal((await rows(f)).find(r=>r.event_id===good.event_id).status,'ACKED');
+});
+
+test('invalid unresolved event binding is locally quarantined before server status lookup',async()=>{
+ const f=fixture(async()=>assert.fail('damaged event must not be sent or looked up'));
+ const e=f.event();await f.store.put({owner_key:f.credentials.owner_key,executor_id:f.credentials.executor_id,event_id:randomUUID(),
+  body:JSON.stringify(e),status:'RESPONSE_UNCONFIRMED',attempts:1,next_attempt_at:0,error:null});
+ await f.delivery.flush();assert.equal((await rows(f))[0].status,'LOCAL_REVIEW_REQUIRED');assert.equal((await rows(f))[0].body,JSON.stringify(e));
+});

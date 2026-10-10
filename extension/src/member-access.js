@@ -40,6 +40,15 @@ export class MemberAccessStore {
     });
   }
   originals(owner,executor,base) { return this.transaction('readonly',(tx,done)=>{const r=tx.objectStore('originals').getAll();r.onsuccess=()=>done(r.result.filter(x=>x.owner_key===owner&&x.executor_id===executor&&x.base_url===base));}); }
+  review(scope,id,body) {
+    return this.transaction('readwrite',(tx,done)=>{
+      const store=tx.objectStore('originals'),r=store.get([scope,id]);
+      r.onsuccess=()=>{
+        if(!r.result||r.result.body!==body){tx.abort();return;}
+        store.put({...r.result,review_required:true,review_error:'LOCAL_EVENT_INVALID'});done(null);
+      };
+    });
+  }
   acknowledged(scope,id) { return this.transaction('readwrite',(tx,done)=>{tx.objectStore('originals').delete([scope,id]);done(null);}); }
 }
 const explicit=new Set(['link','typed','auto_bookmark','reload','form_submit','generated','keyword','keyword_generated']);

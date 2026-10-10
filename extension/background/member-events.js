@@ -40,6 +40,29 @@
   get(owner,id){return this.transaction('readonly',(store,done)=>{const r=store.get([owner,id]);r.onsuccess=()=>done(r.result||null);});}
   list(owner,executor){return this.transaction('readonly',(store,done)=>{const r=store.getAll();r.onsuccess=()=>done(r.result.filter(item=>item.owner_key===owner&&item.executor_id===executor));});}
  }
+ // Validate persisted bytes without rewriting them or inventing a replacement ID.
+ function persistedEvent(record){
+  let event;
+  try{event=validate(JSON.parse(record.body));}catch{throw new Error('LOCAL_EVENT_INVALID');}
+  if(event.event_id!==record.event_id||event.executor_id!==record.executor_id)throw new Error('LOCAL_EVENT_INVALID');
+  if(new TextEncoder().encode(record.body).length>1048500)throw new Error('LOCAL_EVENT_INVALID');
+  return event;
+ }
+ async function transferOriginals(originals,store,delivery){
+  const transferred=[];
+  for(const original of originals){
+   if(original.review_required)continue;
+   try{
+    const event=persistedEvent(original);
+    await delivery.enqueue(event,{owner_key:original.owner_key,executor_id:original.executor_id});
+    transferred.push(original);
+   }catch(error){
+    if(!['LOCAL_EVENT_INVALID','INVALID_EVENT_CONTRACT','EVENT_CONFLICT','EXECUTOR_MISMATCH','EVENT_TOO_LARGE'].includes(error.message))throw error;
+    await store.review(original.scope,original.event_id,original.body);
+   }
+  }
+  return transferred;
+ }
  // HTTP Retry-After is a lower bound, independent of the local jittered backoff.
  function retryAfterAt(value, now){
   if(typeof value!=='string')return 0;
@@ -101,6 +124,11 @@
    const c=await this.credentials();let records=await this.store.list(c.owner_key,c.executor_id);
    // Persisted scope-wide gate also covers new events queued during a server outage.
    if(records.some(r=>Number.isSafeInteger(r.retry_after_at)&&r.retry_after_at>this.now()))return records;
+   for(const record of records){
+    if(!['QUEUED','IN_FLIGHT','RESPONSE_UNCONFIRMED','PENDING_DEPENDENCY','AUTH_REQUIRED'].includes(record.status))continue;
+    try{persistedEvent(record);}catch{await this.store.put({...record,status:'LOCAL_REVIEW_REQUIRED',error:'LOCAL_EVENT_INVALID'});}
+   }
+   records=await this.store.list(c.owner_key,c.executor_id);
    const unresolved=records.filter(r=>['IN_FLIGHT','RESPONSE_UNCONFIRMED','PENDING_DEPENDENCY','AUTH_REQUIRED'].includes(r.status)&&r.next_attempt_at<=this.now()).slice(0,100);
    if(unresolved.length){
     try{await this.results(unresolved,await this.request('/events/status',{event_ids:unresolved.map(r=>r.event_id)},c),true);}
@@ -121,7 +149,7 @@
  }
  // A local delivery summary is not a claim that all navigation was collected.
  function summarize(records, originals, scope) {
-  const counts={QUEUED:0,IN_FLIGHT:0,RESPONSE_UNCONFIRMED:0,PENDING_DEPENDENCY:0,AUTH_REQUIRED:0,REJECTED:0,ACKED:0};
+  const counts={QUEUED:0,IN_FLIGHT:0,RESPONSE_UNCONFIRMED:0,PENDING_DEPENDENCY:0,AUTH_REQUIRED:0,REJECTED:0,ACKED:0,LOCAL_REVIEW_REQUIRED:0};
   const events=new Map();
   for(const row of records){
    if(row.owner_key!==scope.owner_key||row.executor_id!==scope.executor_id)continue;
@@ -134,11 +162,12 @@
    if(row.owner_key!==scope.owner_key||row.executor_id!==scope.executor_id||row.base_url!==scope.base_url)continue;
    if(typeof row.event_id!=='string')throw new Error('EVENT_SUMMARY_INVALID');
    const old=events.get(row.event_id);
+   if(row.review_required){events.set(row.event_id,{...row,status:'LOCAL_REVIEW_REQUIRED'});continue;}
    if(old&&old.body!==row.body)throw new Error('EVENT_SUMMARY_CONFLICT');
    if(!old)events.set(row.event_id,{...row,status:'QUEUED'});
   }
   for(const row of events.values())counts[Object.hasOwn(counts,row.status)?row.status:'RESPONSE_UNCONFIRMED']++;
   return {counts,total:events.size};
  }
- globalThis.FocurveMemberEvents=Object.freeze({validate,summarize,MemberEventStore,MemberEventDelivery});
+ globalThis.FocurveMemberEvents=Object.freeze({validate,summarize,transferOriginals,MemberEventStore,MemberEventDelivery});
 })();

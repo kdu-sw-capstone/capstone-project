@@ -4,7 +4,7 @@
 
 ## 작업 상태
 
-- 상태: 진행 중 · 0.1.10 전송 상태 UI 사용자 정상 회신 / 서버 장애 전송 복구 보완 중
+- 상태: 진행 중 · 0.1.10 UI 사용자 정상 회신 / 0.1.12 원문 오류 격리 부분 구현
 - 실제 담당자: Core 종민 · 기존 Server 담당 배정 유지
 - 브랜치 / 시작 기준 커밋: `feature/extension-core-ext-02` / `b52681bd4088be3f64722c30d5072632b8e9515e`
 - PR: https://github.com/kdu-sw-capstone/capstone-project/pull/17
@@ -88,3 +88,13 @@
 ### 서버 장애 전송 복구 결과
 
 0.1.11: 429/503 Retry-After 초/HTTP-date를 기존 outbox에 보존하고 현재 owner/executor의 신규·미확인 기록에 함께 적용한다. 대기 후 상태 조회 우선과 원문/ID 유지, 거절 보존은 기존 규칙을 유지한다. 자동 198/198 및 구문 검사 PASS. 실제 Worker 재시작·서버 장애 검증은 새 변경에 대해 미실행이다. [복구 검증 기록](../evidence/EXT-03-2026-10-10-retry-after.md). 0.1.10 사용자 정상 확인과 새 복구 결과를 구분한다.
+
+## 2026-10-10 · 이번 작업: 손상된 원문 격리와 전송 복구
+
+- 기능 ID: EXT-03, 담당 Core 종민, 시작 f5ef45e094ff3738af200d53dfe38224ee6edc57, 브랜치 feature/extension-core-ext-02, PR #17.
+- 목표: 저장된 원문이 잘못되어도 정상 기록 전송을 계속하고 손상 원문/ID를 그대로 보존한다. 로컬 확인 필요와 Server REJECTED/ACKED를 구분한다.
+- 기준: Event 1.2 계약의 원문/ID 보존 및 계약 오류 격리·진단. 공유 Server enum/API, D06 계약은 변경하지 않는다.
+
+### 원문 오류 격리 결과
+
+Extension 0.1.12: staging 및 outbox 계약 오류/ID·설치 불일치/손상 JSON을 원문 그대로 보존하고 로컬 확인 필요로 격리한다. 정상 기록은 계속 전송한다. 저장·인증 실패는 원문 오류로 오인하지 않는다. 자동 204/204·구문 PASS, 제품 HTML+mocked Chrome API UI 28/28 PASS. 실제 새 Chrome/Server 격리·전송 검증은 미실행이다. [검증 기록](../evidence/EXT-03-2026-10-10-local-review.md). 전체 EXT-03 진행 중, develop 미병합.

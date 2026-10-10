@@ -18,3 +18,9 @@ test('unknown delivery state remains unconfirmed and inconsistent original is an
  assert.equal(summarize([row('a','UNKNOWN')],[],scope).counts.RESPONSE_UNCONFIRMED,1);
  assert.throws(()=>summarize([row('a')],[row('a','QUEUED',{body:'changed'})],scope),/CONFLICT/);
 });
+
+test('review-required staging supersedes conflicting receipt without masquerading as server rejection or ACK',()=>{
+ const summary=summarize([row('a','ACKED')],[row('a','QUEUED',{body:'different original',review_required:true})],scope);
+ assert.equal(summary.total,1);assert.equal(summary.counts.LOCAL_REVIEW_REQUIRED,1);
+ assert.equal(summary.counts.ACKED,0);assert.equal(summary.counts.REJECTED,0);
+});
