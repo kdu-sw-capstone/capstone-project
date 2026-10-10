@@ -1,8 +1,8 @@
 import { buildSiteRules, blockedUrl, selectSite, supportedSnapshot, sameRule } from './site-rules.js';
+import { parseServerTime } from './server-time.js';
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-const timestamp = value => typeof value === 'string' && /^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d(?:\.\d{1,3})?Z$/.test(value)
-  && Number.isFinite(Date.parse(value));
+const timestamp = value => Number.isFinite(parseServerTime(value));
 
 // Internal adapter, not an API or runtime message endpoint. getContext must come
 // from trusted Core state AFTER reconciliation, never a page or command payload.
@@ -31,8 +31,10 @@ export class SiteController {
     const owner = context.owner_key;
     if (typeof owner !== 'string' || !(owner === `GUEST:${context.executor_id}` || /^MEMBER:[1-9][0-9]*$/.test(owner))) throw new Error('INVALID_OWNER');
     if (desired === 'APPLIED') {
+      if (!Number.isInteger(command.duration_minutes) || command.duration_minutes < 1
+        || command.duration_minutes > 180) throw new Error('INVALID_DURATION');
       if (command.type !== 'APPLY_POLICY' || !timestamp(command.execute_before)
-        || Date.parse(command.execute_before) <= this.now()) throw new Error('APPLY_EXPIRED_OR_INVALID');
+        || parseServerTime(command.execute_before) <= this.now()) throw new Error('APPLY_EXPIRED_OR_INVALID');
       const snapshot = command.snapshot;
       if (!supportedSnapshot(snapshot)) throw new Error('SNAPSHOT_VERSION_UNSUPPORTED');
       if (!UUID.test(snapshot.policy_snapshot_id)
@@ -96,6 +98,8 @@ export class SiteController {
         if (saved.owner_key !== context.owner_key || saved.session_id !== input.session_id
           || saved.command_id !== input.command_id || saved.revision !== input.desired_revision
           || saved.executor_id !== context.executor_id || saved.desired !== 'APPLIED'
+          || saved.duration_minutes !== input.duration_minutes
+          || saved.apply_created_at !== input.created_at || saved.apply_execute_before !== input.execute_before
           || JSON.stringify(saved.snapshot) !== JSON.stringify(input.snapshot)) throw new Error('JOURNAL_CONFLICT');
         // Replay only checks existing state. It never reapplies an old command.
         const actual = await this.checkOwned(saved);
@@ -109,6 +113,8 @@ export class SiteController {
       const entry = { owner_key: context.owner_key, session_id: input.session_id,
         executor_id: input.executor_id, command_id: input.command_id,
         revision: input.desired_revision, action_seq: 1, desired: 'APPLIED', observed: 'UNCONFIRMED',
+        duration_minutes: input.duration_minutes, apply_created_at: input.created_at,
+        apply_execute_before: input.execute_before,
         rules, snapshot: input.snapshot };
       for (const rule of rules) {
         const result = await this.dnr.isRegexSupported({ regex: rule.condition.regexFilter, isCaseSensitive: false });
@@ -127,6 +133,9 @@ export class SiteController {
         await this.divert(input, context, input.snapshot.sites);
         await this.recheck(input, context, 'APPLIED');
         entry.observed = 'APPLIED';
+        const appliedMs = this.now();
+        entry.applied_at = new Date(appliedMs).toISOString();
+        entry.planned_end_at = new Date(appliedMs + entry.duration_minutes * 60000).toISOString();
         await this.journal.save(entry);
         return { observed: 'APPLIED', duplicate: false };
       } catch (error) {
@@ -176,7 +185,8 @@ export class SiteController {
       return { desired: entry.desired, observed: entry.rules.length
         ? (entry.rules.every(rule => actual.some(item => sameRule(item, rule))) ? 'APPLIED'
           : entry.rules.every(rule => !actual.some(item => item.id === rule.id)) ? 'RELEASED' : 'UNCONFIRMED')
-        : entry.observed };
+        : entry.observed, duration_minutes: entry.duration_minutes ?? null,
+        applied_at: entry.applied_at ?? null, planned_end_at: entry.planned_end_at ?? null };
     });
   }
 }

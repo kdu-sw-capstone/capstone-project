@@ -2,6 +2,10 @@
 
 단계: 필수 MVP · 설계 담당 영역: Extension
 
+## 최신 작업 — Server 명령 시각·기간 기반
+
+최신 develop90ad32b를1de73ee로작업브랜치에merge하고연동가이드양쪽기록보존. 내부SiteController의9자리UTC시각/기간1~180검증·명령/세션결박·회원별도IDBjournal·중복timer보존구현. Extension124/124·Backend162/162·Web121/121·buildPASS. **제품Worker회원명령loop/타이머/보고는아직미연결**. [근거·실패이력·다음단위](../evidence/EXT-02-2026-10-10-command-duration.md). 실제Chrome이번기간검증미실행,EXT02전체미완료.
+
 ## 최신 재개 — D06 필수 Shorts 연결 계약 구체화
 
 - 담당 윤종민 / feature/extension-core-ext-02 / 시작 b8bc7a17269a9c46981f6891f9fc92e9d98c38c9.

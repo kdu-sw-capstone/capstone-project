@@ -11,7 +11,7 @@ const page = 'chrome-extension://test/blocked/index.html';
 const site = (host = 'example.com', subdomains = true, policy = 'BLOCK') =>
   ({ canonical_host: host, include_subdomains: subdomains, access_policy: policy });
 const command = () => ({ command_id: commandId, session_id: session, executor_id: executor,
-  type: 'APPLY_POLICY', desired_revision: 1, reason: 'START', created_at: new Date(time).toISOString(),
+  type: 'APPLY_POLICY', desired_revision: 1, duration_minutes: 25, reason: 'START', created_at: new Date(time).toISOString(),
   execute_before: new Date(time + 30000).toISOString(), snapshot: {
     policy_snapshot_id: '44444444-4444-4444-8444-444444444444', format_version: '1.1',
     executor_id: executor, created_at: new Date(time).toISOString(), source_version: 1,
@@ -113,7 +113,7 @@ test('duplicate command and re-created worker do not add new rules', async () =>
   const f = fixture(); await f.controller.apply(command());
   assert.equal((await f.newController().apply(command())).duplicate, true);
   assert.equal(f.changes.length, 1);
-  assert.deepEqual(await f.newController().inspect(f.context.owner_key, session), { desired: 'APPLIED', observed: 'APPLIED' });
+  assert.deepEqual(await f.newController().inspect(f.context.owner_key, session), { desired: 'APPLIED', observed: 'APPLIED', duration_minutes: 25, applied_at: new Date(time).toISOString(), planned_end_at: new Date(time + 25 * 60000).toISOString() });
 });
 
 test('AC-EXT-02-03 partial: missing rules after restart only inspected; old APPLY never reinstalled', async () => {
@@ -270,4 +270,67 @@ test('unknown 1.2 strategy rejected before journal or Chrome mutations',async()=
  const f=fixture(),c=command();c.snapshot.format_version='1.2';c.snapshot.site_match_strategy='FIRST';
  await assert.rejects(f.controller.apply(c),/SNAPSHOT_VERSION_UNSUPPORTED/);
  assert.equal(f.saved.length,0);assert.equal(f.changes.length,0);
+});
+
+
+test('nanosecond Server timestamps apply and persist original wire boundaries', async () => {
+ const f=fixture(),c=command();c.created_at='2026-10-08T00:00:00.000000001Z';c.execute_before='2026-10-08T00:00:30.123456789Z';
+ await f.controller.apply(c);
+ assert.equal(f.saved[0].apply_execute_before,c.execute_before);
+ assert.equal(f.saved[0].duration_minutes,25);
+ assert.equal(f.entry.apply_created_at,c.created_at);
+ const before=f.entry;f.now+=1000;
+ await f.newController().apply(c);
+ assert.deepEqual(f.entry,before);assert.equal(f.changes.length,1);
+});
+test('duration invalid or absent rejected before storage/rules; existing rules preserved',async()=>{
+ for(const value of [undefined,null,'25',0,-1,181,1.5,Infinity,NaN]){
+  const f=fixture();await f.controller.apply(command());const previous=f.entry,changes=f.changes.length;
+  const c=command();c.duration_minutes=value;
+  await assert.rejects(f.newController().apply(c),/INVALID_DURATION/);
+  assert.deepEqual(f.entry,previous);assert.equal(f.changes.length,changes);
+ }
+});
+test('1/25/180 minute goals survive recreated controller inspection and release without duration',async()=>{
+ for(const duration of [1,25,180]){
+  const f=fixture(),c=command();c.duration_minutes=duration;await f.controller.apply(c);
+  const state=await f.newController().inspect(f.context.owner_key,session);
+  assert.equal(state.duration_minutes,duration);assert.equal(Date.parse(state.planned_end_at)-Date.parse(state.applied_at),duration*60000);
+  const release=f.release();delete release.duration_minutes;
+  await f.newController().release(release);assert.equal(f.entry.duration_minutes,duration);assert.equal(f.rules.length,0);
+ }
+});
+test('same command changed goal or timestamp conflicts without resetting saved timer',async()=>{
+ for(const field of ['duration_minutes','created_at','execute_before']){
+  const f=fixture(),c=command();await f.controller.apply(c);const original=f.entry;
+  if(field==='duration_minutes')c[field]=30;else c[field]=new Date(time+10000).toISOString();
+  await assert.rejects(f.newController().apply(c),/JOURNAL_CONFLICT/);
+  assert.deepEqual(f.entry,original);assert.equal(f.changes.length,1);
+ }
+});
+
+test('member goal and command survive new IndexedDB journal/controller instances',async()=>{
+ const { IDBFactory }=await import('fake-indexeddb');
+ const { MemberJournalStore }=await import('../src/member-journal-store.js');
+ const indexedDB=new IDBFactory();const f=fixture();f.context.owner_key='MEMBER:42';
+ f.journal=new MemberJournalStore({indexedDB});const c=command();c.snapshot.owner_user_id='42';c.duration_minutes=180;
+ await f.newController().apply(c);
+ const first=await f.journal.load('MEMBER:42',session);
+ f.journal=new MemberJournalStore({indexedDB});f.now+=1000;
+ await f.newController().apply(c);
+ assert.deepEqual(await f.journal.load('MEMBER:42',session),first);
+ assert.equal((await f.newController().inspect('MEMBER:42',session)).duration_minutes,180);
+ assert.equal(await f.journal.load('MEMBER:43',session),null);
+ const release=f.release();delete release.duration_minutes;
+ await f.newController().release(release);
+ assert.equal((await f.journal.load('MEMBER:42',session)).duration_minutes,180);
+ assert.equal(f.rules.length,0);
+});
+
+test('expired nanosecond deadline and invalid calendar dates preserve existing execution',async()=>{
+ for(const change of [{execute_before:'2026-10-08T00:00:00.000000001Z'},{created_at:'2026-02-30T00:00:00.123456789Z'}]){
+  const f=fixture();await f.controller.apply(command());const entry=f.entry;
+  await assert.rejects(f.newController().apply({...command(),...change}),/APPLY_EXPIRED_OR_INVALID|INVALID_COMMAND/);
+  assert.deepEqual(f.entry,entry);assert.equal(f.changes.length,1);
+ }
 });
