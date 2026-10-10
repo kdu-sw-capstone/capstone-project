@@ -1,0 +1,9 @@
+{
+  "product": "/workspace/capstone-project/extension",
+  "base_sha": "e79ef3034e3951a20c735de714debab830006284",
+  "code": "uncommitted visited-host changes",
+  "os": "Linux-6.18.44-x86_64-with-glibc2.41",
+  "kind": "system Chromium actual unpacked product load attempt; not UI API mock",
+  "browser": "151.0.7922.173",
+  "load_error": "CDPSession.send: Protocol error (Extensions.loadUnpacked): Loading of unpacked extensions is disabled by the administrator."
+}

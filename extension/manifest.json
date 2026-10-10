@@ -1,0 +1,42 @@
+{
+  "manifest_version": 3,
+  "name": "FOCURVE",
+  "version": "0.1.19",
+  "minimum_chrome_version": "120",
+  "description": "FOCURVE 확장프로그램 개발용 기본 구조",
+  "action": {
+    "default_title": "FOCURVE",
+    "default_popup": "popup/popup.html"
+  },
+  "background": {
+    "service_worker": "background/service-worker.js"
+  },
+  "permissions": [
+    "declarativeNetRequest",
+    "alarms",
+    "storage",
+    "tabs",
+    "webNavigation"
+  ],
+  "host_permissions": [
+    "http://*/*",
+    "https://*/*"
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": [
+        "blocked/blocked.html"
+      ],
+      "matches": [
+        "http://*/*",
+        "https://*/*"
+      ]
+    }
+  ],
+  "externally_connectable": {
+    "matches": [
+      "http://127.0.0.1/*",
+      "http://localhost/*"
+    ]
+  }
+}

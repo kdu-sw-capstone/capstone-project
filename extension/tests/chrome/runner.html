@@ -1,0 +1,14 @@
+<!doctype html>
+<html lang="ko"><head><meta charset="utf-8"><title>FOCURVE EXT-02 검증 전용</title></head>
+<body>
+  <h1>EXT-02 사이트 차단 규칙 검증</h1>
+  <p>모의 Core 소유·명령 문맥과 실제 Chrome DNR·탭·IndexedDB를 사용합니다.
+    제품 집중 세션·회원 인증·Server 연동을 검증하지 않습니다.</p>
+  <p>차단: example.com 및 하위 도메인. 허용: example.org. 기록 정책: example.net (수집 기능은 제외).</p>
+  <button id="new-run">새 검증 실행 준비</button>
+  <button id="apply">규칙 적용</button><button id="inspect">journal / 실제 규칙 대조</button>
+  <button id="release">소유 규칙 해제</button>
+  <button id="expired">만료 APPLY 확인</button><button id="wrong">타 설치 APPLY 확인</button>
+  <pre id="result" aria-live="polite">준비 중</pre>
+  <script type="module" src="runner.js"></script>
+</body></html>

@@ -4,17 +4,17 @@
 
 ## 작업 상태
 
-- 상태: 미착수
-- 실제 담당자: 미지정 (기존 배정 기준)
-- 브랜치 / 시작 기준 커밋:
-- PR:
+- 상태: 진행 중 · Windows 정상 경로 사용자 회신 / 0.1.19 저장소 열기 실패 복구 보완
+- 실제 담당자: Core 종민 · 기존 Server 담당 배정 유지
+- 브랜치 / 시작 기준 커밋: `feature/extension-core-ext-02` / `b52681bd4088be3f64722c30d5072632b8e9515e`
+- PR: https://github.com/kdu-sw-capstone/capstone-project/pull/17
 - 선행 작업 / 차단 조건:
 
 | 영역 | 담당 | 구현 상태 | 검증 상태 |
 |---|---|---|---|
 | Web | | 미확인 | 미실행 |
 | Server | | 미확인 | 미실행 |
-| Extension | | 미확인 | 미실행 |
+| Extension | Core 종민 | 회원 SITE 전송·상태·복구 및 수집 저장 장애 부분 구현 | 자동 227/227 · 실제 IndexedDB 장애·blocked 주입 PASS · 실제 MV3 장애 검증 대기 |
 
 해당하지 않는 영역은 관련 명세 근거와 함께 해당없음으로 표시한다.
 
@@ -67,3 +67,108 @@
 담당 김다훈(Server/API/DB·연결Frontend), 브랜치 codex/server-event12-integration, 시작develop76df34ea6be1c591be33c29606c24fc654f61932. 기존 담당 배정 유지. 상태: 담당 구현 검토 대기 / 실제Extension통합 미검증. 최신 사용자 지시로 담당 코드 전달용Commit·Push·develop PR을 진행하며 전체MVP완료나 병합으로 처리하지 않는다.
 
 [게시 검증·실행환경·주체·남은 조건](../Server_최신수정본_게시검증_2026-10-09.md) · [실제 API·Event1.2·구형 호환·Core 절차](../Extension_Server_연동가이드.md). Backend 최종107/107(기존106+실제HTTP합성1), Frontend104/104·build PASS. 설치/APPLIED는합성, 실제Chrome/회원Core통합/Content감지는미검증. Snapshot1.2 신규발급OFF. 전체AC를 통과로 승격하지 않는다.
+
+## 2026-10-10 · 이번 목표: 회원 접근 기록 전송 상태 표시
+
+- Extension 0.1.10 팝업에서 현재 계정·설치·Server의 로컬 기록 전송 상태만 집계한다.
+- 전송 대기 / 전송 중 / 응답 미확인 / 적용 확인 대기 / 인증 확인 필요 / 전송 거절 / 서버 수신 확인을 구분한다.
+- 원문 임시 저장과 전송함의 동일 event_id는 중복 집계하지 않는다. 서로 다른 원문은 조회 오류로 처리한다.
+- 재확인은 기존 전송기의 상태 조회·동일 ID 재시도·서버 대기 시간 규칙을 그대로 따른다. 거절 기록을 자동 재전송하거나 새 ID로 바꾸지 않는다.
+- 계정 전환 중 조회 결과는 거절하며, 팝업의 이전 계정 표시도 지운다. 본문·URL·토큰·계정 ID를 UI 응답에 넣지 않는다.
+- 구현 근거 및 검증: [EXT-03 evidence](../evidence/EXT-03-2026-10-10-delivery-status.md).
+- 미완료: 실제 Chrome + Server 전송/오프라인/계정 전환 검증, FEATURE/Shorts 통합, 수집 완료 watermark. 전체 EXT-03 완료로 표시하지 않는다.
+
+## 2026-10-10 · 다음 작업 시작: 서버 장애 전송 복구
+
+- 이번 기능 ID: EXT-03 (이벤트 전송), 내부 작업명 Retry-After 복구.
+- 이번 목표: 429/503 서버 대기 시간을 영속 저장하고, 재확인 버튼 및 전송기 재생성 후에도 같은 계정·설치의 이벤트 요청을 대기 시간 전에 보내지 않는다. 원문/ID는 유지하고 대기 종료 후 상태 조회부터 재개한다.
+- 시작 기준: 93c46438cc268244f59d5c70fd32bb2c0b27f8ae, 브랜치 feature/extension-core-ext-02, 담당 Core 종민, PR #17.
+- 원문 근거: API 연동 공통 429/503 Retry-After 및 1/2/4/8/16/30초 지터, Event 1.2 동일 원문 재시도 계약. Server API·공동 Content 계약은 변경하지 않는다.
+
+### 서버 장애 전송 복구 결과
+
+0.1.11: 429/503 Retry-After 초/HTTP-date를 기존 outbox에 보존하고 현재 owner/executor의 신규·미확인 기록에 함께 적용한다. 대기 후 상태 조회 우선과 원문/ID 유지, 거절 보존은 기존 규칙을 유지한다. 자동 198/198 및 구문 검사 PASS. 실제 Worker 재시작·서버 장애 검증은 새 변경에 대해 미실행이다. [복구 검증 기록](../evidence/EXT-03-2026-10-10-retry-after.md). 0.1.10 사용자 정상 확인과 새 복구 결과를 구분한다.
+
+## 2026-10-10 · 이번 작업: 손상된 원문 격리와 전송 복구
+
+- 기능 ID: EXT-03, 담당 Core 종민, 시작 f5ef45e094ff3738af200d53dfe38224ee6edc57, 브랜치 feature/extension-core-ext-02, PR #17.
+- 목표: 저장된 원문이 잘못되어도 정상 기록 전송을 계속하고 손상 원문/ID를 그대로 보존한다. 로컬 확인 필요와 Server REJECTED/ACKED를 구분한다.
+- 기준: Event 1.2 계약의 원문/ID 보존 및 계약 오류 격리·진단. 공유 Server enum/API, D06 계약은 변경하지 않는다.
+
+### 원문 오류 격리 결과
+
+Extension 0.1.12: staging 및 outbox 계약 오류/ID·설치 불일치/손상 JSON을 원문 그대로 보존하고 로컬 확인 필요로 격리한다. 정상 기록은 계속 전송한다. 저장·인증 실패는 원문 오류로 오인하지 않는다. 자동 204/204·구문 PASS, 제품 HTML+mocked Chrome API UI 28/28 PASS. 실제 새 Chrome/Server 격리·전송 검증은 미실행이다. [검증 기록](../evidence/EXT-03-2026-10-10-local-review.md). 전체 EXT-03 진행 중, develop 미병합.
+
+## 2026-10-10 · 사용자 확인 및 다음 작업: 재전송 대기 시간 안내
+
+- 직전 0.1.12 사용자 검증 정상 회신. 추가 로그/환경은 제공되지 않았고 전체 EXT-03 완료 판정과 구분한다.
+- 이번 기능 ID: EXT-03, 목표: 서버/로컬 재시도 대기 시간과 재확인 가능 시점을 팝업에 표시하고, 대기 중 전송 재확인 버튼을 제한한다. 로컬 상태 조회 버튼은 계속 제공한다.
+- 시작 bcd1ccb7b485690d34953af29c7f5e8144f42e53, 담당 Core 종민, feature/extension-core-ext-02, PR #17. EXT-01 전송 상태 및 공통 API Retry-After 명세를 적용한다.
+
+### 재전송 대기 안내 결과
+
+0.1.13에서 저장된 서버 대기 하한과 최초 로컬 재시도 시점을 팝업에 표시한다. 대기 중 전송 재확인을 제한하고 상태 조회는 제공한다. 자동 206/206·구문 PASS·모의 팝업 UI 30/30 PASS. 실제 새 Chrome/Server 대기 안내는 미실행이다. [검증 기록](../evidence/EXT-03-2026-10-10-retry-wait-ui.md).
+
+## 2026-10-10 · 이번 작업: 전송 저장 실패 후 복구
+
+- 기능 ID EXT-03, 목표: staging/outbox 조회·쓰기 오류를 저장 오류로 표시하고, 저장 정상화 후 보존된 기록을 같은 ID·원문으로 전송 재개한다. 전송 경고만 실제 성공 이후 해제하며 수집 실패 경고는 별도로 유지한다.
+- 시작 4087f33b3017c899b07971e7d72585b2526d1724, 담당 Core 종민, feature/extension-core-ext-02, PR #17.
+- 설계 근거: 데이터·복구 로컬 저장 실패/원본 보존, Event 1.2 ACK 전 원문 보존·상태 조회 재시도. 신규 수집 중단·세션 해제 전체 절차 및 저장되기 전에 잃은 기록 재구성은 이번 전송 복구로 완료되지 않는다.
+
+### 전송 저장 실패 복구 결과
+
+Extension 0.1.14: 전송 저장 오류를 팝업에 명확히 표시하고, 정상화 후 보존 원문/ID로 전송 재개한다. 수집 오류와 전송 오류를 분리하고 성공한 전송 복구 후 전송 경고만 해제한다. 자동 211/211·구문 PASS·모의 팝업 UI 32/32 PASS. 실제 새 Chrome/Server 저장 장애 복구는 미실행. [검증 기록](../evidence/EXT-03-2026-10-10-storage-recovery.md). 전체 EXT-03 진행 중, 신규 수집 중단/세션 해제 전체 복구 절차는 별도다.
+
+## 2026-10-10 · 이번 작업: Worker 재시작·중복 요청·계정 전환 경계
+
+- 기능 ID EXT-03, 담당 Core 종민, 시작 3dda383583592f23a03dc48cd57eb68e39728485, feature/extension-core-ext-02, PR #17.
+- 목표: Worker 재생성 후 미확인 기록은 같은 ID로 상태 조회부터 복구, 중복 재확인은 직렬화, 계정·설치·Server 변경 시 이전 전송 pass 중단.
+- 기준: 데이터·복구의 owner 고정 outbox 및 재시작, Event1.2 원문/ID 보존. 실제 브라우저 전체 자동 재개·집중 시간 보존 계약은 이번 전송 복구와 별도다.
+
+### Worker 전송 복구 결과
+
+0.1.15: Core 명령 조회 실패와 독립적으로 보존된 전송함 복구를 시작한다. 원문 읽기/복사/flush/정리 경계마다 현재 owner/executor/Server를 확인한다. 자동 216/216·구문 PASS. 새 5개는 별도 VM Worker 런타임+공유 fake-indexeddb+제품 전송기 기반 모의 검증이다. 실제 MV3 Worker 종료/재시작은 미실행. [검증 기록](../evidence/EXT-03-2026-10-10-worker-delivery-recovery.md). 전체 EXT-03 진행 중, develop 미병합.
+
+## 2026-10-10 · 이번 작업: 수집 저장 장애 대응
+
+기능 ID EXT-03, 담당 Core 종민, 시작 e11bcb4229a497259fc7b0409d30e8ab09684dcf, feature/extension-core-ext-02, PR #17. 목표는 ACCESS_STORAGE_UNAVAILABLE 이후 신규 수집 중단·fault 영속화·자기 규칙 해제 확인이다. 실제 Server END의 저장 오류 사유는 현행 계약에 없어 기존 사용자 확인 MANUAL 종료를 제공한다. 자동 오류 종료 사유는 Server 협업 대상이다.
+
+시작 개인 진행률 약80~85% 추정, 큰 개인 잔여: 이번 저장 장애 경계와 최신 실제 검증. 전체MVP/팀원 통합/정식AC 완료율과 별도다.
+
+### 수집 저장 장애 대응 결과
+
+0.1.17: 신규 수집 중단 및 control fault 영속화, 자기 규칙 해제 확인·재시작 후 중단 유지. 기존 사용자 MANUAL 종료/Web RELEASE/EXPIRED는 계속 처리하며 저장 오류 전용 자동 END는 공유 계약 합의 대기다. 자동 220/220·구문 PASS·모의 UI 42/42 PASS. 실제 새 Chrome/Server 장애 검증은 미실행. [검증 기록](../evidence/EXT-03-2026-10-10-capture-storage-stop.md).
+
+개인 Core 추정85~90%(전체MVP/팀원 통합/정식AC 아님). 큰 개인 잔여는 최신 실제 검증 1단위이며 결함 보완 시 늘어난다. 저장 오류 자동 END 사유는 Server 협업에 추가한다. 제어/저널까지 저장 불가이면 해제 미확인으로 남으며 사용자 저장소 정상화 후 재확인이 필요하다.
+
+
+### 2026-10-11 · EXT-03 최신 브라우저 검증
+
+시작32a02e7·0.1.17: 실제 Chromium Worker/IndexedDB 및 fetch 검사는 PASS(합성 HTTP). 설치형 확장은 serviceworker 대기 timeout으로 미검증, 실제 Server/Windows/저장 장애는 미실행이다. 과거220/220·UI42/42를 이번 결과로 재사용하지 않는다. 개인 약85~90% 추정 유지, 실제 통합 잔여1단위·팀 협업 별도. [검증 및 Windows 확인 순서](../evidence/EXT-03-2026-10-11-browser-verification.md). develop 미병합.
+
+
+### 2026-10-11 · 설치형 검증 차단 원인 확정
+
+시작7b5c12b: CDP 확장 로드는 관리자 거절, 관리 정책 ExtensionInstallBlocklist=["*"] 확인. 제품 Worker 결함으로 단정하지 않는다. 정책 변경 없이 Windows 실제 검증으로 이어간다. 제품 코드 변경/새 기능 완료 없음. 개인 Core 약85~90% 유지, 실제 통합 잔여1단위·팀 협업 별도. 상세 근거는 최신 브라우저 검증 문서 후속 작업 절에 기록했다. develop 미병합.
+
+
+### Windows 정상 작동 사용자 확인
+
+후속 검증 안내에 사용자가 “지금 정상 작동함”으로 회신했다. Windows 정상 경로에 대한 사용자 확인으로 기록한다. AI가 직접 관찰하거나 로그를 수집한 결과는 아니며, 개별 단계·확장 버전·전송 ACK별 상세 근거는 제공되지 않았다. 저장 장애 주입·Worker 재시작 복구·완전 수집 및 팀 계약 검증까지 통과한 것으로 확대하지 않는다.
+
+개인 Core 진행률은 약90% 추정으로 갱신한다(전체 MVP/정식 AC/팀 통합 완료율 아님). 개인 잔여는 오류·재시작 복구의 실제 확인과 발견 결함 보완이다. 팀 협업 잔여는 Shorts/Core D06, 저장 오류 자동 END 사유, lifecycle local_seq/watermark/완전 수집 경계다. 제품 코드 변경·기능 테스트 재실행 없음, develop 미병합.
+
+
+### 2026-10-11 · EXT-03 이벤트 Worker 복구 검증
+
+시작ede3f97·0.1.17: 신규 실제 Chromium classic Worker/IndexedDB+합성HTTP 검사2/2, 기존 VM 런타임 재시작 검사5/5 PASS. 상태 조회 우선·동일 ID/원문·접수 이벤트 재전송 방지·미접수 재전송 확인. 제품 코드 변경 없음. 실제 MV3/Server 및 저장 장애는 미검증, 개인약90% 유지. [검증 및 Windows 재시작 확인 순서](../evidence/EXT-03-2026-10-11-event-worker-recovery.md). develop 미병합.
+
+
+### 2026-10-11 · EXT-03 수집 저장 오류 경계 보완 (0.1.18)
+
+시작0ac9b0f: 닫힌 IndexedDB 연결의 transaction 생성 오류가 수집 중단 절차로 전달되지 않는 실패를 재현·수정했다. 기존 저장 오류 코드로 변환, fault 영속화·자기 규칙 해제 경로 유지. 자동222/222·구문 PASS·최종 관련32/32, 실제 Chromium IndexedDB 연결 종료/transaction abort 주입 및 원문/순번 보존 PASS. 실제 MV3/Server/Windows0.1.18 장애는 미검증, 개인약90% 유지·팀 계약 별도. [근거 및 적용](../evidence/EXT-03-2026-10-11-storage-error-boundary.md). develop 미병합.
+
+
+### 2026-10-11 · EXT-03 저장소 open 실패 복구 (0.1.19)
+
+시작04f5167: blocked 오류 뒤 늦게 열린 연결이 남는 결함4개 저장소에서 재현·수정, 전송함 transaction 생성 오류를 기존 저장 장애로 분류. 자동227/227·구문 PASS·실제 Chromium IndexedDB blocked/후속upgrade 및 기존 원문/순번 보존 PASS. API/DB버전/원문 형식 변경 없음. 실제 MV3/Server/Windows 장애는 미검증, 개인약90% 유지·팀 계약 별도. [근거 및 적용](../evidence/EXT-03-2026-10-11-storage-open-recovery.md). develop 미병합.

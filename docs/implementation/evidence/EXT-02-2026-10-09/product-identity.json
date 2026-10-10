@@ -1,0 +1,22 @@
+{
+  "base_sha": "e79ef3034e3951a20c735de714debab830006284",
+  "uncommitted": true,
+  "product_sha256": "2ae196a83b5177dfd496a65d18da9da7c28c6786c4964f46aa28bf08da66aa2a",
+  "files": {
+    "extension/background/access-store.js": "726f3fe5cb956b6e64e4dc02c1098dfa4df5728c908337a9ff92faf57a489d70",
+    "extension/background/host-policy.js": "a5bd2cbc4b07e20480243661c6418ae54d1e771af70e04f34ed0124205065243",
+    "extension/background/local-store.js": "d55960de2e96cd7988d9a31dc79fb4c194231bcf4ef9dd29b1cb2435b9b7bd18",
+    "extension/background/service-worker.js": "dae47ee408418830dd20696c8ea016594a38bf4261bb30b3b0829855ede2f120",
+    "extension/background/session-core.js": "ed143f94d81619d82ef20773b61a21d23bc743abaf07c08fa5f20de2391a42eb",
+    "extension/background/session-db.js": "f5d1cffcf1622ec3d3c33651f8a253704a0a6f181aea73bbe0a2ea50067e9343",
+    "extension/background/site-store.js": "cc231a953fcbd279480e1a6154d35be9857aaa0b30b11393d8a674037d9791d8",
+    "extension/blocked/blocked.css": "a3ae0ee4caee8e648cb0c522a2d518f7cd089a6494072e05c45ba521d7005496",
+    "extension/blocked/blocked.html": "c1d911803e99907d3b9262192ee735daf5865938c5aad4cc2591c6ad697008f8",
+    "extension/blocked/blocked.js": "1530683c4d1aae98021d23674f350a3ac3cfd08e734d825d0bcba5bb127a1ec7",
+    "extension/manifest.json": "9979aa9ecdcd8c39c8d56dfd44b409561ebbccc2a27097520502cd7b139fcb8b",
+    "extension/popup/popup-ui.js": "0ddf8480d054e5e49019b0160a047b7e70fa73ef934471058b00bc56a5569030",
+    "extension/popup/popup.css": "8ec1ae19d841b66d24448d0b7e8ad4c4ac295525e69f76054fb8753e9514fa16",
+    "extension/popup/popup.html": "e2fca3ba8e53acef21ae476c662fe2e79450fc406153fea4d82abc1b582ffefd",
+    "extension/popup/popup.js": "740dbcd886964b5408a6f0b40fc632202fa027be834a7b5395bcbd6f47937501"
+  }
+}

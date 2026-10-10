@@ -1,0 +1,120 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>FOCURVE · 비회원 집중</title>
+  <link rel="stylesheet" href="popup.css">
+  <script src="popup.js" defer></script>
+  <script src="popup-ui.js" defer></script>
+  <script src="member-execution-ui.js" defer></script>
+  <script src="member-delivery-ui.js" defer></script>
+  <script src="member-auth-ui.js" defer></script>
+</head>
+<body>
+  <main>
+    <header class="brand"><span class="brand-mark" aria-hidden="true">FC</span><div><h1>FOCURVE</h1><p>집중 행동 관리</p></div></header>
+    <p id="page-subtitle" class="note">비회원 · 이 브라우저에 저장</p>
+    <nav id="main-tabs" aria-label="비회원 관리"><button type="button" data-page="focus" class="primary" aria-current="page">집중 관리</button><button type="button" data-page="sites" class="secondary">사이트 관리</button></nav>
+    <section id="focus-page" class="page" aria-labelledby="focus-title">
+      <section id="member-focus-guide" class="card" hidden aria-labelledby="member-focus-title">
+        <h2 id="member-focus-title">회원 집중은 Web에서 시작하세요</h2>
+        <p id="member-focus-note" class="note">이 확장은 Web에서 요청한 집중을 실행합니다. 실행 상태와 기록 전송 상태를 확인할 수 있습니다.</p>
+        <a id="member-web-link" class="secondary" target="_blank" rel="noopener noreferrer" aria-disabled="true">회원 관리 Web 열기</a>
+        <button id="member-focus-check" type="button" class="secondary">회원 실행 상태 확인하기</button>
+        <button type="button" data-page="access" class="secondary">보존된 비회원 기록 보기</button>
+      </section>
+      <div id="guest-focus-controls">
+      <div class="card" id="focus-card">
+      <h2 id="focus-title">집중 세션을 시작하세요</h2>
+      <p id="focus-description" class="note">집중 시간과 적용할 설정을 확인하세요.</p>
+      <p id="focus-countdown" hidden></p>
+      <label id="duration-label">집중 시간 (분) <input id="focus-minutes" type="number" min="1" max="180" step="1" value="25"></label>
+      <button id="start-focus" type="button" disabled>집중 시작</button>
+      <button id="request-end" type="button" hidden>세션 종료</button>
+      </div>
+      <p id="focus-feedback" role="status" aria-live="polite"></p>
+      <p id="policy-summary">적용할 설정을 확인하고 있습니다…</p>
+      <button type="button" data-page="sites" class="secondary">설정 확인·수정</button>
+      <button type="button" data-page="access" class="secondary">로컬 기록 보기</button>
+      <button type="button" class="secondary account-button">계정 연결하기</button>
+      </div>
+    </section>
+    <section id="access-page" class="page" hidden aria-labelledby="access-title">
+      <button type="button" data-page="focus" class="secondary">집중 세션으로 돌아가기</button>
+      <h2 id="access-title">이 브라우저에 저장된 기록</h2>
+      <button id="refresh-access" type="button">접근 기록 확인</button>
+      <p id="access-result" role="status" aria-live="polite">버튼을 눌러 로컬 기록을 확인해주세요.</p>
+      <ul id="access-list"></ul>
+      <p class="note">최신 세션의 최근 20건입니다. 주소 입력·링크·새로고침으로 확인된 최상위 페이지 탐색을 수집합니다. 실패한 탐색은 접근으로 계산하지 않습니다. 이 비회원 기록은 회원 접근 기록과 별도로 보존됩니다. 로그인만으로 서버에 전송되지 않습니다.</p>
+    </section>
+    <section id="sites-page" class="page" hidden aria-labelledby="sites-title">
+      <button type="button" data-page="focus" class="secondary">집중 관리로</button>
+      <p id="guest-sites-note" class="note">이 브라우저의 비회원 설정입니다.</p>
+      <label>사이트 검색 <input id="site-search" type="search" placeholder="이름 또는 도메인"></label>
+      <div id="site-list-panel">
+        <ul id="site-list"></ul>
+        <button id="add-site" type="button">사이트 추가</button>
+        <p id="site-count" class="note"></p>
+      </div>
+      <div id="site-editor" hidden>
+      <h2 id="sites-title">게스트 사이트</h2>
+      <p id="site-mode" class="note">새 사이트 등록</p>
+      <form id="site-form">
+        <label>사이트 주소 <input id="site-url" required maxlength="2048" placeholder="example.com"></label>
+        <label>이름 <input id="site-name" required maxlength="100" placeholder="테스트 사이트"></label>
+        <label class="checkbox"><input id="site-subdomains" type="checkbox" checked> 하위 도메인 포함</label>
+        <label>분류 <select id="site-purpose"><option value="DISTRACTION">방해</option><option value="FOCUS">집중</option><option value="GENERAL">일반</option></select></label>
+        <label>정책 <select id="site-policy"><option value="BLOCK">차단</option><option value="RECORD">기록</option></select></label>
+        <button id="save-site" type="submit">사이트 등록</button>
+        <button id="cancel-edit" type="button" hidden>수정 취소</button>
+      </form>
+      </div>
+      <button id="reload-sites" type="button">목록 다시 확인</button>
+      <p id="site-result" role="status" aria-live="polite">등록한 설정은 이후 집중 세션에 사용됩니다.</p>
+    </section>
+    <section id="result-page" class="page" hidden aria-labelledby="result-title">
+      <h2 id="result-title">이 브라우저에 저장된 기록</h2>
+      <p id="session-summary"></p>
+      <div class="card"><h3>최근 기록</h3><p id="recent-result" class="note">기록을 확인하고 있습니다…</p></div>
+      <button type="button" data-page="access" class="secondary">로컬 기록 확인</button>
+      <button id="next-session" type="button">다음 세션 준비</button>
+      <button type="button" class="secondary account-button">계정 연결하기</button>
+      <p class="note">로그인만으로 로컬 자료가 업로드되지 않습니다.<br>자료 보관 기간은 현재 로컬 정책을 따릅니다.</p>
+    </section>
+    <p id="ui-notice" role="status" aria-live="polite"></p>
+    <details id="preferences"><summary>화면 설정·연결 확인</summary>
+      <p id="member-status" role="status" aria-live="polite">계정 연결 상태 확인 중…</p>
+      <label>연결할 Server API 주소 <input id="member-server" type="url" value="http://127.0.0.1:8080/api/v1"></label>
+      <label>로그인할 Web 주소 <input id="member-web" type="url" value="http://127.0.0.1:5173"></label>
+      <label>Server 허용 등록용 확장 주소 <input id="member-callback" readonly></label>
+      <button id="member-check" type="button" class="secondary">계정 연결 상태 확인</button>
+      <div id="member-execution-panel" hidden>
+        <p id="member-execution-status" role="status" aria-live="polite">회원 실행 상태 확인 중…</p>
+        <button id="member-execution-check" type="button" class="secondary">회원 실행 상태 확인</button>
+        <button id="member-execution-end" type="button" class="secondary" hidden>회원 집중 종료</button>
+      </div>
+      <section id="member-delivery-panel" hidden aria-labelledby="member-delivery-title">
+        <h2 id="member-delivery-title">행동 기록 전송 상태</h2>
+        <p class="note">현재 계정·이 브라우저에 저장된 접근 기록입니다. 전체 기록 수집 완료를 뜻하지 않습니다.</p>
+        <p id="member-delivery-status" role="status" aria-live="polite">전송 상태 확인 중…</p>
+        <dl id="member-delivery-counts"></dl>
+        <p id="member-delivery-wait" class="note" role="status" aria-live="polite" hidden></p>
+        <button id="member-delivery-check" type="button" class="secondary">전송 상태 다시 확인</button>
+        <button id="member-delivery-recheck" type="button" class="secondary">대기 기록 전송 재확인</button>
+        <p class="note">서버의 재시도 대기 시간을 따릅니다. 거절된 기록은 자동 재전송하지 않으며 원문을 보존합니다.</p>
+      </section>
+      <p class="note">연결 대기 중에는 새 집중을 시작할 수 없습니다. 기존 비회원 자료는 보존됩니다.</p>
+      <label>화면 모드 <select id="theme-mode"><option value="system">시스템 설정</option><option value="dark">다크</option><option value="light">라이트</option></select></label>
+      <button id="refresh-focus" type="button" class="text-button">상태 다시 확인</button>
+      <p id="focus-result" role="status" aria-live="polite">실제 집중 상태를 확인하고 있습니다…</p>
+      <p class="note">시작 시 저장된 설정으로 차단하며, 이후 설정은 다음 세션에 적용됩니다. 접근 기록은 아래에서 확인할 수 있습니다.</p>
+    <button id="check-core" type="button">Core 연결 확인</button>
+    <p id="result" role="status" aria-live="polite">버튼을 눌러 연결을 확인해주세요.</p>
+    <button id="check-storage" type="button">게스트 저장 확인</button>
+    <p id="storage-result" role="status" aria-live="polite">저장 확인 버튼을 눌러주세요.</p>
+    </details>
+    <dialog id="end-dialog" aria-labelledby="end-title"><h2 id="end-title">집중 세션을 종료할까요?</h2><p class="note">직접 종료한 진행 시간을 이 브라우저에 기록합니다.<br>차단을 해제한 뒤 결과를 표시합니다.</p><button id="end-focus" type="button" class="danger" disabled>종료하기</button><button id="continue-focus" type="button" class="secondary">계속 집중하기</button></dialog>
+  </main>
+</body>
+</html>
