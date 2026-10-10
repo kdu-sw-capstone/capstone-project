@@ -94,3 +94,7 @@
 - 다음: 윤종민이 D-06 연결 제안의 정책 주입/적용·해제 결과/공통 navigation_id/이벤트 확정·중복 방지를 검토. 세부 계약 합의 후 Core 연결 및 실제 회원·비회원 Chrome 검증. 현재 전체 기능 미완료.
 
 - 중간 공유 실행: stage·diff검사 통과, commit은 Author identity unknown으로 실패. user.name/email 미설정 확인, 사용자 정보 답변 대기. Push 미실행·HEAD90ad32b·stage 보존, 최신 실패 기록은 작업본. 이름/이메일 설정 후 재stage·Commit·Push·원격SHA 대조 재개. develop 병합 금지 유지.
+
+### 2026-10-10 중간 게시 완료
+
+구현3d7bff718e756cedb0950858885edbb6f472ea68를 feature/content-control로 Push하고 원격SHA 일치를 확인했다. 이전 게시/작성자 차단 해소(사용자 지정 local Git 작성자 적용). PR/리뷰/develop병합 미수행. 자동29/29 PASS·사용자 OPTION-09 부분 확인은 상세 기록과 동일하며 실제 서비스/Core/Server·목록/모델·복구 미검증 유지. 오늘은 중간 공유로 종료, 다음은 D-06 연결 제안 팀 검토→세부계약 합의→Core 연결/실제 Chrome 검증. 최신 게시/재개 원본은 Content_Control_2026-10-10.md 참조.

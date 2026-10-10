@@ -138,3 +138,12 @@ Windows 절차: [Content_Control_Windows_검증.md](Content_Control_Windows_검�
 - 명시한27개 파일 stage 및 staged diff --check 통과 후 commit을 시도했으나 `Author identity unknown` / `unable to auto-detect email address`로 실패했다. repository user.name/user.email 모두 미설정이다. commit/push는 아직 없음, HEAD90ad32b 유지.
 - 다른 팀원의 author를 복사하거나 임의 이메일을 만들지 않았다. 사용자에게 작성자 이름(채지민 사용 여부)과 Git 이메일을 요청했다. 답변 후 이 저장소에만 설정하고 commit/push/원격SHA 대조를 재개한다. develop 병합은 하지 않는다.
 - staged27개 파일은 보존하며 이 실패 기록은 작업본에 추가했다. 재개 시 최신기록을 다시stage하고 변경 범위를 재확인해야 한다. 테스트29/29 PASS·사용자 부분확인·Core 연결 대기 상태는 변함없다.
+
+## 2026-10-10 중간 결과 게시 완료·오늘 작업 마무리
+
+- 사용자 지정 이름/비공개 GitHub noreply 이메일을 이 저장소의 local Git config에만 설정하여 작성자 오류를 해소했다.
+- 구현 Commit: 3d7bff718e756cedb0950858885edbb6f472ea68 / feat(content): share independent controls and partial validation. feature/content-control로 Push 성공, ls-remote SHA 일치 확인. 시작 기준90ad32b, 최신 fetch에서도 develop 변경 없음.
+- 공유 브랜치: https://github.com/kdu-sw-capstone/capstone-project/tree/feature/content-control . 이전 미게시/작성자 차단 문구는 당시 이력이며 위 게시 결과로 해소됐다. PR 생성·리뷰·develop 병합/자동병합은 수행하지 않았다.
+- 검증: Codex 자동29/29 PASS·문법/diff검사 PASS. 사용자 OPTION-09 합성도구 입력 제외/본문감지는 제공 화면 확인, 복원/수동해제/재적용은 정상 추정 보고(세부증거 미확보). 실제 서비스/Extension/Core/Server·목록/모델·복구는 미검증 유지.
+- 윤종민 전달 문서: docs/implementation/Content_Core_D06_연결제안.md (미확정 제안). 확인할 사항은 정책/고정 Snapshot 전달, 적용·해제 결과 보고와 실패 기준, 공통 navigation_id·명시 접근/중복 방지, 복수 사유 이벤트 확정 시점, manifest 주입/회원·비회원 실제 Chrome 검증이다. 임의 공용계약 변경·직접 메시지 발송 없음.
+- 오늘 종료 상태: 독립 구현 중간 공유 완료, 기능 전체 미완료·Core 세부계약/연결 대기. 다음에는 브랜치 최신 코드/작업카드와 팀 합의 내용을 다시 대조하고 연결 단위로 재개한다. 본 게시 기록은 별도 문서 커밋으로 같은 브랜치에 보관한다.
