@@ -22,9 +22,9 @@ $env:CHROME_EXECUTABLE='C:\Program Files\Google\Chrome\Application\chrome.exe'
 
 결과: **33/33 PASS, 실패/생략 0, 21054.1217ms**. 기존 29개 회귀 + 절대 URL/쿼리 오탐/중복 scan, 지연 viewer/재생 재시도/해제 후 리스너 제거, history 뒤로·앞으로, 시험 popup sender 검증/중복 적용/해제 4개 추가. 초기 32개도 통과했고 시험 transport 검증 추가 후 전체 재실행했다. 기존 autoplay·키워드·이미지 등 회귀를 포함하지만 추가 MVP 완료로 판정하지 않는다.
 
-검증용 확장 생성 명령도 정상 종료했다. 문법 및 diff 검사는 게시 전 점검한다. 실제 페이지 새로고침·Core 재주입·정책 자동 재적용은 자동 시험 범위에 포함하지 않는다.
+검증용 확장 생성 명령도 정상 종료했다. 문법 및 diff 검사 PASS 후 구현을 db9fa68로 Commit·Push했다. 실제 페이지 새로고침·Core 재주입·정책 자동 재적용은 자동 시험 범위에 포함하지 않는다.
 
-## Windows Chrome에서 확인하는 방법 — 아직 미실행
+## Windows Chrome에서 확인하는 방법 — 사용자 실행 보고는 아래 별도 기록
 
 시험 전용 확장이다. 제품 확장·Core 계약을 대신하지 않는다. 실제 계정·세션·Server 전송·저장·통계·정책 조회 기능이 없다. 메시지 TEST_SHORTS_*는 이 도구의 popup 전용이며 제품 type으로 사용하면 안 된다.
 
@@ -44,8 +44,17 @@ $env:CHROME_EXECUTABLE='C:\Program Files\Google\Chrome\Application\chrome.exe'
 
 ## 미검증과 연결 대기
 
-- 실제 Windows Chrome UI의 unpacked 확장 로드/실제 YouTube DOM·음성·SPA/새로고침·로그인/실험별 차이. 위 절차는 준비됐으나 사용자가 수행한 증거는 아직 없다. 과거 localhost 키워드 확인은 이 Shorts 시험의 증거가 아니다.
+- 사용자 실행 보고는 아래 기록에 한정한다. 실제 YouTube DOM·음성·SPA/새로고침·로그인/실험별 차이의 단계별 확인 증거는 미확보이며 실제 사이트 전체 검증은 미완료다. 과거 localhost 키워드 확인은 이 Shorts 시험의 증거가 아니다.
 - Core manifest에는 Content 주입이 없고 수신 메시지 세부 스키마·규칙 ID·navigation_id 전달/중복 명령·Event 1.2 확정 시점은 D-06에 미합의로 남아 있다. 임의 제품 schema와 모의 성공을 넣지 않았다.
 - 실제 회원/비회원 세션 적용·종료·정책 해제 확인, Snapshot 일치, 실제 방문 호스트/정책 호스트/복수 차단 사유 통합, 재시작·오프라인 복구, Server 전송은 미검증이다. siteBlocked 억제와 frozen 입력 시험은 실제 연동을 대신하지 않는다.
 - 윤종민 검토 문서: [Content_Core_D06_연결제안.md](Content_Core_D06_연결제안.md). 먼저 주입 위치·최소 frozen 정책·적용/해제 결과 schema·sender 검증·탐색 ID·전송 freeze를 합의한 뒤 별도 연결 단위로 구현한다.
 - 상태: 독립 구현 검토 대기 / 실제 Chrome 및 통합 검증 대기. Draft PR을 생성하여 리뷰받고, CI와 공식 승인 이후에도 사용자 명시 요청 전 develop에는 병합하지 않는다.
+
+## 2026-10-10 사용자 실행 결과와 오늘 종료 기록
+
+- 기록 담당 채지민 / feature/content-control / 기록 시작 기준 db9fa68. 구현 파일 변경 없이 이 문서·POLICY-03 작업카드·통합현황·Windows 절차의 상태 기록만 갱신한다.
+- 실행 주체: 사용자. Windows PowerShell에서 빌드 명령 실행 후 Chrome 확장 로드와 YouTube Shorts 적용→해제 안내를 전달했고, 사용자가 **“오 다 됐어 이건 이미 commit push 한거야?”**라고 응답했다. 이를 **안내한 시험에 대한 사용자 정상 실행 보고**로 기록한다. 자동화 결과 또는 Codex 직접 관찰 결과로 대체하지 않는다.
+- 범위 한계: 사용자가 어느 단계까지 완료했는지, 영상 숨김·음성 정지·복원 및 active/status/released 실제 값, Chrome 버전, 로드된 파일 hash, 화면 증거를 개별 제공하지 않았다. 따라서 확장 로드·적용·해제의 각 항목을 독립 PASS로 단정하거나 전체 수용 기준 통과로 올리지 않는다. 안내 대상 소스는 db9fa68이나 실제 로드 산출물과 일치 여부는 미확인이다.
+- 검증 구분: (1) Codex Windows Chrome 엔진 합성 DOM/모의 정책 자동33/33 PASS, (2) 사용자 Chrome 시험 정상 보고(단계별 증거 미확보), (3) 실제 사이트 상세 동작·Core/Server 연동은 미검증. 사용자 보고가 생겼으므로 이전의 ‘사용자 미실행’ 상태는 이 기록으로 갱신하되 전체 실제 사이트 검증완료를 뜻하지 않는다.
+- 남은 확인: 실제 YouTube 일반 영상 보존/Shorts 직접 진입/SPA/뒤로·앞으로/새로고침/음성/해제·실패 복구의 단계별 결과. Core 정책·Snapshot·메시지/중복 명령·규칙 ID·navigation_id·Event 1.2 호스트/사유·세션 종료/해제·회원/비회원·Server 전송은 연결 대기 또는 미검증 유지.
+- 다음 작업: 윤종민이 [D-06 연결 제안](Content_Core_D06_연결제안.md)을 검토하고 세부계약을 합의한 뒤 실제 연결 및 회귀 검증. 본 기록 변경을 같은 기능 브랜치에 Commit·Push하고 오늘 작업을 종료한다. Draft PR은 아직 생성하지 않았으며 이번 마무리는 기록 게시까지다. develop 병합·자동병합은 수행하지 않는다.

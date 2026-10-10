@@ -126,3 +126,7 @@
 ### Shorts 보강 결과 · 독립 검토 대기
 
 ShortsControl adapter와 시험 전용 MV3 도구 추가. 기존 구현 보존. Windows Chrome 엔진 합성/모의 자동33/33 PASS(21054.1217ms), 직접/SPA/뒤로·앞으로/동적 viewer/재생 재시도/해제 및 기존 기능 회귀 포함. 실제 서비스/MV3 로드/새로고침 자동 정책 재적용/Core·Event1.2·Snapshot·회원/비회원 통합은 미검증. D-06 schema·규칙 ID·navigation_id·이벤트 freeze 미합의이므로 제품 연결 보류. 명령·코드·AC 범위·Chrome 수동 절차는 ../Content_Shorts_2026-10-10.md 참조. 다음은 실제 Chrome 절차 기록과 윤종민의 연결안 검토. Draft PR 대상으로 공유하며 develop 병합/자동병합은 사용자 명시 요청 전 금지.
+
+### 2026-10-10 사용자 실행 보고 반영 · 오늘 종료
+
+담당 채지민 / feature/content-control / 기록 시작 db9fa68(Shorts 보강 Commit·Push 완료). 사용자는 Chrome 시험 안내 후 “오 다 됐어 이건 이미 commit push 한거야?”라고 정상 실행을 보고했다. 실행 주체는 사용자이며 Codex 관찰/자동 시험과 구분한다. 단계별 완료 범위·화면·active/status/released 값·Chrome 버전·로드hash 미확보이므로 각 항목 PASS나 AC 전체 검증완료로 확대하지 않는다. 기존 자동33/33 PASS는 합성 DOM/모의 정책 검증이다. 실제 YouTube 상세 DOM·음성·SPA·새로고침·뒤로/앞으로·실패/복원 단계별 검증, Core 정책/Snapshot/메시지/규칙ID/navigation_id/Event1.2/세션·회원/비회원/Server 통합은 미검증 또는 계약 합의 대기 유지. 이번 변경은 기록만이며 자동 테스트 재실행 불필요, diff검사 후 Commit·Push. 상세 원본 ../Content_Shorts_2026-10-10.md의 사용자 실행 결과 참조. 다음은 윤종민 D-06 연결안 검토/합의→실제 연결·회귀 검증. Draft PR 미생성, 오늘은 기록 게시 후 종료. develop 병합·자동병합 없음, 사용자 명시 요청 전 금지.
