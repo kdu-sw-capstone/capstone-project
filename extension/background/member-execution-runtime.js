@@ -2,7 +2,15 @@ const MemberExecutionRuntime = (() => {
   let loop, server;
   const alarm = 'focurve-member-execution';
   const deadlineAlarm = 'focurve-member-deadline';
-  let lastWake = -Infinity;
+  let waking = null, wakeAgain = false, connecting = null;
+  // Keep one pending follow-up: END arriving during APPLY must never be dropped.
+  function wake() {
+    wakeAgain = true;
+    if (!waking) waking = (async () => {
+      do { wakeAgain = false; await tick(); } while (wakeAgain);
+    })().finally(() => { waking = null; if (wakeAgain) wake().catch(() => {}); });
+    return waking;
+  }
   async function getLoop() {
     const status = await MemberAuthRuntime.status();
     if (!status.owner_user_id || !status.executor_id) return null;
@@ -56,24 +64,34 @@ const MemberExecutionRuntime = (() => {
         error: { code: 'EXECUTION_UNCONFIRMED' } }));
     return true;
   });
-  // Local Web notification, never an APPLY/END command or a state/credential query.
+  // Local Web bridge; neither message authorizes APPLY/END or exposes credentials.
   chrome.runtime.onMessageExternal.addListener((message, sender, respond) => {
     if (sender.id || sender.frameId !== 0 || !Number.isInteger(sender.tab?.id)
       || !message || Object.keys(message).sort().join(',') !== 'owner_context,payload,request_id,type'
-      || message.type !== 'FOCURVE_EXECUTION_WAKE' || message.owner_context !== null
+      || !['FOCURVE_EXECUTION_WAKE', 'FOCURVE_EXECUTION_CONNECT'].includes(message.type) || message.owner_context !== null
       || typeof message.request_id !== 'string' || !message.request_id.length || message.request_id.length > 64
-      || !message.payload || Object.keys(message.payload).join(',') !== 'executor_id'
-      || !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(message.payload.executor_id)) return;
+      || !message.payload || Array.isArray(message.payload)
+      || (message.type === 'FOCURVE_EXECUTION_CONNECT' ? Object.keys(message.payload).length !== 0
+        : Object.keys(message.payload).join(',') !== 'executor_id'
+          || !/^[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i.test(message.payload.executor_id))) return;
     (async () => {
       const auth = await MemberAuthRuntime.status();
       let origin; try { origin = new URL(sender.url).origin; } catch { return false; }
-      if (auth.phase !== 'LINKED' || auth.executor_id !== message.payload.executor_id || origin !== auth.web_origin) return false;
-      if (Date.now() - lastWake >= 1000) {
-        lastWake = Date.now();
-        tick().catch(() => {});
+      if (auth.phase !== 'LINKED' || origin !== auth.web_origin) return { received: false };
+      if (message.type === 'FOCURVE_EXECUTION_CONNECT') {
+        if (!connecting) connecting = tick().finally(() => { connecting = null; });
+        const state = await connecting;
+        const current = await MemberAuthRuntime.status();
+        if (['UNCONFIRMED', 'UNLINKED', 'RECOVERY_REQUIRED'].includes(state.status)
+          || current.phase !== 'LINKED' || current.executor_id !== auth.executor_id
+          || current.owner_user_id !== auth.owner_user_id || current.server_url !== auth.server_url
+          || current.web_origin !== origin) throw new Error('CONNECTION_UNCONFIRMED');
+        return { executor_id: auth.executor_id };
       }
-      return true;
-    })().then(received => respond({ request_id: message.request_id, status: 'OK', data: { received }, error: null }))
+      if (auth.executor_id !== message.payload.executor_id) return { received: false };
+      wake().catch(() => {});
+      return { received: true };
+    })().then(data => respond({ request_id: message.request_id, status: 'OK', data, error: null }))
       .catch(() => respond({ request_id: message.request_id, status: 'ERROR', data: null, error: { code: 'WAKE_UNAVAILABLE' } }));
     return true;
   });

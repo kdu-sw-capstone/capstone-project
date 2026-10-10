@@ -2,6 +2,10 @@
 
 단계: 필수 MVP · 설계 담당 영역: Extension
 
+## 이번 작업 — 현재 브라우저 자동 선택·시작/종료 즉시 연결
+
+윤종민 / feature/extension-core-ext-02 / 시작 a4fe6bd74dff3a5a52225daaab0183fe8cbfb7e6 / 구현·모의 검증 완료, 실제 Windows 통합 대기. 사용자가 시작·종료 즉시 동작 및 현재 설치 자동 선택을 요청했다. EXT-02·SESSION-01/02 연결 범위. Server의 owner/executor·Snapshot gate·실제 적용/해제 확인 기준은 유지한다. 로컬 Web에 설치 확인 전용 CONNECT 계약을 추가하고, 시작 전에 인증 조회 heartbeat를 완료하며, 종료는 한 번 클릭으로 요청한다. D06 Content 계약 및 Server gate 완화는 범위 밖. Extension180/180·Web130/130·TS/Vite·문법 PASS. [코드·계약·오류 수정·실제 미검증·적용 절차](../evidence/EXT-02-2026-10-10-current-browser.md). 확장 0.1.8·Web 업데이트 후 실제 차단/해제 반응 측정 필요. 기존 setup skill 환경 지침은 개발 도구 재사용에 적용하며 제품 수정은 이번 사용자 요청으로 수행한다.
+
 ## 최신 작업 — 회원 시작·종료 지연 개선 (0.1.7)
 
 윤종민 / feature/extension-core-ext-02 / 시작1165dc1. 기존 Server 요청 성공 뒤 Web→Core 제한된 wake hint로 즉시 명령 조회, 검증된 planned_end_at 일회성 alarm 및30초 backup 유지. Extension178/178·Web125/125·TS/Vite·문법 PASS(모의 Chrome/HTTP). [코드·신뢰 경계·계약·업데이트](../evidence/EXT-02-2026-10-10-execution-wake.md). 실제 Windows MV3/지연 개선·deadline/43초 집계는 미검증. Web·확장0.1.7 업데이트/VITE_EXTENSION_ID 설정 후 측정 필요. Server API/DB/D06 Content 미변경·develop 병합 없음.
