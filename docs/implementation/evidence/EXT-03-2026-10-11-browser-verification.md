@@ -23,3 +23,16 @@ AGENTS.md, 개발운영.md, 통합현황.md, tasks/EXT-03.md 및 설계 11_인�
 6. 미전송 원문이 있는 테스트 세션에서 서비스 워커를 종료하고 다시 팝업을 연다. 동일 이벤트 ID/원문으로 복구되고 중복 기록이 생성되지 않는지 확인한다. 저장 장애는 별도 안전한 테스트 프로필에서만 주입하고 수집 중단·자기 규칙 해제·원문 보존을 확인한다.
 
 시작 지연 측정은 사용자 지시대로 보류한다. 저장 오류 자동 END 사유, Shorts/Core D06, lifecycle local_seq/watermark/완전 수집 경계는 팀 협업으로 남는다. 실제 통합 검증 전 개인 잔여 1단위를 완료 처리하지 않는다. develop 미병합.
+
+## 후속 작업: 설치형 확장 실행 차단 원인 확인
+
+시작 커밋 7b5c12b, 기능 EXT-03, 목표는 이전 serviceworker timeout 원인 확인이다. 제품 코드는 변경하지 않았다.
+
+- Debian Chromium 실행 래퍼와 Playwright 기본 옵션을 확인하고, `/usr/lib/chromium/chromium` 직접 실행 및 `--disable-extensions` 제외로 재시도했으나 serviceworker 대기는 10초 timeout했다.
+- 임시 프로필의 `chrome://extensions`에서 `chrome.developerPrivate.getExtensionsInfo` 결과는 빈 목록이었다. 확장이 로드되지 않은 단계임을 확인했다.
+- Chromium CDP `Extensions.loadUnpacked`로 저장소 extension 폴더를 지정하자 `Loading of unpacked extensions is disabled by the administrator.` 오류가 발생했다.
+- `/etc/chromium/policies/managed/extensions.json`의 `ExtensionInstallBlocklist`가 `["*"]`인 것을 읽기 전용으로 확인했다. 클라우드 관리 정책이 설치를 차단한다. 관리자 정책·강제 설치 항목은 변경하지 않았다.
+
+따라서 이전 timeout을 제품 서비스 워커 결함으로 해석하지 않는다. 현재 환경의 설치형 MV3/DNR/회원 Server 통합은 차단 상태이며 앞선 Worker 검사는 별도의 대체 검증이다. Windows 실제 확인 결과를 받기 전 검증완료/진행률 상승으로 처리하지 않는다.
+
+사용자 다음 행동: 기존 Windows 확장 폴더를 새로고침해 0.1.17인지 확인 → 현재 설치 ID와 Web 실행 설치 ID 대조 → 유효한 도메인의 1분 집중 시작 → 실제 차단/행동 기록/종료 후 허용을 확인한다. 이번 회신에 필요한 근거는 확장 버전, 차단·해제 결과, 전송 상태 및 오류 코드이며 토큰·쿠키·개인 기록은 공유하지 않는다. 저장 장애·Worker 종료 복구는 정상 경로 뒤 별도 확인한다. 시작 지연 측정은 계속 보류한다.
