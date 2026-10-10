@@ -69,3 +69,7 @@ Chrome에서 `http://127.0.0.1:4178/content-tools/harness.html`을 연다. “�
 - 적용 범위: OPTION-09 키워드 합성 도구, AC-OPTION-09-01/02/03 및 BOUND-18의 일부(입력 제외·본문 감지·가림/해제). 실제 Extension/서비스 페이지/Core/Server·모델·재시작 검증으로 전용하지 않는다.
 - 최신 사용자 지시: 확인한 결과와 미검증·Core 연결 대기를 기록하고 feature/content-control에 Commit·Push하여 중간 결과 공유. develop 병합 금지, 오늘 추가 구현은 진행하지 않음. 이전 게시 거부·보류는 당시 이력이며 이번 명시 허용으로 Git 게시를 재개한다.
 - 다음: 윤종민이 D-06 연결 제안의 정책 주입/적용·해제 결과/공통 navigation_id/이벤트 확정·중복 방지를 검토. 세부 계약 합의 후 Core 연결 및 실제 회원·비회원 Chrome 검증. 현재 전체 기능 미완료.
+
+## 필수 Shorts 후속 도구
+
+2026-10-10 시험 전용 unpacked MV3 확장 생성 도구를 추가했다. 제품 Core 연결은 없으며 새로고침 시 모의 정책은 초기화된다. 빌드·로드·직접/SPA/뒤로·앞으로·해제 절차 및 기대값은 [Content_Shorts_2026-10-10.md](Content_Shorts_2026-10-10.md)를 따른다. 실제 Chrome UI/YouTube 검증은 아직 미실행이다.

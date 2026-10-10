@@ -68,6 +68,61 @@ test('SPA route applies and releases viewer changes', async t => {
   await page.evaluate(() => history.pushState({}, '', '/watch?v=2'));
   await page.waitForFunction(() => document.querySelector('ytd-shorts').style.display !== 'none');
 });
+test('POLICY-03: absolute Shorts links, query false positive and duplicate scans', async t => {
+  const page = await fixture(t, '<a id="absolute" href="https://www.youtube.com/shorts/1">short</a><a id="query" href="/watch?v=1&next=/shorts/2">watch</a><ytd-shorts>player</ytd-shorts>', '/shorts/1');
+  await page.evaluate(() => { controller.start({features:{shorts:true}}); controller.scan(); controller.scan(); });
+  assert.equal(await page.locator('#absolute').isVisible(), false);
+  assert.equal(await page.locator('#query').isVisible(), true);
+  assert.equal(await page.locator('aside[role=status]').count(), 1);
+  assert.equal(await page.evaluate(() => controller.release()), true);
+  assert.equal(await page.locator('aside[role=status]').count(), 0);
+  assert.equal(await page.locator('#absolute').isVisible(), true);
+});
+test('POLICY-03: delayed viewer recovers and replay guard is removed on release', async t => {
+  const page = await fixture(t, '<main>loading</main>', '/shorts/1');
+  assert.equal((await page.evaluate(() => controller.start({features:{shorts:true}})))[0].status,'FAILED');
+  await page.evaluate(() => document.body.insertAdjacentHTML('beforeend','<ytd-shorts><video></video></ytd-shorts>'));
+  await page.waitForFunction(() => results.at(-1)?.[0]?.status === 'SUPPORTED');
+  await page.evaluate(() => {
+    window.pauseCalls = 0;
+    document.querySelector('video').pause = () => pauseCalls++;
+    document.querySelector('video').dispatchEvent(new Event('play'));
+  });
+  assert.equal(await page.evaluate(() => pauseCalls),1);
+  await page.evaluate(() => { controller.release(); document.querySelector('video').dispatchEvent(new Event('play')); });
+  assert.equal(await page.evaluate(() => pauseCalls),1);
+});
+test('POLICY-03: history back and forward restore ordinary route', async t => {
+  const page = await fixture(t, '<ytd-shorts>player</ytd-shorts>');
+  await page.evaluate(() => { controller.start({features:{shorts:true}}); history.pushState({},'', '/shorts/1'); });
+  await page.waitForFunction(() => document.querySelector('ytd-shorts').style.display === 'none');
+  await page.goBack();
+  await page.waitForFunction(() => document.querySelector('ytd-shorts').style.display !== 'none');
+  await page.goForward();
+  await page.waitForFunction(() => document.querySelector('ytd-shorts').style.display === 'none');
+});
+test('TEST harness: trusted popup only, repeated apply and release', async t => {
+  const page = await fixture(t, '<ytd-shorts>player</ytd-shorts>', '/shorts/1');
+  await page.evaluate(() => {
+    window.chrome = {runtime:{id:'test-extension',getURL:path => location.origin+'/'+path,
+      onMessage:{addListener:callback => { window.testListener = callback; }}}};
+  });
+  await page.evaluate(await readFile(new URL('../content-tools/chrome-harness/bootstrap.js',import.meta.url),'utf8'));
+  const result = await page.evaluate(async () => {
+    const sender = {id:'test-extension',url:chrome.runtime.getURL('popup.html')};
+    let rejectedReply = false;
+    const rejected = testListener({type:'TEST_SHORTS_APPLY'}, {...sender,url:location.href}, () => { rejectedReply = true; });
+    const send = type => new Promise(resolve => testListener({type},sender,resolve));
+    const first = await send('TEST_SHORTS_APPLY'), second = await send('TEST_SHORTS_APPLY');
+    const release = await send('TEST_SHORTS_RELEASE');
+    return {rejected:rejected === undefined && !rejectedReply,first,second,release};
+  });
+  assert.equal(result.rejected,true);
+  assert.equal(result.first.active,true);
+  assert.equal(result.second.result[0].status,'SUPPORTED');
+  assert.equal(result.release.released,true);
+  assert.equal(await page.locator('ytd-shorts').isVisible(),true);
+});
 test('OPTION-01/02: hide recommendations/comments, preserve video and manual playback', async t => {
   const page = await fixture(t, '<ytd-watch-flexy><video autoplay></video><div id="related">suggestions</div><ytd-comments>comments</ytd-comments></ytd-watch-flexy>');
   await page.evaluate(() => controller.start({features:{recommendations:true,comments:true}}));

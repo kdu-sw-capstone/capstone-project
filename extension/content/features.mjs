@@ -1,10 +1,10 @@
 import { Changes } from './changes.mjs';
 import { featureEntry } from './entry.mjs';
+import { ShortsControl } from './shorts.mjs';
 
 const YOUTUBE = new Set(['youtube.com', 'www.youtube.com']);
 const INSTAGRAM = new Set(['instagram.com', 'www.instagram.com']);
 const SELECTORS = {
-  shorts: 'ytd-reel-shelf-renderer, ytd-rich-shelf-renderer[is-shorts], a[href^="/shorts/"]',
   recommendations: 'ytd-browse[page-subtype="home"] #contents, ytd-watch-flexy #related',
   comments: 'ytd-watch-flexy ytd-comments',
 };
@@ -15,6 +15,7 @@ export class FeatureControls {
     this.document = document;
     this.changes = new Changes();
     this.autoplay = new Map();
+    this.shorts = new ShortsControl(document);
   }
   apply(flags) {
     const url = new URL(this.document.location.href);
@@ -26,21 +27,17 @@ export class FeatureControls {
       if (flags[feature] !== true) continue;
       const result = { feature, status: 'UNSUPPORTED', changed: 0 };
       try {
-        if (youtube && feature in SELECTORS) {
+        if (youtube && feature === 'shorts') {
+          results.push(this.shorts.apply());
+          continue;
+        } else if (youtube && feature in SELECTORS) {
           let selector = SELECTORS[feature];
-          if (feature === 'shorts' && entry === 'YOUTUBE_SHORTS')
-            selector += ', ytd-shorts';
           const elements = [...this.document.querySelectorAll(selector)];
           result.status = elements.length ? 'SUPPORTED' : 'FAILED';
           for (const element of elements) {
             if (!this.changes.hide(element)) result.status = 'FAILED';
             else result.changed++;
-            if (feature === 'shorts' && element.matches('ytd-shorts'))
-              element.querySelectorAll('video').forEach(video => video.pause());
           }
-          // A link/shelf alone cannot prove that a directly opened Shorts player is blocked.
-          if (feature === 'shorts' && entry === 'YOUTUBE_SHORTS' &&
-              !this.document.querySelector('ytd-shorts')) result.status = 'FAILED';
         } else if (instagram && feature === 'reels') {
           if (entry === 'INSTAGRAM_REELS') {
             const main = this.document.querySelector('main');
@@ -68,7 +65,8 @@ export class FeatureControls {
     return results;
   }
   release() {
-    let confirmed = this.changes.restore();
+    const shortsReleased = this.shorts.release();
+    let confirmed = this.changes.restore() && shortsReleased;
     for (const [toggle] of this.autoplay) {
       try {
         if (toggle.getAttribute('aria-checked') === 'false') toggle.click();

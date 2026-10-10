@@ -114,3 +114,15 @@
 ### 2026-10-10 중간 게시 완료
 
 구현3d7bff718e756cedb0950858885edbb6f472ea68를 feature/content-control로 Push하고 원격SHA 일치를 확인했다. 이전 게시/작성자 차단 해소(사용자 지정 local Git 작성자 적용). PR/리뷰/develop병합 미수행. 자동29/29 PASS·사용자 OPTION-09 부분 확인은 상세 기록과 동일하며 실제 서비스/Core/Server·목록/모델·복구 미검증 유지. 오늘은 중간 공유로 종료, 다음은 D-06 연결 제안 팀 검토→세부계약 합의→Core 연결/실제 Chrome 검증. 최신 게시/재개 원본은 Content_Control_2026-10-10.md 참조.
+
+## 2026-10-10 필수 Shorts 재개 시작
+
+- 담당 채지민(Content Control), feature/content-control, 시작 HEAD0febe9838ebccdf269f5d3ad8e5b81363bc7f820. fetch 확인 origin/develop90ad32b·Core9b063be, 작업본 clean. 기존 추가MVP 코드/타담당 구현 보존.
+- 이번 범위: Shorts 직접/SPA/새DOM/재생 재시도/새로고침·뒤로가기·해제 보강 및 시험전용 MV3 주입 도구. 제품 Core 메시지·규칙ID·Event1.2 발급/저장/세션 관리는 제외. AC-POLICY-03-01~03·BOUND-19 부분 검증.
+- 기준: AGENTS/개발운영/통합현황/작업카드, 화면 SITE-02/FEATURE-01·TF-08/TF-A01, 동작규칙 제한/복원, D-06·API 로컬메시지·호스트정책우선순위60행. Core 선택 사이트만 사용, 상위정책 혼합 금지·설정 다음세션.
+- Core 현 manifest에는 content_scripts 없음, worker에는 OBSERVE_ACCESS/FEATURE_RESULT receiver 없음. D-06은 메시지필드·DNR ID/priority·이벤트확정 미합의를 명시. 이 부분은 조율 대기, 고정 성공 응답/임의 계약 추가 금지.
+- 사용자 최신 지시: 추가MVP 신규 작업 없이 필수 Shorts 우선. 명시 병합 요청 전 develop 병합/자동병합 금지. 기능브랜치 구현·검증·Commit/Push·Draft PR 범위만 진행.
+
+### Shorts 보강 결과 · 독립 검토 대기
+
+ShortsControl adapter와 시험 전용 MV3 도구 추가. 기존 구현 보존. Windows Chrome 엔진 합성/모의 자동33/33 PASS(21054.1217ms), 직접/SPA/뒤로·앞으로/동적 viewer/재생 재시도/해제 및 기존 기능 회귀 포함. 실제 서비스/MV3 로드/새로고침 자동 정책 재적용/Core·Event1.2·Snapshot·회원/비회원 통합은 미검증. D-06 schema·규칙 ID·navigation_id·이벤트 freeze 미합의이므로 제품 연결 보류. 명령·코드·AC 범위·Chrome 수동 절차는 ../Content_Shorts_2026-10-10.md 참조. 다음은 실제 Chrome 절차 기록과 윤종민의 연결안 검토. Draft PR 대상으로 공유하며 develop 병합/자동병합은 사용자 명시 요청 전 금지.
