@@ -58,3 +58,8 @@ main{border-radius:16px}.brand{align-items:flex-start}.brand h1{line-height:30px
 #site-list>li{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;min-height:70px}#site-list>li>span{flex:1;min-width:120px}#site-list strong{display:block;font-size:16px}#site-list small{display:block;font-size:12px;color:var(--muted);overflow-wrap:anywhere}.site-actions{margin:0;flex-shrink:0}.site-confirm{flex-basis:100%}
 
 :root{--control:#172033}:root[data-theme=light]{--control:#edf6ff;--mark:#1c70e8;--mark-end:#1c70e8}.secondary,#cancel-edit,#reload-sites,input:not([type=checkbox]),select{background:var(--control)}:root[data-theme=light] .secondary{color:var(--muted)}#focus-feedback{font-size:12px;color:var(--muted);margin:12px 0}#focus-feedback:empty{display:none}
+
+#member-web-link{display:block;min-height:40px;padding:9px 12px;border:1px solid var(--border);border-radius:12px;text-align:center;text-decoration:none;font-weight:600}
+#member-web-link[aria-disabled="true"]{opacity:.5}
+#member-web-link:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
+#guest-focus-controls>button,#member-focus-guide>button,#member-web-link{margin-bottom:12px}

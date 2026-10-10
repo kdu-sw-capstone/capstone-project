@@ -3,13 +3,19 @@
  const $=id=>document.getElementById(id);
  let page='focus', previousStatus=null, preparing=false;
  const terminal=status=>['ENDED','INTERRUPTED','START_FAILED'].includes(status);
- function navigate(next){page=next;for(const s of document.querySelectorAll('.page'))s.hidden=s.id!==`${next}-page`;$('main-tabs').hidden=next!=='focus';$('page-subtitle').textContent=next==='sites'?'비회원 · 사이트 설정':next==='access'?'비회원 · 로컬 기록':'비회원 · 이 브라우저에 저장';if(next==='access')refreshAccess.click();}
+ function navigate(next){page=next;for(const s of document.querySelectorAll('.page'))s.hidden=s.id!==`${next}-page`;$('main-tabs').hidden=next!=='focus';$('page-subtitle').textContent=window.FocurveMemberUI?.memberMode?(next==='sites'?'보존된 비회원 · 사이트 설정':next==='access'?'보존된 비회원 · 로컬 기록':'회원 연결됨 · 기존 비회원 자료 보존'):next==='sites'?'비회원 · 사이트 설정':next==='access'?'비회원 · 로컬 기록':'비회원 · 이 브라우저에 저장';if(next==='access')refreshAccess.click();}
  function editor(open){$('site-editor').hidden=!open;$('site-list-panel').hidden=open;$('site-search').parentElement.hidden=open;}
  function summary(){if(!sitesVerified&&!focusSession){$('policy-summary').textContent='사이트 설정 조회 결과 미확인. 사이트 관리에서 다시 확인해주세요.';return;}const items=focusVerified&&focusSession&&!terminal(focusSession.status)?focusSession.snapshot?.sites:siteItems; if(!Array.isArray(items)){$('policy-summary').textContent='세션 정책을 확인하지 못했습니다.';return;} const counts={BLOCK:0,ALLOW:0,RECORD:0};for(const s of items)if(Object.hasOwn(counts,s.access_policy))counts[s.access_policy]++;$('policy-summary').textContent=`${items===siteItems?'적용할 설정':'현재 세션의 고정된 설정'}\n사이트 차단 ${counts.BLOCK}개 · 허용 ${counts.ALLOW}개 · 기록 ${counts.RECORD}개\n설정 변경은 다음 세션부터 적용됩니다.`;}
  function renderSites(){const term=$('site-search').value.trim().toLowerCase();[...siteList.children].forEach((row,i)=>{const s=siteItems[i];row.hidden=Boolean(s&&term&&!`${s.display_name} ${s.canonical_host}`.toLowerCase().includes(term));});$('site-count').textContent=!sitesVerified?'사이트 목록을 확인하고 있습니다…':siteItems.length?`저장된 사이트 ${siteItems.length}개`:'등록된 사이트가 없습니다. 사이트를 추가해주세요.';summary();}
  function renderRecords(){const ok=accessData&&accessData.session_id===focusSession?.session_id;$('recent-result').textContent=ok&&accessData.quarantined_count?`기존 이벤트 ${accessData.quarantined_count}건의 계약 오류 확인 필요 · 원본 보존`:ok?`접근 ${accessData.total_access}회 · 반복 ${accessData.repeat_access}회\n${accessData.items.slice(0,3).map(e=>`${e.payload.target_host} · ${e.event_type==='BLOCKED_SITE_ACCESS'?'차단':'기록'}`).join('\n')||'저장된 접근 기록이 없습니다.'}`:'기록 조회 결과 미확인. 로컬 기록에서 다시 확인해주세요.';}
  function renderFocus(){
   const status=focusSession?.status, active=focusSession&&!terminal(status), running=focusVerified&&!focusBusy&&status==='RUNNING';
+  const member=Boolean(window.FocurveMemberUI?.memberMode);
+  $('focus-page').setAttribute('aria-labelledby',member?'member-focus-title':'focus-title');
+  $('member-focus-guide').hidden=!member;$('guest-focus-controls').hidden=member&&!active;
+  $('guest-sites-note').textContent=member?'보존된 비회원 설정입니다. 회원 집중 설정은 Web에서 관리합니다.':'이 브라우저의 비회원 설정입니다.';
+  if(page==='focus')$('page-subtitle').textContent=member?'회원 연결됨 · 기존 비회원 자료 보존':'비회원 · 이 브라우저에 저장';
+  $('main-tabs').setAttribute('aria-label',member?'회원 실행 및 비회원 자료 관리':'비회원 관리');
   $('focus-countdown').hidden=!running;$('duration-label').hidden=Boolean(active)||focusBusy;startFocus.hidden=Boolean(active)||focusBusy;startFocus.disabled=!focusVerified||focusBusy||Boolean(active)||Boolean(window.FocurveMemberUI?.blocked);
   $('request-end').hidden=!focusVerified||!active||status==='STARTING'||focusBusy;$('request-end').textContent=status==='RUNNING'?'세션 종료':'차단 해제 다시 확인';endFocus.disabled=!focusVerified||focusBusy||!active||status==='STARTING';
   $('focus-title').textContent=!focusVerified?'실제 상태를 확인해주세요':focusBusy?'처리 결과 확인 중':running?'집중 진행 중':active?(focusStates[status]||'결과 확인 필요'):'집중 세션을 시작하세요';

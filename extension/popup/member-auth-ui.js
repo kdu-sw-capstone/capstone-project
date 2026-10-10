@@ -5,12 +5,13 @@
   const check = document.getElementById('member-check');
   const info = document.getElementById('member-status');
   const preferences = document.getElementById('preferences');
-  const ui = window.FocurveMemberUI = { blocked: true };
+  const ui = window.FocurveMemberUI = { blocked: true, memberMode: false };
   let busy = false;
   const labels = { UNREGISTERED: '계정이 연결되지 않았습니다.', REGISTERED: '설치 등록 완료 · 계정 연결 가능',
     LINK_PENDING: 'Web에서 로그인·승인 후 연결 상태를 확인해주세요.', REQUEST_UNCONFIRMED: '연결 요청 응답 미확인 · 만료까지 새 실행을 보류합니다.',
     REGISTRATION_UNCONFIRMED: '설치 등록 결과 미확인 · 서버 담당자 확인이 필요합니다.',
     AUTH_RECOVERY_REQUIRED: '인증 복구가 필요합니다. Web의 설치 연결 관리에서 확인해주세요.',
+    REFRESHING: '회원 인증 상태를 다시 확인하고 있습니다.',
     VERIFYING: '토큰을 받았으며 실제 회원 정보를 확인 중입니다.',
     LINKED: '회원 연결 확인 완료 · 회원 실행 상태를 아래에서 확인해주세요.' };
   const errors = { INVALID_CALLBACK: 'Server에 확장 주소 허용 등록이 필요합니다.',
@@ -21,13 +22,30 @@
     LINK_EXPIRED: '연결 요청이 만료되었거나 거절되었습니다. 필요하면 다시 연결해주세요.' };
   const errorText = code => errors[code] || '인증 또는 저장 상태 확인이 필요합니다. 서버와 연결 설정을 확인해주세요.';
   function render(data) {
-    const executionAvailable = data?.phase === 'LINKED' || Boolean(data?.owner_user_id && data?.executor_id
-      && ['AUTH_RECOVERY_REQUIRED', 'REFRESHING', 'VERIFYING'].includes(data.phase));
+    const valid = Boolean(data && Object.hasOwn(labels,data.phase) && typeof data.guest_start_allowed === 'boolean');
+    const executionAvailable = valid && (data?.phase === 'LINKED' || Boolean(data?.owner_user_id && data?.executor_id
+      && ['AUTH_RECOVERY_REQUIRED', 'REFRESHING', 'VERIFYING'].includes(data.phase)));
+    ui.memberMode = executionAvailable;
+    const link = document.getElementById('member-web-link');
+    link.removeAttribute('href');link.setAttribute('aria-disabled','true');
+    if (executionAvailable) {
+      try {
+        const url = new URL(data.web_origin);
+        if (url.username || url.password || url.search || url.hash || url.pathname !== '/'
+          || url.protocol !== 'https:' && !(url.protocol === 'http:' && ['localhost','127.0.0.1','[::1]'].includes(url.hostname))) throw new Error('INVALID_WEB');
+        link.href = url.origin + '/';link.setAttribute('aria-disabled','false');
+      } catch {}
+    }
+    document.getElementById('member-focus-title').textContent = data?.phase === 'LINKED'
+      ? '회원 집중은 Web에서 시작하세요' : '회원 연결 확인이 필요합니다';
+    document.getElementById('member-focus-note').textContent = data?.phase === 'LINKED'
+      ? 'Web에서 집중을 시작하고, 이 확장에서 실제 실행과 기록 전송 상태를 확인하세요.'
+      : 'Web의 설치 연결 관리에서 인증 상태를 확인해주세요. 기존 실행의 종료·해제 확인은 계속 제공됩니다.';
     window.dispatchEvent(new CustomEvent('focurve-member-state', { detail: { linked: executionAvailable } }));
     if (!data || !Object.hasOwn(labels, data.phase) || typeof data.guest_start_allowed !== 'boolean') {
       ui.blocked = true; info.textContent = '계정 연결 상태 미확인 · 상태를 다시 확인해주세요.';
     } else {
-      ui.blocked = !data.guest_start_allowed || busy;
+      ui.blocked = !data.guest_start_allowed || busy || executionAvailable;
       info.textContent = labels[data.phase] + (data.error ? ' · ' + errorText(data.error) : '');
       document.getElementById('member-callback').value = data.callback_uri;
       if (!busy) { server.value = data.server_url; web.value = data.web_origin; }
@@ -59,6 +77,7 @@
     preferences.open = true;
     run('FOCURVE_AUTH_BEGIN', { server_url: server.value, web_origin: web.value });
   }));
+  document.getElementById('member-focus-check').addEventListener('click',() => {preferences.open = true;document.getElementById('member-execution-check').click();});
   check.addEventListener('click', () => run('FOCURVE_AUTH_POLL'));
   run('FOCURVE_AUTH_STATUS');
 })();
