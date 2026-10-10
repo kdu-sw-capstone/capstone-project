@@ -7,6 +7,7 @@
   <link rel="stylesheet" href="popup.css">
   <script src="popup.js" defer></script>
   <script src="popup-ui.js" defer></script>
+  <script src="member-execution-ui.js" defer></script>
   <script src="member-auth-ui.js" defer></script>
 </head>
 <body>
@@ -77,6 +78,11 @@
       <label>로그인할 Web 주소 <input id="member-web" type="url" value="http://127.0.0.1:5173"></label>
       <label>Server 허용 등록용 확장 주소 <input id="member-callback" readonly></label>
       <button id="member-check" type="button" class="secondary">계정 연결 상태 확인</button>
+      <div id="member-execution-panel" hidden>
+        <p id="member-execution-status" role="status" aria-live="polite">회원 실행 상태 확인 중…</p>
+        <button id="member-execution-check" type="button" class="secondary">회원 실행 상태 확인</button>
+        <button id="member-execution-end" type="button" class="secondary" hidden>회원 집중 종료</button>
+      </div>
       <p class="note">연결 대기 중에는 새 집중을 시작할 수 없습니다. 기존 비회원 자료는 보존됩니다.</p>
       <label>화면 모드 <select id="theme-mode"><option value="system">시스템 설정</option><option value="dark">다크</option><option value="light">라이트</option></select></label>
       <button id="refresh-focus" type="button" class="text-button">상태 다시 확인</button>

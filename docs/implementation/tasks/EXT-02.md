@@ -2,6 +2,10 @@
 
 단계: 필수 MVP · 설계 담당 영역: Extension
 
+## 최신 작업 — 제품 회원 Worker loop (0.1.6)
+
+윤종민 / feature/extension-core-ext-02 / 시작3f77cad. 제품 Worker에서 verified auth·실제 Server session/context·SiteController·별도 control/report IDB·commands/APPLIED/RELEASED·수동/만료 local END/reconcile 연결. Worker 복구는 실제 규칙/Server 대조, 사라진 규칙은 자동재적용하지 않고 복구 확인 상태, 미확인 gap 제외. Extension159/159·UI22·Backend전체165/165/package 및 최종 실제 HTTP3/3 통과(Chrome DNR/인증은 모의). **실제 Windows 회원 Chrome·alarm/절전·Event1.2 수집·신규 자동재개 및 전체 AC 미검증**. [구현·검증·실패·수동절차](../evidence/EXT-02-2026-10-10-member-worker-loop.md). Content D06 회신 대기, develop 병합 금지 유지.
+
 ## 최신 작업 — 회원 명령 조회·실행 보고 통신 단위
 
 윤종민 / feature/extension-core-ext-02 / 시작 b674693. 기존 commands/reports API의 설치·회원 결속 조회, 별도 IndexedDB 보고 원문 저장·같은 ID 재전송·확정 거절 격리 구현. Extension139/139·Backend163/163/package·실제 Chromium Worker/IndexedDB 시험 통과. 실제 HTTP/MySQL에서 SiteController와 보고 adapter를 연결해 적용/보고 유실 재전송/종료/해제를 확인했으나 DNR·인증·trusted context는 합성이다. **제품 Worker 회원 loop·타이머·reconcile는 미연결, 실제 회원 Chrome 및 전체 AC 미검증**. [코드·검증·초기 SQL 실패·다음 단계](../evidence/EXT-02-2026-10-10-member-execution-client.md). Content D06 미합의·develop 병합 금지 유지.

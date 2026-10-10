@@ -27,6 +27,12 @@ export class MemberJournalStore {
       request.onsuccess = () => done(request.result ?? null);
     });
   }
+  list(ownerKey, executorId) {
+    return this.transaction('readonly', (store, done) => {
+      const request = store.getAll();
+      request.onsuccess = () => done(request.result.filter(entry => entry.owner_key === ownerKey && entry.executor_id === executorId));
+    });
+  }
   save(entry) {
     const copy = structuredClone(entry);
     if (!/^MEMBER:[1-9][0-9]*$/.test(copy.owner_key)) throw new Error('INVALID_OWNER');

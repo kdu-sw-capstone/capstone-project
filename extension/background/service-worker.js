@@ -1,4 +1,4 @@
-importScripts("host-policy.js", "local-store.js", "site-store.js", "session-db.js", "session-core.js", "access-store.js", "member-events.js", "member-auth.js", "member-auth-runtime.js");
+importScripts("host-policy.js", "local-store.js", "site-store.js", "session-db.js", "session-core.js", "access-store.js", "member-events.js", "member-auth.js", "member-auth-runtime.js", "member-execution.js", "member-execution-runtime.js");
 
 // 개발용 연결 진단입니다. 제품의 세션/정책 메시지와 분리합니다.
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {

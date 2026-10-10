@@ -48,5 +48,6 @@ const MemberAuthRuntime = (() => {
     return true;
   });
   // Credentials are available only to a future background member command/event caller.
-  return Object.freeze({ guardGuestStart: operation => auth.guardGuestStart(operation), credentials: () => auth.credentials() });
+  return Object.freeze({ guardGuestStart: operation => auth.guardGuestStart(operation), credentials: () => auth.credentials(),
+    status: () => auth.status() });
 })();

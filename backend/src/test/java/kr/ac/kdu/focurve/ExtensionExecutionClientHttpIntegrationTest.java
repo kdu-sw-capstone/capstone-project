@@ -30,6 +30,17 @@ class ExtensionExecutionClientHttpIntegrationTest {
 
   @Test
   void productAdaptersApplyAndReleaseWithDurableIdenticalReportRetry() throws Exception {
+    runProbe("member-execution-http-probe.mjs", false);
+  }
+  @Test
+  void productLoopChecksRealSessionAndReconcileBeforeRecoveredExecution() throws Exception {
+    runProbe("member-loop-http-probe.mjs", false);
+  }
+  @Test
+  void productLoopLocallyReleasesThenReconcilesManualEnd() throws Exception {
+    runProbe("member-loop-http-probe.mjs", true);
+  }
+  void runProbe(String script, boolean localEnd) throws Exception {
     String email = uuid() + "@example.invalid";
     db.update("INSERT INTO users(display_name,email,email_verified,status,created_at,terms_version,terms_accepted_at) VALUES ('Execution HTTP synthetic',?,true,'ACTIVE',UTC_TIMESTAMP(3),'dev-v1',UTC_TIMESTAMP(3))", email);
     long owner = db.queryForObject("SELECT id FROM users WHERE email=?", Long.class, email);
@@ -41,11 +52,11 @@ class ExtensionExecutionClientHttpIntegrationTest {
     String sessionId = execution.start(owner, executor, 1, uuid()).get("session_id").toString();
     Path root = Path.of(System.getProperty("user.dir"));
     if (!root.resolve("extension/scripts/member-execution-http-probe.mjs").toFile().isFile()) root = root.getParent();
-    var process = new ProcessBuilder("node", "extension/scripts/member-execution-http-probe.mjs").directory(root.toFile()).redirectErrorStream(true);
+    var process = new ProcessBuilder("node", "extension/scripts/" + script).directory(root.toFile()).redirectErrorStream(true);
     process.environment().put("FOCURVE_TEST_BEARER", token);
     process.environment().put("FOCURVE_HTTP_FIXTURE", new ObjectMapper().writeValueAsString(Map.of(
         "owner_key", "MEMBER:" + owner, "executor_id", executor, "session_id", sessionId,
-        "base_url", "http://127.0.0.1:" + port + "/api/v1")));
+        "base_url", "http://127.0.0.1:" + port + "/api/v1", "local_end", localEnd)));
     var child = process.start();
     if (!child.waitFor(30, TimeUnit.SECONDS)) { child.destroyForcibly(); throw new AssertionError("Execution probe timed out"); }
     String output = new String(child.getInputStream().readAllBytes()).replace(token, "[redacted]");
@@ -53,7 +64,7 @@ class ExtensionExecutionClientHttpIntegrationTest {
     assertThat(output).contains("PASS: execution adapters");
     long session = db.queryForObject("SELECT id FROM focus_sessions WHERE source_session_id=?", Long.class, sessionId);
     assertThat(db.queryForObject("SELECT execution_status FROM focus_sessions WHERE id=?", String.class, session)).isEqualTo("ENDED");
-    assertThat(db.queryForObject("SELECT COUNT(*) FROM execution_reports WHERE session_id=?", Long.class, session)).isEqualTo(2);
+    assertThat(db.queryForObject("SELECT COUNT(*) FROM execution_reports WHERE session_id=?", Long.class, session)).isEqualTo(localEnd ? 1 : 2);
     assertThat(db.queryForObject("SELECT COUNT(*) FROM session_intervals WHERE session_id=? AND end_at IS NOT NULL", Long.class, session)).isEqualTo(1);
     assertThat(db.queryForObject("SELECT COUNT(*) FROM active_execution_locks WHERE session_id=?", Long.class, session)).isZero();
   }

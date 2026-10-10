@@ -111,16 +111,36 @@ export class MemberExecutionClient {
       || !result.access_token) throw new Error('INVALID_EXECUTION_CREDENTIALS');
     return result;
   }
-  async request(path, credentials, body) {
+  async request(path, credentials, body, headers = {}) {
     const controller = new AbortController(), timer = setTimeout(() => controller.abort(), this.timeoutMs);
     try {
       const response = await this.fetch(this.baseUrl + path, { method: body == null ? 'GET' : 'POST',
-        headers: { Authorization: 'Bearer ' + credentials.access_token,
+        headers: { ...headers, Authorization: 'Bearer ' + credentials.access_token,
           ...(body == null ? {} : { 'Content-Type': 'application/json' }) },
         ...(body == null ? {} : { body }), credentials: 'omit', redirect: 'error', cache: 'no-store', signal: controller.signal });
       if (!response.ok) { const error = new Error('EXECUTION_HTTP_' + response.status); error.status = response.status; throw error; }
       return await response.json();
     } finally { clearTimeout(timer); }
+  }
+  async session(sessionId) {
+    if (!uuid(sessionId)) throw new Error('INVALID_SESSION');
+    const credentials = await this.credentials();
+    const result = await this.request('/sessions/' + sessionId, credentials);
+    if (result?.session_id !== sessionId || result.executor_id !== credentials.executor_id
+      || !revision(result.desired_revision) || !['STARTING', 'RUNNING', 'ENDING', 'UNKNOWN', 'ENDED', 'START_FAILED'].includes(result.execution_status))
+      throw new Error('INVALID_SESSION_RESPONSE');
+    return result;
+  }
+  async end(sessionId, key) {
+    if (!uuid(sessionId) || !uuid(key)) throw new Error('INVALID_SESSION');
+    return this.request('/sessions/' + sessionId + '/end', await this.credentials(), '{}', { 'Idempotency-Key': key });
+  }
+  async reconcile(body) {
+    const credentials = await this.credentials();
+    const result = await this.request('/executors/' + credentials.executor_id + '/reconcile', credentials, JSON.stringify(body));
+    if (!revision(result?.revision) || !['APPLIED', 'RELEASED'].includes(result.desired_state)
+      || !Array.isArray(result.acknowledged_actions)) throw new Error('INVALID_RECONCILE_RESPONSE');
+    return result;
   }
   async commands() {
     const credentials = await this.credentials();
@@ -143,9 +163,11 @@ export class MemberExecutionClient {
     // revision, expiry and supported policies before using SiteController.
     return structuredClone(response);
   }
-  async enqueue(report) {
+  async enqueue(report, expectedScope = null) {
     const body = JSON.stringify(validateExecutionReport(structuredClone(report)));
     const credentials = await this.credentials();
+    if (expectedScope && (expectedScope.owner_key !== credentials.owner_key || expectedScope.executor_id !== credentials.executor_id))
+      throw new Error('EXECUTION_SCOPE_MISMATCH');
     if (JSON.parse(body).executor_id !== credentials.executor_id) throw new Error('EXECUTION_SCOPE_MISMATCH');
     return this.store.insert({ owner_key: credentials.owner_key, executor_id: credentials.executor_id,
       report_id: JSON.parse(body).report_id, base_url: this.baseUrl, body, status: 'PENDING', next_attempt_at: 0 });

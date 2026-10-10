@@ -10,6 +10,7 @@
     "test": "node --test tests/*.test.js tests/*.test.mjs",
     "check": "node scripts/check.js",
     "build:harness": "node scripts/build-harness.js",
+    "build:member-worker": "node scripts/build-member-worker.js",
     "test:popup-ui": "python3 tests/ui/popup_ui.py"
   },
   "devDependencies": {

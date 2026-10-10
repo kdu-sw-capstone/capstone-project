@@ -12,7 +12,7 @@
     REGISTRATION_UNCONFIRMED: '설치 등록 결과 미확인 · 서버 담당자 확인이 필요합니다.',
     AUTH_RECOVERY_REQUIRED: '인증 복구가 필요합니다. Web의 설치 연결 관리에서 확인해주세요.',
     VERIFYING: '토큰을 받았으며 실제 회원 정보를 확인 중입니다.',
-    LINKED: '회원 연결 확인 완료 · 회원 집중 실행은 아직 연결되지 않았습니다.' };
+    LINKED: '회원 연결 확인 완료 · 회원 실행 상태를 아래에서 확인해주세요.' };
   const errors = { INVALID_CALLBACK: 'Server에 확장 주소 허용 등록이 필요합니다.',
     GUEST_SESSION_ACTIVE: '진행 중인 비회원 집중을 먼저 종료하고 차단 해제를 확인해주세요.',
     ACCOUNT_TRANSITION_ACTIVE: '기존 연결 상태부터 확인해주세요.', AUTH_SERVER_BOUND: '등록한 Server 주소를 유지해주세요.',
@@ -21,6 +21,7 @@
     LINK_EXPIRED: '연결 요청이 만료되었거나 거절되었습니다. 필요하면 다시 연결해주세요.' };
   const errorText = code => errors[code] || '인증 또는 저장 상태 확인이 필요합니다. 서버와 연결 설정을 확인해주세요.';
   function render(data) {
+    window.dispatchEvent(new CustomEvent('focurve-member-state', { detail: { linked: data?.phase === 'LINKED' } }));
     if (!data || !Object.hasOwn(labels, data.phase) || typeof data.guest_start_allowed !== 'boolean') {
       ui.blocked = true; info.textContent = '계정 연결 상태 미확인 · 상태를 다시 확인해주세요.';
     } else {

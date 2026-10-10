@@ -5,7 +5,9 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const timestamp = value => Number.isFinite(parseServerTime(value));
 
 // Internal adapter, not an API or runtime message endpoint. getContext must come
-// from trusted Core state AFTER reconciliation, never a page or command payload.
+// from trusted Core state: authorize a fresh command against the authenticated
+// current session; reconcile persisted recovery first. Never trust a page or
+// command payload alone. The reconciled flag is internal, not a Server wire.
 // journal.save resolves only when the durable transaction has committed.
 export class SiteController {
   constructor({ dnr, tabs, journal, getContext, blockedPageUrl, now = Date.now,
