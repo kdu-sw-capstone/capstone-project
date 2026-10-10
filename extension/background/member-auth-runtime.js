@@ -9,7 +9,9 @@ const MemberAuthRuntime = (() => {
     const terminal = !state || ['ENDED', 'INTERRUPTED', 'START_FAILED'].includes(state.session.status);
     const confirmed = !state || state.journal.observed === 'RELEASED';
     return { active_session_id: terminal ? null : state.session.session_id, owned_rule_ids,
-      pending_action_count: terminal && confirmed ? 0 : 1 };
+      // Without a journal, existing rules cannot be certified as unrelated/fully released.
+      // Keep them intact and require recovery; never claim empty execution evidence.
+      pending_action_count: terminal && confirmed && (state || actual.length === 0) ? 0 : 1 };
   }
   const auth = new FocurveMemberAuth.MemberAuth({ store: new FocurveMemberAuth.AuthStore(),
     getInstallation: () => LocalStore.guestContext(), inspectIdle,

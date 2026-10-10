@@ -14,13 +14,13 @@ AGENTS.md·개발운영/통합현황/EXT02카드, 인증·실행복구·가져�
 - 기존계정버튼·화면설정/연결확인 details에 상태·Server/Web설정·공개callback주소를 연결. 신규 전체회원메인/다이얼로그 디자인을 추측해 구현하지 않음. 제공retry디자인명세22PNG 범위에 회원연결 상세프레임은 없고 일부속성미검증이므로 완전Figma일치/회원UI완료로 표시하지 않는다.
 - LINKED여도 **회원집중/명령루프는 미연결**이라고 안내하고 guestSTART를 막는다. 기존guest자료 조회/설정은 비회원 경로 그대로다. 회원 START/적용/보고/이벤트업로드/로그아웃·disconnect는 이번인증단위 전체완료로 주장하지 않음.
 
-이번 제품 파일 SHA256: `0c184c71a68189afb34bf4e002236a915bc620e0aa6754fa1e88bf25ad9cd7a8`. extension manifest/background/popup/blocked 경로순 `상대경로+NUL+파일SHA256+LF` 산식. 실제Windows 로드hash 대조 미검증. 이번 source는 f6사용자Chrome1~25 코드와 다르다.
+이번 제품 파일 SHA256: `3ef8a9fdcbaefea59a8b9b8f11eb73422907e63cb025e8969523cbb59c501101`. extension manifest/background/popup/blocked 경로순 `상대경로+NUL+파일SHA256+LF` 산식. 실제Windows 로드hash 대조 미검증. 이번 source는 f6사용자Chrome1~25 코드와 다르다.
 
 ## 실행 결과 및 근거 구분
 
 | 근거 | 주체·환경/방법 | 실제 결과 | 한계 |
 |---|---|---|---|
-| Extension 전체자동 | Codex Linux / Node24.19.0 / npm --prefix extension test | **113/113**, 실패0·skip0 | Chrome/storage/fetch/IndexedDB 모의. 설치·PKCE·원본보존·동시refresh·유실·만료/거절·sender·소유규칙·guest경합 포함 |
+| Extension 전체자동 | Codex Linux / Node24.19.0 / npm --prefix extension test | **114/114**, 실패0·skip0 | Chrome/storage/fetch/IndexedDB 모의. 설치·PKCE·원본보존·동시refresh·유실·만료/거절·sender·소유규칙·guest경합 포함 |
 | 제품popup HTML | Chromium151.0.7922.173 / test:popup-ui | **19항목** 통과 | ChromeAPI·회원상태 모의. 실제설치/물리Chrome 아님 |
 | Backend 전체verify | JDK21.0.12.1 / MySQL8.4.8 격리focurve_test | **140/140**, 실패0·skip0·package PASS | 마지막helper/status확인 보완 전전체실행; 보완후 좁은 인증HTTP 재실행 아래행 |
 | 제품Auth모듈→실제HTTP/MySQL | ExtensionAuthHttpIntegrationTest + member-auth-http-probe.mjs 최종재실행 | **1/1** 통과 | Webcookie/테스트회원·Chrome idle·storage 합성. 설치/proof·evidence·approval·PKCE·access/refresh 발급·me API는 실제 |
@@ -63,3 +63,5 @@ bash scripts/with-env.sh env SNAPSHOT_1_2_ENABLED=true SNAPSHOT_1_2_VERIFIED_EXE
 - **조율 필요:** 다훈의실행Server/Web·테스트계정·실제callback허용값, 설치proof/토큰교환·회전유실 후 상태확인/재연결 한계 및회원명령후속adapter. 현API는token없는identity복구API가 없고 직접 disconnect는Web인증경로. 추가API는합의후Server담당작업, 자동변경없음. 회원Figma프레임상세는별도확보필요.
 - **다음 행동:** 사용자코드·검증결과리뷰→Server/Web준비후 이번코드회원Chrome 수동검증→회원명령수신/Chrome적용/보고/Event전송연결. 확인한단위만전진하고회원통합/전체완료로표시하지 않음.
 - **Git:** 사용자허용된작업브랜치Commit·Push·PR17갱신만. develop병합없음. CI판정은PRchecks 별도로확인.
+
+추가검토: journal이 없는데 실제DNR규칙이 남아 있으면 빈실행증거라고 추정하지 않고 연결을보류한다. 규칙은임의삭제하지 않음. 추가회귀포함114/114 및문법검사통과; 인증HTTP흐름은변경없음.

@@ -4,7 +4,7 @@
 
 ## 작업 상태
 
-- 상태: 진행 중 — 2026-10-10 D09 제품 설치·PKCE·토큰/guest전환guard 구현. Extension모의113/113·UI19항목·Backend140/140·최종Auth실HTTP/MySQL합성1/1 통과. f6 비회원Chrome1~25 사용자성공/원본캡처/환경 확보(로드hash미대조), 이번Auth코드제품Chrome·회원명령/보고·필수전체AC미검증. Commit/Push/PR17갱신 허용, develop병합 금지. 과거Git동결은당시이력.
+- 상태: 진행 중 — 2026-10-10 D09 제품 설치·PKCE·토큰/guest전환guard 구현. Extension모의114/114·UI19항목·Backend140/140·최종Auth실HTTP/MySQL합성1/1 통과. f6 비회원Chrome1~25 사용자성공/원본캡처/환경 확보(로드hash미대조), 이번Auth코드제품Chrome·회원명령/보고·필수전체AC미검증. Commit/Push/PR17갱신 허용, develop병합 금지. 과거Git동결은당시이력.
 - 실제 담당자: 윤종민 — 기존 배정 원문(원본보관 ZIP의 개발계획 v1.3: Extension Core·세션·URL/Domain·사이트 정책·차단 페이지·시작/종료 연동)과 사용자 지시 기준. EXT 전체·Content Control을 재배정하지 않음
 - 브랜치 / 시작 기준 커밋: `feature/extension-core-ext-02` / `76df34e` (2026-10-07, origin/develop 최신 확인)
 - PR: [#17](https://github.com/kdu-sw-capstone/capstone-project/pull/17), develop ← feature/extension-core-ext-02, 현재 Open(non-draft)·수정 후 재검토 중. 사용자가 직접 생성했으며 병합하지 않음
@@ -461,7 +461,7 @@ Snapshot/가져오기 safe 상한과 사이트·메모 증가 방어, API 자동
 
 ### 최종 로컬 실행 결과 — 2026-10-09
 
-Backend 전체120/120·패키징 PASS, Frontend113/113·빌드 PASS. 격리 MySQL57490의 실제 HTTP/DB import8·execution7·note4·policy6 및 기존 Event1.2 HTTP2 시험 통과. 실제 Chrome/회원 Extension NOT RUN. 일반 session.version 극단 경계 계약은 조율 필요하므로 전체 D03/MVP/병합 완료로 바꾸지 않는다. 증거: C:\Users\dahun\capstone-project\.reviews\pr18-20261009\PR18_병합차단_로컬수정_검증보고서.md 및 merge-boundary 로그.
+Backend 전체120/120·패키징 PASS, Frontend114/114·빌드 PASS. 격리 MySQL57490의 실제 HTTP/DB import8·execution7·note4·policy6 및 기존 Event1.2 HTTP2 시험 통과. 실제 Chrome/회원 Extension NOT RUN. 일반 session.version 극단 경계 계약은 조율 필요하므로 전체 D03/MVP/병합 완료로 바꾸지 않는다. 증거: C:\Users\dahun\capstone-project\.reviews\pr18-20261009\PR18_병합차단_로컬수정_검증보고서.md 및 merge-boundary 로그.
 
 
 ## 2026-10-10 Event1.2 전송 단위 검증 결과
@@ -479,4 +479,4 @@ Backend 전체120/120·패키징 PASS, Frontend113/113·빌드 PASS. 격리 MySQ
 
 ### D09 이번 구현·검증 및 인계
 
-background member-auth/runtime·popup기존계정버튼 연결. 안전storage/단일refresh/응답유실대기·guest경합/sender/ownedrules검사, 제품JS의 실제HTTP PKCE/me/refresh 회귀추가. 모의113/113·UI19·Backend140/140 및 최신AuthHTTP1/1 통과, 회원명령/보고/자동복구는미연결. 이번Auth코드 실제Chrome·전체AC/BOUND17미검증. [코드식별·명령·미검증/실패/조율/다음행동 및 Chrome준비절차](../evidence/EXT-02-2026-10-10-member-auth.md). 이전f6 사용자Chrome1~25는보존하고이번Auth검증으로전용하지 않음.
+background member-auth/runtime·popup기존계정버튼 연결. 안전storage/단일refresh/응답유실대기·guest경합/sender/ownedrules검사, 제품JS의 실제HTTP PKCE/me/refresh 회귀추가. 모의114/114·UI19·Backend140/140 및 최신AuthHTTP1/1 통과, 회원명령/보고/자동복구는미연결. 이번Auth코드 실제Chrome·전체AC/BOUND17미검증. [코드식별·명령·미검증/실패/조율/다음행동 및 Chrome준비절차](../evidence/EXT-02-2026-10-10-member-auth.md). 이전f6 사용자Chrome1~25는보존하고이번Auth검증으로전용하지 않음.

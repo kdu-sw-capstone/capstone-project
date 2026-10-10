@@ -45,3 +45,8 @@ test('unconfirmed release or active session cannot be submitted as idle', async 
     const result = await f.options.inspectIdle(); assert.equal(result.active_session_id, 's'); assert.equal(result.pending_action_count, 1);
   }
 });
+
+test('missing journal with residual rules cannot be certified as idle or silently cleared', async () => {
+  const f = await fixture(null, [{ id: 100001 }]);
+  assert.equal((await f.options.inspectIdle()).pending_action_count, 1);
+});

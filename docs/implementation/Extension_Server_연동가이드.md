@@ -216,4 +216,4 @@ D06 메시지·규칙 ID/priority/freeze 및 D09 응답유실 추가 API는 계�
 
 ## 2026-10-10 D09 Core 인증 연결 준비
 
-제품background 설치등록/proof·PKCE evidence/claim·tokens/me·직렬refresh 및기존popup연결을구현했다. 실제HTTP/MySQL에서합성Web회원·storage·Chromeidle관측으로제품JS경로1/1통과. Extension모의113/113·UI19·Backend140/140. 회원Chrome은Server/Web/테스트회원/실제callback허용설정준비후별도검증한다. 회원명령/report/event 실제제품연결은후속, Snapshot1.2운영OFF/담당변경없음. 응답유실의추가상태/재발급API는임의생성하지 않았다. [실행명령/최신식별값/Chrome준비/미검증](evidence/EXT-02-2026-10-10-member-auth.md).
+제품background 설치등록/proof·PKCE evidence/claim·tokens/me·직렬refresh 및기존popup연결을구현했다. 실제HTTP/MySQL에서합성Web회원·storage·Chromeidle관측으로제품JS경로1/1통과. Extension모의114/114·UI19·Backend140/140. 회원Chrome은Server/Web/테스트회원/실제callback허용설정준비후별도검증한다. 회원명령/report/event 실제제품연결은후속, Snapshot1.2운영OFF/담당변경없음. 응답유실의추가상태/재발급API는임의생성하지 않았다. [실행명령/최신식별값/Chrome준비/미검증](evidence/EXT-02-2026-10-10-member-auth.md).
