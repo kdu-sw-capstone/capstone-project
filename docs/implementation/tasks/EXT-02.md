@@ -2,6 +2,10 @@
 
 단계: 필수 MVP · 설계 담당 영역: Extension
 
+## 최신 작업 — Content 검토 응답에 대한 Core 재응답
+
+윤종민 / feature/extension-core-ext-02 / 시작5c6064a. Content bcca674·Draft PR21·Shorts 기록 및 최신 Core/공용 D06/Event1.2 대조. [Core 재응답](../Content_Core_D06_Core재응답_2026-10-10.md)에 제안마다 수락/수정/보류·미결속 QUERY·seq/캐시·필수 문서 집합·media0/탐색·freeze와 다훈 확인 S1~S5·수정 JSON9개·최소 A단위를 작성했다. **공동 계약 미확정, 제품 메시지 구현 없음**. 문서 JSON/참조/diff 검사만 실행, 기능 테스트 NOT RUN. 다음: 지민 재확인/다훈 보고·이벤트 매핑 확인→공동 계약 기록→한 문서 비회원 Shorts 적용/해제 단위. develop 병합 금지.
+
 ## 최신 작업 — 제품 회원 Worker loop (0.1.6)
 
 윤종민 / feature/extension-core-ext-02 / 시작3f77cad. 제품 Worker에서 verified auth·실제 Server session/context·SiteController·별도 control/report IDB·commands/APPLIED/RELEASED·수동/만료 local END/reconcile 연결. Worker 복구는 실제 규칙/Server 대조, 사라진 규칙은 자동재적용하지 않고 복구 확인 상태, 미확인 gap 제외. Extension159/159·UI23·Backend전체165/165/package 및 최종 실제 HTTP3/3 통과(Chrome DNR/인증은 모의). **실제 Windows 회원 Chrome·alarm/절전·Event1.2 수집·신규 자동재개 및 전체 AC 미검증**. [구현·검증·실패·수동절차](../evidence/EXT-02-2026-10-10-member-worker-loop.md). Content D06 회신 대기, develop 병합 금지 유지.
