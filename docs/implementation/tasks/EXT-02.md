@@ -2,6 +2,10 @@
 
 단계: 필수 MVP · 설계 담당 영역: Extension
 
+## 최신 작업 — 회원 시작·종료 지연 개선 (0.1.7)
+
+윤종민 / feature/extension-core-ext-02 / 시작1165dc1. 기존 Server 요청 성공 뒤 Web→Core 제한된 wake hint로 즉시 명령 조회, 검증된 planned_end_at 일회성 alarm 및30초 backup 유지. Extension178/178·Web125/125·TS/Vite·문법 PASS(모의 Chrome/HTTP). [코드·신뢰 경계·계약·업데이트](../evidence/EXT-02-2026-10-10-execution-wake.md). 실제 Windows MV3/지연 개선·deadline/43초 집계는 미검증. Web·확장0.1.7 업데이트/VITE_EXTENSION_ID 설정 후 측정 필요. Server API/DB/D06 Content 미변경·develop 병합 없음.
+
 ## 최신 작업 — 회원 Windows 사용자 사이트 차단·수동 종료 시험
 
 윤종민 / feature/extension-core-ext-02 / 기록 시작a1f668c. 사용자 실제 확장0.1.6/Windows/Web/Server에서 회원 연결 복구·시작/진행 UI·사이트 차단·수동 종료 후 접속 복원 정상 보고(**사용자 PASS**, 차단/복원 페이지 원본·로드SHA 미확보). 1분 만료 종료 UI 확인, 예정 대비14초 지연 및00:43 집계는 intervals/actual 규칙 시각 대조 필요. [환경·장애·실제 근거·남은 검증](../evidence/EXT-02-2026-10-10-member-windows.md). 문서만 변경, 기능 검사 재실행 없음. 자동 만료 정확성/절전·재시작·정상 refresh·회원Event/전체 AC 미검증, D06 공동 합의 대기. develop 병합 없음.

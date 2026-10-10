@@ -50,3 +50,21 @@ it("자동 복구 미지원 경계를 진행 화면에서도 명시한다",async
  await screen.findByText("집중 세션 진행");
  expect(screen.getByRole("note")).toHaveTextContent("자동 복구를 지원하지 않습니다");
 });
+
+it('start wake follows accepted Server request and never promotes STARTING to RUNNING',async()=>{
+  vi.stubEnv('VITE_EXTENSION_ID','a'.repeat(32));
+  const fetch=sessionFixture(null), base=fetch.getMockImplementation()!, events:string[]=[];
+  let accepted=false;
+  fetch.mockImplementation(async(url:string,init?:RequestInit)=>{
+    if(url.endsWith('/sessions')&&init?.method==='POST'){events.push('accepted');accepted=true;}
+    if(url.endsWith('/sessions/current')&&accepted)return json({session_id:sid,executor_id:sid,execution_status:'STARTING',record_status:'PARTIAL',duration_minutes:1,active_duration_ms:0});
+    return base(url,init);
+  });
+  const sendMessage=vi.fn((_id,message,callback)=>{events.push('wake');callback({request_id:message.request_id,status:'OK',data:{received:true}});});
+  vi.stubGlobal('chrome',{runtime:{sendMessage}});
+  render(<Sessions settings={()=>{}} records={()=>{}}/>);
+  const button=screen.getByRole('button',{name:'▶ 집중 시작'});await waitFor(()=>expect(button).toBeEnabled());fireEvent.click(button);
+  await screen.findByText(/확장 프로그램의 실제 적용 결과를 기다리고 있습니다/);
+  expect(events).toEqual(['accepted','wake']);expect(screen.queryByText('집중 세션 진행')).not.toBeInTheDocument();
+  vi.unstubAllEnvs();
+});

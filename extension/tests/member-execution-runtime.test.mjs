@@ -15,8 +15,8 @@ async function fixture() {
       async end(id) { calls++; assert.equal(id, 'session'); return { status: 'RELEASED', session_id: id }; }
     } },
     chrome: { runtime: { id: 'self', getURL: path => 'chrome-extension://self/' + path,
-      onMessage: { addListener: fn => listeners.push(fn) }, onStartup: { addListener() {} } },
-      alarms: { create: async () => {}, onAlarm: { addListener() {} } }, declarativeNetRequest: {}, tabs: {} }
+      onMessage: { addListener: fn => listeners.push(fn) }, onMessageExternal: { addListener() {} }, onStartup: { addListener() {} } },
+      alarms: { get: async () => undefined, clear: async () => true, create: async () => {}, onAlarm: { addListener() {} } }, declarativeNetRequest: {}, tabs: {} }
   });
   vm.runInContext(await readFile(new URL('../background/member-execution-runtime.js', import.meta.url), 'utf8'), context);
   await new Promise(resolve => setTimeout(resolve, 0));

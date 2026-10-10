@@ -266,3 +266,7 @@ Backend154/154, Frontend121/121, HTTP131 PASS/1계약 BLOCKED. 실제 Chrome·Ed
 - 검증 주체는 Codex 자동·HTTP·실제 임시 DB/메일 수신·합성 설치/실행 보고다. 시간 제한 경계는 격리 DB 시각을 조절한 재현이며 실제 한 시간 대기가 아니다. 실제 Chrome·Edge·외부 OAuth·외부 SMTP·회원 Core/Content 통합은 이번 검증 NOT RUN이다.
 - 과거 기간 미전달 BLOCKED는 당시 Server 상태이며 PR #19로 Server 전달은 해결됐다. Core의 소수점9자리 시각 파싱·기간 검증/영속 결속 및 실제 회원 실행은 후속 통합 대기다. D-01·D-05 자동복구 전체는 미구현, Snapshot1.2 신규 발급 기본 OFF를 유지한다.
 - 상태: 검증된 결함 수정본 Draft PR 게시 준비/팀 리뷰·통합 대기. 전체 작업카드·93개 수용 기준·필수 MVP를 완료로 변경하지 않는다. 실행 로그와 게시 결과는 `FOCURVE_1단계_F1_F4_게시검증보고서.md`에 남긴다. develop 병합은 수행하지 않는다.
+
+### 2026-10-10 로컬 Web 실행 조회 알림 — EXT-02 지연 개선
+
+사용자의 실제 시작 지연 개선 지시에 따라 개발 Web의 기존 sessions POST/end 성공 뒤 `FOCURVE_EXECUTION_WAKE` 알림을 추가한다. 공통 envelope 유지, owner_context=null은 이 무권한 hint 전용, payload는 executor_id만. Core는 설정된 정확한 Web origin·top-frame·LINKED·executor를 확인하고 기존 인증 commands/session 조회를 즉시 실행한다. 응답 received는 명령 성공/실행 상태가 아니다. 기존 Server API/enum/권한·D06 Content 계약을 변경하지 않는다. 개발용 manifest 외부 연결 허용은 localhost/127.0.0.1 HTTP이며 운영 origin은 후속 검토. [필드·검증·실제 Chrome 미검증 범위](../../implementation/evidence/EXT-02-2026-10-10-execution-wake.md).

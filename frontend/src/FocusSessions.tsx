@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { request } from "./api";
+import { wakeExecution } from "./executionWake";
 import SessionNote from "./SessionNote";
 import { allPages, clockTime, dateTime, DateFields, Kpi, label, seoulDay, SiteMark, useWork, type Access, type Page, type Policy, type PolicySite, type Session } from "./FocusShared";
 
@@ -39,7 +40,7 @@ export default function FocusSessions({settings,records}:{settings:()=>void;reco
       <section className="focus-card timer-card" aria-label="집중 타이머">
         <h4>{failed?"시작 실패 · 정책 정리 완료":ready?"이번 집중을 준비하세요":ended?"이번 집중을 마쳤어요":status==="RUNNING"?"지금, 집중을 이어가고 있어요":"확장 프로그램의 결과를 확인하고 있어요"}</h4>
         <div className="focus-timer" data-execution-status={status}><TimerRing ratio={ready?1:shown/Math.max(1,(session?.duration_minutes??1)*60000)}/><span>{ready?"시작 준비":ended?endLabel:label(status)}</span><strong>{timer}</strong><small>{ready||ended?"한 번에 하나씩, 나의 속도로":`목표 시간 ${session?.duration_minutes??"—"}분`}</small></div>
-        {ready?<form className="timer-controls" onSubmit={e=>{e.preventDefault();void work.run(async()=>{const result=await request<Session>("/sessions","POST",{executor_id:executor,duration_minutes:Number(minutes)},{key:key.current});setCurrent(result);previous.current=result.session_id;setSelected(null);key.current=crypto.randomUUID();await load();});}}>
+        {ready?<form className="timer-controls" onSubmit={e=>{e.preventDefault();void work.run(async()=>{const result=await request<Session>("/sessions","POST",{executor_id:executor,duration_minutes:Number(minutes)},{key:key.current});void wakeExecution(executor);setCurrent(result);previous.current=result.session_id;setSelected(null);key.current=crypto.randomUUID();await load();});}}>
           <div className="minute-presets">{[25,30,50].map(value=><button type="button" key={value} aria-pressed={Number(minutes)===value} onClick={()=>{setMinutes(String(value));key.current=crypto.randomUUID();}}>{value}분</button>)}</div>
           <label>집중 시간 (분)<input name="minutes" type="number" min="1" max="180" step="1" required value={minutes} onChange={e=>{setMinutes(e.target.value);key.current=crypto.randomUUID();}}/></label>
           {installations.length>1&&<label>실행 설치<select aria-label="실행 설치" value={executor} onChange={e=>{setExecutor(e.target.value);key.current=crypto.randomUUID();}}>{installations.map(i=><option key={i.executor_id}>{i.executor_id}</option>)}</select></label>}
@@ -50,7 +51,7 @@ export default function FocusSessions({settings,records}:{settings:()=>void;reco
           {status==="RUNNING"&&<small>예정 종료까지의 표시 시간입니다. 집중 시간은 확인된 실행 구간으로 집계합니다.</small>}
           {session&&<p className="muted">실행 상태: {label(status)} · 기록 상태: {label(session.record_status)}</p>}
         </div>}
-        {confirmEnd&&!ended&&<div className="end-confirm" role="group" aria-label="세션 종료 확인"><p>집중 정책 해제를 요청할까요? 실제 해제 확인 후 종료됩니다.</p><div className="session-actions"><button className="danger" disabled={work.busy} onClick={()=>{void work.run(async()=>{const s=await request<Session>(`/sessions/${current!.session_id}/end`,"POST",{},{key:key.current});setCurrent(s);setConfirmEnd(false);key.current=crypto.randomUUID();});}}>종료 요청 확인</button><button disabled={work.busy} onClick={()=>setConfirmEnd(false)}>계속 집중하기</button></div></div>}
+        {confirmEnd&&!ended&&<div className="end-confirm" role="group" aria-label="세션 종료 확인"><p>집중 정책 해제를 요청할까요? 실제 해제 확인 후 종료됩니다.</p><div className="session-actions"><button className="danger" disabled={work.busy} onClick={()=>{void work.run(async()=>{const s=await request<Session>(`/sessions/${current!.session_id}/end`,"POST",{},{key:key.current});void wakeExecution(s.executor_id ?? executor);setCurrent(s);setConfirmEnd(false);key.current=crypto.randomUUID();});}}>종료 요청 확인</button><button disabled={work.busy} onClick={()=>setConfirmEnd(false)}>계속 집중하기</button></div></div>}
         <div className="execution-message" role="status">{!loaded?"세션과 연결 상태를 확인하고 있습니다.":status==="STARTING"?"확장 프로그램의 실제 적용 결과를 기다리고 있습니다. Chrome과 확장 프로그램을 열어 주세요.":status==="ENDING"?"정책 해제 결과를 기다리고 있습니다. 타이머가 0이 되어도 해제 확인 전에는 종료 완료가 아닙니다.":failed?"시작에 실패했지만 남은 정책의 해제는 확인했습니다. 연결·설정을 확인한 뒤 다시 준비할 수 있습니다.":status==="UNKNOWN"?"실행 결과가 미확인입니다. 신규 시작은 잠겨 있습니다. 확장 프로그램에서 복구 상태를 확인하거나 세션 종료로 해제를 요청하세요.":ready&&!installations.length?"회원 연결된 Extension이 없습니다. 연결 후 집중을 시작할 수 있습니다.":ended?`정책 해제 완료 · 기록 ${label(session?.record_status)}`:"설정 변경은 다음 세션부터 적용됩니다."}</div>
         <button className="text-button" disabled={work.busy} onClick={()=>{void work.run(load);}}>연결·실행 상태 다시 확인</button>
         {!fresh&&loaded&&<p role="status">최신 상태를 확인 중입니다. 마지막 확인 화면을 유지하며 실행 조작을 잠시 제한합니다.</p>}{work.error&&<p role="alert">{work.error}</p>}

@@ -1,6 +1,8 @@
 const MemberExecutionRuntime = (() => {
   let loop, server;
   const alarm = 'focurve-member-execution';
+  const deadlineAlarm = 'focurve-member-deadline';
+  let lastWake = -Infinity;
   async function getLoop() {
     const status = await MemberAuthRuntime.status();
     if (!status.owner_user_id || !status.executor_id) return null;
@@ -25,13 +27,21 @@ const MemberExecutionRuntime = (() => {
     return loop;
   }
   async function tick() {
-    await chrome.alarms.create(alarm, { periodInMinutes: 0.5 });
+    if (!await chrome.alarms.get(alarm)) await chrome.alarms.create(alarm, { periodInMinutes: 0.5 });
     const current = await getLoop();
     if (!current) return { status: 'UNLINKED', session_id: null };
-    try { return await current.tick(); }
+    try {
+      const result = await current.tick();
+      const end = Date.parse(result.planned_end_at);
+      if (result.status === 'RUNNING' && Number.isFinite(end)) {
+        const existing = await chrome.alarms.get(deadlineAlarm);
+        if (!existing || existing.scheduledTime !== end) await chrome.alarms.create(deadlineAlarm, { when: Math.max(Date.now() + 1, end) });
+      } else await chrome.alarms.clear(deadlineAlarm);
+      return result;
+    }
     catch { return { status: 'UNCONFIRMED', session_id: current.view.session_id }; }
   }
-  chrome.alarms.onAlarm.addListener(event => { if (event.name === alarm) tick().catch(() => {}); });
+  chrome.alarms.onAlarm.addListener(event => { if ([alarm, deadlineAlarm].includes(event.name)) tick().catch(() => {}); });
   chrome.runtime.onStartup.addListener(() => tick().catch(() => {}));
   chrome.runtime.onMessage.addListener((message, sender, respond) => {
     if (!['DEV_MEMBER_EXECUTION_STATE', 'DEV_MEMBER_EXECUTION_END'].includes(message?.type)) return;
@@ -44,6 +54,27 @@ const MemberExecutionRuntime = (() => {
     operation.then(data => respond({ request_id: message.request_id, status: 'OK', data, error: null }))
       .catch(() => respond({ request_id: message.request_id, status: 'ERROR', data: null,
         error: { code: 'EXECUTION_UNCONFIRMED' } }));
+    return true;
+  });
+  // Local Web notification, never an APPLY/END command or a state/credential query.
+  chrome.runtime.onMessageExternal.addListener((message, sender, respond) => {
+    if (sender.id || sender.frameId !== 0 || !Number.isInteger(sender.tab?.id)
+      || !message || Object.keys(message).sort().join(',') !== 'owner_context,payload,request_id,type'
+      || message.type !== 'FOCURVE_EXECUTION_WAKE' || message.owner_context !== null
+      || typeof message.request_id !== 'string' || !message.request_id.length || message.request_id.length > 64
+      || !message.payload || Object.keys(message.payload).join(',') !== 'executor_id'
+      || !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(message.payload.executor_id)) return;
+    (async () => {
+      const auth = await MemberAuthRuntime.status();
+      let origin; try { origin = new URL(sender.url).origin; } catch { return false; }
+      if (auth.phase !== 'LINKED' || auth.executor_id !== message.payload.executor_id || origin !== auth.web_origin) return false;
+      if (Date.now() - lastWake >= 1000) {
+        lastWake = Date.now();
+        tick().catch(() => {});
+      }
+      return true;
+    })().then(received => respond({ request_id: message.request_id, status: 'OK', data: { received }, error: null }))
+      .catch(() => respond({ request_id: message.request_id, status: 'ERROR', data: null, error: { code: 'WAKE_UNAVAILABLE' } }));
     return true;
   });
   tick().catch(() => {});
