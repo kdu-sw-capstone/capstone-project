@@ -4,7 +4,7 @@
 
 ## 작업 상태
 
-- 상태: 진행 중 / 통합 차단 — 2026-10-09 팀 리뷰 수정. 실제 방문 host 이벤트 로컬 수정·모의79/79 및 UI16항목 통과. 모든 필수 기준 미통과, 최신 제품 Chrome·회원/Server 연동 미검증. Commit/Push/PR 갱신/병합 금지. 아래 최신 판정이 과거 이력보다 우선한다.
+- 상태: 진행 중 — 2026-10-10 Event1.2 전송 단위 구현·모의96/96·UI17항목·Backend139/139·실제HTTP/MySQL 합성3/3 통과. 제품 회원 인증/명령/보고 연결 및 최신 Chrome·전체 필수 기준 미검증. 최신 사용자 지시로 Commit/Push/PR17 갱신 허용, develop 병합 금지. 아래 과거 Git 동결은 당시 이력이다.
 - 실제 담당자: 윤종민 — 기존 배정 원문(원본보관 ZIP의 개발계획 v1.3: Extension Core·세션·URL/Domain·사이트 정책·차단 페이지·시작/종료 연동)과 사용자 지시 기준. EXT 전체·Content Control을 재배정하지 않음
 - 브랜치 / 시작 기준 커밋: `feature/extension-core-ext-02` / `76df34e` (2026-10-07, origin/develop 최신 확인)
 - PR: [#17](https://github.com/kdu-sw-capstone/capstone-project/pull/17), develop ← feature/extension-core-ext-02, 현재 Open(non-draft)·수정 후 재검토 중. 사용자가 직접 생성했으며 병합하지 않음
@@ -14,7 +14,7 @@
 |---|---|---|---|
 | Web | | 미확인 | 미실행 |
 | Server | | 미확인 | 미실행 |
-| Extension | 윤종민* | 비회원 Core·Snapshot1.2·팝업 및 방문 host 이벤트 로컬 수정. 제품 회원 실행/설치 인증/보고/reconcile 미구현 | 현재 미커밋 코드 모의79/79·UI16항목. 실제 제품 로드 관리자 제한. 회원/HTTP 통합 차단. 과거 사용자 Chrome 결과는 아래 별도 이력 |
+| Extension | 윤종민* | 비회원 Core·Snapshot1.2·팝업·신규Event1.2 및 별도 회원 전송adapter. 제품 회원 인증/context/명령loop 연결 미완료 | 모의96/96·UI17·Backend139/139. 실제HTTP/MySQL 합성3/3. 이번 제품 회원Chrome 전체 미검증, 과거 사용자 Chrome 이력과 분리 |
 
 \* 현행 TEAM_GUIDE/기존 카드의 개인 배정란은 상세하지 않지만, 이후 보관 ZIP에서 기존 3인 배정 원문을 확인했다. 기술 기준은 현행 설계이며 보관 원문은 배정 확인에만 사용한다. 과거 탐색·검증 결과는 아래 이력에 보존한다.
 
@@ -36,13 +36,17 @@
 
 | 기준 ID | 기대 결과(기존 설계) | 코드 위치 | 검증 명령·환경 | 결과 |
 |---|---|---|---|---|
-| AC-EXT-02-01 | 현재 소유자·최신 revision 실행 + 실제 회원 설치 적용/Server 보고 | site-controller.js guard는 내부 adapter. product service-worker.js에는 Guest 경로만 있음 | 현재 Node 모의 + 제품 경로 코드 확인 | **차단/미검증** — 회원 Core 연결·명령 API·보고 API 선행. 모의 guard를 실제 회원 통과로 보지 않음 |
+| AC-EXT-02-01 | 현재 소유자·최신 revision 실행 + 실제 회원 설치 적용/Server 보고 | site-controller.js guard는 내부 adapter. product service-worker.js에는 Guest 경로만 있음 | 현재 Node 모의 + 제품 경로 코드 확인 | **차단/미검증** — 회원 Core context·명령/보고 API 연결 선행. 최신 Server endpoint는 존재하지만 제품 Core 연결 미완료. 모의 guard를 실제 회원 통과로 보지 않음 |
 | AC-EXT-02-02 | 다른 설치 인증·유효하지 않은 인증/만료 APPLY 거절 및 규칙 보존 | site-controller.js executor/owner/revision/기한 비교 | 내부 getContext/Chrome 모의 검사 | **차단/미검증** — 실제 설치 토큰 발급/검증/회수 및 인증 HTTP/규칙 원본 증거 필요 |
 | AC-EXT-02-03 | 실제 Worker 재생성 journal 대조 + Server reconcile 후 실행 | GuestSession recovery, adapter inspect; Server reconcile 경로 없음 | fresh VM 모의; 현재 Chromium 제품 로드 시도는 관리자 제한 | **차단/미검증** — 최신 실제 Chrome Worker/journal·API-EXEC-03 연동 근거 없음. 과거 사용자 stop 성공은 이번 코드 통과 근거 아님 |
 
 기존 수용 기준은 출발점이다. 상세 명세의 실제 입력·출력·오류를 검증하며 이 표의 존재만으로 충분한 테스트라고 판단하지 않는다. 관련 BOUND 사례도 선택하여 아래에 기록한다.
 
-## 2026-10-09 필수 경계·최신 코드 검증 판정
+## 2026-10-10 현재 단위 판정
+
+[이번 코드·실행 환경·기준별 결과·남은 작업](../evidence/EXT-02-2026-10-10-event12.md). Event1.2 실제HTTP adapter/DB 단위 통과는 실제 회원Chrome 필수 AC 통과가 아니다. AC01/02/03·BOUND17 전체 미검증 유지. 최신 기준 develop b45a680을 작업 브랜치에 merge했고 Server endpoint 선행 구현은 이제 존재한다. 다음은 제품 회원 설치 인증/context 및 명령/보고 연결이며, Server 자동복구 미지원 계약은 별도 차단이다.
+
+## 2026-10-09 필수 경계·당시 코드 판정 (과거 이력)
 
 | 기준 | 현재 결과 | 남은 작업·담당·필요 증거 |
 |---|---|---|
@@ -458,3 +462,8 @@ Snapshot/가져오기 safe 상한과 사이트·메모 증가 방어, API 자동
 ### 최종 로컬 실행 결과 — 2026-10-09
 
 Backend 전체120/120·패키징 PASS, Frontend113/113·빌드 PASS. 격리 MySQL57490의 실제 HTTP/DB import8·execution7·note4·policy6 및 기존 Event1.2 HTTP2 시험 통과. 실제 Chrome/회원 Extension NOT RUN. 일반 session.version 극단 경계 계약은 조율 필요하므로 전체 D03/MVP/병합 완료로 바꾸지 않는다. 증거: C:\Users\dahun\capstone-project\.reviews\pr18-20261009\PR18_병합차단_로컬수정_검증보고서.md 및 merge-boundary 로그.
+
+
+## 2026-10-10 Event1.2 전송 단위 검증 결과
+
+이번 제품 SITE event는1.2/실제host key(접두사 없음)/matched_policy_host/blocked_reasons. 기존 원본은 보존·잘못된 계약은 격리. background 전송 adapter·개별ACK/수신조회/동일원본 재시도 구현, 회원 인증/context/명령loop는 후속. 모의96/96·UI17항목·Backend139/139·실HTTP 합성3/3 통과. 과거 사용자Chrome1~25는 이전 코드 근거이며 이번 제품Chrome 미검증. 모든 필수AC·BOUND17 전체 미검증 유지. 자세한 실패/조율/다음 행동은 [검증 기록](../evidence/EXT-02-2026-10-10-event12.md). 최신 사용자 허용에 따라 작업 브랜치 게시·PR17 갱신만 진행하며 develop 병합 없음.

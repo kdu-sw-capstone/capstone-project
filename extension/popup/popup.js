@@ -248,14 +248,14 @@ refreshAccess.addEventListener('click', async () => {
   if(!Array.isArray(data?.items)||!Number.isSafeInteger(data.total_access)||!Number.isSafeInteger(data.repeat_access))throw new Error('INVALID_ACCESS_RESPONSE');
   accessData=data;window.FocurvePopupUI?.renderRecords();
   accessList.replaceChildren();
-  accessResult.textContent=data.session_id?`이 세션의 수집된 전체 ${data.total_access}회 · 반복 ${data.repeat_access}회 (부분 기록)`:'조회할 집중 세션이 없습니다.';
+  accessResult.textContent=data.quarantined_count?`기존 이벤트 ${data.quarantined_count}건의 계약 오류를 격리하고 원본을 보존했습니다.`:data.session_id?`이 세션의 수집된 전체 ${data.total_access}회 · 반복 ${data.repeat_access}회 (부분 기록)`:'조회할 집중 세션이 없습니다.';
   for(const event of data.items){
    const row=document.createElement('li');
    const type=event.event_type==='BLOCKED_SITE_ACCESS'?'차단 접근':'기록 접근';
    row.textContent=`#${event.payload.access_seq} · ${type} · ${event.payload.target_host} · ${new Date(event.occurred_at).toLocaleString('ko-KR',{timeZone:'Asia/Seoul'})}${event.is_repeat?' · 반복':''}`;
    accessList.append(row);
   }
-  if(data.session_id&&!data.items.length){const row=document.createElement('li');row.textContent='이 세션에 저장된 접근 기록이 없습니다.';accessList.append(row);}
+  if(data.session_id&&!data.items.length&&!data.quarantined_count){const row=document.createElement('li');row.textContent='이 세션에 저장된 접근 기록이 없습니다.';accessList.append(row);}
  }catch{accessData=null;window.FocurvePopupUI?.renderRecords();accessResult.textContent='기록을 조회하지 못했습니다. 다시 확인해주세요.';accessList.replaceChildren();}
  finally{refreshAccess.disabled=false;}
 });

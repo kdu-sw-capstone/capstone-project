@@ -127,3 +127,14 @@ Windows Chrome에서는 이번 Push의 `extension/`을 별도 테스트 프로�
 제품은 `popup/popup.html`이며 Figma 전달 자료의 비회원 팝업을 적용했습니다. 기존 API/저장/정책 Core를 재사용합니다. 최신 실제 Chrome 검증은 별도이며 전체 디자인/EXT-02 완료가 아닙니다. [범위·디자인 차이·수동 절차·검증 구분](../docs/implementation/evidence/EXT-02-popup-ui.md)을 확인하세요.
 
 `npm run test:popup-ui`는 Python Playwright와 Chromium이 준비된 환경에서 실행합니다. 실제 제품 HTML을 모의 Chrome API로 검사하며 확장 설치/DNR 검증을 대신하지 않습니다. npm ci는 Python/브라우저를 설치하지 않습니다. `.chrome-harness/`는 검증용이며 제품 설치 폴더는 `extension/`입니다.
+
+
+## Event 1.2 전송 adapter — 2026-10-10
+
+신규 SITE 접근은 Event1.2로 저장한다. `target_key`는 접두사 없는 실제 정규화 host, `matched_policy_host`는 적용 정책 host, `blocked_reasons`는 사이트 차단이면 `["USER_SITE"]`, RECORD이면 `[]`다. `www`를 제거하지 않고 같은 세션/실제host의 repeat_count는0,1,2 순으로 증가한다. 구형 원본 이벤트는 수정하지 않으며 잘못된 계약은 원본을 보존하고 팝업에 격리 건수를 표시한다.
+
+`background/member-events.js`는 회원 전송의 독립 준비 계층이다. Worker가 로드하지만 실제 회원 인증/context 및 세션/명령 loop에는 아직 연결하지 않았다. 비회원 데이터를 자동 전송하거나 회원 데이터로 변환하지 않는다. 호출자는 신뢰된 background에서 검증된 owner/executor/access token과 Server Base URL을 제공해야 한다. 토큰을 popup·Content message로 받거나 로그/IndexedDB outbox에 넣지 않는다.
+
+개별 ACCEPTED/DUPLICATE만 ACK, REJECTED는 원본 보존 격리, PENDING_DEPENDENCY는 상태 조회. 응답 유실/503 또는 Worker 재생성의 IN_FLIGHT는 수신 상태를 먼저 조회하고 NOT_RECEIVED일 때만 동일ID·본문으로 재전송한다. 저장 실패는 전송 전에 거절한다. 자동 refresh/실제 회원 설치 연결은 다음 구현 단위다.
+
+`tests/member-events.test.mjs`는 fake IndexedDB/HTTP 모의다. `scripts/member-event-http-probe.mjs`는 Backend 회귀에서 호출하는 **테스트 전용 Node caller**로, 제품 모듈을 실제HTTP에 연결하지만 설치/회원/APPLIED 증거와 IndexedDB는 합성이다. 단독 실행용 인증 준비 도구가 아니다. 실제Chrome 검증 결과로 취급하지 않는다. 재실행 명령·최신 코드 식별값·미검증·실패·조율·다음행동은 [이번 검증 기록](../docs/implementation/evidence/EXT-02-2026-10-10-event12.md)을 따른다.

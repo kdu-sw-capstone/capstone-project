@@ -207,3 +207,8 @@ D06 메시지·규칙 ID/priority/freeze 및 D09 응답유실 추가 API는 계�
 - Codex 실행: Backend138/138·패키징, Frontend114/114·빌드 PASS. 추가 HTTP/MySQL 테스트10개(복수 하위 사례 포함), 별도 독립 HTTP 재현 probe PASS. 격리 MySQL8.4.8 127.0.0.1:60046/focurve_contract_test, 합성 회원/설치/보고 사용. 실제 Chrome·회원 Core/Content 통합 NOT RUN. 응답 유실은 클라이언트가 첫 결과를 무시하고 재전송한 모의 사례이며 Server 프로세스 강제 중단은 NOT RUN.
 - MAX/MAX+1/Long.MAX_VALUE 버전 원본·frozen Snapshot 보존 및 잠금 해제 확인. 운영 Snapshot1.2 기본 OFF 유지(테스트 프로필만 ON). D01/D05 자동복구 전체 미구현 경계 유지. AC-SESSION-02/03/04의 -01/-03 중 Server 합성 보고 부분만 검증했으며 실제 적용/해제·전체 AC·MVP 완료로 승격하지 않는다.
 - 증거: C:\Users\dahun\capstone-project\.reviews\pr18-20261009\PR18_RELEASED_보고순서_수정검증보고서.md 및 released-order 로그. 후속: 독립 재리뷰, 실제 Core 해제 증거·역순/재전송 통합. 이번 Commit/Push/PR 업데이트/병합 없음.
+
+
+## 2026-10-10 Core 작업 브랜치 연동 현황
+
+최신 공유 develop b45a680a9f2262bd9725619e9643df3bb9b91164를 feature/extension-core-ext-02에 merge. 위 Server 과거 SHA/실행 수는 당시 이력이다. Core 신규Event1.2 key는 접두사 없는 실제host, matched_policy_host/blocked_reasons 포함. 제품 member 전송adapter를 Node에서 실제HTTP·MySQL에 연결한 합성 회귀1건 및 기존Server Event1.2 HTTP2건 통과. Backend 이번전체139/139, Extension모의96/96, UI17항목. 인증/APPLIED는 합성, 실제Chrome회원연결/context/명령loop는 미연결. 일반Snapshot1.2 신규발급OFF, test process에만 합성executor 허용. 구형원본무변환·개별ACK 및 status/동일원본 재시도·미검증/다음행동/재실행명령은 [Core단위검증](evidence/EXT-02-2026-10-10-event12.md) 참조.
