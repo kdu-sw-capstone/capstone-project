@@ -29,18 +29,19 @@ afterEach(async () => {
   await new Promise(resolve => setTimeout(resolve, 0));
 });
 describe("회원 Web 입력 및 실패 처리 (HTTP 모의 검증)", () => {
-  it("추가 시간대 분석을 활성 기능이나 예시 차트로 표시하지 않는다", async () => {
+  it("추가 시간대 분석은 실제 API의 빈 데이터로 표시한다", async () => {
     vi.stubGlobal("fetch", vi.fn(async (url: string) => {
       if (url.endsWith("/me")) return json({user_id:"1",display_name:"검증",providers:["EMAIL"]});
       if (url.endsWith("/extension-installations")) return json([]);
       if (url.startsWith("/api/v1/sites")) return json({items:[],next_cursor:null,has_more:false});
       if (url.startsWith("/api/v1/statistics/summary")) return json({quality:"NO_DATA"});
+      if (url.startsWith("/api/v1/statistics/hourly")) return json(Array.from({length:24},(_,hour)=>({hour,timezone:"Asia/Seoul",total_access:0,repeat_access:0,blocked_access:0,quality:"NO_DATA",as_of:"2026-10-10T00:00:00Z"})));
       if (url.endsWith("/dashboard")) return json({current_session:null,recent_sessions:[],recent_access:[],summary:{quality:"NO_DATA"}});
       throw new Error("unexpected request");
     }));
     render(<MemberApp />);
-    await screen.findByText("시간대별 분석은 아직 제공하지 않습니다.");
-    expect(screen.queryByRole("img", {name:/0시/})).not.toBeInTheDocument();
+    await screen.findByText("조회 기간에 접근 기록이 없습니다.");
+    expect(screen.getByRole("img", {name:/0시/})).toBeInTheDocument();
   });
   it("미설정 소셜 제공자를 비활성화하고 이메일 인증과 분리한다", async () => {
     vi.stubGlobal("fetch", vi.fn(async (url: string) => {

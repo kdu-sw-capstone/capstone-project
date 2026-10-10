@@ -31,6 +31,7 @@ W=Web HttpOnly Secure SameSite=Lax 쿠키, 변경 요청 CSRF+Origin 검증. E=�
 | Note | session_id,text:0..2000,version:int≥0,updated_at? |
 | Access | event_id,session_id,executor_id,occurred_at,event_type,target_kind,target_host,feature_code?,target_key,access_seq,target_access_index,is_repeat,policy_snapshot_id,quality |
 | Metrics | total_access,repeat_access,blocked_access,active_duration_ms,repeat_ratio?,quality:COMPLETE/PARTIAL/NO_DATA/NOT_COLLECTED,as_of; TargetMetrics는 host 추가 |
+| HourlyMetrics | Metrics + hour:0..23 정수, timezone:"Asia/Seoul". 접근 건수 조회의 active_duration_ms는 null (집중/이용 시간을 추정하지 않음) |
 | ScheduleWrite | name:1..80,weekdays:서로다른1..7배열,start_local:HH:mm,duration_minutes:1..180,timezone:IANA,executor_id UUID,enabled:boolean |
 | Schedule | schedule_id UUID,ScheduleWrite,version,created_at,updated_at,deleted_at? |
 | Occurrence | occurrence_id UUID,schedule_id,scheduled_start_at,scheduled_end_at,status:PENDING/WAITING_CONFLICT/STARTING/RUNNING/FINISHED/SKIPPED,reason?,session_id?,schedule_version |
@@ -266,3 +267,22 @@ Backend154/154, Frontend121/121, HTTP131 PASS/1계약 BLOCKED. 실제 Chrome·Ed
 - 검증 주체는 Codex 자동·HTTP·실제 임시 DB/메일 수신·합성 설치/실행 보고다. 시간 제한 경계는 격리 DB 시각을 조절한 재현이며 실제 한 시간 대기가 아니다. 실제 Chrome·Edge·외부 OAuth·외부 SMTP·회원 Core/Content 통합은 이번 검증 NOT RUN이다.
 - 과거 기간 미전달 BLOCKED는 당시 Server 상태이며 PR #19로 Server 전달은 해결됐다. Core의 소수점9자리 시각 파싱·기간 검증/영속 결속 및 실제 회원 실행은 후속 통합 대기다. D-01·D-05 자동복구 전체는 미구현, Snapshot1.2 신규 발급 기본 OFF를 유지한다.
 - 상태: 검증된 결함 수정본 Draft PR 게시 준비/팀 리뷰·통합 대기. 전체 작업카드·93개 수용 기준·필수 MVP를 완료로 변경하지 않는다. 실행 로그와 게시 결과는 `FOCURVE_1단계_F1_F4_게시검증보고서.md`에 남긴다. develop 병합은 수행하지 않는다.
+
+
+## API-STAT-03 시간대별 접근 조회 구현 — 2026-10-10
+
+`GET /api/v1/statistics/hourly?from_date=2026-10-10&to_date=2026-10-10`은 0시부터 23시 순서의 `HourlyMetrics` 배열 24개를 반환한다. 현재 구현은 Web 회원 쿠키 인증이며 E Bearer의 통계 직접 조회는 아직 구현하지 않았다. 미인증은 401, 형식·역전·366일 초과는 422 `INVALID_DATE_RANGE`다. body/query의 다른 user_id로 조회 대상을 바꾸지 않는다.
+
+양 끝 **날짜** 포함을 Asia/Seoul의 시작 자정 이상·종료 다음 날 자정 미만 UTC 구간으로 변환한다. 집계 기준은 수신 시각이 아니라 `access_events.occurred_at`이다. Java ZoneRules로 역사적 한국 시간대 오프셋도 적용하며 MySQL timezone table 설치에 의존하지 않는다. 지연 이벤트는 다음 조회 시 원래 발생 시간대로 반영된다.
+
+접근 한 행이 전체 1건이고 복수 사유를 펼쳐 합산하지 않는다. 동일 event_id 재전송은 기존 수신 멱등성에 의해 새 행이 생기지 않는다. 반복은 전체 세션의 access_seq 순서에서 첫 유효 접근을 제외한 건수다. 기간 밖 첫 접근도 반복 판단에 유지한다. Event 1.2는 실제 방문 host, Event 1.1은 기존 target_key 기준을 보존한다.
+
+기간과 겹치는 PENDING/PARTIAL/REVIEW_REQUIRED 세션이 있으면 모든 버킷을 PARTIAL로 표시한다. 수신 건수가 없는 버킷의 수치는 null, 받은 건수는 부분 집계 수치로 제공한다. 알려진 미완료 세션 없이 접근 행이 하나도 없으면 NO_DATA·0건·비율 null이다. 자료 없음은 실제 Chrome에서 접근이 없었다는 검증을 뜻하지 않는다. COMPLETE는 현재 저장 자료 기준이며 실제 Extension 수집 완전성을 새롭게 보장하지 않는다. `as_of`는 응답 전체에 같은 UTC 조회 기준 시각이다.
+
+예시 (배열의 한 항목; 실제 응답은 24개):
+
+```json
+{"hour":9,"timezone":"Asia/Seoul","total_access":3,"repeat_access":2,"blocked_access":1,"active_duration_ms":null,"repeat_ratio":66.66666666666667,"quality":"COMPLETE","as_of":"2026-10-10T00:00:00Z"}
+```
+
+현재 Web의 통계·대시보드 내 기존 시간대 카드만 연결한다. 사이트별 이용 시간·집중 시간 배분·AI 분석·새로운 정책 발급은 이 API의 범위가 아니다. Event/Snapshot/Journal의 저장·발급 계약을 변경하지 않고 Snapshot 1.2 신규 발급 기본 OFF를 유지한다.

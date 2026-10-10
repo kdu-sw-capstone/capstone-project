@@ -1,0 +1,9 @@
+.hourly-chart-scroll,.hourly-table-scroll{max-width:100%;overflow-x:auto}
+.hourly-chart{display:grid;grid-template-columns:repeat(24,minmax(18px,1fr));gap:5px;min-width:560px;padding:16px 0 8px}
+.hourly-column{display:flex;flex-direction:column;align-items:center;gap:6px;font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums}
+.hourly-value{color:var(--foreground);font-size:12px;max-width:100%;overflow-wrap:anywhere}
+.hourly-track{height:120px;width:100%;display:flex;align-items:flex-end;border-bottom:1px solid var(--border)}
+.hourly-track>span{display:block;width:100%;background:var(--brand);border-radius:4px 4px 0 0;min-height:0}
+.hourly-details{margin-top:12px;font-size:14px}.hourly-details summary{cursor:pointer;color:var(--hover)}
+.hourly-details table{width:100%;min-width:350px}.hourly-details th,.hourly-details td{padding:8px;text-align:right}
+.hourly-details th:first-child{text-align:left}.access-pattern{min-width:0}

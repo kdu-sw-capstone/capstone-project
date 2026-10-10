@@ -143,7 +143,7 @@ public class RecordQueries {
         db.queryForObject(
             "SELECT COUNT(*) FROM focus_sessions WHERE user_id=? AND record_status IN"
                 + " ('PENDING','PARTIAL','REVIEW_REQUIRED') AND (started_at IS NULL OR"
-                + " started_at<?) AND (ended_at IS NULL OR ended_at>=?)",
+                + " started_at<?) AND (ended_at IS NULL OR ended_at>?)",
             Long.class,
             user,
             Timestamp.from(range.to()),
@@ -181,6 +181,71 @@ public class RecordQueries {
       result.put("repeat_access", null);
       result.put("blocked_access", null);
       if (measured == 0) result.put("active_duration_ms", null);
+    }
+    return result;
+  }
+
+  @org.springframework.transaction.annotation.Transactional(readOnly = true)
+  public List<Map<String, Object>> hourly(long user, String from, String to) {
+    Range range = range(from, to);
+    var args = new ArrayList<Object>();
+    args.add(user);
+    // Use Java's Asia/Seoul rules, including historical offsets/DST, without
+    // depending on MySQL's optional named-timezone tables. Aggregate in SQL.
+    var rules = ZoneId.of("Asia/Seoul").getRules();
+    Instant position = range.from();
+    StringBuilder offset = new StringBuilder("CASE ");
+    var transition = rules.nextTransition(position);
+    while (transition != null && transition.getInstant().isBefore(range.to())) {
+      offset.append("WHEN occurred_at<? THEN ? ");
+      args.add(Timestamp.from(transition.getInstant()));
+      args.add(rules.getOffset(position).getTotalSeconds());
+      position = transition.getInstant();
+      transition = rules.nextTransition(position);
+    }
+    int lastOffset = rules.getOffset(position).getTotalSeconds();
+    String offsetSql;
+    if (args.size() == 1) {
+      offsetSql = "?";
+    } else {
+      offsetSql = offset.append("ELSE ? END").toString();
+    }
+    args.add(lastOffset);
+    args.add(Timestamp.from(range.from()));
+    args.add(Timestamp.from(range.to()));
+    var rows = db.queryForList(RANKED
+        + "SELECT HOUR(DATE_ADD(occurred_at,INTERVAL (" + offsetSql + ") SECOND)) hour,"
+        + "COUNT(*) total_access,SUM(target_access_index>1) repeat_access,"
+        + "SUM(event_type IN ('BLOCKED_SITE_ACCESS','BLOCKED_FEATURE_ACCESS')) blocked_access"
+        + " FROM ranked WHERE occurred_at>=? AND occurred_at<? GROUP BY hour", args.toArray());
+    long incomplete = db.queryForObject(
+        "SELECT COUNT(*) FROM focus_sessions WHERE user_id=? AND record_status IN"
+            + " ('PENDING','PARTIAL','REVIEW_REQUIRED') AND (started_at IS NULL OR started_at<?)"
+            + " AND (ended_at IS NULL OR ended_at>?)", Long.class, user,
+        Timestamp.from(range.to()), Timestamp.from(range.from()));
+    long total = rows.stream().mapToLong(r -> ((Number) r.get("total_access")).longValue()).sum();
+    String quality = incomplete > 0 ? "PARTIAL" : total == 0 ? "NO_DATA" : "COMPLETE";
+    String asOf = Instant.now().toString();
+    var result = new ArrayList<Map<String, Object>>();
+    for (int hour = 0; hour < 24; hour++) {
+      int h = hour;
+      var row = rows.stream().filter(r -> ((Number) r.get("hour")).intValue() == h)
+          .findFirst().orElse(Map.of());
+      long count = row.isEmpty() ? 0 : ((Number) row.get("total_access")).longValue();
+      long repeats = row.isEmpty() ? 0 : ((Number) row.get("repeat_access")).longValue();
+      long blocked = row.isEmpty() ? 0 : ((Number) row.get("blocked_access")).longValue();
+      var bucket = new LinkedHashMap<String, Object>();
+      bucket.put("hour", hour);
+      bucket.put("timezone", "Asia/Seoul");
+      // A partial bucket with no received records is unknown, not measured zero.
+      bucket.put("total_access", incomplete > 0 && count == 0 ? null : count);
+      bucket.put("repeat_access", incomplete > 0 && count == 0 ? null : repeats);
+      bucket.put("blocked_access", incomplete > 0 && count == 0 ? null : blocked);
+      bucket.put("active_duration_ms", null); // Access counts do not measure usage/focus time.
+      bucket.put("repeat_ratio", count == 0 ? null : repeats * 100.0 / count);
+      bucket.put("quality", quality);
+      bucket.put("as_of", asOf);
+      result.add(bucket);
     }
     return result;
   }

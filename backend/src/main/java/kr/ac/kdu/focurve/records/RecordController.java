@@ -55,6 +55,14 @@ public class RecordController {
     return records.targets(auth.require(req), from_date, to_date, cursor);
   }
 
+  @GetMapping("/statistics/hourly")
+  public Object hourly(
+      HttpServletRequest req,
+      @RequestParam(required = false) String from_date,
+      @RequestParam(required = false) String to_date) {
+    return records.hourly(auth.require(req), from_date, to_date);
+  }
+
   @GetMapping("/dashboard")
   public Object dashboard(HttpServletRequest req) {
     long owner = auth.require(req);
