@@ -95,5 +95,26 @@
    return this.store.list(c.owner_key,c.executor_id);
   });}
  }
- globalThis.FocurveMemberEvents=Object.freeze({validate,MemberEventStore,MemberEventDelivery});
+ // A local delivery summary is not a claim that all navigation was collected.
+ function summarize(records, originals, scope) {
+  const counts={QUEUED:0,IN_FLIGHT:0,RESPONSE_UNCONFIRMED:0,PENDING_DEPENDENCY:0,AUTH_REQUIRED:0,REJECTED:0,ACKED:0};
+  const events=new Map();
+  for(const row of records){
+   if(row.owner_key!==scope.owner_key||row.executor_id!==scope.executor_id)continue;
+   if(typeof row.event_id!=='string')throw new Error('EVENT_SUMMARY_INVALID');
+   const old=events.get(row.event_id);
+   if(old&&old.body!==row.body)throw new Error('EVENT_SUMMARY_CONFLICT');
+   events.set(row.event_id,row);
+  }
+  for(const row of originals){
+   if(row.owner_key!==scope.owner_key||row.executor_id!==scope.executor_id||row.base_url!==scope.base_url)continue;
+   if(typeof row.event_id!=='string')throw new Error('EVENT_SUMMARY_INVALID');
+   const old=events.get(row.event_id);
+   if(old&&old.body!==row.body)throw new Error('EVENT_SUMMARY_CONFLICT');
+   if(!old)events.set(row.event_id,{...row,status:'QUEUED'});
+  }
+  for(const row of events.values())counts[Object.hasOwn(counts,row.status)?row.status:'RESPONSE_UNCONFIRMED']++;
+  return {counts,total:events.size};
+ }
+ globalThis.FocurveMemberEvents=Object.freeze({validate,summarize,MemberEventStore,MemberEventDelivery});
 })();

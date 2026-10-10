@@ -86,14 +86,38 @@ const MemberExecutionRuntime = (() => {
     }
     catch { return { status: 'UNCONFIRMED', session_id: current.view.session_id }; }
   }
+  async function deliveryState(recheck = false) {
+    const before = await MemberAuthRuntime.status();
+    const allowed = state => state.owner_user_id && state.executor_id
+      && ['LINKED', 'AUTH_RECOVERY_REQUIRED', 'REFRESHING', 'VERIFYING'].includes(state.phase);
+    if (!allowed(before)) throw new Error('UNAUTHENTICATED');
+    const same = state => allowed(state) && state.owner_user_id === before.owner_user_id
+      && state.executor_id === before.executor_id && state.server_url === before.server_url;
+    const current = await getLoop();
+    if (!current || !same(await MemberAuthRuntime.status())) throw new Error('EXECUTION_SCOPE_MISMATCH');
+    if (recheck) {
+      if (before.phase !== 'LINKED') throw new Error('AUTH_REQUIRED');
+      await deliverAccess();
+    }
+    const scope = {owner_key:'MEMBER:'+before.owner_user_id,executor_id:before.executor_id,base_url:before.server_url};
+    // Read staging first: an enqueue/ACK between reads must not make a durable event disappear.
+    const originals = await current.access.store.originals(scope.owner_key,scope.executor_id,scope.base_url);
+    const records = await accessDelivery.store.list(scope.owner_key,scope.executor_id);
+    if (!same(await MemberAuthRuntime.status())) throw new Error('EXECUTION_SCOPE_MISMATCH');
+    return FocurveMemberEvents.summarize(records,originals,scope);
+  }
   chrome.alarms.onAlarm.addListener(event => { if ([alarm, deadlineAlarm].includes(event.name)) tick().catch(() => {}); });
   chrome.runtime.onStartup.addListener(() => tick().catch(() => {}));
   chrome.runtime.onMessage.addListener((message, sender, respond) => {
-    if (!['DEV_MEMBER_EXECUTION_STATE', 'DEV_MEMBER_EXECUTION_END'].includes(message?.type)) return;
+    if (!['DEV_MEMBER_EXECUTION_STATE', 'DEV_MEMBER_EXECUTION_END', 'MEMBER_DELIVERY_STATE', 'MEMBER_DELIVERY_RECHECK'].includes(message?.type)) return;
     if (sender.id !== chrome.runtime.id || sender.url !== chrome.runtime.getURL('popup/popup.html')
       || sender.frameId && sender.frameId !== 0 || typeof message.request_id !== 'string'
       || !message.request_id.length || message.request_id.length > 64) return;
-    const operation = message.type === 'DEV_MEMBER_EXECUTION_STATE' ? tick() : getLoop().then(current => {
+    if (message.type.startsWith('MEMBER_DELIVERY_') && (!message.payload || typeof message.payload !== 'object'
+      || Array.isArray(message.payload) || Object.keys(message.payload).length
+      || Object.keys(message).some(key => !['type','request_id','payload'].includes(key)))) return;
+    const operation = message.type.startsWith('MEMBER_DELIVERY_') ? deliveryState(message.type === 'MEMBER_DELIVERY_RECHECK')
+      : message.type === 'DEV_MEMBER_EXECUTION_STATE' ? tick() : getLoop().then(current => {
       if (!current) throw new Error('UNAUTHENTICATED'); return current.end(message.payload?.session_id);
     });
     operation.then(data => respond({ request_id: message.request_id, status: 'OK', data, error: null }))
