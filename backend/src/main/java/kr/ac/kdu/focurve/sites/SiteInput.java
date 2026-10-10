@@ -30,15 +30,7 @@ public record SiteInput(
             && !Set.of("BLOCK", "RECORD").contains(Objects.toString(access_policy, "")))
         || (!purpose.equals("DISTRACTION") && !"ALLOW".equals(access_policy))) invalid();
     List<Feature> features = feature_policies == null ? List.of() : feature_policies;
-    Set<String> codes = new HashSet<>();
-    for (var feature : features) {
-      // Only the required-MVP Shorts policy is editable in this implementation.
-      if (feature == null
-          || feature.enabled() == null
-          || !"YOUTUBE_SHORTS".equals(feature.feature_code())
-          || !codes.add(feature.feature_code())
-          || !(host.equals("youtube.com") || host.endsWith(".youtube.com"))) invalid();
-    }
+    if (!FeaturePolicies.valid(host, features)) invalid();
     return new Validated(
         host,
         display_name,

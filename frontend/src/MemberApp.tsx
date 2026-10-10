@@ -1,3 +1,4 @@
+import FeatureSettings, {featureHostMatches, FEATURES} from "./FeatureSettings";
 import {SocialSignup, SocialEmailVerify} from "./SocialSignup";
 import SocialButtons from "./SocialButtons";
 import EmailSignup, {clearSignupProgress} from "./EmailSignup";
@@ -317,7 +318,7 @@ function DevTerms({compact=false}:{compact?:boolean}) {
     </>
   );
 }
-function Sites() {
+export function Sites() {
   const state = useAction();
   const [items, setItems] = useState<Site[]>([]),
     [cursor, setCursor] = useState<string | null>(null),
@@ -332,7 +333,7 @@ function Sites() {
     [purpose, setPurpose] = useState("DISTRACTION"),
     [policy, setPolicy] = useState("BLOCK"),
     [sub, setSub] = useState(true),
-    [shorts, setShorts] = useState(false),
+    [features, setFeatures] = useState<Record<string, boolean>>({}),
     [key, setKey] = useState(() => crypto.randomUUID());
   async function load(next: string | null = null) {
     const page = await request<Page<Site>>(
@@ -353,11 +354,7 @@ function Sites() {
     setPurpose(site?.purpose ?? "DISTRACTION");
     setPolicy(site?.access_policy ?? "BLOCK");
     setSub(site?.include_subdomains ?? true);
-    setShorts(
-      site?.feature_policies.some(
-        (f) => f.feature_code === "YOUTUBE_SHORTS" && f.enabled,
-      ) ?? false,
-    );
+    setFeatures(Object.fromEntries((site?.feature_policies ?? []).map(f => [f.feature_code, f.enabled])));
     setKey(crypto.randomUUID());
     setNotice("");
   }
@@ -371,9 +368,9 @@ function Sites() {
         purpose,
         access_policy: policy,
         include_subdomains: sub,
-        feature_policies: shorts
-          ? [{ feature_code: "YOUTUBE_SHORTS", enabled: true }]
-          : [],
+        feature_policies: Object.entries(features)
+          .filter(([code, enabled]) => enabled || featureHostMatches(url, code))
+          .map(([feature_code, enabled]) => ({feature_code, enabled})),
       };
       try {
         await request(
@@ -390,7 +387,9 @@ function Sites() {
       await load();
       edit(null);
       setNotice(
-        "설정을 저장했습니다. 현재 세션은 유지하고 다음 세션에 적용합니다.",
+        Object.entries(features).some(([code, enabled]) => enabled && code !== "YOUTUBE_SHORTS")
+          ? "설정을 저장했습니다. 추가 기능 실행은 아직 지원하지 않아 집중 시작이 제한됩니다. 현재 세션은 유지됩니다."
+          : "설정을 저장했습니다. 현재 세션은 유지하고 다음 세션에 적용합니다.",
       );
     });
   }
@@ -403,7 +402,7 @@ function Sites() {
         {loaded && items.length === 0 && <li className="empty-state"><h4>등록된 사이트가 없습니다.</h4><p>사이트 등록에서 주소와 적용할 정책을 저장하세요.</p></li>}
         {items.map((site) => (
           <li key={site.site_id}>
-            <div className="site-identity"><strong>{site.display_name}</strong><small>{site.canonical_host}</small></div><span className={"badge " + site.purpose}>{({FOCUS:"집중",DISTRACTION:"방해",GENERAL:"일반"} as Record<string,string>)[site.purpose]}</span><span className={"badge " + site.access_policy}>{({ALLOW:"허용",BLOCK:"전체 차단",RECORD:"허용하고 기록"} as Record<string,string>)[site.access_policy]}</span>
+            <div className="site-identity"><strong>{site.display_name}</strong><small>{site.canonical_host}</small><small>{site.feature_policies.filter(f => f.enabled).map(f => (FEATURES.find(item => item[0] === f.feature_code)?.[1] ?? f.feature_code) + (f.feature_code !== "YOUTUBE_SHORTS" ? " (실행 미지원)" : "")).join(" · ") || "내부 기능 제한 없음"}</small></div><span className={"badge " + site.purpose}>{({FOCUS:"집중",DISTRACTION:"방해",GENERAL:"일반"} as Record<string,string>)[site.purpose]}</span><span className={"badge " + site.access_policy}>{({ALLOW:"허용",BLOCK:"전체 차단",RECORD:"허용하고 기록"} as Record<string,string>)[site.access_policy]}</span>
             <button disabled={state.busy} onClick={() => edit(site)}>
               수정
             </button>
@@ -509,15 +508,8 @@ function Sites() {
             )}
           </select>
         </label>
-        <label>
-          <input
-            type="checkbox"
-            checked={shorts}
-            onChange={(e) => setShorts(e.target.checked)}
-          />
-          YouTube Shorts 제한
-        </label>
-        <p className="muted">YouTube 도메인에서만 설정할 수 있습니다. 전체 차단 정책이 있으면 전체 차단을 우선하며, 저장한 정책은 다음 세션에 적용합니다.</p>
+        <FeatureSettings url={url} values={features} busy={state.busy} blocked={policy === "BLOCK"}
+          onChange={(code, enabled) => setFeatures(old => ({...old, [code]: enabled}))}/>
         <button disabled={state.busy}>저장</button>
         {selected && (
           <button type="button" onClick={() => edit(null)}>

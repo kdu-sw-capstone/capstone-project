@@ -169,6 +169,18 @@ public class ExecutionService {
     payload.put("content_policy", defaultContent());
     payload.put("source_version", 1);
     SnapshotValidation.validate(payload);
+    // Saving an additional policy does not certify its Core implementation.
+    // Reject before inserting a Snapshot/session/command; never silently drop it.
+    kr.ac.kdu.focurve.sites.FeaturePolicies.requireIssuable(all);
+    // Even disabled unknown codes can be rejected by old Core parsers.
+    // Only inactive additional entries are omitted from a NEW Snapshot;
+    // persisted settings and already frozen Snapshots are never rewritten.
+    for (int n = 0; n < all.size(); n++) {
+      var site = new LinkedHashMap<String,Object>((Map<String,Object>) all.get(n));
+      site.put("feature_policies", ((List<?>)site.get("feature_policies")).stream()
+          .filter(f -> "YOUTUBE_SHORTS".equals(((Map<?,?>)f).get("feature_code"))).toList());
+      all.set(n, site);
+    }
     db.update(
         "INSERT INTO"
             + " policy_snapshots(id,user_id,executor_id,format_version,payload,source_version,created_at)"

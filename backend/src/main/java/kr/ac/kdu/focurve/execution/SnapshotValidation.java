@@ -3,6 +3,7 @@ package kr.ac.kdu.focurve.execution;
 import java.util.*;
 import kr.ac.kdu.focurve.api.ApiFailure;
 import kr.ac.kdu.focurve.sites.SiteInput;
+import kr.ac.kdu.focurve.sites.FeaturePolicies;
 
 /** Validate the complete policy before issuance; never repair or rewrite saved snapshots. */
 public final class SnapshotValidation {
@@ -40,9 +41,14 @@ public final class SnapshotValidation {
           ||!Set.of("FOCUS","DISTRACTION","GENERAL").contains(Objects.toString(site.get("purpose"),""))
           ||!(site.get("feature_policies") instanceof List<?>)) fail();
       if("DISTRACTION".equals(site.get("purpose")) ? "ALLOW".equals(site.get("access_policy")) : !"ALLOW".equals(site.get("access_policy"))) fail();
+      var features = new ArrayList<SiteInput.Feature>();
       for(Object f:(List<?>)site.get("feature_policies")) {
-        if(!(f instanceof Map<?,?> feature)||!"YOUTUBE_SHORTS".equals(feature.get("feature_code"))||!(feature.get("enabled") instanceof Boolean)) fail();
+        if(!(f instanceof Map<?,?> feature)||!(feature.get("feature_code") instanceof String)
+            ||!(feature.get("enabled") instanceof Boolean)) fail();
+        var feature=(Map<?,?>)f;
+        features.add(new SiteInput.Feature((String)feature.get("feature_code"),(Boolean)feature.get("enabled")));
       }
+      if(!FeaturePolicies.valid(host,features)) fail();
     }
     if(!(value.get("content_policy") instanceof Map<?,?>)) fail();
     var content=(Map<?,?>)value.get("content_policy");

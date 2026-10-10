@@ -61,3 +61,20 @@
 - 실제 연동 확인 (모의 응답 제외):
 - 검토·통합 근거:
 - 남은 문제:
+
+## Feature 설정 사전 구현 — 2026-10-10
+
+- 담당: 김다훈 Web·Server·DB 범위. 브랜치 feature/additional-feature-settings, 시작 SHA 90ad32be5d282f3b44c917a29e156dffc5e29187.
+- 상태: Web·Server 설정 저장 범위 검토 대기 / 실제 Core·Content 통합 대기. 기존 Extension 담당 배정/상태는 변경하지 않음.
+- 범위: 기존 Site API와 site_feature_policies의 6개 코드 저장·조회·Web 설정. 추가 enabled 정책은 SNAPSHOT_COMPATIBILITY_REQUIRED로 발급 거절, 비활성 추가 항목만 새 Snapshot에서 생략. 저장 설정과 기존 frozen Snapshot 보존.
+- 전체 AC 통과가 아님: 실제 DOM 제한/복원/중복 접근은 Core·Content 통합 후 검증. 실제 Chrome NOT RUN, Snapshot1.2 기본OFF 유지.
+- 실행 결과와 코드 위치: 로컬 FOCURVE_추가MVP_Feature설정_구현검증보고서.md 참조. Commit/Push/PR 없음.
+
+- 최종 실행: Backend166/166, Frontend125/125 및 package/build PASS; 격리 HTTP·MySQL·Mailpit 검증179/179 PASS. 실제 Chrome NOT RUN. 전체 AC는 부분/미검증 유지.
+
+
+## Feature URL 기본포트 Low 수정 — 2026-10-10
+
+- 김다훈, feature/additional-feature-settings, 기준90ad32be5d282f3b44c917a29e156dffc5e29187. API의 명시적port 금지 유지, Frontend 원본authority 검사로 기본443/80 정규화 누락만 수정.
+- FeatureSettings.tsx 및 FeatureSettings.test.tsx, 수정전실패 재현→Frontend126/126·빌드, Backend166/166·패키징, 격리 HTTP/MySQL/Mailpit209/209 PASS. 보고서 FOCURVE_추가MVP_Feature설정_기본포트_수정검증보고서.md 참조.
+- 기존6코드·frozen·기본Snapshot1.2OFF·미지원발급거절 유지. 실제Chrome/Core/Content는 NOT RUN, 전체AC/MVP완료로 변경하지 않음. 좁은 독립재리뷰 권장. Commit/Push/PR/병합 없음.

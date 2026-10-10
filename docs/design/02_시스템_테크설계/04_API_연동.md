@@ -266,3 +266,9 @@ Backend154/154, Frontend121/121, HTTP131 PASS/1계약 BLOCKED. 실제 Chrome·Ed
 - 검증 주체는 Codex 자동·HTTP·실제 임시 DB/메일 수신·합성 설치/실행 보고다. 시간 제한 경계는 격리 DB 시각을 조절한 재현이며 실제 한 시간 대기가 아니다. 실제 Chrome·Edge·외부 OAuth·외부 SMTP·회원 Core/Content 통합은 이번 검증 NOT RUN이다.
 - 과거 기간 미전달 BLOCKED는 당시 Server 상태이며 PR #19로 Server 전달은 해결됐다. Core의 소수점9자리 시각 파싱·기간 검증/영속 결속 및 실제 회원 실행은 후속 통합 대기다. D-01·D-05 자동복구 전체는 미구현, Snapshot1.2 신규 발급 기본 OFF를 유지한다.
 - 상태: 검증된 결함 수정본 Draft PR 게시 준비/팀 리뷰·통합 대기. 전체 작업카드·93개 수용 기준·필수 MVP를 완료로 변경하지 않는다. 실행 로그와 게시 결과는 `FOCURVE_1단계_F1_F4_게시검증보고서.md`에 남긴다. develop 병합은 수행하지 않는다.
+
+## Feature 설정 저장과 실행 지원 경계 — 2026-10-10
+
+기존 SiteWrite와 GET/POST/PATCH /api/v1/sites 경로로 명세의 6개 feature_code를 저장·조회한다. 각 코드의 서비스 host 경계·중복 코드·enabled 필수 boolean을 검증한다. Site PATCH의 If-Match·Idempotency-Key·소유권·전체 저장 원자성은 유지한다. 새 endpoint/DB 구조 변경은 없다.
+
+저장 지원은 제품 Core의 실행 호환 인증이 아니다. 현재 Shorts 외 enabled feature가 있으면 세션 생성 전에503 SNAPSHOT_COMPATIBILITY_REQUIRED로 전체 발급을 거절한다. 검증되지 않은 정책을 부분 적용하지 않는다. 구형 Core가 비활성 unknown code도 거절할 수 있으므로 추가 기능이 모두 false인 경우 새 Snapshot에는 Shorts 항목만 전달한다. 원본 site_feature_policies 및 이미 생성된 frozen Snapshot은 변경하지 않는다. Snapshot 전체 형식 검증은1.1/1.2의 명세상6코드를 검증할 수 있으나 발급 guard와 구분한다. Snapshot1.2 발급 기본OFF 및 검증executor gate는 유지한다. 실제 Chrome/Core 적용은 미검증이다.
