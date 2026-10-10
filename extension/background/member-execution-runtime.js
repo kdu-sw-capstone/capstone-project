@@ -97,7 +97,9 @@ const MemberExecutionRuntime = (() => {
       } else await chrome.alarms.clear(deadlineAlarm);
       return {...result,...((current.accessError||current.deliveryError)?{access_error:current.accessError||current.deliveryError}:{}),...(current.accessPending?{access_pending:current.accessPending}:{})};
     }
-    catch { return { status: 'UNCONFIRMED', session_id: current.view.session_id }; }
+    catch { return { status: 'UNCONFIRMED', session_id: current.view.session_id,
+      ...(current.accessError?{access_error:current.accessError}:{}),
+      ...(typeof current.view.capture_release_confirmed==='boolean'?{capture_release_confirmed:current.view.capture_release_confirmed}:{}) }; }
   }
   async function deliveryState(recheck = false) {
     const before = await MemberAuthRuntime.status();

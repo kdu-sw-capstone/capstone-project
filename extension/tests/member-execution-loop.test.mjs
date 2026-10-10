@@ -187,3 +187,48 @@ test('member navigation requires verified RUNNING context and actual owned rules
   assert.equal((await f.loop.access.store.originals('MEMBER:1',f.credentials.executor_id,f.client.baseUrl)).length,1);
   f.loop.view.status='ENDING';assert.equal(await f.loop.observe('before',before),null);
 });
+
+test('capture storage failure suspends collection, durably marks fault and removes only owned rules until user END',async()=>{
+ const f=fixture();await f.loop.tick();f.addForeign();let observations=0;
+ f.loop.access.observe=async()=>{observations++;throw new Error('ACCESS_STORAGE_UNAVAILABLE');};
+ await assert.rejects(f.loop.observe('before',{tabId:1}),/ACCESS_STORAGE_UNAVAILABLE/);
+ assert.equal(f.loop.view.status,'RECOVERY_REQUIRED');assert.equal(f.loop.view.capture_release_confirmed,true);
+ assert.deepEqual(f.rules().map(r=>r.id),[9000]);assert.equal(f.session.execution_status,'RUNNING');
+ assert.equal((await f.control.load(f.credentials.owner_key,f.sessionId)).capture_storage_fault,true);
+ assert.equal(await f.loop.observe('commit',{tabId:1}),null);assert.equal(observations,1);
+ const recreated=new MemberExecutionLoop(f.options);const result=await recreated.tick();
+ assert.equal(result.status,'RECOVERY_REQUIRED');assert.equal(result.capture_release_confirmed,true);
+ assert.equal(await recreated.observe('before',{tabId:1}),null);
+ const ended=await recreated.end(f.sessionId);assert.equal(ended.status,'RELEASED');assert.equal(f.session.execution_status,'ENDED');
+ const row=await f.control.load(f.credentials.owner_key,f.sessionId);assert.equal(row.local_end.reason,'MANUAL');
+});
+test('cleanup failure never claims release and queued observations remain suspended; later tick retries cleanup',async()=>{
+ const f=fixture();await f.loop.tick();const update=f.options.dnr.updateSessionRules;let fail=true,observations=0;
+ f.options.dnr.updateSessionRules=async args=>{if(fail&&args.removeRuleIds.length)throw new Error('DNR_FAILED');return update(args);};
+ f.loop.access.observe=async()=>{observations++;throw new Error('ACCESS_STORAGE_UNAVAILABLE');};
+ const results=await Promise.allSettled([f.loop.observe('before',{tabId:1}),f.loop.observe('commit',{tabId:1})]);
+ assert.equal(results[0].status,'rejected');assert.equal(results[1].value,null);assert.equal(observations,1);
+ assert.equal(f.loop.view.capture_release_confirmed,false);assert.ok(f.rules().length);
+ fail=false;const result=await f.loop.tick();assert.equal(result.capture_release_confirmed,true);assert.equal(f.rules().length,0);
+});
+test('control persistence failure retains suspension and no release success; later writable tick persists fault before cleanup',async()=>{
+ const f=fixture();await f.loop.tick();const save=f.control.save.bind(f.control);let fail=true;
+ f.control.save=async row=>{if(fail&&row.capture_storage_fault)throw new Error('CONTROL_STORAGE_UNAVAILABLE');return save(row);};
+ f.loop.access.observe=async()=>{throw new Error('ACCESS_STORAGE_UNAVAILABLE');};
+ await assert.rejects(f.loop.observe('before',{tabId:1}),/CONTROL_STORAGE_UNAVAILABLE/);
+ assert.equal(f.loop.view.capture_release_confirmed,false);assert.equal(await f.loop.observe('commit',{tabId:1}),null);
+ assert.ok(f.rules().length);fail=false;assert.equal((await f.loop.tick()).capture_release_confirmed,true);
+ assert.equal((await f.control.load(f.credentials.owner_key,f.sessionId)).capture_storage_fault,true);
+});
+
+test('capture suspension still honors existing Web RELEASE and scheduled expiry without new END reason',async()=>{
+ for(const ending of ['WEB','EXPIRED']){
+  const f=fixture();await f.loop.tick();f.loop.access.observe=async()=>{throw new Error('ACCESS_STORAGE_UNAVAILABLE');};
+  await assert.rejects(f.loop.observe('before',{tabId:1}));
+  if(ending==='WEB')f.release();else f.advance(61000);
+  const result=await f.loop.tick();assert.equal(result.status,'RELEASED');assert.equal(f.session.execution_status,'ENDED');
+  assert.equal(f.rules().length,0);
+  const row=await f.control.load(f.credentials.owner_key,f.sessionId);
+  if(ending==='EXPIRED')assert.equal(row.local_end.reason,'EXPIRED');
+ }
+});

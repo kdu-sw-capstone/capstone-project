@@ -658,6 +658,7 @@ class MemberExecutionLoop {
     accessStore, journal = new MemberJournalStore(), control = new MemberJournalStore({ name: 'focurve-member-control' }),
     now = Date.now, randomUUID = () => crypto.randomUUID() }) {
     Object.assign(this, { client, getCredentials, getIdentity, idle, journal, control, now, randomUUID });
+    this.captureSuspended = new Set();
     this.queue = Promise.resolve(); this.recovered = new Set(); this.command = null;
     this.controller = new SiteController({ dnr, tabs, journal, blockedPageUrl, now,
       getContext: () => this.context() });
@@ -846,6 +847,27 @@ class MemberExecutionLoop {
       const identity = await this.getIdentity();
       for (const row of await this.control.list(identity.owner_key, identity.executor_id)) {
         if (row.phase !== 'FINAL') this.view.session_id = row.session_id;
+        if(row.phase !== 'FINAL' && (row.capture_storage_fault || this.captureSuspended.has(row.session_id))){
+          await this.stopCapture(row.session_id);
+          if(row.local_end || row.planned_end_at && this.now()>=parseServerTime(row.planned_end_at)){
+            await this.localEnd(row,row.local_end?.reason||'EXPIRED');
+            this.view={status:'RELEASED',session_id:row.session_id,capture_release_confirmed:true};
+          }else{
+            // Keep existing Web END/RELEASE processing available; never replay APPLY.
+            try{
+              const credentials=await this.getCredentials();await this.scope(row);await this.client.flush();
+              for(const command of (await this.client.commands()).commands)
+                if(command.type==='RELEASE_POLICY'&&command.session_id===row.session_id)await this.execute(command,credentials);
+              await this.client.flush();
+              if(finished(await this.client.session(row.session_id))){
+                const current=await this.control.load(row.owner_key,row.session_id);await this.cleanup(current);
+                current.phase='FINAL';await this.control.save(current);
+                this.view={status:'RELEASED',session_id:row.session_id,capture_release_confirmed:true};
+              }
+            }catch{ /* Keep verified local release separate from unconfirmed Server END. */ }
+          }
+          return structuredClone(this.view);
+        }
         if (row.phase !== 'FINAL' && (row.local_end || ['APPLIED', 'RECOVERY_REQUIRED', 'PREPARING'].includes(row.phase)
           && row.planned_end_at && this.now() >= parseServerTime(row.planned_end_at)))
           await this.localEnd(row, row.local_end?.reason || 'EXPIRED');
@@ -888,9 +910,33 @@ class MemberExecutionLoop {
     return {owner_key:row.owner_key,executor_id:row.executor_id,base_url:row.base_url,session_id:row.session_id,
       revision:row.revision,applied_at:row.applied_at,snapshot:structuredClone(row.command.snapshot)};
   }
+  async stopCapture(sessionId) {
+    this.captureSuspended.add(sessionId);
+    this.accessError = 'ACCESS_STORAGE_UNCONFIRMED';
+    this.view = {status:'RECOVERY_REQUIRED',session_id:sessionId,capture_release_confirmed:false};
+    const identity = await this.getIdentity(), row = await this.control.load(identity.owner_key,sessionId);
+    if (!row || row.phase === 'FINAL') return;
+    await this.scope(row);
+    row.capture_storage_fault = true;row.phase = 'RECOVERY_REQUIRED';
+    row.run_end_ms ??= Math.max(parseServerTime(row.applied_at)||0,
+      Math.min(this.now(),row.checkpoint_ms??this.now()));
+    await this.control.save(row);
+    // Do not invent a Server END reason. The user may confirm END via the existing contract.
+    await this.cleanup(row);
+    this.view = {status:'RECOVERY_REQUIRED',session_id:sessionId,capture_release_confirmed:true};
+  }
   observe(stage,details) {
-    if (this.view.status !== 'RUNNING') return Promise.resolve(null);
-    return this.serial(() => this.access.observe(stage,details)).catch(error => {this.accessError='ACCESS_STORAGE_UNCONFIRMED';throw error;});
+    const sessionId = this.view.session_id;
+    if (this.view.status !== 'RUNNING' || this.captureSuspended.has(sessionId)) return Promise.resolve(null);
+    return this.serial(async () => {
+      if(this.view.status !== 'RUNNING'||this.view.session_id!==sessionId||this.captureSuspended.has(sessionId))return null;
+      try{return await this.access.observe(stage,details);}
+      catch(error){
+        this.accessError='ACCESS_STORAGE_UNCONFIRMED';
+        if(error.message==='ACCESS_STORAGE_UNAVAILABLE')await this.stopCapture(sessionId);
+        throw error;
+      }
+    });
   }
   end(sessionId) {
     return this.serial(async () => {

@@ -4,7 +4,7 @@
 
 ## 작업 상태
 
-- 상태: 진행 중 · 0.1.12 사용자 정상 회신 / 0.1.15 Worker 전송 복구 경계 보완
+- 상태: 진행 중 · 0.1.12 사용자 정상 회신 / 0.1.17 수집 저장 장애 대응 부분 구현
 - 실제 담당자: Core 종민 · 기존 Server 담당 배정 유지
 - 브랜치 / 시작 기준 커밋: `feature/extension-core-ext-02` / `b52681bd4088be3f64722c30d5072632b8e9515e`
 - PR: https://github.com/kdu-sw-capstone/capstone-project/pull/17
@@ -128,3 +128,15 @@ Extension 0.1.14: 전송 저장 오류를 팝업에 명확히 표시하고, 정�
 ### Worker 전송 복구 결과
 
 0.1.15: Core 명령 조회 실패와 독립적으로 보존된 전송함 복구를 시작한다. 원문 읽기/복사/flush/정리 경계마다 현재 owner/executor/Server를 확인한다. 자동 216/216·구문 PASS. 새 5개는 별도 VM Worker 런타임+공유 fake-indexeddb+제품 전송기 기반 모의 검증이다. 실제 MV3 Worker 종료/재시작은 미실행. [검증 기록](../evidence/EXT-03-2026-10-10-worker-delivery-recovery.md). 전체 EXT-03 진행 중, develop 미병합.
+
+## 2026-10-10 · 이번 작업: 수집 저장 장애 대응
+
+기능 ID EXT-03, 담당 Core 종민, 시작 e11bcb4229a497259fc7b0409d30e8ab09684dcf, feature/extension-core-ext-02, PR #17. 목표는 ACCESS_STORAGE_UNAVAILABLE 이후 신규 수집 중단·fault 영속화·자기 규칙 해제 확인이다. 실제 Server END의 저장 오류 사유는 현행 계약에 없어 기존 사용자 확인 MANUAL 종료를 제공한다. 자동 오류 종료 사유는 Server 협업 대상이다.
+
+시작 개인 진행률 약80~85% 추정, 큰 개인 잔여: 이번 저장 장애 경계와 최신 실제 검증. 전체MVP/팀원 통합/정식AC 완료율과 별도다.
+
+### 수집 저장 장애 대응 결과
+
+0.1.17: 신규 수집 중단 및 control fault 영속화, 자기 규칙 해제 확인·재시작 후 중단 유지. 기존 사용자 MANUAL 종료/Web RELEASE/EXPIRED는 계속 처리하며 저장 오류 전용 자동 END는 공유 계약 합의 대기다. 자동 220/220·구문 PASS·모의 UI 42/42 PASS. 실제 새 Chrome/Server 장애 검증은 미실행. [검증 기록](../evidence/EXT-03-2026-10-10-capture-storage-stop.md).
+
+개인 Core 추정85~90%(전체MVP/팀원 통합/정식AC 아님). 큰 개인 잔여는 최신 실제 검증 1단위이며 결함 보완 시 늘어난다. 저장 오류 자동 END 사유는 Server 협업에 추가한다. 제어/저널까지 저장 불가이면 해제 미확인으로 남으며 사용자 저장소 정상화 후 재확인이 필요하다.
