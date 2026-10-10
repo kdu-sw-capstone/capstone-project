@@ -1,0 +1,9 @@
+<!doctype html>
+<html lang="ko"><meta charset="utf-8"><title>Content Control 독립 검증</title>
+<style>body{font:18px sans-serif;margin:32px}button{padding:12px;margin:8px}pre{white-space:pre-wrap}</style>
+<h1>Content Control 독립 검증</h1>
+<p>합성 DOM 및 입력으로 수행하는 검증입니다. 실제 서비스·세션·Core 연결 결과가 아닙니다.</p>
+<button id="start">키워드 제한 적용</button><button id="change">본문 변경</button><button id="release">제한 해제</button>
+<p id="fixture">일반 콘텐츠</p><input value="검증대상"><p>입력창 값은 검사하지 않습니다.</p>
+<pre id="result"></pre><script type="module" src="harness.mjs"></script>
+</html>
