@@ -130,3 +130,7 @@ ShortsControl adapter와 시험 전용 MV3 도구 추가. 기존 구현 보존. 
 ### 2026-10-10 사용자 실행 보고 반영 · 오늘 종료
 
 담당 채지민 / feature/content-control / 기록 시작 db9fa68(Shorts 보강 Commit·Push 완료). 사용자는 Chrome 시험 안내 후 “오 다 됐어 이건 이미 commit push 한거야?”라고 정상 실행을 보고했다. 실행 주체는 사용자이며 Codex 관찰/자동 시험과 구분한다. 단계별 완료 범위·화면·active/status/released 값·Chrome 버전·로드hash 미확보이므로 각 항목 PASS나 AC 전체 검증완료로 확대하지 않는다. 기존 자동33/33 PASS는 합성 DOM/모의 정책 검증이다. 실제 YouTube 상세 DOM·음성·SPA·새로고침·뒤로/앞으로·실패/복원 단계별 검증, Core 정책/Snapshot/메시지/규칙ID/navigation_id/Event1.2/세션·회원/비회원/Server 통합은 미검증 또는 계약 합의 대기 유지. 이번 변경은 기록만이며 자동 테스트 재실행 불필요, diff검사 후 Commit·Push. 상세 원본 ../Content_Shorts_2026-10-10.md의 사용자 실행 결과 참조. 다음은 윤종민 D-06 연결안 검토/합의→실제 연결·회귀 검증. Draft PR 미생성, 오늘은 기록 게시 후 종료. develop 병합·자동병합 없음, 사용자 명시 요청 전 금지.
+
+### 2026-10-10 후속 사용자 확인: 단계별 YouTube 시험 정상 완료
+
+사용자가 “지금 테스트 다 정상적으로 완료됐거든”이라고 확인하여 안내한 6개 단계(직접 진입 제한/일반 영상 이동/뒤로 Shorts 재제한/앞으로 일반 영상/새로고침 후 수동 재적용/해제·복원)를 사용자 실행 PASS로 기록한다. 이전 완료범위 미확정 기록을 이 범위에서 갱신한다. 실제 상태값·화면·버전/로드hash 미확보, Codex 직접 관찰과 별개. 자동33/33은 합성/모의 결과다. Core 자동 재주입·정책/Snapshot·세션·Event1.2·Server·회원/비회원·실패/복구·서비스 DOM 변형은 미검증 유지. 상세 원본 Content_Shorts_2026-10-10.md 최신 표 참조. Draft PR #21 생성 완료·사용자 결과 반영 대상, 기록만 Commit·Push. 다음 D-06 합의/실제 통합 검증, develop 병합·자동병합 없음.
