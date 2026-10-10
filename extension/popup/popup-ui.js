@@ -10,7 +10,7 @@
  function renderRecords(){const ok=accessData&&accessData.session_id===focusSession?.session_id;$('recent-result').textContent=ok&&accessData.quarantined_count?`기존 이벤트 ${accessData.quarantined_count}건의 계약 오류 확인 필요 · 원본 보존`:ok?`접근 ${accessData.total_access}회 · 반복 ${accessData.repeat_access}회\n${accessData.items.slice(0,3).map(e=>`${e.payload.target_host} · ${e.event_type==='BLOCKED_SITE_ACCESS'?'차단':'기록'}`).join('\n')||'저장된 접근 기록이 없습니다.'}`:'기록 조회 결과 미확인. 로컬 기록에서 다시 확인해주세요.';}
  function renderFocus(){
   const status=focusSession?.status, active=focusSession&&!terminal(status), running=focusVerified&&!focusBusy&&status==='RUNNING';
-  $('focus-countdown').hidden=!running;$('duration-label').hidden=Boolean(active)||focusBusy;startFocus.hidden=Boolean(active)||focusBusy;startFocus.disabled=!focusVerified||focusBusy||Boolean(active);
+  $('focus-countdown').hidden=!running;$('duration-label').hidden=Boolean(active)||focusBusy;startFocus.hidden=Boolean(active)||focusBusy;startFocus.disabled=!focusVerified||focusBusy||Boolean(active)||Boolean(window.FocurveMemberUI?.blocked);
   $('request-end').hidden=!focusVerified||!active||status==='STARTING'||focusBusy;$('request-end').textContent=status==='RUNNING'?'세션 종료':'차단 해제 다시 확인';endFocus.disabled=!focusVerified||focusBusy||!active||status==='STARTING';
   $('focus-title').textContent=!focusVerified?'실제 상태를 확인해주세요':focusBusy?'처리 결과 확인 중':running?'집중 진행 중':active?(focusStates[status]||'결과 확인 필요'):'집중 세션을 시작하세요';
   $('focus-description').textContent=running?'시작할 때 저장된 정책으로 집중하고 있습니다.':!focusVerified?'상태 다시 확인 후 집중을 시작할 수 있습니다.':focusBusy?'정책 적용·해제 확인이 끝날 때까지 기다려주세요.':'집중 시간과 적용할 설정을 확인하세요.';
@@ -26,7 +26,6 @@
  $('add-site').addEventListener('click',()=>{stopEditing();editor(true);$('site-url').focus();});$('site-search').addEventListener('input',renderSites);
  $('request-end').addEventListener('click',()=>{if(!endFocus.disabled)$('end-dialog').showModal();});$('continue-focus').addEventListener('click',()=>$('end-dialog').close());endFocus.addEventListener('click',()=>$('end-dialog').close());
  startFocus.addEventListener('click',()=>{preparing=false;});$('next-session').addEventListener('click',()=>{preparing=true;navigate('focus');renderFocus();});
- document.querySelectorAll('.account-button').forEach(b=>b.addEventListener('click',()=>{$('ui-notice').textContent='계정 연결은 별도 통합 작업이며 현재 지원하지 않습니다.';}));
  const theme=$('theme-mode');function applyTheme(){document.documentElement.dataset.theme=theme.value==='system'?(matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light'):theme.value;}
  theme.addEventListener('change',()=>{applyTheme();chrome.storage.local.set({focurve_ui_theme:theme.value}).catch(()=>{$('ui-notice').textContent='화면 모드 저장 실패. 다시 선택해주세요.';});});matchMedia('(prefers-color-scheme: dark)').addEventListener('change',()=>{if(theme.value==='system')applyTheme();});chrome.storage.local.get('focurve_ui_theme').then(data=>{if(['system','dark','light'].includes(data.focurve_ui_theme))theme.value=data.focurve_ui_theme;applyTheme();}).catch(applyTheme);
  applyTheme();renderSites();renderFocus();setInterval(()=>{if(focusVerified&&focusSession?.status==='RUNNING'&&!focusBusy)renderFocus();},1000);setInterval(()=>{if(!focusBusy)refreshFocusState().catch(()=>{focusResult.textContent='상태 확인 실패. 상태 다시 확인을 눌러주세요.';});},15000);

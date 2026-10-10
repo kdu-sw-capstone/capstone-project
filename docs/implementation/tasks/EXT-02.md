@@ -4,7 +4,7 @@
 
 ## 작업 상태
 
-- 상태: 진행 중 — 2026-10-10 Event1.2 전송 단위 구현·모의96/96·UI17항목·Backend139/139·실제HTTP/MySQL 합성3/3 통과. 제품 회원 인증/명령/보고 연결 및 최신 Chrome·전체 필수 기준 미검증. 최신 사용자 지시로 Commit/Push/PR17 갱신 허용, develop 병합 금지. 아래 과거 Git 동결은 당시 이력이다.
+- 상태: 진행 중 — 2026-10-10 D09 제품 설치·PKCE·토큰/guest전환guard 구현. Extension모의113/113·UI19항목·Backend140/140·최종Auth실HTTP/MySQL합성1/1 통과. f6 비회원Chrome1~25 사용자성공/원본캡처/환경 확보(로드hash미대조), 이번Auth코드제품Chrome·회원명령/보고·필수전체AC미검증. Commit/Push/PR17갱신 허용, develop병합 금지. 과거Git동결은당시이력.
 - 실제 담당자: 윤종민 — 기존 배정 원문(원본보관 ZIP의 개발계획 v1.3: Extension Core·세션·URL/Domain·사이트 정책·차단 페이지·시작/종료 연동)과 사용자 지시 기준. EXT 전체·Content Control을 재배정하지 않음
 - 브랜치 / 시작 기준 커밋: `feature/extension-core-ext-02` / `76df34e` (2026-10-07, origin/develop 최신 확인)
 - PR: [#17](https://github.com/kdu-sw-capstone/capstone-project/pull/17), develop ← feature/extension-core-ext-02, 현재 Open(non-draft)·수정 후 재검토 중. 사용자가 직접 생성했으며 병합하지 않음
@@ -467,3 +467,16 @@ Backend 전체120/120·패키징 PASS, Frontend113/113·빌드 PASS. 격리 MySQ
 ## 2026-10-10 Event1.2 전송 단위 검증 결과
 
 이번 제품 SITE event는1.2/실제host key(접두사 없음)/matched_policy_host/blocked_reasons. 기존 원본은 보존·잘못된 계약은 격리. background 전송 adapter·개별ACK/수신조회/동일원본 재시도 구현, 회원 인증/context/명령loop는 후속. 모의96/96·UI17항목·Backend139/139·실HTTP 합성3/3 통과. 과거 사용자Chrome1~25는 이전 코드 근거이며 이번 제품Chrome 미검증. 모든 필수AC·BOUND17 전체 미검증 유지. 자세한 실패/조율/다음 행동은 [검증 기록](../evidence/EXT-02-2026-10-10-event12.md). 최신 사용자 허용에 따라 작업 브랜치 게시·PR17 갱신만 진행하며 develop 병합 없음.
+
+
+## 2026-10-10 사용자 최신 비회원 Chrome 검증 및 D-09 착수
+
+- 사용자 새 작업브랜치 ZIP 재로드 후1~10 정상 보고,11~14 전체4/반복2 화면,15~17 두 RECORDED_ACCESS 원본 캡처에서 schema1.2/실제host key(접두사 없음)/matched_policy_host naver.com/blocked_reasons[]/동일session 확인. 최초 반복3 보고는 구형1.1/SITE:naver.com 실행 원본에서 확인했으며 새코드 결과에서 제외한다.
+- 18~21 Worker단독Stop 후 세션/차단유지·종료/해제,22~25 전체Chrome종료 후 INTERRUPTED/해제 정상 사용자보고. Chrome154.0.8037.98 공식64Stable / Windows11 25H2Build26200.9457 캡처 확인. 사용자실행/화면확인이며 Codex직접Chrome 또는 journal/interval/규칙원본 검증 아님. 다운로드 소스기준 f6c2f7e, 실제 로드파일hash 대조는 미검증. D01/D05 자동재개·Serverreconcile·시간계산·실quota 통과로 확대하지 않는다.
+- 이번 기능ID EXT-02, 참조 D09(새기능ID아님), 담당 윤종민/Extension Core, 브랜치 feature/extension-core-ext-02, 시작f6c2f7e1216c52d2470a5ca8ebb7ec143b5415f0. 이번 목표: 설치등록/proof·PKCE polling·토큰저장/단일refresh·popup상태·guest실행전환guard를 기존API에 연결. guest원본/설정/미전송자료 보존, 회원명령/보고/완전자동복구는 후속이며 전체완료아님.
+- 기준: AGENTS.md·개발운영/통합현황/작업카드, 인증연결계약11, D01_D10최종공용계약 D09/응답유실한계, ServerLinkController/MemberLinks/AuthController/WebAuthentication 실제코드. 기존Callbackallowlist·Webapproval확인 필요. Server제품코드/API를 임의변경하지 않는다. Commit/Push/PR17갱신 허용, develop병합 없음.
+
+
+### D09 이번 구현·검증 및 인계
+
+background member-auth/runtime·popup기존계정버튼 연결. 안전storage/단일refresh/응답유실대기·guest경합/sender/ownedrules검사, 제품JS의 실제HTTP PKCE/me/refresh 회귀추가. 모의113/113·UI19·Backend140/140 및 최신AuthHTTP1/1 통과, 회원명령/보고/자동복구는미연결. 이번Auth코드 실제Chrome·전체AC/BOUND17미검증. [코드식별·명령·미검증/실패/조율/다음행동 및 Chrome준비절차](../evidence/EXT-02-2026-10-10-member-auth.md). 이전f6 사용자Chrome1~25는보존하고이번Auth검증으로전용하지 않음.

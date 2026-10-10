@@ -138,3 +138,10 @@ Windows Chrome에서는 이번 Push의 `extension/`을 별도 테스트 프로�
 개별 ACCEPTED/DUPLICATE만 ACK, REJECTED는 원본 보존 격리, PENDING_DEPENDENCY는 상태 조회. 응답 유실/503 또는 Worker 재생성의 IN_FLIGHT는 수신 상태를 먼저 조회하고 NOT_RECEIVED일 때만 동일ID·본문으로 재전송한다. 저장 실패는 전송 전에 거절한다. 자동 refresh/실제 회원 설치 연결은 다음 구현 단위다.
 
 `tests/member-events.test.mjs`는 fake IndexedDB/HTTP 모의다. `scripts/member-event-http-probe.mjs`는 Backend 회귀에서 호출하는 **테스트 전용 Node caller**로, 제품 모듈을 실제HTTP에 연결하지만 설치/회원/APPLIED 증거와 IndexedDB는 합성이다. 단독 실행용 인증 준비 도구가 아니다. 실제Chrome 검증 결과로 취급하지 않는다. 재실행 명령·최신 코드 식별값·미검증·실패·조율·다음행동은 [이번 검증 기록](../docs/implementation/evidence/EXT-02-2026-10-10-event12.md)을 따른다.
+
+
+## D09 제품회원 설치·PKCE 연결
+
+기존계정버튼이 background 설치/proof·PKCE·Web승인polling·token교환/me확인을 호출한다. Server/Web가 실제로 실행되고, 팝업details의 공개callback주소가Server EXTENSION_CALLBACK_URIS에 허용돼 있어야 한다. 연결대기/미확인/회원연결중 새guest집중은막고 기존자료는보존한다. Token은background 접근제어storage에만저장, UI/Content로반환하지 않는다. 회원집중명령/실행보고/event업로드·로그아웃전환은후속미연결이며 연결성공만으로제품전체가완료되지 않는다.
+
+등록·코드교환·refresh응답유실은보수적으로복구필요표시한다. 현재Server는proof재발급/token없는identity상태조회API가없으므로강제새ID/무조건refresh재사용 기능을제공하지 않는다. [실제Chrome준비·수동검증 및 최신근거](../docs/implementation/evidence/EXT-02-2026-10-10-member-auth.md)를읽고준비한테스트Server에서만계정연결을시작한다.

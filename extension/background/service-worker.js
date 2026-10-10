@@ -1,4 +1,4 @@
-importScripts("host-policy.js", "local-store.js", "site-store.js", "session-db.js", "session-core.js", "access-store.js", "member-events.js");
+importScripts("host-policy.js", "local-store.js", "site-store.js", "session-db.js", "session-core.js", "access-store.js", "member-events.js", "member-auth.js", "member-auth-runtime.js");
 
 // 개발용 연결 진단입니다. 제품의 세션/정책 메시지와 분리합니다.
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
@@ -55,11 +55,11 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (!["DEV_SESSION_START", "DEV_SESSION_END", "DEV_SESSION_STATE"].includes(message?.type)) return;
   if (sender.id !== chrome.runtime.id || sender.url !== chrome.runtime.getURL("popup/popup.html") || (sender.frameId && sender.frameId !== 0)) return;
   if (typeof message.request_id !== "string" || !message.request_id.length || message.request_id.length > 64) return;
-  const operation = message.type === "DEV_SESSION_START" ? GuestSession.start(message.payload?.duration_minutes, message.request_id)
+  const operation = message.type === "DEV_SESSION_START" ? MemberAuthRuntime.guardGuestStart(() => GuestSession.start(message.payload?.duration_minutes, message.request_id))
     : message.type === "DEV_SESSION_END" ? GuestSession.end(message.payload?.session_id) : GuestSession.state();
   operation.then(state => sendResponse({ request_id: message.request_id, status: "OK", data: state?.session || null, error: null }))
     .catch(error => sendResponse({ request_id: message.request_id, status: "ERROR", data: null,
-      error: { code: ["INVALID_START", "SESSION_ACTIVE", "SESSION_NOT_FOUND", "IDEMPOTENCY_CONFLICT", "FEATURE_NOT_IMPLEMENTED", "APPLY_EXPIRED", "RULE_UNSUPPORTED", "RULE_OWNERSHIP_CONFLICT", "APPLY_UNCONFIRMED", "RELEASE_UNCONFIRMED"].includes(error.message) ? error.message : "EXECUTION_UNCONFIRMED" } }));
+      error: { code: ["ACCOUNT_TRANSITION_ACTIVE", "INVALID_START", "SESSION_ACTIVE", "SESSION_NOT_FOUND", "IDEMPOTENCY_CONFLICT", "FEATURE_NOT_IMPLEMENTED", "APPLY_EXPIRED", "RULE_UNSUPPORTED", "RULE_OWNERSHIP_CONFLICT", "APPLY_UNCONFIRMED", "RELEASE_UNCONFIRMED"].includes(error.message) ? error.message : "EXECUTION_UNCONFIRMED" } }));
   return true;
 });
 chrome.alarms.onAlarm.addListener(alarm => {
