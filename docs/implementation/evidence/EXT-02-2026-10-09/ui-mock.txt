@@ -1,0 +1,26 @@
+
+> focurve-extension-core@0.1.0 test:popup-ui
+> python3 tests/ui/popup_ui.py
+
+{
+  "kind": "product HTML + mocked Chrome API in Chromium",
+  "passed": 16,
+  "checks": [
+    "initial verified state / dynamic policies",
+    "theme selection and persistence request",
+    "site navigation and search",
+    "existing edit and cancel preserved",
+    "registration uses existing adapter",
+    "edit forwards expected version",
+    "version conflict preserves unsaved input",
+    "delete requires confirmation",
+    "pending apply never shows running",
+    "running summary uses frozen snapshot",
+    "cancel end sends no end request",
+    "pending release never shows completed result",
+    "confirmed release displays confirmed duration",
+    "failed refresh prevents start / stale progress",
+    "malformed running response rejected",
+    "unconfirmed recovery offers release retry without running"
+  ]
+}

@@ -19,7 +19,7 @@ W=Web HttpOnly Secure SameSite=Lax 쿠키, 변경 요청 CSRF+Origin 검증. E=�
 | SiteWrite | url:string≤2048, display_name:1..100, include_subdomains:boolean=true, purpose:FOCUS/DISTRACTION/GENERAL, access_policy:ALLOW/BLOCK/RECORD, feature_policies:[{feature_code,enabled}] |
 | Site | site_id:string, canonical_host:string, SiteWrite 중 url 제외, version:int≥1,created_at,updated_at,deleted_at? |
 | ContentPolicyWrite | keywords:{enabled,rules:[{id UUID,text1..80,scopes:[TITLE/URL/BODY]}],exceptions:[Host]},adult_domains:{enabled,custom_hosts:[Host],exceptions:[Host]},image_blur:{enabled,sensitivity:LOW/MEDIUM/HIGH,strength:LOW/MEDIUM/HIGH},usage_tracking:{enabled} |
-| Host | host:소문자 IDNA 정규화≤253,include_subdomains:boolean. 각 목록≤500. 키워드≤200. |
+| Host | host:소문자 IDNA 정규화≤253·마지막 점 제거·www 유지,include_subdomains:boolean. 각 목록≤500. 키워드≤200. |
 | ContentPolicy | ContentPolicyWrite + version:int,updated_at |
 | Snapshot | policy_snapshot_id UUID,format_version=1.2,site_match_strategy=MOST_SPECIFIC_HOST,owner_user_id?,executor_id,created_at,sites:[Site],content_policy,catalog_version?,model_profile_version?,source_version |
 | Session | session_id UUID,executor_id UUID,policy_snapshot_id UUID,origin:MEMBER/GUEST_IMPORT,source:MANUAL/SCHEDULE,execution_status,record_status:PENDING/PARTIAL/COMPLETE/REVIEW_REQUIRED,duration_minutes,active_duration_ms,overrun_ms,remaining_ms,started_at?,planned_end_at?,ended_at?,policy_released_at?,end_reason?,version,desired_revision,last_error_code? |
@@ -27,7 +27,7 @@ W=Web HttpOnly Secure SameSite=Lax 쿠키, 변경 요청 CSRF+Origin 검증. E=�
 | ExecutionReport | report_id UUID,command_id?,session_id,executor_id,desired_revision,result:APPLIED/RELEASED/FAILED/UNCONFIRMED,observed_at,error_code?,rollback_confirmed?,intervals:[Interval],local_action_seq? |
 | Interval | interval_id UUID,kind:RUN/PAUSE,start_at,end_at?,duration_ms?,quality:CONFIRMED/UNCONFIRMED; RUN 종료는 실제 해제 시각 |
 | Note | session_id,text:0..2000,version:int≥0,updated_at? |
-| Access | event_id,session_id,executor_id,occurred_at,event_type,target_kind,target_host,feature_code?,target_key,access_seq,target_access_index,is_repeat,policy_snapshot_id,quality |
+| Access | event_id,session_id,executor_id,occurred_at,event_type,target_kind,target_host,matched_policy_host?(SITE 접근 필수),feature_code?,target_key,access_seq,target_access_index,is_repeat,policy_snapshot_id,quality |
 | Metrics | total_access,repeat_access,blocked_access,active_duration_ms,repeat_ratio?,quality:COMPLETE/PARTIAL/NO_DATA/NOT_COLLECTED,as_of; TargetMetrics는 host 추가 |
 | ScheduleWrite | name:1..80,weekdays:서로다른1..7배열,start_local:HH:mm,duration_minutes:1..180,timezone:IANA,executor_id UUID,enabled:boolean |
 | Schedule | schedule_id UUID,ScheduleWrite,version,created_at,updated_at,deleted_at? |
@@ -161,3 +161,14 @@ Occurrence.status는 PENDING/WAITING_CONFLICT/STARTING/RUNNING/FINISHED/SKIPPED�
 ## 2026-10-08 사용자 명시 변경
 
 [호스트별 정책 우선순위](../02_시스템_테크설계/10_호스트_정책우선순위.md)를 적용한다. 부모·자식 동시 등록을 허용하며 정확한 호스트만 중복 거절한다. 새 snapshot1.2, 가장 구체적인 행 선택, 기존 snapshot1.1/기존 사용자 자료 보존. 실제 Extension 연동은 미검증이다.
+
+
+## 2026-10-09 리뷰 합의: SITE 접근 이벤트의 실제 호스트
+
+최신 사용자 전달 팀 리뷰 지시를 반영한 공용 계약이다. Server 구현/검증기 반영은 팀장(Server 담당), Extension 생성은 윤종민 담당이다. Server 수정본은 현재 저장소에 없으며 실제 HTTP 통합 검증 전이다. 아래 합의를 Server 배포/승인 완료로 해석하지 않는다.
+
+- SITE 접근의 payload.target_host는 실제 방문 호스트를 Host 규칙(소문자 IDNA·마지막 점 제거·www 유지)으로 정규화한 값이다. payload.target_key는 `SITE:${target_host}`다.
+- payload.matched_policy_host는 해당 Snapshot에서 실제 선택된 사이트 정책의 canonical_host다. SITE BLOCKED_SITE_ACCESS/RECORDED_ACCESS의 신규 이벤트에 필수다. FEATURE 이벤트의 상세 형식은 이번 SITE 변경으로 확정하지 않는다.
+- `chzzk.naver.com`과 `www.naver.com`은 같은 naver.com 정책이 적용돼도 다른 target_key다. 반복은 session_id+실제 방문 host의 access_seq 순위로 계산한다. 정책 선택/차단은 Snapshot1.2 MOST_SPECIFIC_HOST로 결정하며 target_key를 차단 명령으로 사용하지 않는다.
+- 예: payload={access_seq:1,navigation_id:"UUID",target_kind:"SITE",target_host:"chzzk.naver.com",target_key:"SITE:chzzk.naver.com",matched_policy_host:"naver.com",reason:"USER_SITE"}. 기존 이벤트 schema_version=1.1은 유지한다. 해당 필드 수용/지원·과거 schema1.1 이벤트 처리 규칙은 실제 Server 검증기와 추가 대조가 필요하다.
+- 기존 저장 이벤트·event_id/receipt/outbox는 자동으로 재작성하지 않는다. 과거 이벤트의 matched_policy_host 누락/정책-host key를 Server가 수용·거절·이관하는 방법은 조율 필요다. 미합의 상태에서 이미 저장된 원본을 변경해서 재전송하지 않는다.

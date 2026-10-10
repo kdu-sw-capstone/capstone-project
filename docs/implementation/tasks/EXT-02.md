@@ -4,7 +4,7 @@
 
 ## 작업 상태
 
-- 상태: 진행 중 — PR #17 수정 후 재검토: 오류 4건 수정, 자동 51/51. 정책 1.2 원본·Figma 접근 대기, 최신 실제 Chrome 미검증; 회원/전체 연동 미완료
+- 상태: 진행 중 / 통합 차단 — 2026-10-09 팀 리뷰 수정. 실제 방문 host 이벤트 로컬 수정·모의79/79 및 UI16항목 통과. 모든 필수 기준 미통과, 최신 제품 Chrome·회원/Server 연동 미검증. Commit/Push/PR 갱신/병합 금지. 아래 최신 판정이 과거 이력보다 우선한다.
 - 실제 담당자: 윤종민 — 기존 배정 원문(원본보관 ZIP의 개발계획 v1.3: Extension Core·세션·URL/Domain·사이트 정책·차단 페이지·시작/종료 연동)과 사용자 지시 기준. EXT 전체·Content Control을 재배정하지 않음
 - 브랜치 / 시작 기준 커밋: `feature/extension-core-ext-02` / `76df34e` (2026-10-07, origin/develop 최신 확인)
 - PR: [#17](https://github.com/kdu-sw-capstone/capstone-project/pull/17), develop ← feature/extension-core-ext-02, 현재 Open(non-draft)·수정 후 재검토 중. 사용자가 직접 생성했으며 병합하지 않음
@@ -14,7 +14,7 @@
 |---|---|---|---|
 | Web | | 미확인 | 미실행 |
 | Server | | 미확인 | 미실행 |
-| Extension | 윤종민* | 별도 사이트 실행 모듈 및 복원 비회원 세션; 기한·도메인 경계 보완. 두 실행 경로 연결 및 회원 연동 미완료 | 최신 Codex Linux 자동 42/42, 문법/fixture 빌드 통과. 사용자 기본 6개 및 신규 D1~D6 성공 보고. 별도 .chrome-harness 재검증·회원 연동 미검증 |
+| Extension | 윤종민* | 비회원 Core·Snapshot1.2·팝업 및 방문 host 이벤트 로컬 수정. 제품 회원 실행/설치 인증/보고/reconcile 미구현 | 현재 미커밋 코드 모의79/79·UI16항목. 실제 제품 로드 관리자 제한. 회원/HTTP 통합 차단. 과거 사용자 Chrome 결과는 아래 별도 이력 |
 
 \* 현행 TEAM_GUIDE/기존 카드의 개인 배정란은 상세하지 않지만, 이후 보관 ZIP에서 기존 3인 배정 원문을 확인했다. 기술 기준은 현행 설계이며 보관 원문은 배정 확인에만 사용한다. 과거 탐색·검증 결과는 아래 이력에 보존한다.
 
@@ -36,13 +36,23 @@
 
 | 기준 ID | 기대 결과(기존 설계) | 코드 위치 | 검증 명령·환경 | 결과 |
 |---|---|---|---|---|
-| AC-EXT-02-01 | 현재 소유자·최신 revision의 명령만 실행 | extension/src/site-controller.js guard/recheck/apply/release; site-rules.js | extension에서 npm test; Windows Node 24.21.0; trusted context·DNR·tabs·journal 모의 | 사이트 계층 자동 통과; 실제 인증·제품 RUNNING 전이 미검증 |
-| AC-EXT-02-02 | 다른 설치 토큰·만료 APPLY 거절 | site-controller.js guard/apply | npm test; 다른 executor·스냅샷 소유자·만료/누락/잘못된 기한·적용 도중 만료 | 모의 context 기반 설치 ID/기한 부분 통과; 실제 설치 토큰 인증은 미구현·미검증 |
-| AC-EXT-02-03 | 재접속은 journal 대조 후 명령 실행 | site-controller.js inspect/apply; tests/site-controller.test.js | npm test; controller 재생성·누락/부분 규칙·중복 재설치 금지 | 모의 journal·DNR 부분 통과; 실제 Server reconcile·worker lifecycle·브라우저 재시작 세션 확정 미검증 |
+| AC-EXT-02-01 | 현재 소유자·최신 revision 실행 + 실제 회원 설치 적용/Server 보고 | site-controller.js guard는 내부 adapter. product service-worker.js에는 Guest 경로만 있음 | 현재 Node 모의 + 제품 경로 코드 확인 | **차단/미검증** — 회원 Core 연결·명령 API·보고 API 선행. 모의 guard를 실제 회원 통과로 보지 않음 |
+| AC-EXT-02-02 | 다른 설치 인증·유효하지 않은 인증/만료 APPLY 거절 및 규칙 보존 | site-controller.js executor/owner/revision/기한 비교 | 내부 getContext/Chrome 모의 검사 | **차단/미검증** — 실제 설치 토큰 발급/검증/회수 및 인증 HTTP/규칙 원본 증거 필요 |
+| AC-EXT-02-03 | 실제 Worker 재생성 journal 대조 + Server reconcile 후 실행 | GuestSession recovery, adapter inspect; Server reconcile 경로 없음 | fresh VM 모의; 현재 Chromium 제품 로드 시도는 관리자 제한 | **차단/미검증** — 최신 실제 Chrome Worker/journal·API-EXEC-03 연동 근거 없음. 과거 사용자 stop 성공은 이번 코드 통과 근거 아님 |
 
 기존 수용 기준은 출발점이다. 상세 명세의 실제 입력·출력·오류를 검증하며 이 표의 존재만으로 충분한 테스트라고 판단하지 않는다. 관련 BOUND 사례도 선택하여 아래에 기록한다.
 
-## 추가·통합 검증
+## 2026-10-09 필수 경계·최신 코드 검증 판정
+
+| 기준 | 현재 결과 | 남은 작업·담당·필요 증거 |
+|---|---|---|
+| BOUND-17 | **미검증/통합 차단**. adapter journal/rollback 실패 주입은 모의 부분 검증 | 윤종민: 제품 IndexedDB 실제 quota·실패 표시/자료·규칙 보존 검증. Server 담당: 실제 장애 endpoint/인증·재시도/보고 계약. 실제 실행 전후 DB/DNR/outbox와 실패 UI 필요 |
+| 최신 제품 Chrome 팝업·차단·해제·복구 | **미검증**. Chromium151.0.7922.173/Linux에서 실제 제품 로드 관리자 정책 오류 | 윤종민 구현·사용자 로컬 실행: 최신 미커밋 제품 SHA256 식별 + OS/Chrome 버전 + 수동 절차 + 화면/DB/DNR/journal 필요 |
+| SITE 방문-host 이벤트 계약 | 로컬 수정, 신규 회귀5건 포함79/79 **모의** 통과. 실제 HTTP 미검증 | 팀장(Server): matched_policy_host 필드/API/검증기·legacy 처리/테스트; 양쪽 HTTP 수신 이벤트/반복 계산 확인 |
+
+이번 작업 식별은 HEAD e79ef30 + 미커밋 product-identity.json SHA256이다. 최종 커밋 SHA는 생성하지 않는다. 최신 결과/담당/실행 절차는 [팀 리뷰 대응 기록](../evidence/EXT-02-2026-10-09-review.md) 참조.
+
+## 과거 추가·통합 검증 이력 (현재 통과 판정 아님)
 
 | BOUND 또는 추가 기준 | 실행 방법 | 결과 | 증거 |
 |---|---|---|---|
@@ -50,7 +60,7 @@
 | 사이트 경계·적용/해제·중복 | Codex Windows 자동; HTTP(S), exact/subdomain, www, 마지막 점, ALLOW/RECORD 제외, 열린 탭 미확인·닫힘, unrelated 규칙 보존 | 자동 통과; Chrome 실제 상세 결과 확인 중 | 동일 테스트·증거; extension/README.md 수동 절차 |
 | BOUND-07/14/19 및 제품 재시작·전체 연결 | 회원 전환·원격 로그아웃·다중 제어 이유·Server/Content 통합 필요 | 미실행; 이번 독립 계층의 완료 근거로 사용하지 않음 | 설계 07_검증기준.md |
 
-## 중단·재개 기록
+## 과거 중단·재개 기록 (이하 당시 환경·개수/결과를 보존)
 
 - 마지막 작업: 2026-10-07 저장소·브랜치·작업카드·역할·현행 EXT-02 설계 및 Extension 코드 상태 확인.
 - 완료한 부분: `feature/extension-core-ext-02`에서 시작 상태 확인. working tree는 착수 전 깨끗했고 `origin/develop` 최신 커밋은 `76df34e`이며 현재 작업 브랜치와 동일하다. EXT-02 수용 기준과 API/복구 계약을 대조했다.
@@ -61,11 +71,11 @@
 
 ## 완료 판정
 
-- 관련 설계 항목 구현:
-- 수용 기준 및 관련 경계 사례 검증:
-- 실제 연동 확인 (모의 응답 제외):
-- 검토·통합 근거:
-- 남은 문제:
+- 관련 설계 항목 구현: 비회원/adapter 일부, 회원 경로 미구현
+- 수용 기준 및 관련 경계 사례 검증: 필수 전체 통과 아님
+- 실제 연동 확인 (모의 응답 제외): 최신 Chrome/회원/HTTP 미검증
+- 검토·통합 근거: 팀 PR17 수정 요청, 기존 PR는 갱신하지 않음
+- 남은 문제: 위 최신 판정표의 차단/미검증 및 Server 선행 자료 부재
 
 ## 2026-10-08 재개 기록 — 이번 독립 구현 단위
 
@@ -378,3 +388,55 @@
 - Node 제품/adapter 모의74/74, 제품 HTML+모의Chrome API Chromium UI16항목 통과. JS check/검증용 harness 빌드 성공. UI PNG는 모의 API 화면으로 실제 설치 결과와 구분.
 - 이전 사용자 Worker stop 모두 정상 보고 반영. 이전 코드의 사용자 수동 보고이며 이번 UI 검증으로 승계하지 않음.
 - 미검증: 최신 UI 실제 제품 Chrome, Server/회원/Content·보고/승인/통합복구, 차단 안내 및 나머지 디자인. 실패: 최종 자동0. 조율 필요: 차단 안내 비회원 목적지/디자인 누락 자산·폰트/공유 계약. 다음 행동: 사용자 UI 점검 후 별도 차단 안내 반영 및 팀 PR17 재검토. 병합 없음, 전체 EXT-02 완료 아님.
+
+### 2026-10-09 팀 재검토 수정 착수 — Commit/Push/PR 갱신 금지
+
+- 기능 EXT-02, 윤종민 Extension Core. 시작 HEAD e79ef3034e3951a20c735de714debab830006284, feature/extension-core-ext-02, 시작 시 working tree clean.
+- 최신 사용자 지시: target_key는 정규화한 실제 방문 host, www 유지; matched_policy_host에 적용 정책 host 별도 기록. Snapshot1.2 MOST_SPECIFIC_HOST 차단 결정은 그대로 유지한다. Server API/검증기 변경 담당은 사용자 전달의 팀장(Server 담당), 개인 이름은 미확정.
+- Server 검증기422는 전달받은 모의 검증 결과이며 실제 HTTP 결과가 아니다. Server 수정본/실행 endpoint·샘플/인증이 현재 저장소에 없어 HTTP 연동은 차단.
+- 모든 필수 기준이 최신 코드로 통과하기 전 Commit/Push/PR 갱신/병합 금지. 이번 수정은 로컬 미커밋으로 보존한다. 과거 Push 허가는 이번 제한을 대체하지 않는다.
+
+### 2026-10-09 로컬 수정 결과 — 전체 필수 기준 미통과
+
+- AccessStore 신규 SITE key=실제 정규화 host, matched_policy_host=선택 정책 host. 현재 Snapshot1.2 차단 결정 유지. 반복은 실제 host별, 과거 DB 원본/대기자료 보존. 추가 회귀5건 포함 Node79/79, UI모의16항목 재실행 통과; 문법 검사 성공.
+- 기준 코드: HEAD e79ef30 + 미커밋 제품 SHA256 `2ae196a83b5177dfd496a65d18da9da7c28c6786c4964f46aa28bf08da66aa2a`. 최신 [기준별 결과/실행 출력/담당·선행/수동 절차](../evidence/EXT-02-2026-10-09-review.md).
+- 실제 제품 로드 시도: Linux/Chromium151.0.7922.173, 관리자 unpacked 제한으로 실패. 이번 실제 팝업·차단·Worker/journal 확인 없음. 사용자 현재 Server 자료 없음 확인; 회원/HTTP/인증/reconcile/실quota 차단·미검증.
+- 완료 아님. Commit/Push/PR 갱신/병합 없음. 미검증/실패/조율 필요/다음 행동을 위 최신 기준 표와 상세 보고서에 기록. 모든 필수 기준 통과 전 제한 유지.
+
+### 2026-10-09 최신 검증용 ZIP 사용자 Chrome 결과 — 1~14
+
+- 개인 전달 저장소 testest의 test/focurve-ext02-local-20261009 브랜치 ZIP을 다운로드/확장 로드했다고 사용자 확인. 제품 식별은 e79ef30 + 미커밋 product SHA256 2ae196a83b5177dfd496a65d18da9da7c28c6786c4964f46aa28bf08da66aa2a. 개인 전달 커밋은 팀 제품 최종 커밋이 아니다. 실제 로드 파일 hash 및 Chrome/OS 버전은 아직 미제공.
+- 사용자 실행 보고: 1~6 팝업/화면모드 유지/등록/시작/차단/종료 취소 정상, 7~10 직접 종료·해제/자동 종료·해제 정상, 11~14 naver.com 부모 RECORD·하위 포함의 두 실제 호스트 방문 및 반복 정상.
+- 첨부 화면에서 전체4회/반복2회, access_seq 1 chzzk.naver.com / 2 www.naver.com / 3 chzzk.naver.com 반복 / 4 www.naver.com 반복을 확인. 표시 시각 2026-10-09 14:10:07~14:10:15 (사용자 화면). Codex가 Chrome을 직접 실행한 결과나 DB 원본 확인은 아니다.
+- 다음 검증: IndexedDB 신규 이벤트 target_key/target_host/matched_policy_host 원본, 다음 세션 반복 초기화·BLOCK/안내 새로고침·최신 Worker 복구. Chrome/OS 버전 및 로드 hash 식별 확보 필요.
+- 필수 회원 인증/명령/보고·Server reconcile·실quota·HTTP는 여전히 미검증/차단. 전체 완료 및 팀 Commit/Push/PR 갱신/병합 없음. 이전 Chromium 직접 로드 실패 및 모의79/79·UI16과 분리해 기록한다.
+
+### 사용자 IndexedDB 원본 캡처 확인 — 실제 방문 host 계약
+
+- 사용자 DevTools Application → focurve-execution/events 캡처 2장 확인. 동일 session의 RECORDED_ACCESS access_seq3: target_host chzzk.naver.com, target_key SITE:chzzk.naver.com, matched_policy_host naver.com. access_seq4: target_host www.naver.com, target_key SITE:www.naver.com, matched_policy_host naver.com. reason RECORD, schema_version1.1. www 레이블 유지 및 실제 host/정책 host 분리 저장 확인.
+- 앞선 팝업 전체4/반복2·각 host 두 번째 방문 반복 표시와 함께 최신 ZIP의 사용자 실제 로컬 Chrome 근거로 기록. Codex 직접 DB 접근 또는 실제 HTTP/Server 수신 검증으로 확대하지 않음. Chrome/OS 버전·로드 hash 미제공, 다음 세션 초기화/BLOCK 경로/최신 Worker 복구 및 필수 회원·Server·실quota 여전히 미검증. 팀 Commit/Push/PR 갱신/병합 없음.
+
+### 최신 ZIP 사용자 Chrome 검증 — 15~17 성공 보고
+
+- 사용자 15~17 정상 보고: 새 RECORD 세션의 첫 치지직 접근 전체1/반복0, 다음 BLOCK 세션의 치지직/네이버 각각 차단 및 전체2/반복0, 차단 안내 새로고침 후 전체2/반복0 유지.
+- 최신 전달 ZIP의 사용자 실제 실행 보고이며 새 캡처/원본 BLOCK 이벤트/Chrome·OS 버전/로드 hash는 미제공. 앞서 받은 RECORD 원본 캡처와 구분한다. 실제 Server 수신/회원 인증/reconcile/실quota 기준 통과 아님.
+- 다음 행동: 최신 코드 Worker 단독 중지/재생성·세션/journal 유지 및 종료 해제, 전체 재시작 별도 점검. 팀 Commit/Push/PR 갱신/병합 보류 유지.
+
+### 최신 ZIP 사용자 Chrome 검증 — 18~21 성공 보고
+
+- 사용자 18~21 정상 보고: naver.com BLOCK 하위 포함10분 세션 시작/차단, FOCURVE 팝업·DevTools 닫고 Worker Stop, 팝업 재접속 시 기존 세션/남은 시간/차단 유지, 직접 종료 후 해제·네이버 정상 접속.
+- 최신 전달 ZIP의 실제 사용자 Chrome Worker 단독 복구 결과. journal/규칙 원본 캡처·세션ID 전후 비교·Chrome/OS 버전·로드 파일 hash는 미제공. Server reconcile 미실행, AC-EXT-02-03 전체 통과로 처리하지 않는다.
+- 다음 행동: 실행환경 정보 확보, 최신 전체 브라우저 재시작/INTERRUPTED·해제 검증. 회원 인증/명령/보고·실HTTP/reconcile·실quota는 차단/미검증 유지. 팀 Commit/Push/PR 갱신/병합 없음.
+
+### 최신 ZIP 사용자 Chrome 환경·전체 재시작 — 22~25 성공
+
+- 사용자 chrome://version 원문 제공: Google Chrome154.0.8037.98 공식64비트 Stable, Windows11 Version25H2 Build26200.9457. 실제 OS/Chrome 버전 정보 확보. 개인 경로/프로필 및 variations 전체는 기록하지 않음.
+- 사용자 22~25 모두 정상 보고: 최신 ZIP BLOCK10분 세션 차단, Chrome 완전 종료/약1분 뒤 재실행, 팝업 중단·차단 해제 확인 완료(이전 세션 RUNNING 아님), 네이버 정상 접속. 종료시간/미확인 구간 미포함의 DB 값은 별도 캡처가 없어 실제 시간 계산 전체 통과로 확대하지 않음.
+- 누적 최신 사용자 실행1~25 성공 보고 + RECORD host/key/matched_policy_host 원본2장 확인. 위 환경은 이번 검증에 대해 사용자가 제공한 환경이다. 실행 코드 식별은 개인 testest 전달 ZIP(e79ef30 기반 미커밋 제품SHA2562ae196a83b5177dfd496a65d18da9da7c28c6786c4964f46aa28bf08da66aa2a), 실제 로드 파일 hash 대조는 미제공.
+- 필수 회원/실제 설치 인증·명령/보고·Server reconcile·실HTTP·실quota 및 최신journal 원본은 미검증/차단. 로컬 사용자 Chrome 검증 성공을 AC01/02/03·BOUND17 전체 통과로 처리하지 않음. 팀 저장소 Commit/Push/PR 갱신/병합 없음. 개인 저장소 전달은 별도 최신 사용자 허용에 따라 수행했으며 팀 Git 동결과 구분.
+
+### 2026-10-10 EXT-02 / Event1.2 연동 착수
+
+- 최신 사용자 지시로 단계별 구현/검증/Commit/Push/PR17 갱신 허용. develop 병합은 리뷰/CI 후 별도이며 Codex가 수행하지 않음. 기존 Git 동결 이력은 당시 지시이며 이번부터 대체.
+- 시작 feature/extension-core-ext-02 HEAD e79ef30 + 보존된 방문host/Chrome 검증·가이드 미커밋 파일. 최신 Server develop b45a680a9f2262bd9725619e9643df3bb9b91164 / Server branch5a018fb 확인 및 fetch. 로컬origin/develop ref는 stale76df34e라 GitHub 조회의 실제SHA로 읽음.
+- 기준 FOCURVE_D01_D10_최종공용계약/12_정책계약_이벤트12_호환성게이트/Server EventController·EventService·연동가이드. 첫 단위: 신규SITE Event1.2/기존원본보존 및 member 전송adapter의 개별ACK·status/동일본문 재시도·격리. 회원 인증/명령loop·D01/D05 자동복구·Content 복수사유는 분리하며 미완료 유지.

@@ -7,7 +7,7 @@ const AccessStore = (() => {
   if(!state||state.session.status!=='RUNNING'||details.frameId!==0||!Number.isInteger(details.tabId)||details.tabId<0||!Number.isFinite(details.observed_at)||details.observed_at<Date.parse(state.session.started_at))return null;
   const target=GuestSession.select(state.session.snapshot,details.url);
   if(!target||!['BLOCK','RECORD'].includes(target.access_policy))return null;
-  return {key:key(details.tabId),owner_key:state.session.owner_key,session_id:state.session.session_id,revision:state.journal.revision,navigation_id:crypto.randomUUID(),event_id:crypto.randomUUID(),target_host:host(details.url),target_key:`SITE:${target.canonical_host}`,registered_host:target.canonical_host,policy:target.access_policy,include_subdomains:target.include_subdomains,navigation_started_at:details.timeStamp,captured_at:details.observed_at};
+  return {key:key(details.tabId),owner_key:state.session.owner_key,session_id:state.session.session_id,revision:state.journal.revision,navigation_id:crypto.randomUUID(),event_id:crypto.randomUUID(),target_host:host(details.url),target_key:`SITE:${host(details.url)}`,registered_host:target.canonical_host,policy:target.access_policy,include_subdomains:target.include_subdomains,navigation_started_at:details.timeStamp,captured_at:details.observed_at};
  }
  async function fingerprint(raw){return Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(new URL(raw).href)))).map(v=>v.toString(16).padStart(2,'0')).join('');}
  async function begin(state,details){
@@ -29,10 +29,14 @@ const AccessStore = (() => {
     if(observation.owner_key!==owner.owner_key||
        !explicit.has(details.transitionType)||(details.transitionQualifiers||[]).includes('client_redirect')||
        (details.documentLifecycle&&details.documentLifecycle!=='active')){done(null);return;}
+    // 이전 Worker에서 저장한 pending도 실제 방문 host로 기록한다. 원본 이벤트는 수정하지 않는다.
+    const actualHost=host('https://'+observation.target_host);
+    if(!actualHost){done(null);return;}
+    const targetKey=`SITE:${actualHost}`;
     let targetMatches=false;
     if(observation.policy==='BLOCK'){
      try{const url=new URL(details.url);targetMatches=url.protocol==='chrome-extension:'&&url.hostname===new URL(chrome.runtime.getURL('')).hostname&&url.pathname==='/blocked/blocked.html'&&url.searchParams.get('session')===observation.session_id&&url.searchParams.get('host')===observation.registered_host;}catch{}
-    }else targetMatches=GuestSession.matches({canonical_host:observation.registered_host,include_subdomains:observation.include_subdomains},details.url);
+    }else targetMatches=host(details.url)===actualHost&&GuestSession.matches({canonical_host:observation.registered_host,include_subdomains:observation.include_subdomains},details.url);
     if(!targetMatches){done(null);return;}
     const current=metadata.get('current');current.onsuccess=()=>{
      if(current.result?.owner_key!==owner.owner_key||current.result.session_id!==observation.session_id){done(null);return;}
@@ -43,12 +47,12 @@ const AccessStore = (() => {
        if(journal.result?.revision!==observation.revision||journal.result.desired!=='APPLIED'){done(null);return;}
        const events=tx.objectStore('events');const existing=events.get([owner.owner_key,observation.event_id]);existing.onsuccess=()=>{
         if(existing.result){
-         if(existing.result.payload.payload.navigation_id!==observation.navigation_id||existing.result.payload.payload.target_key!==observation.target_key){tx.abort();return;}
+         if(existing.result.payload.payload.navigation_id!==observation.navigation_id||existing.result.payload.payload.target_key!==targetKey){tx.abort();return;}
          done(existing.result);return;
         }
         const accessSeq=(session.last_access_seq||0)+1;const localSeq=(session.last_local_seq||1)+1;
         if(!Number.isSafeInteger(accessSeq)||!Number.isSafeInteger(localSeq)){tx.abort();return;}
-        const event={owner_key:owner.owner_key,event_id:observation.event_id,session_id:session.session_id,ack:false,payload:{schema_version:'1.1',event_id:observation.event_id,executor_id:owner.installation_id,session_id:session.session_id,policy_snapshot_id:session.snapshot.policy_snapshot_id,event_type:observation.policy==='BLOCK'?'BLOCKED_SITE_ACCESS':'RECORDED_ACCESS',occurred_at:new Date(details.observed_at).toISOString(),local_seq:localSeq,payload:{access_seq:accessSeq,navigation_id:observation.navigation_id,target_kind:'SITE',target_host:observation.target_host,target_key:observation.target_key,reason:observation.policy==='BLOCK'?'USER_SITE':'RECORD'}}};
+        const event={owner_key:owner.owner_key,event_id:observation.event_id,session_id:session.session_id,ack:false,payload:{schema_version:'1.1',event_id:observation.event_id,executor_id:owner.installation_id,session_id:session.session_id,policy_snapshot_id:session.snapshot.policy_snapshot_id,event_type:observation.policy==='BLOCK'?'BLOCKED_SITE_ACCESS':'RECORDED_ACCESS',occurred_at:new Date(details.observed_at).toISOString(),local_seq:localSeq,payload:{access_seq:accessSeq,navigation_id:observation.navigation_id,target_kind:'SITE',target_host:actualHost,target_key:targetKey,matched_policy_host:observation.registered_host,reason:observation.policy==='BLOCK'?'USER_SITE':'RECORD'}}};
         session.last_access_seq=accessSeq;session.last_local_seq=localSeq;
         events.add(event);tx.objectStore('sessions').put(session);tx.objectStore('journal').put({...journal.result,observed:'APPLIED'});done(event);
        };
@@ -65,7 +69,11 @@ const AccessStore = (() => {
    const items=[];const cursor=tx.objectStore('events').openCursor();cursor.onsuccess=()=>{
     const c=cursor.result;if(c){const event=c.value;if(event.owner_key===owner.owner_key&&event.session_id===state.session.session_id&&['BLOCKED_SITE_ACCESS','RECORDED_ACCESS'].includes(event.payload?.event_type))items.push(event.payload);c.continue();return;}
     items.sort((a,b)=>a.payload.access_seq-b.payload.access_seq);const counts=new Map();let repeats=0;
-    for(const event of items){const rank=(counts.get(event.payload.target_key)||0)+1;counts.set(event.payload.target_key,rank);event.target_access_index=rank;event.is_repeat=rank>1;if(event.is_repeat)repeats++;}
+    for(const event of items){
+     // 과거 정책-host key의 이벤트도 원본을 덮어쓰지 않고 실제 방문 host별로 조회 집계한다.
+     const actualHost=event.payload.target_kind==='SITE'?host('https://'+event.payload.target_host):null;
+     const repeatKey=actualHost?`SITE:${actualHost}`:event.payload.target_key;
+     const rank=(counts.get(repeatKey)||0)+1;counts.set(repeatKey,rank);event.target_access_index=rank;event.is_repeat=rank>1;if(event.is_repeat)repeats++;}
     done({items:items.slice(-20).reverse(),total_access:items.length,repeat_access:repeats,session_id:state.session.session_id,record_status:'PARTIAL'});
    };
   });

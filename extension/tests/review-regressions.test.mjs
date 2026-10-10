@@ -142,7 +142,7 @@ test('1.2 child RECORD event wins over parent BLOCK and uses child target',async
  await f.core.observe('commit',navigation(f,'https://live.chzzk.naver.com./',120));
  const {items,total_access}=await f.core.records();assert.equal(total_access,1);
  assert.equal(items[0].event_type,'RECORDED_ACCESS');assert.equal(items[0].schema_version,'1.1');
- assert.equal(items[0].payload.target_host,'live.chzzk.naver.com');assert.equal(items[0].payload.target_key,'SITE:chzzk.naver.com');
+ assert.equal(items[0].payload.target_host,'live.chzzk.naver.com');assert.equal(items[0].payload.target_key,'SITE:live.chzzk.naver.com');assert.equal(items[0].payload.matched_policy_host,'chzzk.naver.com');
 });
 test('existing 1.1 guest recovery preserves original snapshot and rule IDs',async()=>{
  const f=await fixture();await running(f);const state=await f.db.load();state.session.snapshot.format_version='1.1';
@@ -199,4 +199,48 @@ test('fresh Worker VM after planned end confirms release instead of resuming exp
  const f=await fixture();await running(f);f.advance(26*60_000);
  const worker=await f.spawnWorker();const recovered=await worker.core.state();
  assert.equal(recovered.session.status,'ENDED');assert.equal(recovered.session.end_reason,'TIME_LIMIT');assert.equal(f.rules.length,0);
+});
+
+for(const policy of ['BLOCK','RECORD'])test(`visited-host contract: ${policy} siblings have independent repeats and retain policy host`,async()=>{
+ const f=await fixture();await f.sites.create(input('naver.com',policy),uuid());const started=await f.core.start(25,uuid());
+ const rules=structuredClone(f.rules);
+ for(const [i,host] of ['CHZZK.NAVER.COM.','www.naver.com','chzzk.naver.com','WWW.NAVER.COM.'].entries()){
+  await f.core.observe('before',navigation(f,`https://${host}/`,100+i*10));
+  const url=policy==='BLOCK'?`chrome-extension://test/blocked/blocked.html?host=naver.com&session=${started.session.session_id}`:`https://${host}/`;
+  await f.core.observe('commit',navigation(f,url,105+i*10));
+ }
+ const result=await f.core.records();assert.equal(result.total_access,4);assert.equal(result.repeat_access,2);
+ const ordered=result.items.toSorted((a,b)=>a.payload.access_seq-b.payload.access_seq);
+ assert.deepEqual(Array.from(ordered,e=>e.payload.target_key),['SITE:chzzk.naver.com','SITE:www.naver.com','SITE:chzzk.naver.com','SITE:www.naver.com']);
+ assert.deepEqual(Array.from(ordered,e=>e.target_access_index),[1,1,2,2]);assert.deepEqual(Array.from(ordered,e=>e.is_repeat),[false,false,true,true]);
+ for(const e of ordered){assert.equal(e.payload.matched_policy_host,'naver.com');assert.equal(e.payload.target_key,`SITE:${e.payload.target_host}`);}
+ assert.deepEqual(f.rules,rules);
+ await f.core.end(started.session.session_id);await f.core.start(25,uuid());
+ await f.core.observe('before',navigation(f,'https://chzzk.naver.com/',200));
+ await f.core.observe('commit',navigation(f,policy==='BLOCK'?`chrome-extension://test/blocked/blocked.html?host=naver.com&session=${(await f.core.state()).session.session_id}`:'https://chzzk.naver.com/',205));
+ assert.equal((await f.core.records()).items[0].target_access_index,1);assert.equal((await f.core.records()).repeat_access,0);
+});
+test('visited-host contract: pending from old Worker is normalized on commit after regeneration',async()=>{
+ const f=await fixture();await f.sites.create(input('naver.com','RECORD'),uuid());await f.core.start(25,uuid());
+ await f.core.observe('before',navigation(f,'https://chzzk.naver.com./',100));
+ await f.db.transaction('readwrite',(tx,done)=>{const m=tx.objectStore('metadata');const r=m.get('access_pending:1');r.onsuccess=()=>{m.put({...r.result,target_key:'SITE:naver.com'});done(null);};});
+ const worker=await f.spawnWorker();await worker.core.observe('commit',navigation(f,'https://chzzk.naver.com/',105));
+ const e=(await worker.core.records()).items[0];assert.equal(e.payload.target_key,'SITE:chzzk.naver.com');assert.equal(e.payload.matched_policy_host,'naver.com');
+});
+test('visited-host contract: RECORD commit to a different sibling does not mislabel the visited host',async()=>{
+ const f=await fixture();await f.sites.create(input('naver.com','RECORD'),uuid());await f.core.start(25,uuid());
+ await f.core.observe('before',navigation(f,'https://chzzk.naver.com/',100));await f.core.observe('commit',navigation(f,'https://www.naver.com/',105));
+ assert.equal((await f.core.records()).total_access,0);
+});
+test('visited-host contract: historical policy-host keys are grouped by actual host without rewriting events',async()=>{
+ const f=await fixture();await f.sites.create(input('naver.com','RECORD'),uuid());await f.core.start(25,uuid());
+ for(const [i,host] of ['chzzk.naver.com','www.naver.com','chzzk.naver.com'].entries()){
+  await f.core.observe('before',navigation(f,`https://${host}/`,100+i*10));await f.core.observe('commit',navigation(f,`https://${host}/`,105+i*10));
+ }
+ await f.db.transaction('readwrite',(tx,done)=>{const r=tx.objectStore('events').openCursor();r.onsuccess=()=>{const c=r.result;if(!c){done(null);return;}const event=c.value;if(event.payload?.payload?.target_kind==='SITE'){event.payload.payload.target_key='SITE:naver.com';delete event.payload.payload.matched_policy_host;c.update(event);}c.continue();};});
+ const result=await f.core.records();assert.equal(result.repeat_access,1);
+ assert.deepEqual(Array.from(result.items.toSorted((a,b)=>a.payload.access_seq-b.payload.access_seq),e=>e.target_access_index),[1,1,2]);
+ assert.equal(result.items.every(e=>e.payload.target_key==='SITE:naver.com'),true);
+ const originals=await f.db.transaction('readonly',(tx,done)=>{const r=tx.objectStore('events').getAll();r.onsuccess=()=>done(r.result);});
+ assert.equal(originals.filter(e=>e.payload?.payload?.target_kind==='SITE').every(e=>e.payload.payload.target_key==='SITE:naver.com'&&!('matched_policy_host' in e.payload.payload)),true);
 });
