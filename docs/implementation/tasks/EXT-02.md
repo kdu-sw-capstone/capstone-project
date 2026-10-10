@@ -2,6 +2,10 @@
 
 단계: 필수 MVP · 설계 담당 영역: Extension
 
+## 최신 작업 — 회원 Windows 사용자 사이트 차단·수동 종료 시험
+
+윤종민 / feature/extension-core-ext-02 / 기록 시작a1f668c. 사용자 실제 확장0.1.6/Windows/Web/Server에서 회원 연결 복구·시작/진행 UI·사이트 차단·수동 종료 후 접속 복원 정상 보고(**사용자 PASS**, 차단/복원 페이지 원본·로드SHA 미확보). 1분 만료 종료 UI 확인, 예정 대비14초 지연 및00:43 집계는 intervals/actual 규칙 시각 대조 필요. [환경·장애·실제 근거·남은 검증](../evidence/EXT-02-2026-10-10-member-windows.md). 문서만 변경, 기능 검사 재실행 없음. 자동 만료 정확성/절전·재시작·정상 refresh·회원Event/전체 AC 미검증, D06 공동 합의 대기. develop 병합 없음.
+
 ## 최신 작업 — Core 문서별 제어 registry 독립 기반
 
 윤종민 / feature/extension-core-ext-02 / 시작63193ef. 제품 wire를 연결하지 않고 별도 native IndexedDB 문서/제어 의무·단조 sequence·중복/충돌·epoch·원래 binding cleanup·Worker 재확인 guard 구현. **Extension174/174·문법 PASS, 실제 Chromium Dedicated Worker/IndexedDB 종료·재생성/실패 복원 재시도 PASS**(문서/lifecycle/효과는 합성). [구현·검증·한계](../evidence/EXT-02-2026-10-10-document-registry.md). 제품 Worker/Content 미연결·실제 MV3/YouTube/Server 및 전체 AC 미검증. 다음: 공동 D06 확정→한 문서 비회원 Shorts adapter 연결. 제품 wire 임의 구현/기능 거절 해제/develop 병합 없음.
