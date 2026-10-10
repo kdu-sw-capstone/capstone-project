@@ -140,3 +140,8 @@ Extension 0.1.14: 전송 저장 오류를 팝업에 명확히 표시하고, 정�
 0.1.17: 신규 수집 중단 및 control fault 영속화, 자기 규칙 해제 확인·재시작 후 중단 유지. 기존 사용자 MANUAL 종료/Web RELEASE/EXPIRED는 계속 처리하며 저장 오류 전용 자동 END는 공유 계약 합의 대기다. 자동 220/220·구문 PASS·모의 UI 42/42 PASS. 실제 새 Chrome/Server 장애 검증은 미실행. [검증 기록](../evidence/EXT-03-2026-10-10-capture-storage-stop.md).
 
 개인 Core 추정85~90%(전체MVP/팀원 통합/정식AC 아님). 큰 개인 잔여는 최신 실제 검증 1단위이며 결함 보완 시 늘어난다. 저장 오류 자동 END 사유는 Server 협업에 추가한다. 제어/저널까지 저장 불가이면 해제 미확인으로 남으며 사용자 저장소 정상화 후 재확인이 필요하다.
+
+
+### 2026-10-11 · EXT-03 최신 브라우저 검증
+
+시작32a02e7·0.1.17: 실제 Chromium Worker/IndexedDB 및 fetch 검사는 PASS(합성 HTTP). 설치형 확장은 serviceworker 대기 timeout으로 미검증, 실제 Server/Windows/저장 장애는 미실행이다. 과거220/220·UI42/42를 이번 결과로 재사용하지 않는다. 개인 약85~90% 추정 유지, 실제 통합 잔여1단위·팀 협업 별도. [검증 및 Windows 확인 순서](../evidence/EXT-03-2026-10-11-browser-verification.md). develop 미병합.
