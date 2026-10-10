@@ -901,6 +901,13 @@ public class ExecutionService {
     payload.put("desired_revision", revision);
     payload.put("created_at", Instant.now().toString());
     payload.put("execute_before", kind.equals("APPLY_POLICY") ? deadline.toString() : null);
+    if (kind.equals("APPLY_POLICY")) {
+      Integer minutes = db.queryForObject(
+          "SELECT duration_minutes FROM focus_sessions WHERE id=?", Integer.class, id);
+      if (minutes == null || minutes < 1 || minutes > 180)
+        throw new ApiFailure(422, "VALIDATION_FAILED");
+      payload.put("duration_minutes", minutes);
+    }
     if (snapshot != null) payload.put("snapshot", snapshot);
     payload.put("reason", "MANUAL");
     db.update(

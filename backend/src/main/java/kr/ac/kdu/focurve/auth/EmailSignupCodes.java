@@ -32,8 +32,9 @@ public class EmailSignupCodes {
   @Transactional
   public Map<String,Object> request(String address,String credential,String ip) {
     String email=AuthSupport.email(address), owner=lockSession(credential);
-    rates.check("SIGNUP-CODE-IP:"+ip,20,3600,0);
-    rates.check("SIGNUP-CODE-MAIL:"+email,5,3600,60);
+    Instant retryAt=rates.checkAll(
+      new AuthRateLimits.Limit("SIGNUP-CODE-IP:"+ip,20,3600,0),
+      new AuthRateLimits.Limit("SIGNUP-CODE-MAIL:"+email,5,3600,60));
     String id=UUID.randomUUID().toString(), code=String.format(java.util.Locale.ROOT,"%06d",random.nextInt(1_000_000));
     Instant expires=Instant.now().plusSeconds(600);
     // DB-only disclosure cannot brute-force the 6 digits: HMAC uses the high-entropy
@@ -43,7 +44,8 @@ public class EmailSignupCodes {
     mail.send(email,"SIGNUP_CODE",code);
     // Failed delivery rolls back the new row and preserves the previously valid code/proof.
     db.update("UPDATE email_signup_codes SET superseded_at=UTC_TIMESTAMP(3) WHERE owner_hash=? AND email=? AND id<>? AND superseded_at IS NULL AND consumed_at IS NULL",owner,email,id);
-    return Map.of("request_id",id,"expires_at",expires.toString(),"resend_after_seconds",60,"max_attempts",5);
+    return Map.of("request_id",id,"expires_at",expires.toString(),
+      "resend_after_seconds",AuthRateLimits.secondsUntil(Instant.now(),retryAt),"max_attempts",5);
   }
   @Transactional(noRollbackFor=ApiFailure.class)
   public Map<String,Object> verify(String id,String address,String code,String credential,String ip) {

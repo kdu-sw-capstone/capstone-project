@@ -71,3 +71,24 @@
 ## 2026-10-09 PR18 리뷰 지적 로컬 수정·재검증
 
 담당 김다훈(Server/API/DB·연결Frontend), codex/server-event12-integration, 시작HEAD7dd7abce2bdb7f2d3dfda99c9874c4efb9cd041d. 상태: 리뷰지적 수정·자동/합성 HTTP/MySQL 재검증 통과, 독립 재리뷰·실제Extension 통합 대기. F1복수FEATURE사유·F2버전정수검사·F3실제사유 표시를 수정. Backend109/109, Frontend112/112, 양쪽build PASS. MySQL3308repair_test/HTTP실행; APPLIED·전역정책은합성, Web표시는jsdom HTTP모의. [수정 위치·검증·남은 조건](../PR18_리뷰수정_재검증_2026-10-09.md). 신규1.2발급OFF 유지, 외부/Chrome/전체AC 상태를 통과·완료로 올리지 않음. 코드/계약/테스트/기록은미커밋로컬, Commit/Push/PR변경 없음. 기존 이력 유지.
+
+
+## 2026-10-10 결함 4건 로컬 수정·회귀 기록
+
+- 담당: 김다훈 Web·Server·API·DB. 브랜치: fix/email-code-retry-after. 시작 기준: b45a680a9f2262bd9725619e9643df3bb9b91164.
+- 상태: 관련 입력 경계 로컬 수정 검증, 작업카드 전체 완료 아님.
+- 이번 근거: F4 확장 연도/잘못된 날짜422, 0001/1000/윤일/9999 정상 조회200 확인. 합성 Event1.1/1.2 데이터 있는 목록·상세·종료 후 보존 확인. 실제 Extension 수집 아님.
+- 실행: Backend mvnw.cmd -B -ntp verify(154/154), Frontend npm test(121/121) 및 npm run build, 새 tmpfs MySQL8.4.8·Mailpit1.27의 HTTP(131 PASS/1 BLOCKED).
+- 검증 주체: Codex 자동/HTTP/격리DB·Mailpit 및 합성 실행 보고. 실제 Chrome·Edge·외부 OAuth·Extension은 NOT RUN.
+- 보고서: .reviews/stage1-fixes-20261010/FOCURVE_1단계_결함4건_수정검증보고서.md 및 검증매트릭스_갱신본. 과거 이력·사용자 직접 확인은 유지하며 이번 자동 검증과 구분.
+- 다음 행동: 독립 재리뷰, 실제 UI·Core/Content 통합 검증. Commit·Push·PR·병합 수행 안 함.
+
+
+## 2026-10-10 F1~F4 게시용 최신 develop 재검증
+
+- 담당 김다훈 Web·Server·API·DB. 브랜치 `fix/stage1-boundary-regressions`, 기준 develop `3d105b05753844ceff28a235751ede4e959b3ef6`(PR #19 병합). 기존 로컬 수정/사용자 확인 이력은 당시 근거로 보존한다.
+- 독립 재리뷰 통과 F1~F4만 선별했다. 제품 코드·테스트 12파일은 리뷰 해시와 일치하며 원본 20파일을 보존했다. PR #19의 APPLY_POLICY.duration_minutes 및 공통 Command 표·기간 계약을 유지한다.
+- 게시용 작업본 재실행: Backend160/160(실패·오류·스킵0) 및 패키징, Frontend121/121 및 빌드, 실제 HTTP·격리 MySQL8.4.8·Mailpit1.27 156개 검사 PASS. Backend verify 확인까지 합한 harness 검사 157개 PASS.
+- 검증 주체는 Codex 자동·HTTP·실제 임시 DB/메일 수신·합성 설치/실행 보고다. 시간 제한 경계는 격리 DB 시각을 조절한 재현이며 실제 한 시간 대기가 아니다. 실제 Chrome·Edge·외부 OAuth·외부 SMTP·회원 Core/Content 통합은 이번 검증 NOT RUN이다.
+- 과거 기간 미전달 BLOCKED는 당시 Server 상태이며 PR #19로 Server 전달은 해결됐다. Core의 소수점9자리 시각 파싱·기간 검증/영속 결속 및 실제 회원 실행은 후속 통합 대기다. D-01·D-05 자동복구 전체는 미구현, Snapshot1.2 신규 발급 기본 OFF를 유지한다.
+- 상태: 검증된 결함 수정본 Draft PR 게시 준비/팀 리뷰·통합 대기. 전체 작업카드·93개 수용 기준·필수 MVP를 완료로 변경하지 않는다. 실행 로그와 게시 결과는 `FOCURVE_1단계_F1_F4_게시검증보고서.md`에 남긴다. develop 병합은 수행하지 않는다.

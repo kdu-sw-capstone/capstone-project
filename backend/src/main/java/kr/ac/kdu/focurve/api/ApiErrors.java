@@ -10,7 +10,8 @@ public class ApiErrors {
   @ExceptionHandler(ApiFailure.class)
   public ResponseEntity<?> failure(ApiFailure e) {
     var response = ResponseEntity.status(e.status);
-    if (e.status == 429 || e.status == 503) response.header("Retry-After", "60");
+    if (e.status == 429 || e.status == 503)
+      response.header("Retry-After", Long.toString(e.retryAfterSeconds == null ? 60 : e.retryAfterSeconds));
     return response.body(body(e.code, e.status == 429 || e.status == 503));
   }
 

@@ -94,7 +94,7 @@ link 응답 link_request_id/verification_uri/expires_at(5분). Core가 자신의
 GET commands 응답은 commands 배열, next_cursor 빈 문자열, server_time UTC 필드를 포함한다; command 구조:
 
 ```json
-{"command_id":"88888888-8888-4888-8888-888888888888","session_id":"33333333-3333-4333-8333-333333333333","executor_id":"22222222-2222-4222-8222-222222222222","type":"APPLY_POLICY","desired_revision":1,"created_at":"2026-10-09T08:00:00Z","execute_before":"2026-10-09T08:01:00Z","snapshot":"<위 Snapshot 객체; 실제로는 문자열이 아닌 객체>","reason":"MANUAL"}
+{"command_id":"88888888-8888-4888-8888-888888888888","session_id":"33333333-3333-4333-8333-333333333333","executor_id":"22222222-2222-4222-8222-222222222222","type":"APPLY_POLICY","desired_revision":1,"duration_minutes":25,"created_at":"2026-10-09T08:00:00Z","execute_before":"2026-10-09T08:01:00Z","snapshot":"<위 Snapshot 객체; 실제로는 문자열이 아닌 객체>","reason":"MANUAL"}
 ```
 
 RELEASE_POLICY 명령은 snapshot 없음/execute_before:null. 위 snapshot placeholder는 설명용이며 그대로 호출하지 않는다.
@@ -217,3 +217,7 @@ D06 메시지·규칙 ID/priority/freeze 및 D09 응답유실 추가 API는 계�
 ## 2026-10-10 D09 Core 인증 연결 준비
 
 제품background 설치등록/proof·PKCE evidence/claim·tokens/me·직렬refresh 및기존popup연결을구현했다. 실제HTTP/MySQL에서합성Web회원·storage·Chromeidle관측으로제품JS경로1/1통과. Extension모의114/114·UI19·Backend140/140. 회원Chrome은Server/Web/테스트회원/실제callback허용설정준비후별도검증한다. 회원명령/report/event 실제제품연결은후속, Snapshot1.2운영OFF/담당변경없음. 응답유실의추가상태/재발급API는임의생성하지 않았다. [실행명령/최신식별값/Chrome준비/미검증](evidence/EXT-02-2026-10-10-member-auth.md).
+
+## 2026-10-10 APPLY 기간 전달 사용자 확정·로컬 구현
+
+이전 ‘APPLY 명령에 기간 없음’ 설명은 develop 기준의 과거 구현 이력이다. 새 회원 APPLY_POLICY는 root duration_minutes(JSON 정수1~180)를 저장된 focus_sessions 목표값에서 생성해 포함한다. 조회/멱등·기존Snapshot/보고/Journal은 유지한다. 구형 저장명령은 다시 쓰지 않으며 기간 없는 APPLY를 Core가 기본시간으로 실행하지 않는다. RELEASE는 기간 필수화하지 않는다. 실제 Core 회원 adapter·Chrome 검증 및 자동복구는 미완료; 기본Snapshot1.2OFF 유지. 상세 규칙은 [APPLY 기간 전달 확정 계약](../design/02_시스템_테크설계/FOCURVE_APPLY_POLICY_기간전달_확정계약.md)을 따른다.
