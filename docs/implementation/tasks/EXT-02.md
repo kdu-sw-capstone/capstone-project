@@ -2,6 +2,14 @@
 
 단계: 필수 MVP · 설계 담당 영역: Extension
 
+## 최신 재개 — D06 필수 Shorts 연결 계약 구체화
+
+- 담당 윤종민 / feature/extension-core-ext-02 / 시작 b8bc7a17269a9c46981f6891f9fc92e9d98c38c9.
+- 사용자 확인: 지민 검토 회신 아직 없음. D06 메시지/적용집계/탐색/freeze는 합의 대기. [필수 Shorts 메시지 초안](../Content_Core_D06_필수Shorts_메시지초안.md)에 필드·JSON·실패·중복·검증 순서를 작성했으며 제품 wire 구현 없음.
+- 최신 develop90ad32b의 SnapshotValidation/SnapshotAccess/공용 D06을 읽기 전용 대조. 현재 Core에 merge했다고 표시하지 않음. API·제품 코드·다른 담당 브랜치는 변경하지 않음.
+- 사용자 수정본 회원 연결 성공: 팝업 연결 확인 완료 원본 화면·Web 새로고침 후 연결됨 보고 확보. [실제 회원 연결 기록](../evidence/EXT-02-2026-10-10-member-chrome-link.md). 회원 명령/보고 및 EXT02 전체는 여전히 미검증.
+- 이번 테스트: 제품 코드 변경 없어 실행 테스트 재실행 없음. 문서 JSON 구문·링크·diff만 확인. 다음: 지민·다훈의 계약 결정 → 합의한 주입/적용/해제 A단위부터 구현.
+
 ## 최신 오류 수정 — Worker fetch (2026-10-10)
 
 Windows 제품 회원 설치 등록에서 Illegal invocation 실패를 확인. auth/event 기본 fetch를 Worker 전역에 바인딩하고 모의116/116·실제 Chromium Dedicated Worker 수정전실패/수정후합성HTTP2건 회귀통과. 수정본 Windows 회원연결은 미검증, 기존 미확인 상태 자동해제 없음. 최신 develop90ad32b 및 시각9자리/duration/회원명령은 후속. [근거와 수동 절차](../evidence/EXT-02-2026-10-10-fetch-worker.md).
