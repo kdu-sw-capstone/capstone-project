@@ -44,11 +44,12 @@ export class MemberReportStore {
   }
   async transaction(work) {
     const db = await new Promise((resolve, reject) => {
-      const request = this.indexedDB.open(this.name, 1);
+      const request = this.indexedDB.open(this.name, 1); let abandoned = false;
       request.onupgradeneeded = () => request.result.createObjectStore('reports',
         { keyPath: ['owner_key', 'executor_id', 'report_id'] });
-      request.onsuccess = () => resolve(request.result);
-      request.onerror = request.onblocked = () => reject(new Error('REPORT_STORAGE_UNAVAILABLE'));
+      request.onsuccess = () => { if (abandoned) { request.result.close(); return; } resolve(request.result); };
+      request.onerror = () => reject(new Error('REPORT_STORAGE_UNAVAILABLE'));
+      request.onblocked = () => { abandoned = true; reject(new Error('REPORT_STORAGE_UNAVAILABLE')); };
     });
     try {
       return await new Promise((resolve, reject) => {

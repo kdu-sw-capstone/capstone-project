@@ -10,9 +10,11 @@ export class MemberAccessStore {
     let db;
     try {
       db=await new Promise((resolve,reject)=>{
-        const r=this.indexedDB.open(this.name,1);
+        const r=this.indexedDB.open(this.name,1);let abandoned=false;
         r.onupgradeneeded=()=>{r.result.createObjectStore('pending',{keyPath:'tab_id'});r.result.createObjectStore('sequences',{keyPath:'scope'});r.result.createObjectStore('originals',{keyPath:['scope','event_id']});};
-        r.onsuccess=()=>resolve(r.result);r.onerror=r.onblocked=()=>reject(new Error('ACCESS_STORAGE_UNAVAILABLE'));
+        r.onsuccess=()=>{if(abandoned){r.result.close();return;}resolve(r.result);};
+        r.onerror=()=>reject(new Error('ACCESS_STORAGE_UNAVAILABLE'));
+        r.onblocked=()=>{abandoned=true;reject(new Error('ACCESS_STORAGE_UNAVAILABLE'));};
       });
       return await new Promise((resolve,reject)=>{
         const tx=db.transaction(['pending','sequences','originals'],mode);let value;

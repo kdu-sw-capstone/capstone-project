@@ -4,7 +4,7 @@
 
 ## 작업 상태
 
-- 상태: 진행 중 · Windows 정상 경로 사용자 회신 / 0.1.18 수집 저장 장애 오류 경계 보완
+- 상태: 진행 중 · Windows 정상 경로 사용자 회신 / 0.1.19 저장소 열기 실패 복구 보완
 - 실제 담당자: Core 종민 · 기존 Server 담당 배정 유지
 - 브랜치 / 시작 기준 커밋: `feature/extension-core-ext-02` / `b52681bd4088be3f64722c30d5072632b8e9515e`
 - PR: https://github.com/kdu-sw-capstone/capstone-project/pull/17
@@ -14,7 +14,7 @@
 |---|---|---|---|
 | Web | | 미확인 | 미실행 |
 | Server | | 미확인 | 미실행 |
-| Extension | Core 종민 | 회원 SITE 전송·상태·복구 및 수집 저장 장애 부분 구현 | 자동 222/222 · 실제 IndexedDB 장애 주입 PASS · 실제 MV3 장애 검증 대기 |
+| Extension | Core 종민 | 회원 SITE 전송·상태·복구 및 수집 저장 장애 부분 구현 | 자동 227/227 · 실제 IndexedDB 장애·blocked 주입 PASS · 실제 MV3 장애 검증 대기 |
 
 해당하지 않는 영역은 관련 명세 근거와 함께 해당없음으로 표시한다.
 
@@ -167,3 +167,8 @@ Extension 0.1.14: 전송 저장 오류를 팝업에 명확히 표시하고, 정�
 ### 2026-10-11 · EXT-03 수집 저장 오류 경계 보완 (0.1.18)
 
 시작0ac9b0f: 닫힌 IndexedDB 연결의 transaction 생성 오류가 수집 중단 절차로 전달되지 않는 실패를 재현·수정했다. 기존 저장 오류 코드로 변환, fault 영속화·자기 규칙 해제 경로 유지. 자동222/222·구문 PASS·최종 관련32/32, 실제 Chromium IndexedDB 연결 종료/transaction abort 주입 및 원문/순번 보존 PASS. 실제 MV3/Server/Windows0.1.18 장애는 미검증, 개인약90% 유지·팀 계약 별도. [근거 및 적용](../evidence/EXT-03-2026-10-11-storage-error-boundary.md). develop 미병합.
+
+
+### 2026-10-11 · EXT-03 저장소 open 실패 복구 (0.1.19)
+
+시작04f5167: blocked 오류 뒤 늦게 열린 연결이 남는 결함4개 저장소에서 재현·수정, 전송함 transaction 생성 오류를 기존 저장 장애로 분류. 자동227/227·구문 PASS·실제 Chromium IndexedDB blocked/후속upgrade 및 기존 원문/순번 보존 PASS. API/DB버전/원문 형식 변경 없음. 실제 MV3/Server/Windows 장애는 미검증, 개인약90% 유지·팀 계약 별도. [근거 및 적용](../evidence/EXT-03-2026-10-11-storage-open-recovery.md). develop 미병합.

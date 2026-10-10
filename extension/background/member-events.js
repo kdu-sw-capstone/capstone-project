@@ -33,8 +33,18 @@
  class MemberEventStore{
   constructor({indexedDB=globalThis.indexedDB,name='focurve-member-events'}={}){this.indexedDB=indexedDB;this.name=name;}
   async transaction(mode,work){
-   const db=await new Promise((resolve,reject)=>{const r=this.indexedDB.open(this.name,1);r.onupgradeneeded=()=>r.result.createObjectStore('events',{keyPath:['owner_key','event_id']});r.onsuccess=()=>resolve(r.result);r.onerror=()=>reject(new Error('MEMBER_STORAGE_UNAVAILABLE'));r.onblocked=()=>reject(new Error('MEMBER_STORAGE_BLOCKED'));});
-   try{return await new Promise((resolve,reject)=>{const tx=db.transaction('events',mode);let value;tx.oncomplete=()=>resolve(value);tx.onabort=()=>reject(new Error('MEMBER_STORAGE_UNAVAILABLE'));try{work(tx.objectStore('events'),result=>{value=result;});}catch{tx.abort();}});}finally{db.close();}
+   let db;
+   try{
+    db=await new Promise((resolve,reject)=>{
+     const r=this.indexedDB.open(this.name,1);let abandoned=false;
+     r.onupgradeneeded=()=>r.result.createObjectStore('events',{keyPath:['owner_key','event_id']});
+     r.onsuccess=()=>{if(abandoned){r.result.close();return;}resolve(r.result);};
+     r.onerror=()=>reject(new Error('MEMBER_STORAGE_UNAVAILABLE'));
+     r.onblocked=()=>{abandoned=true;reject(new Error('MEMBER_STORAGE_BLOCKED'));};
+    });
+    return await new Promise((resolve,reject)=>{const tx=db.transaction('events',mode);let value;tx.oncomplete=()=>resolve(value);tx.onabort=()=>reject(new Error('MEMBER_STORAGE_UNAVAILABLE'));try{work(tx.objectStore('events'),result=>{value=result;});}catch{tx.abort();}});
+   }catch(error){throw new Error(error?.message==='MEMBER_STORAGE_BLOCKED'?'MEMBER_STORAGE_BLOCKED':'MEMBER_STORAGE_UNAVAILABLE');}
+   finally{db?.close();}
   }
   put(record){return this.transaction('readwrite',(store,done)=>{const r=store.get([record.owner_key,record.event_id]);r.onsuccess=()=>{if(r.result&&r.result.body!==record.body){store.transaction.abort();return;}store.put(record);done(record);};});}
   get(owner,id){return this.transaction('readonly',(store,done)=>{const r=store.get([owner,id]);r.onsuccess=()=>done(r.result||null);});}

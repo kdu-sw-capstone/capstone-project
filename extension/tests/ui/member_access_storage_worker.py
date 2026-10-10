@@ -36,6 +36,9 @@ try:
             page.goto(origin)
             result = page.evaluate('''async origin => {
               const source = `import {MemberAccessStore,MemberAccessCollector} from '${origin}/src/member-access.js';
+                import {MemberEventStore} from '${origin}/src/member-events.js';
+                import {MemberJournalStore} from '${origin}/src/member-journal-store.js';
+                import {MemberReportStore} from '${origin}/src/member-execution-client.js';
                 onmessage=async message=>{
                   try {
                     const store=new MemberAccessStore();
@@ -67,7 +70,39 @@ try:
                     }else{
                       draft=await store.pending(1);await collector.observe('commit',details);
                     }
-                    postMessage({closedError,abortError,draft,pending:await store.pending(1),
+                    const blocked=[];
+                    if(!message.data.first){
+                      for(const [Store,read,expected,objectStore] of [
+                        [MemberAccessStore,s=>s.pending(1),'ACCESS_STORAGE_UNAVAILABLE','pending'],
+                        [MemberEventStore,s=>s.list('MEMBER:1','test'),'MEMBER_STORAGE_BLOCKED','events'],
+                        [MemberJournalStore,s=>s.list('MEMBER:1','test'),'MEMBER_JOURNAL_UNAVAILABLE','journal'],
+                        [MemberReportStore,s=>s.transaction((_s,done)=>done(null)),'REPORT_STORAGE_UNAVAILABLE','reports']
+                      ]){
+                        const name='native-blocked-'+Store.name;
+                        const held=await new Promise((resolve,reject)=>{
+                          const r=indexedDB.open(name,1);r.onsuccess=()=>resolve(r.result);r.onerror=()=>reject(r.error);
+                        });
+                        let request,reported,closed=false;
+                        // Test adapter requests version2 against a held empty version1 database.
+                        const adapter={open:()=>{request=indexedDB.open(name,2);return request;}};
+                        try{
+                          try{await read(new Store({indexedDB:adapter,name}));}catch(e){reported=e.message;}
+                          const opened=new Promise((resolve,reject)=>{
+                            request.addEventListener('success',resolve);request.addEventListener('error',()=>reject(request.error));
+                          });
+                          held.close();await opened;
+                          try{request.result.transaction(objectStore);}catch(e){closed=e.name==='InvalidStateError';}
+                          if(!closed||reported!==expected)throw new Error('late connection cleanup failed: '+Store.name);
+                          await new Promise((resolve,reject)=>{
+                            const next=indexedDB.open(name,3);
+                            next.onblocked=()=>reject(new Error('late connection still blocks upgrade'));
+                            next.onerror=()=>reject(next.error);next.onsuccess=()=>{next.result.close();resolve();};
+                          });
+                          blocked.push(Store.name);
+                        }finally{held.close();request?.result?.close();}
+                      }
+                    }
+                    postMessage({closedError,abortError,draft,blocked,pending:await store.pending(1),
                       originals:await store.originals(context.owner_key,context.executor_id,context.base_url)});
                   }catch(error){postMessage({error:error.message});}
                 };`;
@@ -92,8 +127,10 @@ try:
             event = json.loads(recovered['body'])
             assert event['local_seq'] == event['payload']['access_seq'] == 2
             assert second['pending'] is None
+            assert second['blocked'] == ['MemberAccessStore', 'MemberEventStore', 'MemberJournalStore', 'MemberReportStore']
             assert all('/private' not in row['body'] and 'secret=' not in row['body'] for row in second['originals'])
             print('PASS: native closed connection and aborted write preserve draft, old original and sequences across Worker recreation')
+            print('PASS: all four member stores close a late blocked-open connection; subsequent real upgrades succeed')
         finally:
             browser.close()
 finally:
