@@ -40,3 +40,26 @@ test('authentication or storage failure is not misclassified as damaged original
  await assert.rejects(f.store.review(f.original.scope,f.original.event_id,'changed bytes'),/ACCESS_STORAGE_UNAVAILABLE/);
  assert.equal((await f.originals())[0].body,f.original.body);
 });
+
+test('outbox write failure leaves durable original unchanged and retries same ID after storage recovery',async()=>{
+ const f=fixture();await f.save([f.original]);
+ const put=f.outbox.put.bind(f.outbox);let fail=true;
+ f.outbox.put=async row=>{if(fail)throw new Error('MEMBER_STORAGE_UNAVAILABLE');return put(row);};
+ await assert.rejects(transferOriginals([f.original],f.store,f.delivery),/MEMBER_STORAGE_UNAVAILABLE/);
+ assert.equal((await f.originals())[0].body,f.original.body);assert.equal((await f.originals())[0].review_required,undefined);
+ fail=false;await transferOriginals(await f.originals(),f.store,f.delivery);
+ const sent=[];f.delivery.fetch=async(_,options)=>{const events=JSON.parse(options.body).events;sent.push(...events);return new Response(JSON.stringify({items:events.map(e=>({event_id:e.event_id,status:'ACCEPTED'}))}));};
+ const receipts=await f.delivery.flush();assert.equal(sent[0].event_id,f.original.event_id);assert.equal(JSON.stringify(sent[0]),f.original.body);
+ assert.equal(receipts[0].status,'ACKED');assert.equal((await f.originals()).length,1);
+});
+
+test('ACK write loss preserves in-flight original; restored sender queries status without repeating batch',async()=>{
+ const f=fixture();await f.save([f.original]);await transferOriginals([f.original],f.store,f.delivery);
+ const put=f.outbox.put.bind(f.outbox);let fail=true,batches=0,statusQueries=0;
+ f.outbox.put=async row=>{if(fail&&['ACKED','RESPONSE_UNCONFIRMED'].includes(row.status))throw new Error('MEMBER_STORAGE_UNAVAILABLE');return put(row);};
+ f.delivery.fetch=async(url,options)=>{const body=JSON.parse(options.body);if(url.endsWith('/status'))statusQueries++;else batches++;
+  return new Response(JSON.stringify({items:(body.event_ids||body.events.map(e=>e.event_id)).map(event_id=>({event_id,status:'ACCEPTED'}))}));};
+ await assert.rejects(f.delivery.flush(),/MEMBER_STORAGE_UNAVAILABLE/);assert.equal((await f.outbox.list(f.original.owner_key,f.original.executor_id))[0].status,'IN_FLIGHT');
+ assert.equal((await f.originals())[0].body,f.original.body);
+ fail=false;const receipts=await f.delivery.flush();assert.equal(receipts[0].status,'ACKED');assert.equal(batches,1);assert.equal(statusQueries,1);
+});

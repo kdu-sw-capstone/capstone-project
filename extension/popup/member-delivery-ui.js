@@ -32,6 +32,8 @@
         new Promise((_,reject) => { timer = setTimeout(() => reject(new Error('UNCONFIRMED')),30000); })
       ]);
       if (epoch !== generation || request !== operation) return;
+      if (response?.request_id === request_id && response.status === 'ERROR'
+        && response.error?.code === 'DELIVERY_STORAGE_UNAVAILABLE') throw new Error('DELIVERY_STORAGE_UNAVAILABLE');
       const data = response?.data;
       if (response?.request_id !== request_id || response.status !== 'OK' || !data?.counts
         || !Number.isSafeInteger(data.retry_after_at) || data.retry_after_at < 0
@@ -46,8 +48,10 @@
         term.textContent = label; value.textContent = `${data.counts[key]}건`; list.append(term,value);
       }
       info.textContent = data.counts.LOCAL_REVIEW_REQUIRED ? '문제가 있는 원문은 보존했습니다. 정상 기록은 계속 전송하며, 확인이 필요한 기록은 자동 재전송하지 않습니다.' : data.total ? '저장된 기록의 전송 상태를 확인했습니다.' : '현재 계정의 저장된 접근 기록이 없습니다.';
-    } catch {
-      if (epoch === generation && request === operation) {schedule = null;info.textContent = '전송 상태 미확인 · 계정 연결과 서버 상태를 확인해주세요. 이전 조회 값은 최신 상태가 아닐 수 있습니다.';}
+    } catch (error) {
+      if (epoch === generation && request === operation) {schedule = null;info.textContent = error.message === 'DELIVERY_STORAGE_UNAVAILABLE'
+        ? '로컬 저장소를 확인하지 못했습니다. 자료를 초기화하지 말고 저장 공간을 확인한 뒤 전송 재확인을 눌러주세요. 저장된 원문은 임의 삭제하지 않습니다.'
+        : '전송 상태 미확인 · 계정 연결과 서버 상태를 확인해주세요. 이전 조회 값은 최신 상태가 아닐 수 있습니다.';}
     } finally {
       clearTimeout(timer);
       if (epoch === generation && request === operation) {busy = false;check.disabled = false;renderWait();}

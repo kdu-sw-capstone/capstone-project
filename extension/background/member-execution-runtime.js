@@ -1,5 +1,6 @@
 const MemberExecutionRuntime = (() => {
   let loop, server, accessDelivery, delivering, deliveryAgain = false;
+  const storageFailure = error => ['MEMBER_STORAGE_UNAVAILABLE','MEMBER_STORAGE_BLOCKED','ACCESS_STORAGE_UNAVAILABLE'].includes(error?.message);
   const alarm = 'focurve-member-execution';
   const deadlineAlarm = 'focurve-member-deadline';
   let waking = null, wakeAgain = false, connecting = null;
@@ -58,17 +59,18 @@ const MemberExecutionRuntime = (() => {
         const transferred = originals.length ? await FocurveMemberEvents.transferOriginals(originals,loop.access.store,accessDelivery) : [];
         const receipts = await accessDelivery.flush();
         loop.accessPending = receipts.filter(r=>!['ACKED','REJECTED','LOCAL_REVIEW_REQUIRED'].includes(r.status)).length;
-        for (const original of transferred) if (receipts.some(r=>r.event_id===original.event_id&&['ACKED','REJECTED'].includes(r.status)))
+        for (const original of transferred) if (receipts.some(r=>r.event_id===original.event_id&&r.owner_key===original.owner_key&&r.executor_id===original.executor_id&&r.body===original.body&&['ACKED','REJECTED'].includes(r.status)))
           await loop.access.store.acknowledged(original.scope,original.event_id);
+        loop.deliveryError = null;
       } while (deliveryAgain);
-    })().finally(()=>{delivering=null;if(deliveryAgain)deliverAccess().catch(()=>{});});
+    })().catch(error=>{loop.deliveryError=storageFailure(error)?'ACCESS_DELIVERY_STORAGE_UNCONFIRMED':'ACCESS_DELIVERY_UNCONFIRMED';throw error;}).finally(()=>{delivering=null;if(deliveryAgain)deliverAccess().catch(()=>{});});
     return delivering;
   }
   async function observe(stage,details) {
     await ready;
     if (loop?.view.status === 'CHECKING') await loop.queue;
     if (!loop || loop.view.status !== 'RUNNING') return Promise.resolve(null);
-    return loop.observe(stage,details).then(event=>{if(event)deliverAccess().catch(()=>{loop.accessError='ACCESS_DELIVERY_UNCONFIRMED';});return event;});
+    return loop.observe(stage,details).then(event=>{if(event)deliverAccess().catch(()=>{});return event;});
   }
   async function tick() {
     if (!await chrome.alarms.get(alarm)) await chrome.alarms.create(alarm, { periodInMinutes: 0.5 });
@@ -76,13 +78,13 @@ const MemberExecutionRuntime = (() => {
     if (!current) return { status: 'UNLINKED', session_id: null };
     try {
       const result = await current.tick();
-      deliverAccess().catch(()=>{current.accessError='ACCESS_DELIVERY_UNCONFIRMED';});
+      deliverAccess().catch(()=>{});
       const end = Date.parse(result.planned_end_at);
       if (result.status === 'RUNNING' && Number.isFinite(end)) {
         const existing = await chrome.alarms.get(deadlineAlarm);
         if (!existing || existing.scheduledTime !== end) await chrome.alarms.create(deadlineAlarm, { when: Math.max(Date.now() + 1, end) });
       } else await chrome.alarms.clear(deadlineAlarm);
-      return {...result,...(current.accessError?{access_error:current.accessError}:{}),...(current.accessPending?{access_pending:current.accessPending}:{})};
+      return {...result,...((current.accessError||current.deliveryError)?{access_error:current.accessError||current.deliveryError}:{}),...(current.accessPending?{access_pending:current.accessPending}:{})};
     }
     catch { return { status: 'UNCONFIRMED', session_id: current.view.session_id }; }
   }
@@ -121,8 +123,8 @@ const MemberExecutionRuntime = (() => {
       if (!current) throw new Error('UNAUTHENTICATED'); return current.end(message.payload?.session_id);
     });
     operation.then(data => respond({ request_id: message.request_id, status: 'OK', data, error: null }))
-      .catch(() => respond({ request_id: message.request_id, status: 'ERROR', data: null,
-        error: { code: 'EXECUTION_UNCONFIRMED' } }));
+      .catch(error => respond({ request_id: message.request_id, status: 'ERROR', data: null,
+        error: { code: message.type.startsWith('MEMBER_DELIVERY_')&&storageFailure(error)?'DELIVERY_STORAGE_UNAVAILABLE':'EXECUTION_UNCONFIRMED' } }));
     return true;
   });
   // Local Web bridge; neither message authorizes APPLY/END or exposes credentials.
