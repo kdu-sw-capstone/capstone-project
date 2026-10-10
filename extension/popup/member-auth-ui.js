@@ -21,7 +21,9 @@
     LINK_EXPIRED: '연결 요청이 만료되었거나 거절되었습니다. 필요하면 다시 연결해주세요.' };
   const errorText = code => errors[code] || '인증 또는 저장 상태 확인이 필요합니다. 서버와 연결 설정을 확인해주세요.';
   function render(data) {
-    window.dispatchEvent(new CustomEvent('focurve-member-state', { detail: { linked: data?.phase === 'LINKED' } }));
+    const executionAvailable = data?.phase === 'LINKED' || Boolean(data?.owner_user_id && data?.executor_id
+      && ['AUTH_RECOVERY_REQUIRED', 'REFRESHING', 'VERIFYING'].includes(data.phase));
+    window.dispatchEvent(new CustomEvent('focurve-member-state', { detail: { linked: executionAvailable } }));
     if (!data || !Object.hasOwn(labels, data.phase) || typeof data.guest_start_allowed !== 'boolean') {
       ui.blocked = true; info.textContent = '계정 연결 상태 미확인 · 상태를 다시 확인해주세요.';
     } else {

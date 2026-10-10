@@ -28,7 +28,7 @@ Linux / Node24 / JDK21 / MySQL8.4.8 / Chromium151.0.7922.173. 기존 cloud helpe
 | Extension 전체 | 159/159, fail/skip0 | Node, 모의 Chrome/HTTP 및 IDBFactory |
 | Backend 전체 verify/package | 165/165, fail/error/skip0 | 실제 HTTP/MySQL, 인증은 합성 fixture |
 | 최종 변경 후 집중 HTTP 회귀 | 3/3 | 실제 commands/session/reports/reconcile/end; Chrome DNR/tabs/guest idle만 모의. 이전 fixture의 fake trusted context를 새 loop 시험에서는 실제 Server session 대조로 대체 |
-| UI | Chromium 22/22 | 제품 HTML/JS + Chrome API 모의. 회원 미확인 응답·별도 실제 coordinator 응답 표시·종료 취소/해제 표시 |
+| UI | Chromium 23/23 | 제품 HTML/JS + Chrome API 모의. 회원 미확인 응답·별도 실제 coordinator 응답 표시·종료 취소/해제 표시 |
 | 기존 네이티브 Worker 회귀 | 보고 재생성/IndexedDB 1건 및 auth/event fetch 2건 통과 | 실제 Dedicated Worker/IndexedDB, 합성 HTTP. 이번 제품 확장 loop 또는 Chrome DNR 시험 아님 |
 | JS 구문·harness build·bundle source 일치/실행 | PASS | harness·VM은 모의 검증 |
 
