@@ -2,6 +2,10 @@
 
 단계: 필수 MVP · 설계 담당 영역: Extension
 
+## 최신 작업 — Core 문서별 제어 registry 독립 기반
+
+윤종민 / feature/extension-core-ext-02 / 시작63193ef. 제품 wire를 연결하지 않고 별도 native IndexedDB 문서/제어 의무·단조 sequence·중복/충돌·epoch·원래 binding cleanup·Worker 재확인 guard 구현. **Extension174/174·문법 PASS, 실제 Chromium Dedicated Worker/IndexedDB 종료·재생성/실패 복원 재시도 PASS**(문서/lifecycle/효과는 합성). [구현·검증·한계](../evidence/EXT-02-2026-10-10-document-registry.md). 제품 Worker/Content 미연결·실제 MV3/YouTube/Server 및 전체 AC 미검증. 다음: 공동 D06 확정→한 문서 비회원 Shorts adapter 연결. 제품 wire 임의 구현/기능 거절 해제/develop 병합 없음.
+
 ## 최신 작업 — Content 검토 응답에 대한 Core 재응답
 
 윤종민 / feature/extension-core-ext-02 / 시작5c6064a. Content bcca674·Draft PR21·Shorts 기록 및 최신 Core/공용 D06/Event1.2 대조. [Core 재응답](../Content_Core_D06_Core재응답_2026-10-10.md)에 제안마다 수락/수정/보류·미결속 QUERY·seq/캐시·필수 문서 집합·media0/탐색·freeze와 다훈 확인 S1~S5·수정 JSON9개·최소 A단위를 작성했다. **공동 계약 미확정, 제품 메시지 구현 없음**. 문서 JSON/참조/diff 검사만 실행, 기능 테스트 NOT RUN. 다음: 지민 재확인/다훈 보고·이벤트 매핑 확인→공동 계약 기록→한 문서 비회원 Shorts 적용/해제 단위. develop 병합 금지.
