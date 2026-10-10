@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { randomUUID } from 'node:crypto';
 import { IDBFactory } from 'fake-indexeddb';
 import { MemberExecutionClient, MemberReportStore } from '../src/member-execution-client.js';
+import { MemberAccessStore } from '../src/member-access.js';
 import { MemberJournalStore } from '../src/member-journal-store.js';
 import { MemberExecutionLoop } from '../src/member-execution-loop.js';
 import { bundleMemberWorker } from '../scripts/build-member-worker.js';
@@ -48,7 +49,7 @@ function fixture() {
   };
   const client = new MemberExecutionClient({ baseUrl: 'http://localhost/api/v1', getCredentials: async () => credentials,
     store, fetch, now: () => now });
-  const options = { client, getCredentials: async () => credentials, journal, control, idle: async () => {},
+  const options = { accessStore:new MemberAccessStore({indexedDB:db}), client, getCredentials: async () => credentials, journal, control, idle: async () => {},
     dnr: { getSessionRules: async () => structuredClone(rules), isRegexSupported: async () => ({ isSupported: true }),
       updateSessionRules: async ({ addRules = [], removeRuleIds = [] }) => {
         additions += addRules.length; rules = rules.filter(rule => !removeRuleIds.includes(rule.id)).concat(addRules);
@@ -172,4 +173,17 @@ test('concurrent terminal Server state verifies release and preserves unacknowle
   await f.loop.end(f.sessionId); const row = await f.control.load('MEMBER:1', f.sessionId);
   assert.equal(f.rules().length, 0); assert.equal(row.phase, 'FINAL'); assert.equal(row.local_action_unconfirmed, true);
   assert.ok(row.local_end.action_id);
+});
+
+test('member navigation requires verified RUNNING context and actual owned rules, and excludes termination',async()=>{
+  const f=fixture();const initial=Date.parse(f.apply.created_at);
+  const before={frameId:0,tabId:1,timeStamp:initial+1,observed_at:initial+1,url:'https://sub.example.org/a'};
+  assert.equal(await f.loop.observe('before',before),null);
+  await f.loop.tick();assert.equal(f.loop.view.status,'RUNNING');
+  await f.loop.observe('before',before);
+  const commit={...before,timeStamp:initial+2,observed_at:initial+2,url:'chrome-extension://synthetic/blocked/blocked.html?host=example.org&reason=USER_SITE',transitionType:'typed'};
+  const event=await f.loop.observe('commit',commit);assert.equal(event.payload.target_host,'sub.example.org');
+  await f.loop.observe('before',before);f.clear();assert.equal(await f.loop.observe('commit',commit),null);
+  assert.equal((await f.loop.access.store.originals('MEMBER:1',f.credentials.executor_id,f.client.baseUrl)).length,1);
+  f.loop.view.status='ENDING';assert.equal(await f.loop.observe('before',before),null);
 });

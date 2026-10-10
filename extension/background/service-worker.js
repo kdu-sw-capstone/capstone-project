@@ -116,3 +116,15 @@ chrome.webNavigation.onErrorOccurred.addListener(details => {
   GuestSession.observe("error", {...details, observed_at: Date.now()})
     .catch(error => console.error("Access failure cleanup failed:", error.message));
 });
+
+// Member SITE-only capture shares Core-native navigation observations, never page messages.
+chrome.webNavigation.onBeforeNavigate.addListener(details => {
+  MemberExecutionRuntime.observe('before', {...details, observed_at:Date.now()}).catch(()=>{});
+});
+chrome.webNavigation.onCommitted.addListener(details => {
+  MemberExecutionRuntime.observe('commit', {...details, observed_at:Date.now()}).catch(()=>{});
+});
+chrome.webNavigation.onErrorOccurred.addListener(details => {
+  MemberExecutionRuntime.observe('error', {...details, observed_at:Date.now()}).catch(()=>{});
+});
+chrome.tabs.onRemoved.addListener(tabId => { MemberExecutionRuntime.forget(tabId).catch(()=>{}); });

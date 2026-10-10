@@ -9,8 +9,8 @@ async function fixture() {
   const auth = { phase:'LINKED',owner_user_id:'1',executor_id:executor,server_url:'http://127.0.0.1:8080/api/v1',web_origin:'http://127.0.0.1:5173' };
   class Clock extends Date { static now() { return now; } }
   const context = vm.createContext({URL,Date:Clock,MemberAuthRuntime:{status:async()=>({...auth}),credentials:()=>assert.fail('external wake must not return credentials')},
-    GuestSession:{state:async()=>null},FocurveMemberExecution:{MemberExecutionClient:class {},MemberExecutionLoop:class {
-      constructor(){this.view={session_id:null};} async tick(){calls++;if(tickImpl)return tickImpl();return now<2000?{status:'RUNNING',planned_end_at:new Date(2000).toISOString()}:{status:'IDLE'};}
+    GuestSession:{state:async()=>null},FocurveMemberEvents:{MemberEventStore:class {},MemberEventDelivery:class {async flush(){return [];}}},FocurveMemberExecution:{MemberExecutionClient:class {},MemberExecutionLoop:class {
+      constructor(){this.access={store:{originals:async()=>[]}};this.view={session_id:null};} async tick(){calls++;if(tickImpl)return tickImpl();return now<2000?{status:'RUNNING',planned_end_at:new Date(2000).toISOString()}:{status:'IDLE'};}
     }},chrome:{runtime:{id:'self',getURL:p=>'chrome-extension://self/'+p,onMessage:{addListener(){}},onMessageExternal:{addListener:f=>{external=f;}},onStartup:{addListener(){}}},
       alarms:{get:async name=>alarms.get(name),create:async(name,opts)=>{created.push(name);alarms.set(name,{scheduledTime:opts.when,...opts});},clear:async name=>alarms.delete(name),onAlarm:{addListener:f=>{alarmListener=f;}}},declarativeNetRequest:{},tabs:{}}});
   vm.runInContext(await readFile(new URL('../background/member-execution-runtime.js',import.meta.url),'utf8'),context);

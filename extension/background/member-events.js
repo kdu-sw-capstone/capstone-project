@@ -49,8 +49,8 @@
   serial(fn){const result=this.queue.then(fn);this.queue=result.catch(()=>{});return result;}
   async credentials(){const c=await this.getCredentials();if(!c||!/^MEMBER:[1-9][0-9]*$/.test(c.owner_key)||!UUID.test(c.executor_id)||typeof c.access_token!=='string'||!c.access_token||/[\r\n]/.test(c.access_token))throw new Error('MEMBER_AUTH_REQUIRED');return {...c};}
   async scope(expected){const c=await this.credentials();if(c.owner_key!==expected.owner_key||c.executor_id!==expected.executor_id)throw new Error('MEMBER_OWNER_CHANGED');return c;}
-  enqueue(event){return this.serial(async()=>{
-   const c=await this.credentials();validate(event);if(event.executor_id!==c.executor_id)throw new Error('EXECUTOR_MISMATCH');
+  enqueue(event,expectedScope){return this.serial(async()=>{
+   const c=expectedScope?await this.scope(expectedScope):await this.credentials();validate(event);if(event.executor_id!==c.executor_id)throw new Error('EXECUTOR_MISMATCH');
    const body=JSON.stringify(event);if(new TextEncoder().encode(body).length>1048500)throw new Error('EVENT_TOO_LARGE');
    const old=await this.store.get(c.owner_key,event.event_id);if(old){if(old.body!==body)throw new Error('EVENT_CONFLICT');return old;}
    return this.store.put({owner_key:c.owner_key,executor_id:c.executor_id,event_id:event.event_id,body,status:'QUEUED',attempts:0,next_attempt_at:0,error:null});

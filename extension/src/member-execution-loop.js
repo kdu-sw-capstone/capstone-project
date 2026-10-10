@@ -2,6 +2,7 @@ import { MemberJournalStore } from './member-journal-store.js';
 import { SiteController } from './site-controller.js';
 import { parseServerTime } from './server-time.js';
 import { sameRule } from './site-rules.js';
+import { MemberAccessCollector } from './member-access.js';
 
 const finished = state => ['ENDED', 'START_FAILED'].includes(state.execution_status);
 export function requireSiteOnly(snapshot) {
@@ -17,12 +18,13 @@ export function requireSiteOnly(snapshot) {
 // SiteController journal, so a crash before/after apply never invents new IDs.
 export class MemberExecutionLoop {
   constructor({ client, getCredentials, getIdentity = getCredentials, idle, dnr, tabs, blockedPageUrl,
-    journal = new MemberJournalStore(), control = new MemberJournalStore({ name: 'focurve-member-control' }),
+    accessStore, journal = new MemberJournalStore(), control = new MemberJournalStore({ name: 'focurve-member-control' }),
     now = Date.now, randomUUID = () => crypto.randomUUID() }) {
     Object.assign(this, { client, getCredentials, getIdentity, idle, journal, control, now, randomUUID });
     this.queue = Promise.resolve(); this.recovered = new Set(); this.command = null;
     this.controller = new SiteController({ dnr, tabs, journal, blockedPageUrl, now,
       getContext: () => this.context() });
+    this.access = new MemberAccessCollector({store:accessStore,getContext: at => this.accessContext(at), blockedPageUrl});
     this.view = { status: 'IDLE', session_id: null };
   }
   serial(work) { const result = this.queue.then(work); this.queue = result.catch(() => {}); return result; }
@@ -232,6 +234,26 @@ export class MemberExecutionLoop {
       if (this.view.status === 'CHECKING') this.view = { status: 'IDLE', session_id: null };
       return structuredClone(this.view);
     });
+  }
+  async accessContext(at) {
+    if (this.view.status !== 'RUNNING' || !this.recovered.has(this.view.session_id)) return null;
+    const identity = await this.getIdentity(), row = await this.control.load(identity.owner_key, this.view.session_id);
+    if (!row || row.phase !== 'APPLIED' || row.local_end || row.executor_id !== identity.executor_id
+      || row.base_url !== this.client.baseUrl || at < parseServerTime(row.applied_at)
+      || at >= parseServerTime(row.planned_end_at) || this.now() >= parseServerTime(row.planned_end_at)) return null;
+    const journal = await this.journal.load(row.owner_key, row.session_id);
+    if (!journal || journal.revision !== row.revision || journal.desired !== 'APPLIED' || journal.observed !== 'APPLIED') return null;
+    const actual = await this.controller.checkOwned(journal);
+    if (!journal.rules.every(rule => actual.some(item => sameRule(item, rule)))) return null;
+    requireSiteOnly(row.command.snapshot);
+    const fresh = await this.getIdentity();
+    if (fresh.owner_key !== identity.owner_key || fresh.executor_id !== identity.executor_id) return null;
+    return {owner_key:row.owner_key,executor_id:row.executor_id,base_url:row.base_url,session_id:row.session_id,
+      revision:row.revision,applied_at:row.applied_at,snapshot:structuredClone(row.command.snapshot)};
+  }
+  observe(stage,details) {
+    if (this.view.status !== 'RUNNING') return Promise.resolve(null);
+    return this.serial(() => this.access.observe(stage,details)).catch(error => {this.accessError='ACCESS_STORAGE_UNCONFIRMED';throw error;});
   }
   end(sessionId) {
     return this.serial(async () => {

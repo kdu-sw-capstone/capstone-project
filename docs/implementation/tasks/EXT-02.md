@@ -2,6 +2,10 @@
 
 단계: 필수 MVP · 설계 담당 영역: Extension
 
+## 후속 작업 — EVENT-01/02 회원 SITE-only 수집
+
+사용자 지시로 시작/종료 속도 Windows 검증을 보류하고 회원 접근 수집을 진행. 확장0.1.9·동일브랜치/시작61118b2. [원본 작업·검증·협업/실제 미검증](../evidence/EVENT-01-02-2026-10-10-member-sites.md), EVENT-01/02 카드에 구현 상태 기록. 실제Core context/DNR 확인·원자원문·기존전송 연결, Extension189/189·UI23·실제HTTP/MySQL3/3·문법 PASS. 제품Chrome/전체AC 및 D06 합의는 계속 대기. 기존 0.1.8 속도 문제를 해결완료로 승격하지 않음.
+
 ## 이번 작업 — 현재 브라우저 자동 선택·시작/종료 즉시 연결
 
 윤종민 / feature/extension-core-ext-02 / 시작 a4fe6bd74dff3a5a52225daaab0183fe8cbfb7e6 / 구현·모의 검증 완료, 실제 Windows 통합 대기. 사용자가 시작·종료 즉시 동작 및 현재 설치 자동 선택을 요청했다. EXT-02·SESSION-01/02 연결 범위. Server의 owner/executor·Snapshot gate·실제 적용/해제 확인 기준은 유지한다. 로컬 Web에 설치 확인 전용 CONNECT 계약을 추가하고, 시작 전에 인증 조회 heartbeat를 완료하며, 종료는 한 번 클릭으로 요청한다. D06 Content 계약 및 Server gate 완화는 범위 밖. Extension180/180·Web130/130·TS/Vite·문법 PASS. [코드·계약·오류 수정·실제 미검증·적용 절차](../evidence/EXT-02-2026-10-10-current-browser.md). 확장 0.1.8·Web 업데이트 후 실제 차단/해제 반응 측정 필요. 기존 setup skill 환경 지침은 개발 도구 재사용에 적용하며 제품 수정은 이번 사용자 요청으로 수행한다.

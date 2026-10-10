@@ -9,8 +9,8 @@ async function fixture() {
     MemberAuthRuntime: { status: async () => ({ phase: 'LINKED', owner_user_id: '1', executor_id: 'synthetic', server_url: 'http://localhost/api/v1' }),
       credentials: async () => assert.fail('runtime must not expose credentials to UI') },
     GuestSession: { state: async () => null },
-    FocurveMemberExecution: { MemberExecutionClient: class {}, MemberExecutionLoop: class {
-      constructor() { this.view = { session_id: 'session' }; }
+    FocurveMemberEvents:{MemberEventStore:class {},MemberEventDelivery:class {async flush(){return [];}}},FocurveMemberExecution: { MemberExecutionClient: class {}, MemberExecutionLoop: class {
+      constructor() { this.access={store:{originals:async()=>[]}};this.view = { session_id: 'session' }; }
       async tick() { calls++; return { status: 'RUNNING', session_id: 'session' }; }
       async end(id) { calls++; assert.equal(id, 'session'); return { status: 'RELEASED', session_id: id }; }
     } },

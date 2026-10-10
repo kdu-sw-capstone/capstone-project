@@ -1,5 +1,5 @@
 const MemberExecutionRuntime = (() => {
-  let loop, server;
+  let loop, server, accessDelivery, delivering, deliveryAgain = false;
   const alarm = 'focurve-member-execution';
   const deadlineAlarm = 'focurve-member-deadline';
   let waking = null, wakeAgain = false, connecting = null;
@@ -17,13 +17,23 @@ const MemberExecutionRuntime = (() => {
     if (loop && server !== status.server_url) throw new Error('EXECUTION_SCOPE_MISMATCH');
     if (!loop) {
       server = status.server_url;
-      const credentials = () => MemberAuthRuntime.credentials();
+      const credentials = async () => {
+        const state = await MemberAuthRuntime.status();
+        if (state.server_url !== server) throw new Error('EXECUTION_SCOPE_MISMATCH');
+        const value = await MemberAuthRuntime.credentials();
+        const fresh = await MemberAuthRuntime.status();
+        if (fresh.server_url !== server || fresh.executor_id !== value.executor_id
+          || 'MEMBER:' + fresh.owner_user_id !== value.owner_key) throw new Error('EXECUTION_SCOPE_MISMATCH');
+        return value;
+      };
       const identity = async () => {
         const state = await MemberAuthRuntime.status();
         if (!state.owner_user_id || !state.executor_id || state.server_url !== server) throw new Error('EXECUTION_SCOPE_MISMATCH');
         return { owner_key: 'MEMBER:' + state.owner_user_id, executor_id: state.executor_id };
       };
       const client = new FocurveMemberExecution.MemberExecutionClient({ baseUrl: server, getCredentials: credentials });
+      accessDelivery = new FocurveMemberEvents.MemberEventDelivery({baseUrl:server,getCredentials:credentials,
+        store:new FocurveMemberEvents.MemberEventStore({name:'focurve-member-events:'+encodeURIComponent(server)})});
       loop = new FocurveMemberExecution.MemberExecutionLoop({ client, getCredentials: credentials, getIdentity: identity,
         dnr: chrome.declarativeNetRequest, tabs: chrome.tabs, blockedPageUrl: chrome.runtime.getURL('blocked/blocked.html'),
         idle: async () => {
@@ -34,18 +44,45 @@ const MemberExecutionRuntime = (() => {
     }
     return loop;
   }
+  // Copy durable originals into the existing delivery outbox; ack deletes only staging originals.
+  function deliverAccess() {
+    if (!loop || !accessDelivery) return Promise.resolve();
+    deliveryAgain = true;
+    if (delivering) return delivering;
+    delivering = (async () => {
+      do {
+        deliveryAgain = false;
+        const identity = await MemberAuthRuntime.status();
+        const owner = 'MEMBER:' + identity.owner_user_id;
+        const originals = await loop.access.store.originals(owner,identity.executor_id,server);
+        for (const original of originals) await accessDelivery.enqueue(JSON.parse(original.body),{owner_key:original.owner_key,executor_id:original.executor_id});
+        const receipts = await accessDelivery.flush();
+        loop.accessPending = receipts.filter(r=>!['ACKED','REJECTED'].includes(r.status)).length;
+        for (const original of originals) if (receipts.some(r=>r.event_id===original.event_id&&['ACKED','REJECTED'].includes(r.status)))
+          await loop.access.store.acknowledged(original.scope,original.event_id);
+      } while (deliveryAgain);
+    })().finally(()=>{delivering=null;if(deliveryAgain)deliverAccess().catch(()=>{});});
+    return delivering;
+  }
+  async function observe(stage,details) {
+    await ready;
+    if (loop?.view.status === 'CHECKING') await loop.queue;
+    if (!loop || loop.view.status !== 'RUNNING') return Promise.resolve(null);
+    return loop.observe(stage,details).then(event=>{if(event)deliverAccess().catch(()=>{loop.accessError='ACCESS_DELIVERY_UNCONFIRMED';});return event;});
+  }
   async function tick() {
     if (!await chrome.alarms.get(alarm)) await chrome.alarms.create(alarm, { periodInMinutes: 0.5 });
     const current = await getLoop();
     if (!current) return { status: 'UNLINKED', session_id: null };
     try {
       const result = await current.tick();
+      deliverAccess().catch(()=>{current.accessError='ACCESS_DELIVERY_UNCONFIRMED';});
       const end = Date.parse(result.planned_end_at);
       if (result.status === 'RUNNING' && Number.isFinite(end)) {
         const existing = await chrome.alarms.get(deadlineAlarm);
         if (!existing || existing.scheduledTime !== end) await chrome.alarms.create(deadlineAlarm, { when: Math.max(Date.now() + 1, end) });
       } else await chrome.alarms.clear(deadlineAlarm);
-      return result;
+      return {...result,...(current.accessError?{access_error:current.accessError}:{}),...(current.accessPending?{access_pending:current.accessPending}:{})};
     }
     catch { return { status: 'UNCONFIRMED', session_id: current.view.session_id }; }
   }
@@ -95,6 +132,6 @@ const MemberExecutionRuntime = (() => {
       .catch(() => respond({ request_id: message.request_id, status: 'ERROR', data: null, error: { code: 'WAKE_UNAVAILABLE' } }));
     return true;
   });
-  tick().catch(() => {});
-  return Object.freeze({ tick });
+  const ready = tick().catch(() => {});
+  return Object.freeze({ tick, observe, forget: tabId => loop?.access.forget(tabId) ?? Promise.resolve() });
 })();

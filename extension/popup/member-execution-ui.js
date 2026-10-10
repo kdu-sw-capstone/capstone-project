@@ -14,7 +14,7 @@
       const request_id = crypto.randomUUID();
       const result = await chrome.runtime.sendMessage({ type, request_id, payload: { session_id: sessionId } });
       if (result?.request_id !== request_id || result.status !== 'OK' || !labels[result.data?.status]) throw new Error('Unconfirmed');
-      sessionId = result.data.session_id; info.textContent = labels[result.data.status];
+      sessionId = result.data.session_id; info.textContent = labels[result.data.status] + (result.data.access_error ? ' · 행동 기록 수집/전송 미확인' : result.data.access_pending ? ' · 행동 기록 전송 대기' : '');
       end.hidden = !sessionId || result.data.status === 'RELEASED';
     } catch { info.textContent = labels.UNCONFIRMED; }
     finally { check.disabled = false; end.disabled = !sessionId; }
