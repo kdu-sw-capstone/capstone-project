@@ -40,6 +40,19 @@
   get(owner,id){return this.transaction('readonly',(store,done)=>{const r=store.get([owner,id]);r.onsuccess=()=>done(r.result||null);});}
   list(owner,executor){return this.transaction('readonly',(store,done)=>{const r=store.getAll();r.onsuccess=()=>done(r.result.filter(item=>item.owner_key===owner&&item.executor_id===executor));});}
  }
+ // HTTP Retry-After is a lower bound, independent of the local jittered backoff.
+ function retryAfterAt(value, now){
+  if(typeof value!=='string')return 0;
+  value=value.trim();let deadline;
+  if(/^[0-9]+$/.test(value)){
+   const seconds=Number(value);deadline=now+seconds*1000;
+   if(!Number.isSafeInteger(seconds)||!Number.isSafeInteger(deadline))return 0;
+  }else{
+   if(!/^[A-Z][a-z]{2}, [0-9]{2} [A-Z][a-z]{2} [0-9]{4} [0-9]{2}:[0-9]{2}:[0-9]{2} GMT$/.test(value))return 0;
+   deadline=Date.parse(value);
+  }
+  return Number.isSafeInteger(deadline)&&deadline>now?deadline:0;
+ }
  class MemberEventDelivery{
   constructor({baseUrl,store,getCredentials,fetch=globalThis.fetch.bind(globalThis),now=Date.now,random=Math.random,timeoutMs=10000}){
    const url=new URL(baseUrl);
@@ -59,11 +72,20 @@
    const c=await this.scope(scope);const controller=new AbortController();const timer=setTimeout(()=>controller.abort(),this.timeoutMs);
    try{
     const response=await this.fetch(this.baseUrl+endpoint,{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+c.access_token},body:JSON.stringify(data),signal:controller.signal,redirect:'error',credentials:'omit',cache:'no-store'});
-    if(!response.ok){const error=new Error(response.status===401||response.status===403?'MEMBER_AUTH_REQUIRED':'HTTP_'+response.status);error.httpStatus=response.status;throw error;}
+    if(!response.ok){const error=new Error(response.status===401||response.status===403?'MEMBER_AUTH_REQUIRED':'HTTP_'+response.status);error.httpStatus=response.status;
+     if([429,503].includes(response.status))error.retryAfterAt=retryAfterAt(response.headers?.get('Retry-After'),this.now());
+     throw error;}
     return await response.json();
    }finally{clearTimeout(timer);}
   }
-  async uncertain(record,error){const attempts=record.attempts+1;return this.store.put({...record,status:error==='MEMBER_AUTH_REQUIRED'?'AUTH_REQUIRED':'RESPONSE_UNCONFIRMED',attempts,next_attempt_at:this.now()+Math.min(30000,1000*2**Math.min(attempts-1,5))*(1+this.random()*.2),error});}
+  async uncertain(record,error,retryAfter=0){
+   const attempts=record.attempts+1;
+   const retry_after_at=Math.max(Number.isSafeInteger(record.retry_after_at)?record.retry_after_at:0,
+    Number.isSafeInteger(retryAfter)?retryAfter:0);
+   return this.store.put({...record,status:error==='MEMBER_AUTH_REQUIRED'?'AUTH_REQUIRED':'RESPONSE_UNCONFIRMED',attempts,
+    next_attempt_at:Math.max(retry_after_at,this.now()+Math.min(30000,1000*2**Math.min(attempts-1,5))*(1+this.random()*.2)),
+    ...(retry_after_at?{retry_after_at}:{}),error});
+  }
   async results(records,response,statusLookup){
    if(!Array.isArray(response?.items))throw new Error('INVALID_EVENT_RESPONSE');
    const ids=new Set(records.map(r=>r.event_id));const duplicate=new Set();const byId=new Map();
@@ -77,10 +99,12 @@
   }
   flush(){return this.serial(async()=>{
    const c=await this.credentials();let records=await this.store.list(c.owner_key,c.executor_id);
+   // Persisted scope-wide gate also covers new events queued during a server outage.
+   if(records.some(r=>Number.isSafeInteger(r.retry_after_at)&&r.retry_after_at>this.now()))return records;
    const unresolved=records.filter(r=>['IN_FLIGHT','RESPONSE_UNCONFIRMED','PENDING_DEPENDENCY','AUTH_REQUIRED'].includes(r.status)&&r.next_attempt_at<=this.now()).slice(0,100);
    if(unresolved.length){
     try{await this.results(unresolved,await this.request('/events/status',{event_ids:unresolved.map(r=>r.event_id)},c),true);}
-    catch(error){for(const r of unresolved)await this.uncertain(r,error.message);return this.store.list(c.owner_key,c.executor_id);}
+    catch(error){for(const r of unresolved)await this.uncertain(r,error.message,error.retryAfterAt);return this.store.list(c.owner_key,c.executor_id);}
    }
    records=await this.store.list(c.owner_key,c.executor_id);
    const batch=[];let bytes=14;
@@ -90,7 +114,7 @@
    if(batch.length){
     for(const r of batch)await this.store.put({...r,status:'IN_FLIGHT'});
     try{await this.results(batch,await this.request('/events/batch',{events:batch.map(r=>JSON.parse(r.body))},c),false);}
-    catch(error){for(const r of batch){const current=await this.store.get(c.owner_key,r.event_id);if(current?.status!=='ACKED'&&current?.status!=='REJECTED')await this.uncertain(current||r,error.message);}}
+    catch(error){for(const r of batch){const current=await this.store.get(c.owner_key,r.event_id);if(current?.status!=='ACKED'&&current?.status!=='REJECTED')await this.uncertain(current||r,error.message,error.retryAfterAt);}}
    }
    return this.store.list(c.owner_key,c.executor_id);
   });}

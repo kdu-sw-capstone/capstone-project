@@ -178,3 +178,40 @@ test('owner switch during durable transition is caught immediately before reques
   const saved = await f.store.list('MEMBER:1', f.credentials.executor_id);
   assert.equal(saved[0].status, 'RESPONSE_UNCONFIRMED'); assert.equal(saved[0].error, 'MEMBER_OWNER_CHANGED');
 });
+
+test('503 Retry-After persists across sender recreation and gates newly queued events; resume queries same original ID first',async()=>{
+ const calls=[];
+ const f=fixture(async(url,options)=>{calls.push({url,body:JSON.parse(options.body)});
+  return new Response('{}',{status:503,headers:{'Retry-After':'60'}});});
+ const original=f.event();await f.delivery.enqueue(original);await f.delivery.flush();
+ const saved=(await rows(f))[0];assert.equal(saved.next_attempt_at,61000);assert.equal(saved.retry_after_at,61000);
+ assert.equal(saved.status,'RESPONSE_UNCONFIRMED');assert.equal(saved.body,JSON.stringify(original));
+ const next=f.event('www.naver.com',2);await f.delivery.enqueue(next);
+ f.advance();await f.delivery.flush();assert.equal(calls.length,1);
+ let time=32000;
+ const restored=new MemberEventDelivery({baseUrl:f.delivery.baseUrl,store:f.store,getCredentials:async()=>f.credentials,
+  now:()=>time,random:()=>0,fetch:async(url,options)=>{const body=JSON.parse(options.body);calls.push({url,body});
+   return response((body.event_ids||body.events.map(e=>e.event_id)).map(event_id=>({event_id,status:url.endsWith('/status')?'NOT_RECEIVED':'ACCEPTED'})));}});
+ await restored.flush();assert.equal(calls.length,1);
+ time=61000;await restored.flush();
+ assert.ok(calls[1].url.endsWith('/events/status'));assert.deepEqual(calls[1].body.event_ids,[original.event_id]);
+ assert.deepEqual(calls[2].body.events[0],original);assert.equal((await rows(f)).filter(r=>r.status==='ACKED').length,2);
+});
+
+test('429 HTTP-date Retry-After is honored; malformed/past headers retain local backoff',async()=>{
+ for(const [header,expected] of [['Thu, 01 Jan 1970 00:02:00 GMT',120000],['not a date',2000],['-10',2000],['1.5',2000],['9999999999999999999999',2000],['Thu, 01 Jan 1970 00:00:00 GMT',2000]]){
+  const f=fixture(async()=>new Response('{}',{status:429,headers:{'Retry-After':header}}));
+  await f.delivery.enqueue(f.event());await f.delivery.flush();assert.equal((await rows(f))[0].next_attempt_at,expected,header);
+ }
+});
+
+test('Retry-After on status lookup persists without replay; other owners are not stalled',async()=>{
+ let statusCalls=0;
+ const f=fixture(async(url)=>{if(url.endsWith('/batch'))throw new Error('OFFLINE');statusCalls++;return new Response('{}',{status:503,headers:{'Retry-After':'120'}});});
+ await f.delivery.enqueue(f.event());await f.delivery.flush();f.advance();await f.delivery.flush();
+ const row=(await rows(f))[0];assert.equal(row.retry_after_at,152000);f.advance();await f.delivery.flush();assert.equal(statusCalls,1);
+ const other={...f.credentials,owner_key:'MEMBER:2'};let calls=0;
+ const sender=new MemberEventDelivery({baseUrl:f.delivery.baseUrl,store:f.store,getCredentials:async()=>other,now:()=>63000,
+  fetch:async(_,options)=>{calls++;return response(JSON.parse(options.body).events.map(e=>({event_id:e.event_id,status:'ACCEPTED'})));}});
+ await sender.enqueue(f.event());await sender.flush();assert.equal(calls,1);
+});
