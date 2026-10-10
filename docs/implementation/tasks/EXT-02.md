@@ -2,6 +2,10 @@
 
 단계: 필수 MVP · 설계 담당 영역: Extension
 
+## 최신 오류 수정 — Worker fetch (2026-10-10)
+
+Windows 제품 회원 설치 등록에서 Illegal invocation 실패를 확인. auth/event 기본 fetch를 Worker 전역에 바인딩하고 모의116/116·실제 Chromium Dedicated Worker 수정전실패/수정후합성HTTP2건 회귀통과. 수정본 Windows 회원연결은 미검증, 기존 미확인 상태 자동해제 없음. 최신 develop90ad32b 및 시각9자리/duration/회원명령은 후속. [근거와 수동 절차](../evidence/EXT-02-2026-10-10-fetch-worker.md).
+
 ## 작업 상태
 
 - 상태: 진행 중 — 2026-10-10 D09 제품 설치·PKCE·토큰/guest전환guard 구현. Extension모의114/114·UI19항목·Backend140/140·최종Auth실HTTP/MySQL합성1/1 통과. f6 비회원Chrome1~25 사용자성공/원본캡처/환경 확보(로드hash미대조), 이번Auth코드제품Chrome·회원명령/보고·필수전체AC미검증. Commit/Push/PR17갱신 허용, develop병합 금지. 과거Git동결은당시이력.

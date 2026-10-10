@@ -24,7 +24,7 @@
   }
   class MemberAuth {
     constructor({ store, getInstallation, inspectIdle, callbackUri, clientVersion, openApproval,
-      fetch = globalThis.fetch, crypto = globalThis.crypto, now = Date.now, timeoutMs = 10000 }) {
+      fetch = globalThis.fetch.bind(globalThis), crypto = globalThis.crypto, now = Date.now, timeoutMs = 10000 }) {
       Object.assign(this, { store, getInstallation, inspectIdle, callbackUri, clientVersion, openApproval, fetch, crypto, now, timeoutMs });
       this.queue = Promise.resolve();
     }

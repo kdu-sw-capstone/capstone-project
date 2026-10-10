@@ -4,6 +4,23 @@ import { randomUUID } from 'node:crypto';
 import { IDBFactory } from 'fake-indexeddb';
 import { validate, MemberEventStore, MemberEventDelivery } from '../src/member-events.js';
 
+test('default event fetch retains WorkerGlobalScope receiver', async () => {
+  const original = globalThis.fetch;
+  let calls = 0;
+  globalThis.fetch = async function () {
+    if (this !== globalThis) throw new TypeError('Illegal invocation');
+    calls++;
+    return new Response(JSON.stringify({ accepted: true }));
+  };
+  try {
+    const credentials = { owner_key: 'MEMBER:1', executor_id: randomUUID(), access_token: 'synthetic-test-only' };
+    const delivery = new MemberEventDelivery({ baseUrl: 'http://127.0.0.1:8080/api/v1',
+      getCredentials: async () => credentials });
+    assert.deepEqual(await delivery.request('/events', {}, credentials), { accepted: true });
+    assert.equal(calls, 1);
+  } finally { globalThis.fetch = original; }
+});
+
 function fixture(fetch) {
   const credentials = { owner_key: 'MEMBER:1', executor_id: randomUUID(), access_token: 'synthetic-test-only' };
   const store = new MemberEventStore({ indexedDB: new IDBFactory() });

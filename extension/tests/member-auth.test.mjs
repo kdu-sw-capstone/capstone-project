@@ -6,6 +6,20 @@ import { MemberAuth, AuthStore } from '../src/member-auth.js';
 const callbackUri = 'chrome-extension://aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa/popup/popup.html';
 const config = { server_url: 'http://127.0.0.1:8080/api/v1', web_origin: 'http://127.0.0.1:5173' };
 const secret = char => char.repeat(43);
+test('default fetch retains WorkerGlobalScope receiver for installation requests', async () => {
+  const original = globalThis.fetch;
+  let calls = 0;
+  globalThis.fetch = async function () {
+    if (this !== globalThis) throw new TypeError('Illegal invocation');
+    calls++;
+    return new Response(JSON.stringify({ accepted: true }));
+  };
+  try {
+    const auth = new MemberAuth({});
+    assert.deepEqual(await auth.request(config, '/extension-installations', {}), { accepted: true });
+    assert.equal(calls, 1);
+  } finally { globalThis.fetch = original; }
+});
 function fixture() {
   let saved = null, time = Date.now(), idle = true, mode = 'PENDING';
   const id = webcrypto.randomUUID(), requestId = webcrypto.randomUUID();

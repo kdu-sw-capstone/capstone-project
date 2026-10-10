@@ -41,7 +41,7 @@
   list(owner,executor){return this.transaction('readonly',(store,done)=>{const r=store.getAll();r.onsuccess=()=>done(r.result.filter(item=>item.owner_key===owner&&item.executor_id===executor));});}
  }
  class MemberEventDelivery{
-  constructor({baseUrl,store,getCredentials,fetch=globalThis.fetch,now=Date.now,random=Math.random,timeoutMs=10000}){
+  constructor({baseUrl,store,getCredentials,fetch=globalThis.fetch.bind(globalThis),now=Date.now,random=Math.random,timeoutMs=10000}){
    const url=new URL(baseUrl);
    if(url.username||url.password||url.search||url.hash||url.pathname!=='/api/v1'||url.protocol!=='https:'&&!(url.protocol==='http:'&&['localhost','127.0.0.1','[::1]'].includes(url.hostname)))throw new Error('INVALID_SERVER_URL');
    Object.assign(this,{baseUrl:url.href,store,getCredentials,fetch,now,random,timeoutMs});this.queue=Promise.resolve();
