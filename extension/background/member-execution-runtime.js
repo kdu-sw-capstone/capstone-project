@@ -45,6 +45,12 @@ const MemberExecutionRuntime = (() => {
     }
     return loop;
   }
+  async function assertDeliveryScope(expected) {
+    const current = await MemberAuthRuntime.status();
+    if (!expected.owner_user_id || !expected.executor_id || expected.server_url !== server
+      || current.owner_user_id !== expected.owner_user_id || current.executor_id !== expected.executor_id
+      || current.server_url !== expected.server_url) throw new Error('MEMBER_OWNER_CHANGED');
+  }
   // Copy durable originals into the existing delivery outbox; ack deletes only staging originals.
   function deliverAccess() {
     if (!loop || !accessDelivery) return Promise.resolve();
@@ -54,13 +60,17 @@ const MemberExecutionRuntime = (() => {
       do {
         deliveryAgain = false;
         const identity = await MemberAuthRuntime.status();
+        await assertDeliveryScope(identity);
         const owner = 'MEMBER:' + identity.owner_user_id;
         const originals = await loop.access.store.originals(owner,identity.executor_id,server);
+        await assertDeliveryScope(identity);
         const transferred = originals.length ? await FocurveMemberEvents.transferOriginals(originals,loop.access.store,accessDelivery) : [];
+        await assertDeliveryScope(identity);
         const receipts = await accessDelivery.flush();
+        await assertDeliveryScope(identity);
         loop.accessPending = receipts.filter(r=>!['ACKED','REJECTED','LOCAL_REVIEW_REQUIRED'].includes(r.status)).length;
         for (const original of transferred) if (receipts.some(r=>r.event_id===original.event_id&&r.owner_key===original.owner_key&&r.executor_id===original.executor_id&&r.body===original.body&&['ACKED','REJECTED'].includes(r.status)))
-          await loop.access.store.acknowledged(original.scope,original.event_id);
+          {await assertDeliveryScope(identity);await loop.access.store.acknowledged(original.scope,original.event_id);}
         loop.deliveryError = null;
       } while (deliveryAgain);
     })().catch(error=>{loop.deliveryError=storageFailure(error)?'ACCESS_DELIVERY_STORAGE_UNCONFIRMED':'ACCESS_DELIVERY_UNCONFIRMED';throw error;}).finally(()=>{delivering=null;if(deliveryAgain)deliverAccess().catch(()=>{});});
@@ -76,9 +86,10 @@ const MemberExecutionRuntime = (() => {
     if (!await chrome.alarms.get(alarm)) await chrome.alarms.create(alarm, { periodInMinutes: 0.5 });
     const current = await getLoop();
     if (!current) return { status: 'UNLINKED', session_id: null };
+    // Delivery recovery does not depend on command/reconcile endpoint availability.
+    deliverAccess().catch(()=>{});
     try {
       const result = await current.tick();
-      deliverAccess().catch(()=>{});
       const end = Date.parse(result.planned_end_at);
       if (result.status === 'RUNNING' && Number.isFinite(end)) {
         const existing = await chrome.alarms.get(deadlineAlarm);

@@ -4,7 +4,7 @@
 
 ## 작업 상태
 
-- 상태: 진행 중 · 0.1.12 사용자 정상 회신 / 0.1.14 전송 저장 실패 복구 부분 구현
+- 상태: 진행 중 · 0.1.12 사용자 정상 회신 / 0.1.15 Worker 전송 복구 경계 보완
 - 실제 담당자: Core 종민 · 기존 Server 담당 배정 유지
 - 브랜치 / 시작 기준 커밋: `feature/extension-core-ext-02` / `b52681bd4088be3f64722c30d5072632b8e9515e`
 - PR: https://github.com/kdu-sw-capstone/capstone-project/pull/17
@@ -14,7 +14,7 @@
 |---|---|---|---|
 | Web | | 미확인 | 미실행 |
 | Server | | 미확인 | 미실행 |
-| Extension | Core 종민 | 회원 SITE 전송 상태 UI 부분 구현 | 자동 195/195 · 모의 UI 27/27 · 0.1.10 사용자 정상 회신 |
+| Extension | Core 종민 | 회원 SITE 전송·상태·복구 부분 구현 | 자동 216/216 · 과거 모의 UI 32/32 · 실제 새 Worker 검증 대기 |
 
 해당하지 않는 영역은 관련 명세 근거와 함께 해당없음으로 표시한다.
 
@@ -118,3 +118,13 @@ Extension 0.1.12: staging 및 outbox 계약 오류/ID·설치 불일치/손상 J
 ### 전송 저장 실패 복구 결과
 
 Extension 0.1.14: 전송 저장 오류를 팝업에 명확히 표시하고, 정상화 후 보존 원문/ID로 전송 재개한다. 수집 오류와 전송 오류를 분리하고 성공한 전송 복구 후 전송 경고만 해제한다. 자동 211/211·구문 PASS·모의 팝업 UI 32/32 PASS. 실제 새 Chrome/Server 저장 장애 복구는 미실행. [검증 기록](../evidence/EXT-03-2026-10-10-storage-recovery.md). 전체 EXT-03 진행 중, 신규 수집 중단/세션 해제 전체 복구 절차는 별도다.
+
+## 2026-10-10 · 이번 작업: Worker 재시작·중복 요청·계정 전환 경계
+
+- 기능 ID EXT-03, 담당 Core 종민, 시작 3dda383583592f23a03dc48cd57eb68e39728485, feature/extension-core-ext-02, PR #17.
+- 목표: Worker 재생성 후 미확인 기록은 같은 ID로 상태 조회부터 복구, 중복 재확인은 직렬화, 계정·설치·Server 변경 시 이전 전송 pass 중단.
+- 기준: 데이터·복구의 owner 고정 outbox 및 재시작, Event1.2 원문/ID 보존. 실제 브라우저 전체 자동 재개·집중 시간 보존 계약은 이번 전송 복구와 별도다.
+
+### Worker 전송 복구 결과
+
+0.1.15: Core 명령 조회 실패와 독립적으로 보존된 전송함 복구를 시작한다. 원문 읽기/복사/flush/정리 경계마다 현재 owner/executor/Server를 확인한다. 자동 216/216·구문 PASS. 새 5개는 별도 VM Worker 런타임+공유 fake-indexeddb+제품 전송기 기반 모의 검증이다. 실제 MV3 Worker 종료/재시작은 미실행. [검증 기록](../evidence/EXT-03-2026-10-10-worker-delivery-recovery.md). 전체 EXT-03 진행 중, develop 미병합.
