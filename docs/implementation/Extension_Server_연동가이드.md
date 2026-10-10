@@ -94,7 +94,7 @@ link 응답 link_request_id/verification_uri/expires_at(5분). Core가 자신의
 GET commands 응답은 commands 배열, next_cursor 빈 문자열, server_time UTC 필드를 포함한다; command 구조:
 
 ```json
-{"command_id":"88888888-8888-4888-8888-888888888888","session_id":"33333333-3333-4333-8333-333333333333","executor_id":"22222222-2222-4222-8222-222222222222","type":"APPLY_POLICY","desired_revision":1,"created_at":"2026-10-09T08:00:00Z","execute_before":"2026-10-09T08:01:00Z","snapshot":"<위 Snapshot 객체; 실제로는 문자열이 아닌 객체>","reason":"MANUAL"}
+{"command_id":"88888888-8888-4888-8888-888888888888","session_id":"33333333-3333-4333-8333-333333333333","executor_id":"22222222-2222-4222-8222-222222222222","type":"APPLY_POLICY","desired_revision":1,"duration_minutes":25,"created_at":"2026-10-09T08:00:00Z","execute_before":"2026-10-09T08:01:00Z","snapshot":"<위 Snapshot 객체; 실제로는 문자열이 아닌 객체>","reason":"MANUAL"}
 ```
 
 RELEASE_POLICY 명령은 snapshot 없음/execute_before:null. 위 snapshot placeholder는 설명용이며 그대로 호출하지 않는다.
@@ -207,3 +207,7 @@ D06 메시지·규칙 ID/priority/freeze 및 D09 응답유실 추가 API는 계�
 - Codex 실행: Backend138/138·패키징, Frontend114/114·빌드 PASS. 추가 HTTP/MySQL 테스트10개(복수 하위 사례 포함), 별도 독립 HTTP 재현 probe PASS. 격리 MySQL8.4.8 127.0.0.1:60046/focurve_contract_test, 합성 회원/설치/보고 사용. 실제 Chrome·회원 Core/Content 통합 NOT RUN. 응답 유실은 클라이언트가 첫 결과를 무시하고 재전송한 모의 사례이며 Server 프로세스 강제 중단은 NOT RUN.
 - MAX/MAX+1/Long.MAX_VALUE 버전 원본·frozen Snapshot 보존 및 잠금 해제 확인. 운영 Snapshot1.2 기본 OFF 유지(테스트 프로필만 ON). D01/D05 자동복구 전체 미구현 경계 유지. AC-SESSION-02/03/04의 -01/-03 중 Server 합성 보고 부분만 검증했으며 실제 적용/해제·전체 AC·MVP 완료로 승격하지 않는다.
 - 증거: C:\Users\dahun\capstone-project\.reviews\pr18-20261009\PR18_RELEASED_보고순서_수정검증보고서.md 및 released-order 로그. 후속: 독립 재리뷰, 실제 Core 해제 증거·역순/재전송 통합. 이번 Commit/Push/PR 업데이트/병합 없음.
+
+## 2026-10-10 APPLY 기간 전달 사용자 확정·로컬 구현
+
+이전 ‘APPLY 명령에 기간 없음’ 설명은 develop 기준의 과거 구현 이력이다. 새 회원 APPLY_POLICY는 root duration_minutes(JSON 정수1~180)를 저장된 focus_sessions 목표값에서 생성해 포함한다. 조회/멱등·기존Snapshot/보고/Journal은 유지한다. 구형 저장명령은 다시 쓰지 않으며 기간 없는 APPLY를 Core가 기본시간으로 실행하지 않는다. RELEASE는 기간 필수화하지 않는다. 실제 Core 회원 adapter·Chrome 검증 및 자동복구는 미완료; 기본Snapshot1.2OFF 유지. 상세 규칙은 [APPLY 기간 전달 확정 계약](../design/02_시스템_테크설계/FOCURVE_APPLY_POLICY_기간전달_확정계약.md)을 따른다.

@@ -25,7 +25,7 @@ W=Web HttpOnly Secure SameSite=Lax 쿠키, 변경 요청 CSRF+Origin 검증. E=�
 | ContentPolicy | ContentPolicyWrite + version:int,updated_at |
 | Snapshot | policy_snapshot_id UUID,format_version=1.2,site_match_strategy=MOST_SPECIFIC_HOST,owner_user_id?,executor_id,created_at,sites:[Site],content_policy,catalog_version?,model_profile_version?,source_version |
 | Session | session_id UUID,executor_id UUID,policy_snapshot_id UUID,origin:MEMBER/GUEST_IMPORT,source:MANUAL/SCHEDULE,automatic_recovery_supported:boolean=false,time_accounting_mode:LEGACY_WALL_CLOCK,execution_status,record_status:PENDING/PARTIAL/COMPLETE/REVIEW_REQUIRED,duration_minutes,active_duration_ms,overrun_ms,remaining_ms,started_at?,planned_end_at?,ended_at?,policy_released_at?,end_reason?,version,desired_revision,last_error_code? |
-| Command | command_id UUID,session_id,executor_id,type:APPLY_POLICY/RELEASE_POLICY,desired_revision,snapshot?,reason,created_at,execute_before? |
+| Command | command_id UUID,session_id,executor_id,type:APPLY_POLICY/RELEASE_POLICY,desired_revision,duration_minutes:APPLY_POLICY 전용 필수 JSON 정수 1..180(분),snapshot?,reason,created_at,execute_before? |
 | ExecutionReport | report_id UUID,command_id?,session_id,executor_id,desired_revision,result:APPLIED/RELEASED/FAILED/UNCONFIRMED,observed_at,error_code?,rollback_confirmed?,intervals:[Interval],local_action_seq? |
 | Interval | interval_id UUID,kind:RUN/PAUSE,start_at,end_at?,duration_ms?,quality:CONFIRMED/UNCONFIRMED; RUN 끝은 마지막 신뢰 가능한 실행 경계; 실제 해제 시각은 policy_released_at 별도 |
 | Note | session_id,text:0..2000,version:int≥0,updated_at? |
@@ -41,6 +41,8 @@ W=Web HttpOnly Secure SameSite=Lax 쿠키, 변경 요청 CSRF+Origin 검증. E=�
 | Capability | feature_code,supported_hosts[],client_min_version,adapter_version,status:SUPPORTED/UNSUPPORTED/FAILED,limits |
 | Catalog | version,sha256,generated_at,source_manifest:[{url,license,version}],hosts[]; 이전 검증본 유지 |
 | Installation | executor_id,current_user_id?,last_seen_at,client_version,execution_status |
+
+Command의 `duration_minutes`는 분 단위 목표 시간이며 위 공통 ms 기간 규칙의 명시적 예외다. 새 회원 `APPLY_POLICY`에서는 `focus_sessions.duration_minutes`의 저장값을 사용한다. 누락·null·문자열·소수·범위 밖 값은 유효한 새 APPLY가 아니며 Core는 임의 기본 시간 또는 APPLIED 성공으로 처리하지 않는다. `RELEASE_POLICY`에는 이 필드를 요구하지 않는다. 기존 저장 명령은 backfill 없이 원문 조회를 유지하되 기간 없는 구형 APPLY를 신규 적용하지 않는다. 세션 조회의 기간 정보·session_id·Snapshot·revision·명령 멱등성 및 보고 계약은 유지한다. [기간 전달 확정 계약](FOCURVE_APPLY_POLICY_기간전달_확정계약.md)의 호환 경계를 따른다. 실제 Core 호환 검증 전 Snapshot 1.2 신규 발급은 기본 OFF이며 D-01·D-05 자동 복구는 후속 구현이다.
 
 ## 사이트·인증 검증
 
@@ -233,3 +235,7 @@ D06 메시지·규칙 ID/priority/freeze 및 D09 응답유실 추가 API는 계�
 - Codex 실행: Backend138/138·패키징, Frontend114/114·빌드 PASS. 추가 HTTP/MySQL 테스트10개(복수 하위 사례 포함), 별도 독립 HTTP 재현 probe PASS. 격리 MySQL8.4.8 127.0.0.1:60046/focurve_contract_test, 합성 회원/설치/보고 사용. 실제 Chrome·회원 Core/Content 통합 NOT RUN. 응답 유실은 클라이언트가 첫 결과를 무시하고 재전송한 모의 사례이며 Server 프로세스 강제 중단은 NOT RUN.
 - MAX/MAX+1/Long.MAX_VALUE 버전 원본·frozen Snapshot 보존 및 잠금 해제 확인. 운영 Snapshot1.2 기본 OFF 유지(테스트 프로필만 ON). D01/D05 자동복구 전체 미구현 경계 유지. AC-SESSION-02/03/04의 -01/-03 중 Server 합성 보고 부분만 검증했으며 실제 적용/해제·전체 AC·MVP 완료로 승격하지 않는다.
 - 증거: C:\Users\dahun\capstone-project\.reviews\pr18-20261009\PR18_RELEASED_보고순서_수정검증보고서.md 및 released-order 로그. 후속: 독립 재리뷰, 실제 Core 해제 증거·역순/재전송 통합. 이번 Commit/Push/PR 업데이트/병합 없음.
+
+## 2026-10-10 APPLY 기간 전달 사용자 확정·로컬 구현
+
+이전 ‘APPLY 명령에 기간 없음’ 설명은 develop 기준의 과거 구현 이력이다. 새 회원 APPLY_POLICY는 root duration_minutes(JSON 정수1~180)를 저장된 focus_sessions 목표값에서 생성해 포함한다. 조회/멱등·기존Snapshot/보고/Journal은 유지한다. 구형 저장명령은 다시 쓰지 않으며 기간 없는 APPLY를 Core가 기본시간으로 실행하지 않는다. RELEASE는 기간 필수화하지 않는다. 실제 Core 회원 adapter·Chrome 검증 및 자동복구는 미완료; 기본Snapshot1.2OFF 유지. 상세 규칙은 [APPLY 기간 전달 확정 계약](FOCURVE_APPLY_POLICY_기간전달_확정계약.md)을 따른다.

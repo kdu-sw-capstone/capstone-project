@@ -96,3 +96,9 @@ Backend 전체120/120·패키징 PASS, Frontend113/113·빌드 PASS. 격리 MySQ
 - Snapshot1.2 신규 발급 기본 OFF, 테스트 profile만 합성 검증 gate 사용. 전체 자동복구는 후속이며 전체 AC/MVP 완료로 승격하지 않는다. 이번 로컬 수정은 독립 재리뷰가 필요하다. Commit/Push/PR 변경/병합 없음.
 
 최종 추가 경합 검증: 미전달 APPLY는 상한 검사 후 해제 명령으로 전환한다. 이미 적용된 APPLY가 상한 감지/해제 명령과 경합하면 유효 실행 구간 증거만 보존하며 현재 revision·UNKNOWN을 되돌리지 않는다. 실제 RELEASED 뒤 구간을 닫고 잠금을 해제한다. 최신 보고서와 session-version-backend.log 참조.
+
+## 2026-10-10 APPLY 기간 전달 게시용 선별
+
+김다훈 Server/API/DB, fix/apply-policy-duration, 기준develop b45a680a9f2262bd9725619e9643df3bb9b91164. 새APPLY root duration_minutes는 DB 목표값1~180분을 사용하며 command/revision/Snapshot/멱등/보고는 유지한다. 제품 기간 변경7줄·기간6테스트·기간계약 문서만 선별했다. 기존 F1~F4 변경은 이 브랜치/PR에 포함하지 않는다. 기존 통합작업본의160/121/HTTP156 PASS는 F1~F4 포함 환경의 과거 근거이며 게시용 선별본의 새검증과 구분한다. 독립재리뷰 REVIEW PASS(기간 Server 범위), 공통Command표 정적검수 PASS. 실제 게시용 검증/Commit/PR 근거는 .reviews/apply-duration-20261010/publish/FOCURVE_APPLY_POLICY_게시결과_보고서.md에 기록한다.
+
+High Core9자리시각 파싱, Medium Core기간검증·영속결속은 후속. 실제Chrome/회원Core NOT RUN, D01/D05자동복구 미구현, 신규Snapshot1.2발급 기본OFF. 전체AC/필수MVP완료로 표시하지 않으며 develop병합은 별도지시 전 금지.
