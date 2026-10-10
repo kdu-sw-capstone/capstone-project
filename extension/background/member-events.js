@@ -148,7 +148,7 @@
   });}
  }
  // A local delivery summary is not a claim that all navigation was collected.
- function summarize(records, originals, scope) {
+ function summarize(records, originals, scope, now=Date.now()) {
   const counts={QUEUED:0,IN_FLIGHT:0,RESPONSE_UNCONFIRMED:0,PENDING_DEPENDENCY:0,AUTH_REQUIRED:0,REJECTED:0,ACKED:0,LOCAL_REVIEW_REQUIRED:0};
   const events=new Map();
   for(const row of records){
@@ -167,7 +167,14 @@
    if(!old)events.set(row.event_id,{...row,status:'QUEUED'});
   }
   for(const row of events.values())counts[Object.hasOwn(counts,row.status)?row.status:'RESPONSE_UNCONFIRMED']++;
-  return {counts,total:events.size};
+  // Mirror the delivery gate across scoped outbox rows, including terminal rows.
+  const retry_after_at=records.filter(row=>row.owner_key===scope.owner_key&&row.executor_id===scope.executor_id)
+   .reduce((latest,row)=>Number.isSafeInteger(row.retry_after_at)&&row.retry_after_at>now?Math.max(latest,row.retry_after_at):latest,0);
+  const pending=[...events.values()].filter(row=>['QUEUED','IN_FLIGHT','RESPONSE_UNCONFIRMED','PENDING_DEPENDENCY','AUTH_REQUIRED'].includes(row.status));
+  const first=pending.reduce((earliest,row)=>Math.min(earliest,
+   Number.isFinite(row.next_attempt_at)&&row.next_attempt_at>now?Math.ceil(row.next_attempt_at):now),Infinity);
+  const next_retry_at=pending.length?Math.max(retry_after_at,Math.ceil(first)):null;
+  return {counts,total:events.size,retry_after_at,next_retry_at};
  }
  globalThis.FocurveMemberEvents=Object.freeze({validate,summarize,transferOriginals,MemberEventStore,MemberEventDelivery});
 })();
