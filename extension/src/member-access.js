@@ -7,16 +7,20 @@ import { parseServerTime } from './server-time.js';
 export class MemberAccessStore {
   constructor({indexedDB=globalThis.indexedDB,name='focurve-member-access'}={}) { Object.assign(this,{indexedDB,name}); }
   async transaction(mode,work) {
-    const db=await new Promise((resolve,reject)=>{
-      const r=this.indexedDB.open(this.name,1);
-      r.onupgradeneeded=()=>{r.result.createObjectStore('pending',{keyPath:'tab_id'});r.result.createObjectStore('sequences',{keyPath:'scope'});r.result.createObjectStore('originals',{keyPath:['scope','event_id']});};
-      r.onsuccess=()=>resolve(r.result);r.onerror=r.onblocked=()=>reject(new Error('ACCESS_STORAGE_UNAVAILABLE'));
-    });
-    try { return await new Promise((resolve,reject)=>{
-      const tx=db.transaction(['pending','sequences','originals'],mode);let value;
-      tx.oncomplete=()=>resolve(value);tx.onabort=()=>reject(new Error('ACCESS_STORAGE_UNAVAILABLE'));
-      try { work(tx,v=>{value=v;}); } catch { tx.abort(); }
-    }); } finally { db.close(); }
+    let db;
+    try {
+      db=await new Promise((resolve,reject)=>{
+        const r=this.indexedDB.open(this.name,1);
+        r.onupgradeneeded=()=>{r.result.createObjectStore('pending',{keyPath:'tab_id'});r.result.createObjectStore('sequences',{keyPath:'scope'});r.result.createObjectStore('originals',{keyPath:['scope','event_id']});};
+        r.onsuccess=()=>resolve(r.result);r.onerror=r.onblocked=()=>reject(new Error('ACCESS_STORAGE_UNAVAILABLE'));
+      });
+      return await new Promise((resolve,reject)=>{
+        const tx=db.transaction(['pending','sequences','originals'],mode);let value;
+        tx.oncomplete=()=>resolve(value);tx.onabort=()=>reject(new Error('ACCESS_STORAGE_UNAVAILABLE'));
+        try { work(tx,v=>{value=v;}); } catch { tx.abort(); }
+      });
+    } catch { throw new Error('ACCESS_STORAGE_UNAVAILABLE'); }
+    finally { db?.close(); }
   }
   pending(tab) { return this.transaction('readonly',(tx,done)=>{const r=tx.objectStore('pending').get(tab);r.onsuccess=()=>done(r.result??null);}); }
   begin(draft,tab) { return this.transaction('readwrite',(tx,done)=>{const s=tx.objectStore('pending');if(draft)s.put(draft);else s.delete(tab);done(null);}); }

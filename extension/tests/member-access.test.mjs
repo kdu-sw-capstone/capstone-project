@@ -88,3 +88,18 @@ test('storage failure never consumes a navigation or sequence as a successful ev
   await assert.rejects(f.collector.observe('commit',f.commit()),/quota/);
   assert.equal((await f.originals()).length,0);assert.ok(await f.store.pending(1));
 });
+test('a closed IndexedDB connection reports the capture storage error and preserves drafts across retry',async()=>{
+  const f=fixture();await f.collector.observe('before',f.before());
+  const original=await f.store.pending(1),factory=f.store.indexedDB;
+  let fail=true;
+  f.store.indexedDB={open(...args){
+    const request=factory.open(...args);
+    request.addEventListener('success',()=>{if(fail){fail=false;request.result.close();}});
+    return request;
+  }};
+  await assert.rejects(f.collector.observe('commit',f.commit()),/ACCESS_STORAGE_UNAVAILABLE/);
+  assert.deepEqual(await f.store.pending(1),original);
+  const event=await f.collector.observe('commit',f.commit());
+  assert.equal(event.event_id,original.event_id);assert.equal(event.local_seq,1);
+  assert.equal((await f.originals()).length,1);
+});

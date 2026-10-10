@@ -232,3 +232,17 @@ test('capture suspension still honors existing Web RELEASE and scheduled expiry 
   if(ending==='EXPIRED')assert.equal(row.local_end.reason,'EXPIRED');
  }
 });
+test('actual access transaction creation failure triggers durable capture suspension and owned release',async()=>{
+ const f=fixture();await f.loop.tick();f.addForeign();
+ const store=f.options.accessStore,factory=store.indexedDB;let fail=true;
+ store.indexedDB={open(...args){const request=factory.open(...args);
+  request.addEventListener('success',()=>{if(fail){fail=false;request.result.close();}});return request;}};
+ const at=Date.parse('2026-10-10T00:00:00Z');
+ await assert.rejects(f.loop.observe('before',{url:'https://example.org/',tabId:1,frameId:0,timeStamp:at,observed_at:at}),/ACCESS_STORAGE_UNAVAILABLE/);
+ assert.equal(f.loop.view.status,'RECOVERY_REQUIRED');assert.equal(f.loop.view.capture_release_confirmed,true);
+ assert.deepEqual(f.rules().map(r=>r.id),[9000]);
+ assert.equal((await f.control.load(f.credentials.owner_key,f.sessionId)).capture_storage_fault,true);
+ const recreated=new MemberExecutionLoop(f.options);await recreated.tick();
+ assert.equal(await recreated.observe('before',{url:'https://example.org/',tabId:1,frameId:0,timeStamp:at,observed_at:at}),null);
+ assert.equal(f.session.execution_status,'RUNNING');
+});
