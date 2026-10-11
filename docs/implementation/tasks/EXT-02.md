@@ -528,3 +528,8 @@ Backend 전체120/120·패키징 PASS, Frontend114/114·빌드 PASS. 격리 MySQ
 ### D09 이번 구현·검증 및 인계
 
 background member-auth/runtime·popup기존계정버튼 연결. 안전storage/단일refresh/응답유실대기·guest경합/sender/ownedrules검사, 제품JS의 실제HTTP PKCE/me/refresh 회귀추가. 모의114/114·UI19·Backend140/140 및 최신AuthHTTP1/1 통과, 회원명령/보고/자동복구는미연결. 이번Auth코드 실제Chrome·전체AC/BOUND17미검증. [코드식별·명령·미검증/실패/조율/다음행동 및 Chrome준비절차](../evidence/EXT-02-2026-10-10-member-auth.md). 이전f6 사용자Chrome1~25는보존하고이번Auth검증으로전용하지 않음.
+
+
+### 2026-10-11 · 사용자 지정 Core 결함3건 (0.1.20)
+
+시작33d3828, Core 종민, feature/extension-core-ext-02, PR17. F-17-01 whole Snapshot 검사·F-17-02 disabled false 허용/true 미지원 유지·F-17-03 CRLF 및 CLI 경로 수정. 자동233/233·구문 PASS, 실제 Windows/MV3/Content/HTTPDB 미실행. U승인 없이 D06 연결 구현 없음, 추가MVP 및 PR21 보존·develop 미병합. [수정/검증/한계](../evidence/EXT-02-2026-10-11-core-defects-three.md).

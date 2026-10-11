@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { SiteController } from '../src/site-controller.js';
 import { buildSiteRules, matchesSite } from '../src/site-rules.js';
+import { completeSnapshot, completeSite } from './fixtures/snapshot.mjs';
 
 const executor = '11111111-1111-4111-8111-111111111111';
 const session = '22222222-2222-4222-8222-222222222222';
@@ -9,14 +10,14 @@ const commandId = '33333333-3333-4333-8333-333333333333';
 const time = Date.parse('2026-10-08T00:00:00Z');
 const page = 'chrome-extension://test/blocked/index.html';
 const site = (host = 'example.com', subdomains = true, policy = 'BLOCK') =>
-  ({ canonical_host: host, include_subdomains: subdomains, access_policy: policy });
+  completeSite({ canonical_host: host, include_subdomains: subdomains, access_policy: policy });
 const command = () => ({ command_id: commandId, session_id: session, executor_id: executor,
   type: 'APPLY_POLICY', desired_revision: 1, duration_minutes: 25, reason: 'START', created_at: new Date(time).toISOString(),
-  execute_before: new Date(time + 30000).toISOString(), snapshot: {
+  execute_before: new Date(time + 30000).toISOString(), snapshot: completeSnapshot({
     policy_snapshot_id: '44444444-4444-4444-8444-444444444444', format_version: '1.1',
     executor_id: executor, created_at: new Date(time).toISOString(), source_version: 1,
-    sites: [site()], content_policy: {},
-  } });
+    sites: [site()],
+  }) });
 
 function fixture() {
   let rules = [], entry = null;
@@ -105,6 +106,7 @@ test('AC-EXT-02-02 partial: expired/missing/invalid APPLY deadline cannot add ru
 test('trusted member owner matches snapshot; payload cannot override context owner', async () => {
   const f = fixture(), c = command();
   f.context.owner_key = 'MEMBER:42'; c.snapshot.owner_user_id = '42';
+  c.snapshot.sites.forEach((s,i)=>s.site_id=String(i+1));
   await f.controller.apply(c);
   assert.equal(f.entry.owner_key, 'MEMBER:42');
 });
@@ -313,7 +315,7 @@ test('member goal and command survive new IndexedDB journal/controller instances
  const { IDBFactory }=await import('fake-indexeddb');
  const { MemberJournalStore }=await import('../src/member-journal-store.js');
  const indexedDB=new IDBFactory();const f=fixture();f.context.owner_key='MEMBER:42';
- f.journal=new MemberJournalStore({indexedDB});const c=command();c.snapshot.owner_user_id='42';c.duration_minutes=180;
+ f.journal=new MemberJournalStore({indexedDB});const c=command();c.snapshot.owner_user_id='42';c.snapshot.sites.forEach((s,i)=>s.site_id=String(i+1));c.duration_minutes=180;
  await f.newController().apply(c);
  const first=await f.journal.load('MEMBER:42',session);
  f.journal=new MemberJournalStore({indexedDB});f.now+=1000;
@@ -325,6 +327,30 @@ test('member goal and command survive new IndexedDB journal/controller instances
  await f.newController().release(release);
  assert.equal((await f.journal.load('MEMBER:42',session)).duration_minutes,180);
  assert.equal(f.rules.length,0);
+});
+
+test('whole Snapshot validation rejects malformed policy before journal or DNR writes',async()=>{
+ const mutations=[
+  s=>delete s.source_version,s=>s.source_version=Number.MAX_SAFE_INTEGER+1,
+  s=>s.sites[0].version=0,s=>s.sites[0].purpose='FOCUS',
+  s=>s.content_policy.version=null,s=>s.content_policy.keywords.rules=null,
+  s=>s.content_policy.image_blur.strength='UNKNOWN',s=>delete s.owner_user_id,
+  s=>s.sites[0].feature_policies=[{feature_code:'YOUTUBE_SHORTS',enabled:null}],
+  s=>s.content_policy.future={enabled:true},s=>s.created_at='2026-02-31T00:00:00Z',
+ ];
+ for(const mutate of mutations){const f=fixture(),c=command();mutate(c.snapshot);
+  await assert.rejects(f.controller.apply(c),/INVALID_SNAPSHOT/);
+  assert.equal(f.changes.length,0);assert.equal(f.saved.length,0);}
+});
+test('disabled Shorts is accepted unchanged in Snapshot1.1/1.2; true and null never partially apply',async()=>{
+ for(const format of ['1.1','1.2'])for(const enabled of [false,true,null]){
+  const f=fixture(),c=command();c.snapshot.format_version=format;
+  if(format==='1.2')c.snapshot.site_match_strategy='MOST_SPECIFIC_HOST';
+  c.snapshot.sites[0]=site('youtube.com');c.snapshot.sites[0].feature_policies=[{feature_code:'YOUTUBE_SHORTS',enabled}];
+  const raw=JSON.stringify(c.snapshot);
+  if(enabled===false){await f.controller.apply(c);assert.equal(JSON.stringify(f.entry.snapshot),raw);}
+  else{await assert.rejects(f.controller.apply(c),enabled===true?/FEATURE_NOT_IMPLEMENTED/:/INVALID_SNAPSHOT/);assert.equal(f.changes.length,0);}
+ }
 });
 
 test('expired nanosecond deadline and invalid calendar dates preserve existing execution',async()=>{

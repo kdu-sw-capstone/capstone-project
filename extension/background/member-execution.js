@@ -171,6 +171,7 @@ class SiteController {
         || (owner.startsWith('MEMBER:') ? String(snapshot.owner_user_id) !== owner.slice(7) : snapshot.owner_user_id != null)) {
         throw new Error('SNAPSHOT_OWNER_MISMATCH');
       }
+      globalThis.FocurveHostPolicy.validateSnapshot(snapshot, true);
     } else if (command.type !== 'RELEASE_POLICY') throw new Error('INVALID_COMMAND');
     return structuredClone(context);
   }
@@ -651,12 +652,7 @@ const { MemberAccessCollector } = modules['member-access'];
 
 const finished = state => ['ENDED', 'START_FAILED'].includes(state.execution_status);
 function requireSiteOnly(snapshot) {
-  if (!Array.isArray(snapshot?.sites) || snapshot.sites.some(site => !Array.isArray(site.feature_policies) || site.feature_policies.length))
-    throw new Error('FEATURE_NOT_IMPLEMENTED');
-  const policy = snapshot.content_policy;
-  if (!policy || !['keywords', 'adult_domains', 'image_blur', 'usage_tracking'].every(key => policy[key]?.enabled === false)
-    || Object.keys(policy).some(key => !['version', 'keywords', 'adult_domains', 'image_blur', 'usage_tracking'].includes(key)))
-    throw new Error('FEATURE_NOT_IMPLEMENTED');
+  globalThis.FocurveHostPolicy.validateSnapshot(snapshot, true);
 }
 
 // Background-only coordinator. Control metadata is durable separately from the

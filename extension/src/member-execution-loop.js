@@ -6,12 +6,7 @@ import { MemberAccessCollector } from './member-access.js';
 
 const finished = state => ['ENDED', 'START_FAILED'].includes(state.execution_status);
 export function requireSiteOnly(snapshot) {
-  if (!Array.isArray(snapshot?.sites) || snapshot.sites.some(site => !Array.isArray(site.feature_policies) || site.feature_policies.length))
-    throw new Error('FEATURE_NOT_IMPLEMENTED');
-  const policy = snapshot.content_policy;
-  if (!policy || !['keywords', 'adult_domains', 'image_blur', 'usage_tracking'].every(key => policy[key]?.enabled === false)
-    || Object.keys(policy).some(key => !['version', 'keywords', 'adult_domains', 'image_blur', 'usage_tracking'].includes(key)))
-    throw new Error('FEATURE_NOT_IMPLEMENTED');
+  globalThis.FocurveHostPolicy.validateSnapshot(snapshot, true);
 }
 
 // Background-only coordinator. Control metadata is durable separately from the

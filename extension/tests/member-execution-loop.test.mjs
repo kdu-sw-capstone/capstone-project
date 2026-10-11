@@ -8,6 +8,7 @@ import { MemberJournalStore } from '../src/member-journal-store.js';
 import { MemberExecutionLoop } from '../src/member-execution-loop.js';
 import { bundleMemberWorker } from '../scripts/build-member-worker.js';
 import { readFileSync } from 'node:fs';
+import { completeSnapshot } from './fixtures/snapshot.mjs';
 
 function fixture() {
   let now = Date.parse('2026-10-10T00:00:00Z'), rules = [], additions = 0, posts = [], lose = false;
@@ -15,10 +16,9 @@ function fixture() {
   const credentials = { owner_key: 'MEMBER:1', executor_id: ex, access_token: 'synthetic' };
   const session = { session_id: sessionId, executor_id: ex, policy_snapshot_id: snapshotId, duration_minutes: 1,
     desired_revision: 1, execution_status: 'STARTING', automatic_recovery_supported: false, time_accounting_mode: 'LEGACY_WALL_CLOCK' };
-  const snapshot = { format_version: '1.2', site_match_strategy: 'MOST_SPECIFIC_HOST', policy_snapshot_id: snapshotId,
+  const snapshot = completeSnapshot({ format_version: '1.2', site_match_strategy: 'MOST_SPECIFIC_HOST', policy_snapshot_id: snapshotId,
     executor_id: ex, owner_user_id: '1', sites: [{ canonical_host: 'example.org', include_subdomains: true,
-      access_policy: 'BLOCK', feature_policies: [] }], content_policy: Object.fromEntries(
-        ['keywords', 'adult_domains', 'image_blur', 'usage_tracking'].map(key => [key, { enabled: false }])) };
+      access_policy: 'BLOCK', feature_policies: [] }] });
   const apply = { command_id: randomUUID(), session_id: sessionId, executor_id: ex, desired_revision: 1,
     type: 'APPLY_POLICY', created_at: new Date(now).toISOString(), execute_before: new Date(now + 60000).toISOString(),
     duration_minutes: 1, snapshot };
@@ -64,6 +64,19 @@ function fixture() {
 
 test('classic Worker bundle exactly matches source modules', () => {
   assert.equal(readFileSync(new URL('../background/member-execution.js', import.meta.url), 'utf8'), bundleMemberWorker());
+});
+test('CRLF source builds the same classic bundle as LF without remaining ESM imports',()=>{
+ const crlf=bundleMemberWorker(url=>readFileSync(url,'utf8').replace(/\r?\n/g,'\r\n'));
+ assert.equal(crlf,bundleMemberWorker());
+ assert.doesNotMatch(crlf,/^import /m);
+});
+test('member SITE profile accepts disabled Shorts and rejects malformed Snapshot before APPLIED',async()=>{
+ const f=fixture();f.apply.snapshot.sites[0].canonical_host='youtube.com';
+ f.apply.snapshot.sites[0].feature_policies=[{feature_code:'YOUTUBE_SHORTS',enabled:false}];
+ await f.loop.tick();assert.equal(f.posts[0].result,'APPLIED');
+ const invalid=fixture();invalid.apply.snapshot.source_version=0;
+ await invalid.loop.tick();assert.equal(invalid.additions(),0);assert.equal(invalid.posts[0].result,'FAILED');
+ assert.equal(invalid.posts[0].error_code,'INVALID_SNAPSHOT');
 });
 test('apply requires actual rules, reports observed RUN, replay/recovery never reapplies or resets timer', async () => {
   const f = fixture(); await f.loop.tick(); assert.ok(f.rules().length);
@@ -118,7 +131,7 @@ test('locally applied but undelivered report never shows IDLE or Server-confirme
   assert.equal(f.session.execution_status, 'STARTING');
 });
 test('unsupported feature policy fails wholly, no DNR; cleanup RELEASE may finish no RUN', async () => {
-  const f = fixture(); f.apply.snapshot.sites[0].feature_policies.push({ feature_code: 'YOUTUBE_SHORTS' });
+  const f = fixture(); f.apply.snapshot.sites[0].canonical_host='youtube.com'; f.apply.snapshot.sites[0].feature_policies.push({ feature_code: 'YOUTUBE_SHORTS', enabled:true });
   await f.loop.tick(); assert.equal(f.additions(), 0); assert.equal(f.posts[0].result, 'FAILED');
   assert.equal(f.posts[0].error_code, 'FEATURE_NOT_IMPLEMENTED'); await f.loop.tick();
   assert.equal(f.posts.filter(post => post.result).at(-1).result, 'RELEASED');

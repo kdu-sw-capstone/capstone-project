@@ -5,6 +5,7 @@ import vm from 'node:vm';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 import { randomUUID } from 'node:crypto';
+import { completeSnapshot, completeSite } from './fixtures/snapshot.mjs';
 
 const sourcePath = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../background/session-core.js');
 const source = await readFile(sourcePath, 'utf8');
@@ -13,6 +14,8 @@ const sharedSource = await readFile(new URL('../background/host-policy.js', impo
 function makeCore({ owner, stored = null, rules = [], expireAfterRegexCheck = false, regexAdvanceMs = 0,
   sites = [{ canonical_host: 'blocked.example', display_name: 'blocked', include_subdomains: true,
     purpose: 'DISTRACTION', access_policy: 'BLOCK', feature_policies: [] }], tabs = [] } = {}) {
+  if(stored?.session?.snapshot?.format_version==='1.1'&&stored.session.snapshot.policy_snapshot_id===undefined)
+    stored.session.snapshot=completeSnapshot({...stored.session.snapshot,executor_id:'11111111-1111-4111-8111-111111111111',policy_snapshot_id:'22222222-2222-4222-8222-222222222222'});
   let now = Date.now();
   let persisted = stored;
   let currentRules = structuredClone(rules);
@@ -23,7 +26,7 @@ function makeCore({ owner, stored = null, rules = [], expireAfterRegexCheck = fa
     constructor(...args) { super(...(args.length ? args : [now])); }
     static now() { return now; }
   }
-  const contextOwner = owner ?? { installation_id: 'install-a', owner_key: 'GUEST:install-a' };
+  const contextOwner = owner ?? { installation_id: '11111111-1111-4111-8111-111111111111', owner_key: 'GUEST:11111111-1111-4111-8111-111111111111' };
   const context = {
     URL,
     Date: ClockDate,
@@ -54,7 +57,7 @@ function makeCore({ owner, stored = null, rules = [], expireAfterRegexCheck = fa
     },
     LocalStore: { guestContext: async () => contextOwner },
     GuestSites: {
-      list: async () => ({ items: sites, settings_version: 1 }),
+      list: async () => ({ items: sites.map(s=>completeSite(s)), settings_version: 1 }),
       validate: () => true,
     },
     SessionDB: {
@@ -145,7 +148,7 @@ test('guest session from a different installation owner is rejected before recov
 
 test('worker reconnect retains a RUNNING session when journal rules match', async () => {
   const rule = { id: 100000, priority: 100, action: { type: 'redirect', redirect: { url: 'chrome-extension://test/blocked/blocked.html?host=blocked.example&session=session-a' } }, condition: { regexFilter: '^https?://blocked\\.example(:[0-9]+)?([/?#]|$)', isUrlFilterCaseSensitive: false, resourceTypes: ['main_frame'] } };
-  const owner = { installation_id: 'install-a', owner_key: 'GUEST:install-a' };
+  const owner = { installation_id: '11111111-1111-4111-8111-111111111111', owner_key: 'GUEST:11111111-1111-4111-8111-111111111111' };
   const stored = {
     session: { owner_key: owner.owner_key, executor_id: owner.installation_id, session_id: 'session-a', status: 'RUNNING', duration_minutes: 25, started_at: new Date().toISOString(), planned_end_at: new Date(Date.now() + 60_000).toISOString(), snapshot: { format_version: '1.1', sites: [] } },
     journal: { owner_key: owner.owner_key, session_id: 'session-a', desired: 'APPLIED', observed: 'APPLIED', rules: [rule] },
@@ -159,7 +162,7 @@ test('worker reconnect retains a RUNNING session when journal rules match', asyn
 
 test('worker reconnect releases the session when journal rules do not match', async () => {
   const rule = { id: 100000, priority: 100, action: { type: 'redirect', redirect: { url: 'chrome-extension://test/blocked/blocked.html?host=blocked.example&session=session-b' } }, condition: { regexFilter: '^https?://blocked\\.example(:[0-9]+)?([/?#]|$)', isUrlFilterCaseSensitive: false, resourceTypes: ['main_frame'] } };
-  const owner = { installation_id: 'install-a', owner_key: 'GUEST:install-a' };
+  const owner = { installation_id: '11111111-1111-4111-8111-111111111111', owner_key: 'GUEST:11111111-1111-4111-8111-111111111111' };
   const stored = {
     session: { owner_key: owner.owner_key, executor_id: owner.installation_id, session_id: 'session-b', status: 'RUNNING', duration_minutes: 25, started_at: new Date().toISOString(), planned_end_at: new Date(Date.now() + 60_000).toISOString(), snapshot: { format_version: '1.1', sites: [] } },
     journal: { owner_key: owner.owner_key, session_id: 'session-b', desired: 'APPLIED', observed: 'APPLIED', rules: [rule] },
@@ -283,4 +286,20 @@ test('1.2 product start preserves child ALLOW tab and diverts only final BLOCK t
  assert.deepEqual(fixture.movedTabs,[2,3]);
  assert.equal(fixture.rules.some(r=>r.action.type==='allow'),true);
  await fixture.core.end(started.session.session_id);assert.equal(fixture.rules.length,0);
+});
+test('guest frozen Snapshot preserves disabled Shorts and rejects invalid versions before DNR',async()=>{
+ const site=policySite('youtube.com','BLOCK');site.feature_policies=[{feature_code:'YOUTUBE_SHORTS',enabled:false}];
+ const f=makeCore({sites:[site]});const started=await f.core.start(1,randomUUID());
+ assert.equal(started.session.status,'RUNNING');assert.equal(started.session.snapshot.feature_policies,undefined);
+ assert.equal(started.session.snapshot.sites[0].feature_policies[0].enabled,false);
+ const invalid=makeCore({sites:[{...site,version:0}]});
+ await assert.rejects(invalid.core.start(1,randomUUID()),/INVALID_SNAPSHOT/);assert.equal(invalid.ruleUpdates,0);
+});
+test('guest recovery refuses a frozen Snapshot bound to another executor without rewriting its bytes',async()=>{
+ const f=makeCore();const started=await f.core.start(1,randomUUID());
+ started.session.snapshot.executor_id='99999999-9999-4999-8999-999999999999';
+ const raw=JSON.stringify(started.session.snapshot);
+ await assert.rejects(f.core.state(),/INVALID_SNAPSHOT/);
+ assert.equal(f.rules.length,0);assert.equal(started.session.status,'INTERRUPTED');
+ assert.equal(JSON.stringify(started.session.snapshot),raw);
 });

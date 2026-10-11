@@ -44,6 +44,7 @@ export class SiteController {
         || (owner.startsWith('MEMBER:') ? String(snapshot.owner_user_id) !== owner.slice(7) : snapshot.owner_user_id != null)) {
         throw new Error('SNAPSHOT_OWNER_MISMATCH');
       }
+      globalThis.FocurveHostPolicy.validateSnapshot(snapshot, true);
     } else if (command.type !== 'RELEASE_POLICY') throw new Error('INVALID_COMMAND');
     return structuredClone(context);
   }

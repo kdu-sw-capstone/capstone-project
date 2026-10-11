@@ -59,7 +59,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     : message.type === "DEV_SESSION_END" ? GuestSession.end(message.payload?.session_id) : GuestSession.state();
   operation.then(state => sendResponse({ request_id: message.request_id, status: "OK", data: state?.session || null, error: null }))
     .catch(error => sendResponse({ request_id: message.request_id, status: "ERROR", data: null,
-      error: { code: ["ACCOUNT_TRANSITION_ACTIVE", "INVALID_START", "SESSION_ACTIVE", "SESSION_NOT_FOUND", "IDEMPOTENCY_CONFLICT", "FEATURE_NOT_IMPLEMENTED", "APPLY_EXPIRED", "RULE_UNSUPPORTED", "RULE_OWNERSHIP_CONFLICT", "APPLY_UNCONFIRMED", "RELEASE_UNCONFIRMED"].includes(error.message) ? error.message : "EXECUTION_UNCONFIRMED" } }));
+      error: { code: ["ACCOUNT_TRANSITION_ACTIVE", "INVALID_START", "INVALID_SNAPSHOT", "SESSION_ACTIVE", "SESSION_NOT_FOUND", "IDEMPOTENCY_CONFLICT", "FEATURE_NOT_IMPLEMENTED", "APPLY_EXPIRED", "RULE_UNSUPPORTED", "RULE_OWNERSHIP_CONFLICT", "APPLY_UNCONFIRMED", "RELEASE_UNCONFIRMED"].includes(error.message) ? error.message : "EXECUTION_UNCONFIRMED" } }));
   return true;
 });
 chrome.alarms.onAlarm.addListener(alarm => {

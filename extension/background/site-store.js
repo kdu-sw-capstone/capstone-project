@@ -22,10 +22,16 @@ const GuestSites = (() => {
         [...input.display_name].length > 100 || typeof input.include_subdomains !== "boolean") throw new Error("INVALID_SITE");
     if (!((input.purpose === "DISTRACTION" && ["BLOCK", "RECORD"].includes(input.access_policy)) ||
         (["FOCUS", "GENERAL"].includes(input.purpose) && input.access_policy === "ALLOW"))) throw new Error("INVALID_POLICY");
-    if (!Array.isArray(input.feature_policies) || input.feature_policies.length) throw new Error("FEATURE_NOT_IMPLEMENTED");
+    if (!Array.isArray(input.feature_policies)) throw new Error("INVALID_POLICY");
+    const codes=new Set();
+    for(const f of input.feature_policies){
+      if(!f||Object.keys(f).some(k=>!['feature_code','enabled'].includes(k))||f.feature_code!=='YOUTUBE_SHORTS'||typeof f.enabled!=='boolean'||codes.has(f.feature_code)
+        ||!(host==='youtube.com'||host.endsWith('.youtube.com')))throw new Error("INVALID_POLICY");
+      codes.add(f.feature_code);if(f.enabled)throw new Error("FEATURE_NOT_IMPLEMENTED");
+    }
     return { canonical_host: host, display_name: input.display_name.trim(),
       include_subdomains: input.include_subdomains, purpose: input.purpose,
-      access_policy: input.access_policy, feature_policies: [] };
+      access_policy: input.access_policy, feature_policies: structuredClone(input.feature_policies) };
   }
   function overlaps(a, b) {
     return a.canonical_host === b.canonical_host;

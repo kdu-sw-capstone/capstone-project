@@ -9,6 +9,11 @@ const GuestSession = (() => {
   const deadline=typeof value==='string'?Date.parse(value):NaN;
   if(!Number.isFinite(deadline)||Date.now()>=deadline)throw new Error('APPLY_EXPIRED');
  }
+ function validateFrozen(state){
+  const snapshot=state.session.snapshot;
+  FocurveHostPolicy.validateSnapshot(snapshot,true);
+  if(snapshot.executor_id!==state.session.executor_id||snapshot.owner_user_id!==null)throw new Error('INVALID_SNAPSHOT');
+ }
  function stable(value){if(Array.isArray(value))return JSON.stringify(value.map(v=>JSON.parse(stable(v))));if(value&&typeof value==='object')return JSON.stringify(Object.fromEntries(Object.keys(value).sort().map(k=>[k,JSON.parse(stable(value[k]))])));return JSON.stringify(value);}
  const normalizeHost=raw=>FocurveHostPolicy.normalize(raw);
  const matches=(site,raw)=>FocurveHostPolicy.matches(site,raw);
@@ -42,6 +47,7 @@ const GuestSession = (() => {
  }
  async function completeStart(state){
   if(state.journal.desired!=='APPLIED')throw new Error('STALE_APPLY');
+  validateFrozen(state);
   checkApplyDeadline(state);
   if(!await rulesMatch(state))throw new Error('APPLY_UNCONFIRMED');
   await divertTabs(state);
@@ -84,6 +90,10 @@ const GuestSession = (() => {
    await finish(state,'INTERRUPTED','SNAPSHOT_VERSION_UNSUPPORTED');
    throw new Error('SNAPSHOT_VERSION_UNSUPPORTED');
   }
+  if(state&&!terminal.has(state.session.status)){
+   try{validateFrozen(state);}
+   catch(error){state.session.last_error_code=error.message;await finish(state,'INTERRUPTED','INVALID_SNAPSHOT');throw error;}
+  }
   if(!marker.focurve_boot){
    if(state&&!terminal.has(state.session.status))await finish(state,'INTERRUPTED','BROWSER_OR_EXTENSION_RESTART');
    await chrome.storage.session.set({focurve_boot:true});
@@ -115,8 +125,8 @@ const GuestSession = (() => {
   if(previous&&!terminal.has(previous.session.status))throw new Error('SESSION_ACTIVE');
   const owner=await LocalStore.guestContext();const siteList=await GuestSites.list();const sites=siteList.items;
   for(const site of sites)GuestSites.validate({url:site.canonical_host,display_name:site.display_name,include_subdomains:site.include_subdomains,purpose:site.purpose,access_policy:site.access_policy,feature_policies:site.feature_policies});
-  if(sites.some(s=>s.feature_policies?.some(p=>p.enabled)))throw new Error('FEATURE_NOT_IMPLEMENTED');
-  const sessionId=crypto.randomUUID();const session={owner_key:owner.owner_key,session_id:sessionId,executor_id:owner.installation_id,start_request_id:requestId,interval_id:crypto.randomUUID(),duration_minutes:minutes,last_local_seq:0,last_access_seq:0,status:'STARTING',started_at:null,ended_at:null,expires_at:null,active_duration_ms:0,overrun_ms:0,record_status:'PENDING',snapshot:{policy_snapshot_id:crypto.randomUUID(),format_version:'1.2',site_match_strategy:'MOST_SPECIFIC_HOST',executor_id:owner.installation_id,created_at:now(),source_version:siteList.settings_version,sites:structuredClone(FocurveHostPolicy.sort(sites))},last_error_code:null};
+  const sessionId=crypto.randomUUID();const session={owner_key:owner.owner_key,session_id:sessionId,executor_id:owner.installation_id,start_request_id:requestId,interval_id:crypto.randomUUID(),duration_minutes:minutes,last_local_seq:0,last_access_seq:0,status:'STARTING',started_at:null,ended_at:null,expires_at:null,active_duration_ms:0,overrun_ms:0,record_status:'PENDING',snapshot:{policy_snapshot_id:crypto.randomUUID(),format_version:'1.2',site_match_strategy:'MOST_SPECIFIC_HOST',owner_user_id:null,executor_id:owner.installation_id,created_at:now(),source_version:siteList.settings_version,content_policy:FocurveHostPolicy.defaultContent(),sites:structuredClone(FocurveHostPolicy.sort(sites))},last_error_code:null};
+  FocurveHostPolicy.validateSnapshot(session.snapshot,true);
   const rules=buildRules(session,await chrome.declarativeNetRequest.getSessionRules());
   const state={session,journal:{owner_key:owner.owner_key,session_id:sessionId,revision:1,action_seq:1,desired:'APPLIED',observed:'UNCONFIRMED',rules,execute_before:new Date(Date.now()+30000).toISOString()}};
   await persist(state);
