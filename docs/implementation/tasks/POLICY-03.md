@@ -140,3 +140,9 @@ ShortsControl adapter와 시험 전용 MV3 도구 추가. 기존 구현 보존. 
 담당 채지민 / feature/content-control / 시작2d681f0d8422e613e7adc0978d65cc30fa0b972d, clean 확인. 필수 POLICY-03/EXT-02/EVENT-03 연결 경계만 검토. Core 문서4e2f055의 메시지 초안/검토 의견과 실제 Core 코드b8bc7a1, Content2d681f0, 공용 D-06/Event1.2/Snapshot 및 Server validate12를 대조했다. 응답 원본 docs/implementation/Content_Core_D06_검토응답.md: 항목별 동의/수정/미합의, 요청·응답 JSON9개, Content/Core 변경 분리, 다훈 합의 항목, 작은 구현/모의·제품Chrome 검증 순서 포함. 제품 listener/발신·추가MVP·Core PR17/타담당 코드 변경 없음.
 
 이번 검사: Python JSON9개 파싱 및 request/context/round/release 결속 검사 PASS, git diff --check PASS. 기존 자동33개 및 사용자YouTube6단계는 과거 근거이며 이번 재실행/관찰 없음, 제품 기능 테스트 NOT RUN. 문서검사는 제품지원 PASS가 아니다. 미검증: 실제Core/Content·Server·회원/비회원·복구. 검토 차단점: feature정책거절/주입·receiver·nav부재/SITE즉시저장/Content증거·멱등·round부재. 추가결정: type/enum·ready/QUERY·seq영속/캐시상한·대상문서집합/rollback·media0·자동Shorts진입·round deadline/freeze/late진단·Server보고집계. 다음: 종민이 수락/수정 회신→다훈 관련 합의→공동 계약 확정→최소단위 구현. 본 회신은 합의 완료 아님. 문서/이 작업기록만 Commit·Push, Draft PR21 링크/남은 결정 갱신. develop 병합·자동병합 없음.
+
+## 2026-10-11 Core 재응답에 대한 Content 재검토 — 문서 회신
+
+담당 채지민 / feature/content-control / 시작bcca67412711507aa04cf01dc33ce2808e28e2e5, clean 확인. Core 문서63193ef(고정)/실제 코드5c6064a와 Content bcca674·현행 D-06/Event1.2/Snapshot 대조. PR17 조회HEAD33d3828은 후속코드이며 전체 대조로 확대하지 않음. 산출 docs/implementation/Content_Core_D06_Content재검토_2026-10-11.md: 제안마다 수락/수정/보류, JSON4개, 양측 방향일치/미합의/다훈S1~S5, 담당파일/작은A 검증순서 포함. 첫A는 비회원 frozen Shorts 한 정책·한 활성 top-frame 문서 주입→QUERY→APPLY 실제증거→RELEASE, 접근이벤트0. A전 결정: 미결속QUERY 문서/instance 결속, cache포화 cleanup 보장, coverage/counts·시험3초/10초 예산. R0/BFCache/이벤트/회원보고는 다음단계 합의로 분리.
+
+검사: Python JSON4/4 구문·request/operation/document 상관·비식별QUERY·coverage 일관성 PASS. git diff --check PASS. 과거33개/사용자YouTube6단계는 이전근거, 이번 기능/제품Chrome/Server 테스트 NOT RUN. 미검증: 실제 주입/메시지·time/cache 실측·BFCache·최신Core후속registry 호환/전체통합. 이번은 문서+기록3개만 Commit·Push·Draft PR21 갱신. 코드/listener/발신·추가MVP·CorePR17/브랜치·develop·자동병합 변경 없음. 다음 Core A수정안 확인→공동확정→최소구현. 아직 공동 계약 확정 아님.
