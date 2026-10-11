@@ -157,3 +157,14 @@ ShortsControl adapter와 시험 전용 MV3 도구 추가. 기존 구현 보존. 
 실행 검사: Windows bundled Python으로 JSON3/3 파싱, U-01~08 표 누락, site_id/effect/observation 관계, 로컬 링크·후행 공백 검사 PASS. 기능/제품 Chrome/HTTPDB NOT RUN. 과거 자동33·사용자 YouTube6단계는 과거 근거만 유지. 제품 코드·listener/발신·추가 MVP·Core PR17 변경 없음. 사용자 내용 확인 전 Commit·Push·PR21 갱신 보류, develop 병합/자동병합 없음. 다음: 사용자 문서 확인→게시 승인→종민 U별 회신/다훈 취합→세 명 승인 후 최소 제어 구현.
 
 사용자 내용 확인 후 “ㅇㅇ 하자”로 문서 Commit·Push 승인. 위 로컬 보류 상태를 게시 진행으로 갱신한다. 제품/공동 계약 승인은 별도이며 develop 병합 금지 유지.
+
+
+## 2026-10-11 Core 재회신 대조·A0 승인 전 잔여 검토
+
+채지민 / feature/content-control / 시작2c56d4010697f630f4123c1395d672e4fd569c58, clean. Core bda6a886 재회신/결함근거와 e23d74b5의 manifest·host-policy·document-control-registry를 고정 ref로 읽었다. 전체 수정본 독립 재리뷰/기능 재실행은 아님. 다훈 최신 회신의 A0 최종안 취합·SV01~05 완료는 담당자 보고로 구분. Content_D06_A0_승인전_잔여검토_2026-10-11.md 작성: 남은 U별 차이만, 버전/schema/QUERY/seq·해제/DOM 기준 선택 후보, A0 필수결정/비활성 범위, 담당·모의/합성/제품Chrome 순서와 세 명 승인표. 최종계약 취합 담당은 다훈이며 병렬 최종계약 승인 선언 없음.
+
+새 확인: registry.stage seq 상한 검사가 RELEASE도 거절하므로 cleanup 보장은 미구현. 별도 cleanup-only 승인 경로와 유한 seq예약의 한계를 비교 제안. null QUERY 최소응답 축소와 A0 응답/QUERY만 사용·FEATURE_RESULT push 비활성은 수정 후보이며 승인 필요. A0 fixture≠A1 Guest 제품/Snapshot·Server/Event/BFCache 전체 성공. 원본 규칙 변경 없음.
+
+Windows bundled Python 문서검사 PASS: JSON3/3·null QUERY allowlist·U01~08 누락·DOM count·해제실패 증거 일관성·후행 공백. git diff --check PASS. 제품/listener/주입/발신/추가 MVP 변경0, 기능/Chrome/HTTPDB NOT RUN. Core233/Content33/사용자6/ServerSV는 과거 또는 타담당 보고. 사용자 내용 확인 전 Commit·Push/PR 갱신 없음, develop 병합/자동병합 금지. 다음 다훈 최종안→잔여 대조·세 명 승인→A0 구현. 협의 대상: 김다훈·윤종민.
+
+사용자 “컴밋 푸시해도돼” 승인으로 A0 잔여 검토 문서 및 작업기록 게시 진행. 문서 게시 허가만이며 제품 착수/공동 계약 승인과 구분. Draft PR21 기록 갱신, develop 병합 없음.
