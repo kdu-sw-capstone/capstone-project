@@ -593,3 +593,7 @@ EXT-02 / 종민 / 시작 ac39226. [실제 관측·규칙 제안·남은 시험·
 ### RELEASE 독립 REVIEW PASS 접수·검증본 전달 준비
 
 [판정·출처](../evidence/EXT-02-independent-release-review-pass.md): 다훈 회신으로9088512 수정본 Windows LF/CRLF238·반례34·권한negative4·실제HTTP/격리DB3 통과. Medium 해결/독립리뷰통과, Chrome실패시험·sender·공동승인·develop미병합 유지. 자체 추가회귀/시험도구와 구분. 전체0/16완료·부분8·sender1·후속7, C04독립조건 완료.
+
+### sender 실행기 KeyError 보완
+
+[원인 대조·한계](../evidence/EXT-02-sender-mv3-runner.md): 확장TAB controller와 popup-only guard 불일치 모의 재현·격리generated worker수정, 제품/기존probe guard보존. 오류필드/단계 명시 및controllerTAB검증 범위표기. 모의회귀5/5·Node76/76·생성구문PASS, Windows재실행대기·전체0/16완료유지·develop미병합.

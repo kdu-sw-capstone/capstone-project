@@ -4,6 +4,11 @@ import argparse, json, platform, tempfile, sys
 
 ROOT = Path(__file__).resolve().parents[1]
 
+class ExperimentFailure(Exception):
+    def __init__(self, check, completed, response_keys=None):
+        self.details={'failedCheck':check,'checks':list(completed),'passed':len(completed)}
+        if response_keys is not None:self.details['responseKeys']=response_keys
+
 def policy_blocked():
     if sys.platform == 'win32':
         import winreg
@@ -49,7 +54,9 @@ if (!globalThis.senderTest) {
     (folder/'worker.js').write_text('''
 chrome.runtime.onMessage.addListener((m,s,reply)=>{
  if(m?.probe!=='AUTH_EXPERIMENT_ROUTE')return;
- if(s.id!==chrome.runtime.id||s.url!==chrome.runtime.getURL('popup.html')||s.tab){reply({denied:true,effects:0});return;}
+ // The isolated controller is an extension TAB, not an action popup.
+ // Only this fixture's exact controller URL can trigger routing. No product change.
+ if(s.id!==chrome.runtime.id||s.url!==chrome.runtime.getURL('popup.html')){reply({denied:true,effects:0});return;}
  chrome.tabs.sendMessage(m.tabId,{probe:'AUTH_EXPERIMENT',binding:m.binding},{documentId:m.documentId})
   .then(reply).catch(()=>reply({transportError:true,effects:0}));return true;
 });
@@ -85,15 +92,23 @@ def run(folder, profile, executable=None):
                 return controller.evaluate('''async x=>x.direct?
                  chrome.tabs.sendMessage(x.binding.tabId,{probe:'AUTH_EXPERIMENT',binding:x.binding},{documentId:x.doc}):
                  chrome.runtime.sendMessage({probe:'AUTH_EXPERIMENT_ROUTE',tabId:x.binding.tabId,documentId:x.doc,binding:x.binding})''',dict(binding=binding,doc=target_doc or binding['documentId'],direct=direct))
+            def receiver_reply(binding, target_doc=None, direct=False):
+                reply=send(binding,target_doc,direct)
+                if not isinstance(reply,dict) or not isinstance(reply.get('accepted'),bool):
+                    keys=sorted(reply.keys()) if isinstance(reply,dict) else []
+                    raise ExperimentFailure('receiver verdict missing',checks,keys)
+                if reply.get('effects')!=0 or not isinstance(reply.get('sender'),dict):
+                    raise ExperimentFailure('receiver evidence malformed',checks,sorted(reply.keys()))
+                return reply
             def check(name,condition):
-                if not condition: raise AssertionError(name)
+                if not condition: raise ExperimentFailure(name,checks)
                 checks.append(name)
-            original=inject();reply=send(original)
+            original=inject();reply=receiver_reply(original)
             check('real Worker accepted',reply['accepted'] and reply['sender']['exactWorkerURL'] and reply['effects']==0)
-            reply=send(original,direct=True)
-            check('real Popup denied at same receiver',not reply['accepted'] and reply['sender']['exactPopupURL'] and reply['effects']==0)
+            reply=receiver_reply(original,direct=True)
+            check('extension controller at popup URL denied at same receiver',not reply['accepted'] and reply['sender']['exactPopupURL'] and reply['effects']==0)
             for key,value in [('instance','old-instance'),('frameId',1)]:
-                changed={**original,key:value};check('mismatch '+key,not send(changed)['accepted'])
+                changed={**original,key:value};check('mismatch '+key,not receiver_reply(changed)['accepted'])
             again=inject();check('singleton retained',again['instance']==original['instance'])
             content_reply=controller.evaluate('''async b=>{
              const [r]=await chrome.scripting.executeScript({target:{tabId:b.tabId,documentIds:[b.documentId]},func:b=>chrome.runtime.sendMessage({probe:'AUTH_EXPERIMENT_ROUTE',...b,binding:b}),args:[b]});return r.result;
@@ -102,10 +117,10 @@ def run(folder, profile, executable=None):
             target.reload();target.wait_for_load_state();new=inject()
             check('new document and instance',new['documentId']!=original['documentId'] and new['instance']!=original['instance'])
             check('old document transport rejected',send(original).get('transportError') is True)
-            check('old binding denied at new receiver',not send(original,target_doc=new['documentId'])['accepted'])
-            check('new binding accepted',send(new)['accepted'])
+            check('old binding denied at new receiver',not receiver_reply(original,target_doc=new['documentId'])['accepted'])
+            check('new binding accepted',receiver_reply(new)['accepted'])
             return {'status':'PASS','checks':checks,'passed':len(checks),'browser':context.browser.version,
-                'platform':platform.system(),'fixtureDOM':True,'effects':0,
+                'platform':platform.system(),'fixtureDOM':True,'controllerIsExtensionTab':True,'effects':0,
                 'notRun':['other-extension external transport','two-tab/iframe full routing','BFCache','Worker stop lifecycle','real YouTube DOM restriction/restoration']}
         finally:context.close()
 
@@ -125,9 +140,18 @@ def main():
             print(json.dumps({'status':'PREPARED','mv3Executed':False}));return 0
         try:
             result=run(root/'extension',root/'profile',args.executable)
+        except ExperimentFailure as error:
+            print(json.dumps({'status':'FAILED','errorType':'ExperimentFailure',**error.details}));return 1
         except Exception as error:
             # No raw browser errors/paths/URLs or credentials in exported report.
-            print(json.dumps({'status':'FAILED','errorType':type(error).__name__,'passed':0}));return 1
+            import traceback
+            frames=traceback.extract_tb(error.__traceback__)
+            location=next((f for f in reversed(frames) if f.filename==__file__),None)
+            diagnostic={'status':'FAILED','errorType':type(error).__name__,'passed':0}
+            if location:diagnostic.update(line=location.lineno,function=location.name)
+            if isinstance(error,KeyError) and error.args[0] in ('accepted','sender','effects','instance','documentId'):
+                diagnostic['missingKey']=error.args[0]
+            print(json.dumps(diagnostic));return 1
         print(json.dumps(result,ensure_ascii=False));return 0
 
 if __name__=='__main__':raise SystemExit(main())

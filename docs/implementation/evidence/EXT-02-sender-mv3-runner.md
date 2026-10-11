@@ -40,3 +40,15 @@ PASS/FAILED/BLOCKED JSON 및 exit code를 확인한다. 코드가 prepared인 �
 별도 확장 외부 발신, 실제 두 탭/iframe 전체 routing, BFCache, Worker 강제 중지 수명은 미구현/미실행인 추가 실증이다. payload frame 불일치 검사가 실제 iframe sender 시험을 대신하지 않는다. runtime acceptance는 격리 후보 규칙 판정이지 승인된 제품 receiver 판정이 아니다. G02-R01~R06 전체 PASS 또는 A0 착수 승인으로 사용하지 않는다.
 
 작업 결과는 실행기 준비·정적검사 완료, 실제 MV3는 차단으로 중단이다. 전체 Core16묶음 완료0, 부분구현8, sender1, 후속7 유지. 기존 RELEASE 회귀 등 변경은 보존했다. 제품 구현 수정·Commit/Push·develop 병합 없음.
+
+## Windows KeyError 후 실행기 보완
+
+사용자는 Python/pip/Playwright 설치 뒤 브라우저 다운로드에서 Node timeout을 경험했다. curl은 공식 CDN→Google storage 리디렉션의 HTTP200을 확인했고, 약205MB 동일 파일을 다운로드했다. MD5/ZIP 검증 명령을 전달했으나 사용자의 통과 출력은 아직 받지 않았으므로 무결성 통과를 소급 단정하지 않는다. 이어 실행 결과 FAILED/errorType KeyError/passed0을 받았다. 정확한 누락 key와 실패 단계는 이전 실행기가 숨겨 진단할 수 없었다.
+
+코드 조사에서 controller는 popup.html을 확장 TAB으로 열지만 generated worker가 sender.tab을 거절해 정상 시험 trigger를 차단하는 오류를 확인했다. 모의 Chrome sender.tab으로 이전 거절→수정 후 routing을 재현했다. 이 조건은 Windows KeyError와 일치 가능한 원인이지만 사용자 실행 trace가 없어 동일 원인 확정은 재실행 대기다.
+
+격리 generated worker만 controller의 자신의 extension ID와 정확한 popup.html URL을 확인해 routing을 허용한다. 다른 extension ID·options.html·Content URL은 계속 거절된다. 제품 receiver 및 기존 관측 probe의 guard는 변경하지 않았다. popup.html extension TAB 송신원 거절은 실제 action popup UI 검증과 같지 않으므로 출력 이름을 controller page로 명확히 했다. 실제 sender.url 비교 등은 브라우저에서 재확인이 필요하다.
+
+누락된 accepted/effects/sender를 자동 성공으로 처리하지 않고 명시적 FAILED/failedCheck/responseKeys를 출력한다. 완료한 check 수와 함수/줄 위치를 진단에 포함하되 raw URL·개인 경로·token은 출력하지 않는다.
+
+검증: `python3 tools/d06-sender-probe/tests/test_mv3_runner.py` 5/5(모의 Chrome), 후보 Node76/76, generated JS prepare-only PASS, diff PASS. Windows 실제 MV3 최종 PASS는 아직 없다. 기존10개 검사 조건을 삭제하지 않았다. BFCache/복수탭·iframe/외부확장 전체 실증 한계는 그대로다.
