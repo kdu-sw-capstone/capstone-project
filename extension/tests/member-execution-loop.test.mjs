@@ -307,3 +307,22 @@ test('Server RELEASE after a recovery fault cannot bypass journal ownership',asy
  f.release();const next=new MemberExecutionLoop(f.options);await assert.rejects(next.tick(),/JOURNAL_SCOPE_MISMATCH/);
  assert.equal(f.rules().length,1);assert.equal(f.posts.filter(p=>p.result==='RELEASED').length,0);
 });
+
+test('independent review Journal-only and paired Snapshot corruption release on first tick and stay idempotent',async()=>{
+ for(const paired of [false,true]){
+  const f=fixture();await f.loop.tick();f.addForeign();
+  const row=await f.control.load(f.credentials.owner_key,f.sessionId);
+  const journal=await f.journal.load(f.credentials.owner_key,f.sessionId);
+  journal.snapshot.source_version=0;await f.journal.save(journal);
+  if(paired){row.command.snapshot.source_version=0;await f.control.save(row);}
+  f.release();const next=new MemberExecutionLoop(f.options);
+  for(let n=0;n<3;n++){
+   await next.tick();assert.notEqual(next.view.status,'RUNNING');
+   assert.deepEqual(f.rules().map(r=>r.id),[9000]);assert.equal(f.additions(),1);
+   assert.equal(f.posts.filter(p=>p.result==='RELEASED').length,1);
+   assert.equal(f.session.execution_status,'ENDED');
+  }
+  assert.equal((await f.journal.load(f.credentials.owner_key,f.sessionId)).snapshot.source_version,0);
+  assert.deepEqual((await f.control.load(f.credentials.owner_key,f.sessionId)).command.snapshot,row.command.snapshot);
+ }
+});

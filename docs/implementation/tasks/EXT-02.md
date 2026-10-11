@@ -557,3 +557,7 @@ EXT-02 / 종민 / 기록 시작c7461ef. [사용자 실행 근거·미검증](../
 ### 복구 오류 시 Server RELEASE 조회 차단 자동 수정
 
 EXT-02 / 종민 / 시작790d35a. [재현·수정·검증](../evidence/EXT-02-recovery-fault-server-release.md): 수정전 새3회귀FAIL, 수정후관련29/전체237·Linux CRLF모사237 PASS. 적용증거오류는 RELEASE전용pass, 기존 인증/revision/journal검사 유지·새APPLY0. 실제Windows/Chrome/HTTPDB·독립재리뷰는 남음. 기존약90%추정유지, D06별도승인대기·develop미병합.
+
+### candidate3 Core 수락 의견·독립 재현 반례 대조
+
+[최종담당의견·검증범위](../FOCURVE_D06_candidate3_Core_최종의견.md). manifest25365535… 대상9hash일치·자체schema35/Corepredicate7 PASS. cleanup별도예약슬롯 설계수락, 공동승인/sender/연결은미완료. 제품c630369유지, 독립journal단독/양쪽Snapshot변이×3tick 회귀추가후LF전체238 PASS. 실제Windows/Chrome/HTTPDB·독립재리뷰남음. Core약90%추정유지·develop미병합.
