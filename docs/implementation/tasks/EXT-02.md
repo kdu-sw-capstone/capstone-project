@@ -565,3 +565,31 @@ EXT-02 / 종민 / 시작790d35a. [재현·수정·검증](../evidence/EXT-02-rec
 ### A0-G02 Core 관측 전용 sender 도구 준비
 
 EXT-02 / 종민 / [실행절차·범위](../../../tools/d06-sender-probe/README.md). 독립시험확장, Worker/Popup→Content 및Content→Worker필드관측·singleton·직접URL마스킹. 제품DOM/세션/Server/DB변경없음. manifest/JS구문검사PASS,실제Windows sender/SND전체는NOT RUN. 기존약90%추정유지·제품연결승인대기·develop미병합.
+
+### A0-G02 Windows sender 관측 결과·규칙 초안
+
+EXT-02 / 종민 / 시작 ac39226. [실제 관측·규칙 제안·남은 시험·전달문](../evidence/EXT-02-A0-G02-windows-sender-observation.md). 사용자 Windows 관측으로 Worker/Popup 동일 receiver 구분, Content→Worker 필드, singleton, Worker 재기동, 새로고침 문서 교체 확인. 고정 authorized:false는 인증 시험 통과가 아님. 권한 차단·다른 탭/프레임·오래된 대상·BFCache 미검증, 전체 버전/SHA 수집 대기. 제품 변경 없음·공동 승인/연결 미착수·develop 미병합. 이번 문서 준비 완료, 전체 진척률 추가 산정 없음.
+
+### A0-G02 권한 규칙 자동 시험
+
+[범위·결과](../evidence/EXT-02-A0-G02-windows-sender-observation.md): 격리 규칙/합성 sender 및 모의 Chrome worker 46/46 PASS, 실패·스킵0. R05 자동 단위 범위 완료, 다른 R항목 일부 모의 근거만 확보. 실제 Chrome 차단/BFCache 미실행, 제품 receiver 미변경·공동승인 대기·develop 미병합.
+
+### Core 전체 추적 기준 재산정
+
+[전체 16묶음 기준안·코드·남은 조건](../Core_전체진행현황.md): 확정완료0/16(전체 검증 완료 기준), 제품 부분구현8/16, sender 실험1, 후속/미연결7. 예전90%는 전체율로 사용하지 않음. 개인 상세 배정 원문 미확보로 분모는 기준안이며 재배정하지 않음. 이번 관리 작업 완료, 제품 변경·개발 완료 추가 없음, develop 미병합.
+
+### 현재 Core 자동 검증 전체 실행
+
+[명령·실패 보완·최종 결과·미실행](../evidence/EXT-02-current-automatic-verification.md): Core238/238·CRLF Linux모사238/238·sender46/46·팝업42/42·Web130/130/build·Server167/167/verify PASS. 네이티브 Worker/IDB 5스크립트 PASS. 새 실제 HTTP 오염 RELEASE2조건 추가, 해당 클래스5/5. auth/DNR/IDB 합성 구분 유지. MV3 실제시험은 관리정책 차단, 정책 미변경. 전체16묶음 확정완료0·부분구현8·sender1·후속7 유지, develop미병합.
+
+### sender 후속 자동 경계 시험 확장
+
+[결과·미검증](../evidence/EXT-02-A0-G02-windows-sender-observation.md): Node76/76·실제 Chromium JS+합성sender30/30 PASS. 후보 상속필드 허용 반례1건 발견/수정/재실행 통과. R05자동범위완료, R01~04/R06실제MV3는 설치관리정책으로 차단. 제품미변경·전체0/16확정완료유지·develop미병합.
+
+### A0-G02 실제 MV3 자동 실행기 준비
+
+[범위·실행·한계](../evidence/EXT-02-sender-mv3-runner.md): 임시 확장/프로필의 후보규칙10검사 실행기 작성. 생성JS/Python구문·Node76 PASS. 실제 실행은 관리정책 BLOCKED/0건, 정책 미변경. Windows 실행도 아직 미검증. BFCache/외부확장/복수탭·iframe 전체 후속. 전체완료0/16유지·제품/기존probe미변경·develop미병합.
+
+### RELEASE 독립 REVIEW PASS 접수·검증본 전달 준비
+
+[판정·출처](../evidence/EXT-02-independent-release-review-pass.md): 다훈 회신으로9088512 수정본 Windows LF/CRLF238·반례34·권한negative4·실제HTTP/격리DB3 통과. Medium 해결/독립리뷰통과, Chrome실패시험·sender·공동승인·develop미병합 유지. 자체 추가회귀/시험도구와 구분. 전체0/16완료·부분8·sender1·후속7, C04독립조건 완료.

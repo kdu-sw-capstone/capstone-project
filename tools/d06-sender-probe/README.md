@@ -18,3 +18,17 @@ SND01/02 Worker/Popup→동일Content receiver 실제관측을 제공한다. SND
 SND04 외부웹/다른확장·SND05필드누락합성negative·SND06전체lifecycle는이도구만으로완료되지않고NOT RUN이다. externallisteners/externally_connectable없음;외부메시지채널을제품에서열지않는다. popup출처의실험trigger검사는진단도구내부의제한일뿐candidate3제품sender승인규칙이아니다.
 
 허용필드조합판정·부속규칙재승인·Windows실측은후속. 제품API/DB/Guest·Member·추가MVP/D06기존코드변경0,develop미병합.
+
+## 2026-10-11 사용자 Windows 관측 후속 기록
+
+위 NOT RUN은 도구 준비 당시 상태다. 이후 기본 송신원 관측·singleton·Worker 재기동·새로고침 문서 교체를 사용자 실행으로 확인했다. [관측 결과와 미검증 시험](../../docs/implementation/evidence/EXT-02-A0-G02-windows-sender-observation.md)을 따른다. 실제 권한 차단과 전체 lifecycle 통과는 아직 아니다.
+
+## 격리 규칙 자동 시험
+
+`node --test tools/d06-sender-probe/tests/sender-policy.test.mjs` — 46개. tests의 규칙 후보는 제품이나 관측 도구가 import하지 않는다. 합성 입력·모의 Chrome API 시험이며 실제 브라우저 권한 차단 전체 PASS가 아니다.
+
+최신 확장 자동 결과: Node76/76. `python3 tools/d06-sender-probe/tests/browser_policy.py`는 실제 Chromium JS에서 합성 sender/binding30개를 검사한다. 실제 확장을 로드한 MV3 메시지 시험은 아니다.
+
+## 실제 MV3 자동 실행기 — 준비·실증 대기
+
+[범위와 실행방법](../../docs/implementation/evidence/EXT-02-sender-mv3-runner.md). `python3 tools/d06-sender-probe/tests/mv3_runner.py --prepare-only`는 구문 준비 확인일 뿐 실제 MV3 시험이 아니다. 실제 모드는 관리정책 차단 시 BLOCKED 종료한다.
