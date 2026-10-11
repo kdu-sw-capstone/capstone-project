@@ -2,10 +2,14 @@
 
 단계: 필수 MVP · 설계 담당 영역: Extension·Server
 
+## 이번 작업 — 회원 SITE-only 접근 수집
+
+Extension Core 담당 윤종민 / feature/extension-core-ext-02 / 시작61118b2c843610503f3fc814405ff2ec36a50c12 / 구현·검증 후 실제 Chrome 통합 대기. 기존 Server·Web 구현/담당은 유지한다. 제품 회원 RUNNING·실제 자기 DNR·frozen Snapshot 검증 뒤 명시적 top-frame 탐색의 BLOCK/RECORD만 Event1.2로 원문 저장·전송한다. navigation 중복·안내/자동 렌더 제외·소유자 변경·Worker 재생성·동일 원문 재전송을 검증한다. 기능 정책이 없는 현재 requireSiteOnly 지원 경계만 연결하며 D06 Content/복수 사유 freeze는 공동 합의 대기다. Server API/DB·Snapshot gate 변경 없음. 확장0.1.9, Extension189/189·UI23·실제HTTP/MySQL3/3·문법 PASS. [코드·신뢰 경계·실행·남은 협업/Chrome 확인](../evidence/EVENT-01-02-2026-10-10-member-sites.md). 전체AC·제품Chrome 미검증.
+
 ## 작업 상태
 
-- 상태: 미착수
-- 실제 담당자: 미지정 (기존 배정 기준)
+- 상태: 진행 중 — 회원 SITE-only 수집·전송 구현/모의·실제 HTTP 검증, 실제 Chrome 통합 대기
+- 실제 담당자: Extension Core 윤종민 / Server 기존 김다훈 담당 유지
 - 브랜치 / 시작 기준 커밋:
 - PR:
 - 선행 작업 / 차단 조건:

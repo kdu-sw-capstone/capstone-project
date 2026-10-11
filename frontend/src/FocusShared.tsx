@@ -2,7 +2,7 @@ import { useRef, useState } from "react";
 import { ApiError, message, request } from "./api";
 
 export type Page<T> = { items: T[]; next_cursor: string | null };
-export type Session = { version?:number|string; version_increment_blocked?:boolean; session_id: string; execution_status: string; record_status: string; duration_minutes: number; active_duration_ms: number; started_at?: string; planned_end_at?: string; ended_at?: string; end_reason?: string; overrun_ms?: number; automatic_recovery_supported?: boolean; time_accounting_mode?: string };
+export type Session = { executor_id?:string; version?:number|string; version_increment_blocked?:boolean; session_id: string; execution_status: string; record_status: string; duration_minutes: number; active_duration_ms: number; started_at?: string; planned_end_at?: string; ended_at?: string; end_reason?: string; overrun_ms?: number; automatic_recovery_supported?: boolean; time_accounting_mode?: string };
 export type PolicySite = { site_id: string; canonical_host: string; display_name?: string; purpose?: string; include_subdomains?: boolean; access_policy: string; feature_policies?: {feature_code:string;enabled:boolean}[] };
 export type Policy = { sites?: PolicySite[] };
 export type Access = { event_id:string; session_id:string; occurred_at:string; target_host:string; target_key:string; feature_code?:string; event_type:string; is_repeat:boolean; target_access_index:number; quality:string; reason?:string|null; blocked_reasons?:string[]|null; matched_policy_host?:string|null; repeat_count?:number; policy?:Policy };

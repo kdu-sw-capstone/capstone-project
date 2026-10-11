@@ -51,6 +51,14 @@ jobs:
           java-version: '21'
           cache: maven
           cache-dependency-path: backend/pom.xml
+      - name: Set up Node for Extension adapter HTTP regression
+        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+          cache-dependency-path: extension/package-lock.json
+      - name: Install Extension test dependencies
+        run: npm --prefix extension ci
       - name: Verify tests and package
         run: bash backend/mvnw -f backend/pom.xml -B -ntp verify
       - name: Record test counts
@@ -68,6 +76,22 @@ jobs:
                   r = ET.parse(path).getroot()
                   out.write(f"- {r.get('name')}: tests={r.get('tests')}, failures={r.get('failures')}, errors={r.get('errors')}, skipped={r.get('skipped')}\n")
           PY
+
+  extension:
+    name: Extension syntax and mock regressions
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+          cache-dependency-path: extension/package-lock.json
+      - run: npm --prefix extension ci
+      - run: npm --prefix extension run check
+      - run: npm --prefix extension test
+      - run: npm --prefix extension run build:harness
 
   frontend:
     name: Frontend tests and build

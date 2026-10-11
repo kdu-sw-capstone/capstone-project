@@ -1,0 +1,51 @@
+﻿COMMAND: npm.cmd test
+
+> focurve-extension-core@0.1.0 test
+> node --test tests/*.test.js
+
+✔ site layer: HTTP(S), exact host, subdomain boundary, www preserved, ALLOW/RECORD untouched (1.4635ms)
+✔ reject malformed/overlapping snapshot before constructing rules (0.311ms)
+✔ AC-EXT-02-01 partial: durable journal precedes DNR, actual rules and open tabs confirmed (1.599ms)
+✔ AC-EXT-02-01/02 partial: executor, revision, owner, ending and reconciliation reject without mutation (0.9738ms)
+✔ AC-EXT-02-02 partial: expired/missing/invalid APPLY deadline cannot add rules (0.5118ms)
+✔ trusted member owner matches snapshot; payload cannot override context owner (0.4734ms)
+✔ duplicate command and re-created worker do not add new rules (0.5507ms)
+✔ AC-EXT-02-03 partial: missing rules after restart only inspected; old APPLY never reinstalled (0.4287ms)
+✔ snapshot changes with same command rejected; immutable copy kept (0.331ms)
+✔ BOUND-17 partial: pre-apply persistence failure makes no browser changes (0.2572ms)
+✔ unsupported regex reported; no journal success or rules installed (0.1541ms)
+✔ apply failure cleans only owned rules; never claims APPLIED (0.3645ms)
+✔ partial apply observation rolls back and does not return success (0.2297ms)
+✔ expiry during journal commit prevents late APPLY (0.2047ms)
+✔ termination racing with apply removes rules before reporting failure (0.2657ms)
+✔ release keeps unrelated rules; re-created worker can retry release (0.4904ms)
+✔ rule ID collision does not delete another feature rule (0.3025ms)
+✔ release failure remains unconfirmed; later release retries (0.3557ms)
+✔ failed rollback is surfaced and journal retained (0.1877ms)
+✔ empty BLOCK set and all-ALLOW snapshot perform no DNR additions (0.1077ms)
+✔ open-tab redirect not confirmed: fail and roll back after bounded retries (0.6911ms)
+✔ tab closed during redirect is not a live unprotected target (0.2598ms)
+✔ post-apply storage failure rolls back; storage uncertainty remains explicit (0.2485ms)
+✔ foreign-owner inspection rejected without disclosing journal (0.2042ms)
+✔ release can clean expired apply rules; deadline only limits APPLY (0.2574ms)
+✔ partial rule loss on re-created worker is UNCONFIRMED and not reapplied (0.2873ms)
+ℹ tests 26
+ℹ suites 0
+ℹ pass 26
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 66.5812
+COMMAND: npm.cmd run check
+
+> focurve-extension-core@0.1.0 check
+> node scripts/check.js
+
+JavaScript syntax checks passed (not ESLint).
+COMMAND: npm.cmd run build:harness
+
+> focurve-extension-core@0.1.0 build:harness
+> node scripts/build-harness.js
+
+Harness built: .chrome-harness/manifest.json (test only, no product build).

@@ -1,0 +1,10 @@
+{
+  "manifest_version": 3,
+  "name": "FOCURVE A0 Sender Probe (관측 전용)",
+  "version": "0.0.1",
+  "minimum_chrome_version": "120",
+  "permissions": ["tabs", "scripting", "webNavigation"],
+  "host_permissions": ["https://www.youtube.com/*"],
+  "background": {"service_worker": "worker.js"},
+  "action": {"default_popup": "popup.html"}
+}

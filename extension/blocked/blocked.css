@@ -1,0 +1,1 @@
+body { margin: 0; font-family: system-ui,sans-serif; background: #f5f3fb; color:#202333; } main { max-width:640px; margin:12vh auto; padding:32px; background:white; border-radius:16px; } h1 { font-size:26px; } p { line-height:1.7; overflow-wrap:anywhere; } a { display:inline-block; padding:12px 20px; background:#5741b8; color:white; border-radius:8px; text-decoration:none; }
