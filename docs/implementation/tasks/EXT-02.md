@@ -549,3 +549,7 @@ EXT-02 / 종민 / 시작 bda6a88. [필수 안전 조건·시험14개·승인 후
 ### 2026-10-11 · FIX REQUIRED 후 CRLF/회원 Worker 복구 보완
 
 EXT-02 / 종민 / 시작0db954a. [변경·검증·미검증](../evidence/EXT-02-2026-10-11-rereview-two-fixes.md). LF234/234·Linux CRLF checkout 모사234/234·구문 PASS. 실제 Windows/Chrome/HTTPDB 및 보고서 원문 대조 미검증. D06 계약은 별도 승인 대기, develop 미병합.
+
+### 사용자 Windows CRLF·Chrome 정상 복구 검증 기록
+
+EXT-02 / 종민 / 기록 시작c7461ef. [사용자 실행 근거·미검증](../evidence/EXT-02-user-windows-crlf-chrome-recovery.md): Windows CRLF234/234·구문 PASS, Chrome 정상 SITE 차단→Worker Stop/복구→동일 종료예정→종료·session rules0/접속복원 확인. 정상 부분 근거이며 변조 Chrome 시험·독립 재리뷰·D06는 미완료. 이번 기능 테스트 재실행 없음, 기존 자료 보존·develop 미병합.

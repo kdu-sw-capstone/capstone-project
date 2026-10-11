@@ -24,3 +24,7 @@
 실제 Windows CRLF checkout, 실제 Chrome MV3 복구, Server HTTP/격리 MySQL 재실행, 독립 보고서 원문 대조는 남는다. 복구 검증 실패 시 owned cleanup/Server 처리의 추가 요구 여부는 보고서와 재리뷰에서 확인하며 임의 runtime END 계약을 추가하지 않았다.
 
 기존 Guest·회원·추가 MVP·D06 문서 보존. 제품 Core↔Content 연결 없음, A0 계약 별도 승인 대기. 수정본 독립 재리뷰 요청 후 실제 Chrome 통합까지 develop 병합 보류.
+
+## 후속 사용자 검증
+
+[Windows CRLF·Chrome 정상 복구 후속 근거](EXT-02-user-windows-crlf-chrome-recovery.md). 앞의 미검증은 수정 당시 상태로 보존한다. 후속 Windows234/234 및 정상 Chrome 부분 확인과, 여전히 남은 변조시험·독립 재리뷰를 구분한다.
