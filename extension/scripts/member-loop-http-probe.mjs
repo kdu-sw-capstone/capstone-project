@@ -22,6 +22,29 @@ const loop = new MemberExecutionLoop(options);
 assert.equal((await loop.tick()).status, 'RUNNING'); assert.ok(actual.length);
 const recreated = new MemberExecutionLoop(options);
 assert.equal((await recreated.tick()).status, 'RUNNING'); assert.equal(additions, 1);
+if (fixture.corruption) {
+  const stored = await journal.load(credentials.owner_key, fixture.session_id);
+  stored.snapshot.source_version = 0;
+  await journal.save(stored);
+  if (fixture.corruption === 'paired') {
+    const row = await control.load(credentials.owner_key, fixture.session_id);
+    row.command.snapshot.source_version = 0;
+    await control.save(row);
+  }
+  actual.push({id:9000,priority:1,action:{type:'block'},condition:{urlFilter:'foreign.invalid'}});
+  await client.end(fixture.session_id, randomUUID());
+  const recovered = new MemberExecutionLoop(options);
+  for (let n=0;n<3;n++) {
+    await recovered.tick();
+    assert.notEqual(recovered.view.status,'RUNNING');
+    assert.deepEqual(actual.map(rule=>rule.id),[9000]);
+    assert.equal(additions,1);
+  }
+  assert.equal((await journal.load(credentials.owner_key,fixture.session_id)).snapshot.source_version,0);
+  assert.equal((await control.load(credentials.owner_key,fixture.session_id)).phase,'FINAL');
+  console.log('PASS: execution adapters corrupted Snapshot RELEASE; actual HTTP/DB, synthetic DNR/IDB');
+  process.exit(0);
+}
 if (fixture.local_end) {
   assert.equal((await recreated.end(fixture.session_id)).status, 'RELEASED');
 } else {

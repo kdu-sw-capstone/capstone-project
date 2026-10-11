@@ -23,3 +23,7 @@ Snapshot 원문을 고치거나 활성 unsupported 기능을 허용하지 않는
 독립 재리뷰·보고서 원문 대조·실제 Windows CRLF/Chrome 변조 복구·HTTP/격리MySQL 미실행. c746 사용자Windows234/Chrome 정상복구 근거는 과거 코드 결과로 보존하고 신규 SHA 검증으로 승격하지 않는다. RELEASED 로컬 phase와 Server 접수/최종 UI는 구분되며 정상 상태 표시는 후속 tick에서 확인해야 한다.
 
 기존 Core 약90% 추정 유지. 결함 자체 자동 회귀는 완료, 독립 판정·실통합은 남음. D06 candidate3는 Schema/자료누락 최종확인 및 sender 선행 gate 대기. develop 미병합.
+
+## 최신 독립 재리뷰 결과 접수
+
+[다훈 회신 REVIEW PASS·출처·남은 검증](EXT-02-independent-release-review-pass.md). Windows LF/CRLF 각238·반례34·잘못RELEASE4·HTTP/격리MySQL3 통과 회신. 과거 NOT RUN은 당시 기록으로 보존하며 이번 독립 판정 접수로 갱신한다. 실제Chrome 실패/sender 및 A0공동승인 미완료·develop 미병합.

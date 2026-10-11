@@ -35,3 +35,7 @@ projection1.2+MOST_SPECIFIC_HOST, fingerprint-only eviction 오류와 freshQUERY
 PR17문서/시험만갱신, PR21/기존Guest·회원·추가MVP보존, develop미병합. 기존Core약90%추정유지. 이번계약최종의견검토·정확반례자동대조는완료, A0구현·sender·실제실패검증은남음.
 
 [RELEASE 수정 근거](evidence/EXT-02-recovery-fault-server-release.md)
+
+## 최신 독립 재리뷰 결과 접수
+
+[다훈 회신 REVIEW PASS·출처·남은 검증](evidence/EXT-02-independent-release-review-pass.md). Windows LF/CRLF 각238·반례34·잘못RELEASE4·HTTP/격리MySQL3 통과 회신. 과거 NOT RUN은 당시 기록으로 보존하며 이번 독립 판정 접수로 갱신한다. 실제Chrome 실패/sender 및 A0공동승인 미완료·develop 미병합.

@@ -40,7 +40,18 @@ class ExtensionExecutionClientHttpIntegrationTest {
   void productLoopLocallyReleasesThenReconcilesManualEnd() throws Exception {
     runProbe("member-loop-http-probe.mjs", true);
   }
+  @Test
+  void corruptedJournalStillProcessesRealServerRelease() throws Exception {
+    runProbe("member-loop-http-probe.mjs", false, "journal");
+  }
+  @Test
+  void corruptedJournalAndControlStillProcessRealServerRelease() throws Exception {
+    runProbe("member-loop-http-probe.mjs", false, "paired");
+  }
   void runProbe(String script, boolean localEnd) throws Exception {
+    runProbe(script, localEnd, "");
+  }
+  void runProbe(String script, boolean localEnd, String corruption) throws Exception {
     String email = uuid() + "@example.invalid";
     db.update("INSERT INTO users(display_name,email,email_verified,status,created_at,terms_version,terms_accepted_at) VALUES ('Execution HTTP synthetic',?,true,'ACTIVE',UTC_TIMESTAMP(3),'dev-v1',UTC_TIMESTAMP(3))", email);
     long owner = db.queryForObject("SELECT id FROM users WHERE email=?", Long.class, email);
@@ -56,7 +67,7 @@ class ExtensionExecutionClientHttpIntegrationTest {
     process.environment().put("FOCURVE_TEST_BEARER", token);
     process.environment().put("FOCURVE_HTTP_FIXTURE", new ObjectMapper().writeValueAsString(Map.of(
         "owner_key", "MEMBER:" + owner, "executor_id", executor, "session_id", sessionId,
-        "base_url", "http://127.0.0.1:" + port + "/api/v1", "local_end", localEnd)));
+        "base_url", "http://127.0.0.1:" + port + "/api/v1", "local_end", localEnd, "corruption", corruption)));
     var child = process.start();
     if (!child.waitFor(30, TimeUnit.SECONDS)) { child.destroyForcibly(); throw new AssertionError("Execution probe timed out"); }
     String output = new String(child.getInputStream().readAllBytes()).replace(token, "[redacted]");
