@@ -4,17 +4,17 @@
 
 ## 작업 상태
 
-- 상태: 미착수
-- 실제 담당자: 미지정 (기존 배정 기준)
-- 브랜치 / 시작 기준 커밋:
-- PR:
+- 상태: 진행 중 (Content 독립 구현 검토 대기; 실제 연결·검증 미완료)
+- 실제 담당자: 채지민 — Content Control 부분 (Web/Server/Core 기존 담당·이력 유지)
+- 브랜치 / 시작 기준 커밋: feature/content-control / 90ad32be5d282f3b44c917a29e156dffc5e29187
+- PR: 이번 중간 공유 요청은 기능 브랜치 Commit·Push까지; PR 생성·develop 병합 미수행
 - 선행 작업 / 차단 조건:
 
 | 영역 | 담당 | 구현 상태 | 검증 상태 |
 |---|---|---|---|
 | Web | | 미확인 | 미실행 |
 | Server | | 미확인 | 미실행 |
-| Extension | | 미확인 | 미실행 |
+| Extension | 채지민(Content Control 부분) / Core 별도 | 독립 부분 구현, 제품 연결 미완료 | 합성 부분 검증, 실제 미검증 |
 
 해당하지 않는 영역은 관련 명세 근거와 함께 해당없음으로 표시한다.
 
@@ -88,3 +88,83 @@
 - 검증 주체는 Codex 자동·HTTP·실제 임시 DB/메일 수신·합성 설치/실행 보고다. 시간 제한 경계는 격리 DB 시각을 조절한 재현이며 실제 한 시간 대기가 아니다. 실제 Chrome·Edge·외부 OAuth·외부 SMTP·회원 Core/Content 통합은 이번 검증 NOT RUN이다.
 - 과거 기간 미전달 BLOCKED는 당시 Server 상태이며 PR #19로 Server 전달은 해결됐다. Core의 소수점9자리 시각 파싱·기간 검증/영속 결속 및 실제 회원 실행은 후속 통합 대기다. D-01·D-05 자동복구 전체는 미구현, Snapshot1.2 신규 발급 기본 OFF를 유지한다.
 - 상태: 검증된 결함 수정본 Draft PR 게시 준비/팀 리뷰·통합 대기. 전체 작업카드·93개 수용 기준·필수 MVP를 완료로 변경하지 않는다. 실행 로그와 게시 결과는 `FOCURVE_1단계_F1_F4_게시검증보고서.md`에 남긴다. develop 병합은 수행하지 않는다.
+
+## 2026-10-10 Content Control 시작 기록
+
+- 담당: 채지민 / Content Control. 사용자 기존 역할 확인 + 원본보관_개정전.zip의 FOCURVE_개발계획_v1.3.md §5 + 현행 D-06 근거. 다른 영역 담당 기록 유지.
+- 브랜치: feature/content-control / 시작: 90ad32be5d282f3b44c917a29e156dffc5e29187 (fetch로 확인한 origin/develop).
+- 포함: 페이지 내부 감지·제어·해제·실패 관찰의 독립 모듈. 제외: Core 세션/저장/전송/DNR, Web/Server/DB.
+- 상태: 진행 중(독립 구현). 실제 Core 연결: 차단(D-06 세부 메시지·navigation 식별/이벤트 확정 시점 미합의).
+- 기존 구현: develop extension은 README만 존재. Core는 별도 PR17/9b063be에 있으며 임의 merge/대체하지 않음. Server 검증 기록은 Content 검증으로 전용하지 않음.
+- 적용: 이 카드의 AC 원문 및 관련 BOUND. 자동 DOM fixture 검증과 실제 Windows/서비스 연동을 구분.
+- 다음: 독립 구현·검증 후 결과/파일/미완료 갱신. D-06 연결안은 제안 문서로 작성(사용자 응답).
+
+## 2026-10-10 Content Control 검증·재개 기록
+
+- 코드: extension/content/features.mjs / entry.mjs / changes.mjs / controller.mjs. 테스트: extension/content-tests/*.test.mjs.
+- 실행 주체·환경: Codex / Windows / Node24.19.0 / 설치 Chrome154.0.8037.98(headless), Playwright 합성 DOM/정책. 이미지 분류는 모의. 사용자 실행은 OPTION-09 합성 도구에 한정(아래 최신 기록 참조).
+- 최종 자동 검증: 29/29 PASS, 실패/skip0. 독립 감지·제어·복원 부분만 검증. EVENT 집계·전송, 실제 서비스/Extension/Core/Server/학습 모델·브라우저 재시작은 미검증.
+- AC·BOUND 대응/명령/초기 실패 및 수정: [상세 기록](../Content_Control_2026-10-10.md)의 기능별 표·코드 대응·실행 결과 참조. 이 카드의 기존 AC 표는 전체 기준이므로 미실행 상태를 전체 PASS로 올리지 않음.
+- 남은 기능·의존: D-06 메시지/공통 탐색/이벤트 확정 시점, Core manifest·고정 정책 주입·소유검증·결과/전송 연결. OPTION-10 목록·OPTION-11 실제 고정 모델 자원 필요. Instagram 추천/모달 DOM 실증 필요.
+- 다음 행동: [연결 제안](../Content_Core_D06_연결제안.md) 팀 검토, [Windows 절차](../Content_Control_Windows_검증.md) 실행 결과 반영. 실제 통합·팀 리뷰·develop 병합은 미완료.
+- 완료 판정: Content 독립 부분 구현만 검토 가능. 기능 전체 검증완료 아님. Git/PR 최종 상태는 상세 기록의 게시 기록 참조.
+
+- 이전 게시 시도의 Git 상태: Commit/Push 실행이 권한 요청에서 거부돼 프로세스 미시작. HEAD90ad32b·staged0, 변경은 로컬 보존. PR 생성/리뷰/통합 미수행. 상세 게시 보류·재개 기록 참조.
+
+### 2026-10-10 중간 게시 완료
+
+구현3d7bff718e756cedb0950858885edbb6f472ea68를 feature/content-control로 Push하고 원격SHA 일치를 확인했다. 이전 게시/작성자 차단 해소(사용자 지정 local Git 작성자 적용). PR/리뷰/develop병합 미수행. 자동29/29 PASS·사용자 OPTION-09 부분 확인은 상세 기록과 동일하며 실제 서비스/Core/Server·목록/모델·복구 미검증 유지. 오늘은 중간 공유로 종료, 다음은 D-06 연결 제안 팀 검토→세부계약 합의→Core 연결/실제 Chrome 검증. 최신 게시/재개 원본은 Content_Control_2026-10-10.md 참조.
+
+## 2026-10-10 필수 Shorts 재개 시작
+
+- 담당 채지민(Content Control), feature/content-control, 시작 HEAD0febe9838ebccdf269f5d3ad8e5b81363bc7f820. fetch 확인 origin/develop90ad32b·Core9b063be, 작업본 clean. 기존 추가MVP 코드/타담당 구현 보존.
+- 이번 범위: Shorts 직접/SPA/새DOM/재생 재시도/새로고침·뒤로가기·해제 보강 및 시험전용 MV3 주입 도구. 제품 Core 메시지·규칙ID·Event1.2 발급/저장/세션 관리는 제외. AC-POLICY-03-01~03·BOUND-19 부분 검증.
+- 기준: AGENTS/개발운영/통합현황/작업카드, 화면 SITE-02/FEATURE-01·TF-08/TF-A01, 동작규칙 제한/복원, D-06·API 로컬메시지·호스트정책우선순위60행. Core 선택 사이트만 사용, 상위정책 혼합 금지·설정 다음세션.
+- Core 현 manifest에는 content_scripts 없음, worker에는 OBSERVE_ACCESS/FEATURE_RESULT receiver 없음. D-06은 메시지필드·DNR ID/priority·이벤트확정 미합의를 명시. 이 부분은 조율 대기, 고정 성공 응답/임의 계약 추가 금지.
+- 사용자 최신 지시: 추가MVP 신규 작업 없이 필수 Shorts 우선. 명시 병합 요청 전 develop 병합/자동병합 금지. 기능브랜치 구현·검증·Commit/Push·Draft PR 범위만 진행.
+
+### Shorts 보강 결과 · 독립 검토 대기
+
+ShortsControl adapter와 시험 전용 MV3 도구 추가. 기존 구현 보존. Windows Chrome 엔진 합성/모의 자동33/33 PASS(21054.1217ms), 직접/SPA/뒤로·앞으로/동적 viewer/재생 재시도/해제 및 기존 기능 회귀 포함. 실제 서비스/MV3 로드/새로고침 자동 정책 재적용/Core·Event1.2·Snapshot·회원/비회원 통합은 미검증. D-06 schema·규칙 ID·navigation_id·이벤트 freeze 미합의이므로 제품 연결 보류. 명령·코드·AC 범위·Chrome 수동 절차는 ../Content_Shorts_2026-10-10.md 참조. 다음은 실제 Chrome 절차 기록과 윤종민의 연결안 검토. Draft PR 대상으로 공유하며 develop 병합/자동병합은 사용자 명시 요청 전 금지.
+
+### 2026-10-10 사용자 실행 보고 반영 · 오늘 종료
+
+담당 채지민 / feature/content-control / 기록 시작 db9fa68(Shorts 보강 Commit·Push 완료). 사용자는 Chrome 시험 안내 후 “오 다 됐어 이건 이미 commit push 한거야?”라고 정상 실행을 보고했다. 실행 주체는 사용자이며 Codex 관찰/자동 시험과 구분한다. 단계별 완료 범위·화면·active/status/released 값·Chrome 버전·로드hash 미확보이므로 각 항목 PASS나 AC 전체 검증완료로 확대하지 않는다. 기존 자동33/33 PASS는 합성 DOM/모의 정책 검증이다. 실제 YouTube 상세 DOM·음성·SPA·새로고침·뒤로/앞으로·실패/복원 단계별 검증, Core 정책/Snapshot/메시지/규칙ID/navigation_id/Event1.2/세션·회원/비회원/Server 통합은 미검증 또는 계약 합의 대기 유지. 이번 변경은 기록만이며 자동 테스트 재실행 불필요, diff검사 후 Commit·Push. 상세 원본 ../Content_Shorts_2026-10-10.md의 사용자 실행 결과 참조. 다음은 윤종민 D-06 연결안 검토/합의→실제 연결·회귀 검증. Draft PR 미생성, 오늘은 기록 게시 후 종료. develop 병합·자동병합 없음, 사용자 명시 요청 전 금지.
+
+### 2026-10-10 후속 사용자 확인: 단계별 YouTube 시험 정상 완료
+
+사용자가 “지금 테스트 다 정상적으로 완료됐거든”이라고 확인하여 안내한 6개 단계(직접 진입 제한/일반 영상 이동/뒤로 Shorts 재제한/앞으로 일반 영상/새로고침 후 수동 재적용/해제·복원)를 사용자 실행 PASS로 기록한다. 이전 완료범위 미확정 기록을 이 범위에서 갱신한다. 실제 상태값·화면·버전/로드hash 미확보, Codex 직접 관찰과 별개. 자동33/33은 합성/모의 결과다. Core 자동 재주입·정책/Snapshot·세션·Event1.2·Server·회원/비회원·실패/복구·서비스 DOM 변형은 미검증 유지. 상세 원본 Content_Shorts_2026-10-10.md 최신 표 참조. Draft PR #21 생성 완료·사용자 결과 반영 대상, 기록만 Commit·Push. 다음 D-06 합의/실제 통합 검증, develop 병합·자동병합 없음.
+
+## 2026-10-10 D-06 Content 검토 응답— 문서만 변경
+
+담당 채지민 / feature/content-control / 시작2d681f0d8422e613e7adc0978d65cc30fa0b972d, clean 확인. 필수 POLICY-03/EXT-02/EVENT-03 연결 경계만 검토. Core 문서4e2f055의 메시지 초안/검토 의견과 실제 Core 코드b8bc7a1, Content2d681f0, 공용 D-06/Event1.2/Snapshot 및 Server validate12를 대조했다. 응답 원본 docs/implementation/Content_Core_D06_검토응답.md: 항목별 동의/수정/미합의, 요청·응답 JSON9개, Content/Core 변경 분리, 다훈 합의 항목, 작은 구현/모의·제품Chrome 검증 순서 포함. 제품 listener/발신·추가MVP·Core PR17/타담당 코드 변경 없음.
+
+이번 검사: Python JSON9개 파싱 및 request/context/round/release 결속 검사 PASS, git diff --check PASS. 기존 자동33개 및 사용자YouTube6단계는 과거 근거이며 이번 재실행/관찰 없음, 제품 기능 테스트 NOT RUN. 문서검사는 제품지원 PASS가 아니다. 미검증: 실제Core/Content·Server·회원/비회원·복구. 검토 차단점: feature정책거절/주입·receiver·nav부재/SITE즉시저장/Content증거·멱등·round부재. 추가결정: type/enum·ready/QUERY·seq영속/캐시상한·대상문서집합/rollback·media0·자동Shorts진입·round deadline/freeze/late진단·Server보고집계. 다음: 종민이 수락/수정 회신→다훈 관련 합의→공동 계약 확정→최소단위 구현. 본 회신은 합의 완료 아님. 문서/이 작업기록만 Commit·Push, Draft PR21 링크/남은 결정 갱신. develop 병합·자동병합 없음.
+
+## 2026-10-11 Core 재응답에 대한 Content 재검토 — 문서 회신
+
+담당 채지민 / feature/content-control / 시작bcca67412711507aa04cf01dc33ce2808e28e2e5, clean 확인. Core 문서63193ef(고정)/실제 코드5c6064a와 Content bcca674·현행 D-06/Event1.2/Snapshot 대조. PR17 조회HEAD33d3828은 후속코드이며 전체 대조로 확대하지 않음. 산출 docs/implementation/Content_Core_D06_Content재검토_2026-10-11.md: 제안마다 수락/수정/보류, JSON4개, 양측 방향일치/미합의/다훈S1~S5, 담당파일/작은A 검증순서 포함. 첫A는 비회원 frozen Shorts 한 정책·한 활성 top-frame 문서 주입→QUERY→APPLY 실제증거→RELEASE, 접근이벤트0. A전 결정: 미결속QUERY 문서/instance 결속, cache포화 cleanup 보장, coverage/counts·시험3초/10초 예산. R0/BFCache/이벤트/회원보고는 다음단계 합의로 분리.
+
+검사: Python JSON4/4 구문·request/operation/document 상관·비식별QUERY·coverage 일관성 PASS. git diff --check PASS. 과거33개/사용자YouTube6단계는 이전근거, 이번 기능/제품Chrome/Server 테스트 NOT RUN. 미검증: 실제 주입/메시지·time/cache 실측·BFCache·최신Core후속registry 호환/전체통합. 이번은 문서+기록3개만 Commit·Push·Draft PR21 갱신. 코드/listener/발신·추가MVP·CorePR17/브랜치·develop·자동병합 변경 없음. 다음 Core A수정안 확인→공동확정→최소구현. 아직 공동 계약 확정 아님.
+
+
+## 2026-10-11 다훈 계약안 검토·종민 통합 전달문 — 로컬 확인 대기
+
+담당 채지민 / feature/content-control / 시작 c0a167410e82091e26d8f2f0e995e7702b32d7de. POLICY-03·EXT-02·EVENT-03 연결 경계만 문서 검토. 다훈 첨부 3개와 기존 Content 재검토를 대조해 Content_D06_다훈계약안_검토의견_2026-10-11.md 및 Content_D06_종민전달_통합검토_2026-10-11.md 작성. 종민 전달문은 이전 별도 전달안 대신 기존 협의와 이번 U-01~08 의견을 합친 단일 전달안이며 기존 게시 검토 이력은 보존한다.
+
+수정 제안: null QUERY 결속/최소 응답, 최초 ACK 불변·cache 포화 cleanup, 회원 숫자문자열 site_id와 UUID 예시 충돌, viewer inert/media 실제 증거·복원, 종류별 observation_id와 공통 round, G-01 단계별 착수 승인 범위. U-03 runtime Server 보고·U-06 이벤트·U-07 탐색·U-08 BFCache 등 공동 승인/실측 대기. Core 후속 결함 3개 해결 여부는 새로 검증하지 않았다.
+
+실행 검사: Windows bundled Python으로 JSON3/3 파싱, U-01~08 표 누락, site_id/effect/observation 관계, 로컬 링크·후행 공백 검사 PASS. 기능/제품 Chrome/HTTPDB NOT RUN. 과거 자동33·사용자 YouTube6단계는 과거 근거만 유지. 제품 코드·listener/발신·추가 MVP·Core PR17 변경 없음. 사용자 내용 확인 전 Commit·Push·PR21 갱신 보류, develop 병합/자동병합 없음. 다음: 사용자 문서 확인→게시 승인→종민 U별 회신/다훈 취합→세 명 승인 후 최소 제어 구현.
+
+사용자 내용 확인 후 “ㅇㅇ 하자”로 문서 Commit·Push 승인. 위 로컬 보류 상태를 게시 진행으로 갱신한다. 제품/공동 계약 승인은 별도이며 develop 병합 금지 유지.
+
+
+## 2026-10-11 Core 재회신 대조·A0 승인 전 잔여 검토
+
+채지민 / feature/content-control / 시작2c56d4010697f630f4123c1395d672e4fd569c58, clean. Core bda6a886 재회신/결함근거와 e23d74b5의 manifest·host-policy·document-control-registry를 고정 ref로 읽었다. 전체 수정본 독립 재리뷰/기능 재실행은 아님. 다훈 최신 회신의 A0 최종안 취합·SV01~05 완료는 담당자 보고로 구분. Content_D06_A0_승인전_잔여검토_2026-10-11.md 작성: 남은 U별 차이만, 버전/schema/QUERY/seq·해제/DOM 기준 선택 후보, A0 필수결정/비활성 범위, 담당·모의/합성/제품Chrome 순서와 세 명 승인표. 최종계약 취합 담당은 다훈이며 병렬 최종계약 승인 선언 없음.
+
+새 확인: registry.stage seq 상한 검사가 RELEASE도 거절하므로 cleanup 보장은 미구현. 별도 cleanup-only 승인 경로와 유한 seq예약의 한계를 비교 제안. null QUERY 최소응답 축소와 A0 응답/QUERY만 사용·FEATURE_RESULT push 비활성은 수정 후보이며 승인 필요. A0 fixture≠A1 Guest 제품/Snapshot·Server/Event/BFCache 전체 성공. 원본 규칙 변경 없음.
+
+Windows bundled Python 문서검사 PASS: JSON3/3·null QUERY allowlist·U01~08 누락·DOM count·해제실패 증거 일관성·후행 공백. git diff --check PASS. 제품/listener/주입/발신/추가 MVP 변경0, 기능/Chrome/HTTPDB NOT RUN. Core233/Content33/사용자6/ServerSV는 과거 또는 타담당 보고. 사용자 내용 확인 전 Commit·Push/PR 갱신 없음, develop 병합/자동병합 금지. 다음 다훈 최종안→잔여 대조·세 명 승인→A0 구현. 협의 대상: 김다훈·윤종민.
+
+사용자 “컴밋 푸시해도돼” 승인으로 A0 잔여 검토 문서 및 작업기록 게시 진행. 문서 게시 허가만이며 제품 착수/공동 계약 승인과 구분. Draft PR21 기록 갱신, develop 병합 없음.
