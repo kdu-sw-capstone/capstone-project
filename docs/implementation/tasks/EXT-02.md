@@ -561,3 +561,7 @@ EXT-02 / 종민 / 시작790d35a. [재현·수정·검증](../evidence/EXT-02-rec
 ### candidate3 Core 수락 의견·독립 재현 반례 대조
 
 [최종담당의견·검증범위](../FOCURVE_D06_candidate3_Core_최종의견.md). manifest25365535… 대상9hash일치·자체schema35/Corepredicate7 PASS. cleanup별도예약슬롯 설계수락, 공동승인/sender/연결은미완료. 제품c630369유지, 독립journal단독/양쪽Snapshot변이×3tick 회귀추가후LF전체238 PASS. 실제Windows/Chrome/HTTPDB·독립재리뷰남음. Core약90%추정유지·develop미병합.
+
+### A0-G02 Core 관측 전용 sender 도구 준비
+
+EXT-02 / 종민 / [실행절차·범위](../../../tools/d06-sender-probe/README.md). 독립시험확장, Worker/Popup→Content 및Content→Worker필드관측·singleton·직접URL마스킹. 제품DOM/세션/Server/DB변경없음. manifest/JS구문검사PASS,실제Windows sender/SND전체는NOT RUN. 기존약90%추정유지·제품연결승인대기·develop미병합.
