@@ -278,3 +278,32 @@ test('recovery rejects invalid frozen snapshots and mismatched executor evidence
   assert.notEqual(next.view.status,'RUNNING');assert.equal(f.additions(),1);
  }
 });
+
+test('invalid persisted Snapshot cannot block an authenticated Server RELEASE or delete foreign rules',async()=>{
+ for(const mutate of [s=>s.source_version=0,s=>s.executor_id=randomUUID(),s=>s.owner_user_id='2']){
+  const f=fixture();await f.loop.tick();f.addForeign();
+  const row=await f.control.load(f.credentials.owner_key,f.sessionId);
+  mutate(row.command.snapshot);await f.control.save(row);f.release();
+  const next=new MemberExecutionLoop(f.options);await next.tick();
+  assert.notEqual(next.view.status,'RUNNING');assert.equal(f.additions(),1);
+  assert.deepEqual(f.rules().map(r=>r.id),[9000]);
+  assert.equal(f.posts.filter(p=>p.result==='RELEASED').length,1);
+  assert.equal(f.session.execution_status,'ENDED');
+  assert.deepEqual((await f.control.load(f.credentials.owner_key,f.sessionId)).command.snapshot,row.command.snapshot);
+ }
+});
+test('recovery fault does not authorize a stale Server RELEASE',async()=>{
+ const f=fixture();await f.loop.tick();
+ const row=await f.control.load(f.credentials.owner_key,f.sessionId);row.command.snapshot.source_version=0;
+ await f.control.save(row);f.release();f.session.desired_revision=3;
+ const next=new MemberExecutionLoop(f.options);await assert.rejects(next.tick(),/STALE_COMMAND/);
+ assert.equal(f.rules().length,1);assert.equal(f.posts.filter(p=>p.result==='RELEASED').length,0);
+ assert.notEqual(next.view.status,'RUNNING');
+});
+test('Server RELEASE after a recovery fault cannot bypass journal ownership',async()=>{
+ const f=fixture();await f.loop.tick();
+ const row=await f.control.load(f.credentials.owner_key,f.sessionId);row.command.snapshot.source_version=0;await f.control.save(row);
+ const journal=await f.journal.load(f.credentials.owner_key,f.sessionId);journal.executor_id=randomUUID();await f.journal.save(journal);
+ f.release();const next=new MemberExecutionLoop(f.options);await assert.rejects(next.tick(),/JOURNAL_SCOPE_MISMATCH/);
+ assert.equal(f.rules().length,1);assert.equal(f.posts.filter(p=>p.result==='RELEASED').length,0);
+});

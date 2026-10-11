@@ -253,14 +253,34 @@ export class MemberExecutionLoop {
         for (const report of row.reports || []) await this.client.enqueue(report, row);
       }
       await this.client.flush();
+      const recoveryFaults = new Map();
       for (const row of await this.control.list(credentials.owner_key, credentials.executor_id)) {
         if (row.phase !== 'FINAL') {
-          await this.recover(row);
+          try { await this.recover(row); }
+          catch (error) {
+            // Invalid persisted apply evidence cannot authorize RUNNING, but must
+            // not prevent a fresh authenticated RELEASE from reaching its own
+            // context/scope/journal-ownership checks. Other failures still surface.
+            if (!['INVALID_SNAPSHOT', 'SNAPSHOT_VERSION_UNSUPPORTED', 'FEATURE_NOT_IMPLEMENTED',
+              'SNAPSHOT_OWNER_MISMATCH', 'EXECUTION_SCOPE_MISMATCH', 'JOURNAL_SCOPE_MISMATCH'].includes(error.message)) throw error;
+            recoveryFaults.set(row.session_id, error);
+            this.recovered.delete(row.session_id);
+            this.view = { status: 'UNCONFIRMED', session_id: row.session_id };
+          }
           if (row.phase === 'RECOVERY_REQUIRED' || row.phase === 'PREPARING') this.view = { status: 'RECOVERY_REQUIRED', session_id: row.session_id };
         }
       }
-      for (const command of (await this.client.commands()).commands) await this.execute(command, credentials);
+      const releaseOnly = recoveryFaults.size > 0;
+      for (const command of (await this.client.commands()).commands) {
+        if (releaseOnly && command.type !== 'RELEASE_POLICY') continue;
+        await this.execute(command, credentials);
+        if (command.type === 'RELEASE_POLICY' && recoveryFaults.has(command.session_id)) {
+          const released = await this.control.load(credentials.owner_key, command.session_id);
+          if (released?.phase === 'RELEASED' || released?.phase === 'FINAL') recoveryFaults.delete(command.session_id);
+        }
+      }
       await this.client.flush();
+      if (recoveryFaults.size) throw recoveryFaults.values().next().value;
       for (const row of await this.control.list(credentials.owner_key, credentials.executor_id)) {
         if (row.phase === 'APPLIED') await this.recover(row);
       }
