@@ -146,3 +146,14 @@ ShortsControl adapter와 시험 전용 MV3 도구 추가. 기존 구현 보존. 
 담당 채지민 / feature/content-control / 시작bcca67412711507aa04cf01dc33ce2808e28e2e5, clean 확인. Core 문서63193ef(고정)/실제 코드5c6064a와 Content bcca674·현행 D-06/Event1.2/Snapshot 대조. PR17 조회HEAD33d3828은 후속코드이며 전체 대조로 확대하지 않음. 산출 docs/implementation/Content_Core_D06_Content재검토_2026-10-11.md: 제안마다 수락/수정/보류, JSON4개, 양측 방향일치/미합의/다훈S1~S5, 담당파일/작은A 검증순서 포함. 첫A는 비회원 frozen Shorts 한 정책·한 활성 top-frame 문서 주입→QUERY→APPLY 실제증거→RELEASE, 접근이벤트0. A전 결정: 미결속QUERY 문서/instance 결속, cache포화 cleanup 보장, coverage/counts·시험3초/10초 예산. R0/BFCache/이벤트/회원보고는 다음단계 합의로 분리.
 
 검사: Python JSON4/4 구문·request/operation/document 상관·비식별QUERY·coverage 일관성 PASS. git diff --check PASS. 과거33개/사용자YouTube6단계는 이전근거, 이번 기능/제품Chrome/Server 테스트 NOT RUN. 미검증: 실제 주입/메시지·time/cache 실측·BFCache·최신Core후속registry 호환/전체통합. 이번은 문서+기록3개만 Commit·Push·Draft PR21 갱신. 코드/listener/발신·추가MVP·CorePR17/브랜치·develop·자동병합 변경 없음. 다음 Core A수정안 확인→공동확정→최소구현. 아직 공동 계약 확정 아님.
+
+
+## 2026-10-11 다훈 계약안 검토·종민 통합 전달문 — 로컬 확인 대기
+
+담당 채지민 / feature/content-control / 시작 c0a167410e82091e26d8f2f0e995e7702b32d7de. POLICY-03·EXT-02·EVENT-03 연결 경계만 문서 검토. 다훈 첨부 3개와 기존 Content 재검토를 대조해 Content_D06_다훈계약안_검토의견_2026-10-11.md 및 Content_D06_종민전달_통합검토_2026-10-11.md 작성. 종민 전달문은 이전 별도 전달안 대신 기존 협의와 이번 U-01~08 의견을 합친 단일 전달안이며 기존 게시 검토 이력은 보존한다.
+
+수정 제안: null QUERY 결속/최소 응답, 최초 ACK 불변·cache 포화 cleanup, 회원 숫자문자열 site_id와 UUID 예시 충돌, viewer inert/media 실제 증거·복원, 종류별 observation_id와 공통 round, G-01 단계별 착수 승인 범위. U-03 runtime Server 보고·U-06 이벤트·U-07 탐색·U-08 BFCache 등 공동 승인/실측 대기. Core 후속 결함 3개 해결 여부는 새로 검증하지 않았다.
+
+실행 검사: Windows bundled Python으로 JSON3/3 파싱, U-01~08 표 누락, site_id/effect/observation 관계, 로컬 링크·후행 공백 검사 PASS. 기능/제품 Chrome/HTTPDB NOT RUN. 과거 자동33·사용자 YouTube6단계는 과거 근거만 유지. 제품 코드·listener/발신·추가 MVP·Core PR17 변경 없음. 사용자 내용 확인 전 Commit·Push·PR21 갱신 보류, develop 병합/자동병합 없음. 다음: 사용자 문서 확인→게시 승인→종민 U별 회신/다훈 취합→세 명 승인 후 최소 제어 구현.
+
+사용자 내용 확인 후 “ㅇㅇ 하자”로 문서 Commit·Push 승인. 위 로컬 보류 상태를 게시 진행으로 갱신한다. 제품/공동 계약 승인은 별도이며 develop 병합 금지 유지.
