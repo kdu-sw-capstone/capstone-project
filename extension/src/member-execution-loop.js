@@ -110,8 +110,11 @@ export class MemberExecutionLoop {
     row.phase = 'FINAL'; await this.control.save(row);
   }
   async recover(row) {
+    this.view = { status: 'UNCONFIRMED', session_id: row.session_id };
     await this.scope(row);
     const session = await this.client.session(row.session_id);
+    if (session.session_id !== row.session_id || session.executor_id !== row.executor_id)
+      throw new Error('EXECUTION_SCOPE_MISMATCH');
     if (finished(session)) { await this.cleanup(row); row.phase = 'FINAL'; await this.control.save(row); return; }
     this.view = { status: 'UNCONFIRMED', session_id: row.session_id };
     if (row.local_end) { await this.localEnd(row, row.local_end.reason); return; }
@@ -127,9 +130,22 @@ export class MemberExecutionLoop {
       await this.localEnd(row, 'EXPIRED'); return;
     }
     if (row.phase !== 'APPLIED') return;
+    const command = row.command;
+    requireSiteOnly(command?.snapshot);
+    if (command.type !== 'APPLY_POLICY' || command.session_id !== row.session_id
+      || command.executor_id !== row.executor_id || command.desired_revision !== row.revision)
+      throw new Error('EXECUTION_SCOPE_MISMATCH');
+    if (command.snapshot.executor_id !== row.executor_id
+      || String(command.snapshot.owner_user_id) !== row.owner_key.slice(7)
+      || command.snapshot.policy_snapshot_id !== session.policy_snapshot_id)
+      throw new Error('SNAPSHOT_OWNER_MISMATCH');
     const journal = await this.journal.load(row.owner_key, row.session_id);
     let observed = 'UNCONFIRMED';
     if (journal) {
+      if (journal.owner_key !== row.owner_key || journal.executor_id !== row.executor_id
+        || journal.session_id !== row.session_id || journal.revision !== row.revision
+        || JSON.stringify(journal.snapshot) !== JSON.stringify(command.snapshot))
+        throw new Error('JOURNAL_SCOPE_MISMATCH');
       const actual = await this.controller.checkOwned(journal);
       if (journal.observed === 'APPLIED' && journal.rules.every(rule => actual.some(item =>
         sameRule(item, rule)))) observed = 'APPLIED';

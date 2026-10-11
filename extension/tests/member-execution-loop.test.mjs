@@ -63,7 +63,7 @@ function fixture() {
 }
 
 test('classic Worker bundle exactly matches source modules', () => {
-  assert.equal(readFileSync(new URL('../background/member-execution.js', import.meta.url), 'utf8'), bundleMemberWorker());
+  assert.equal(readFileSync(new URL('../background/member-execution.js', import.meta.url), 'utf8').replace(/\r\n/g, '\n'), bundleMemberWorker());
 });
 test('CRLF source builds the same classic bundle as LF without remaining ESM imports',()=>{
  const crlf=bundleMemberWorker(url=>readFileSync(url,'utf8').replace(/\r?\n/g,'\r\n'));
@@ -258,4 +258,23 @@ test('actual access transaction creation failure triggers durable capture suspen
  const recreated=new MemberExecutionLoop(f.options);await recreated.tick();
  assert.equal(await recreated.observe('before',{url:'https://example.org/',tabId:1,frameId:0,timeStamp:at,observed_at:at}),null);
  assert.equal(f.session.execution_status,'RUNNING');
+});
+
+
+test('recovery rejects invalid frozen snapshots and mismatched executor evidence before RUNNING',async()=>{
+ for(const mutate of [
+  (r,j,f)=>r.command.snapshot.source_version=0,
+  (r,j,f)=>r.command.snapshot.executor_id=randomUUID(),
+  (r,j,f)=>r.command.snapshot.owner_user_id='2',
+  (r,j,f)=>r.command.executor_id=randomUUID(),
+  (r,j,f)=>f.session.executor_id=randomUUID(),
+  (r,j,f)=>j.executor_id=randomUUID()
+ ]){
+  const f=fixture();await f.loop.tick();
+  const r=await f.control.load('MEMBER:1',f.sessionId),j=await f.journal.load('MEMBER:1',f.sessionId);
+  mutate(r,j,f);await f.control.save(r);await f.journal.save(j);
+  const next=new MemberExecutionLoop(f.options);
+  await assert.rejects(next.tick(),/INVALID_SNAPSHOT|INVALID_SESSION_RESPONSE|EXECUTION_SCOPE_MISMATCH|SNAPSHOT_OWNER_MISMATCH|JOURNAL_SCOPE_MISMATCH/);
+  assert.notEqual(next.view.status,'RUNNING');assert.equal(f.additions(),1);
+ }
 });
