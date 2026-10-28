@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="ko" data-theme="light">
+<head>
+ <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>FOCURVE · 서비스 제어 — 사용 중 유지</title>
+ <link rel="stylesheet" href="../popup/popup.css"><link rel="stylesheet" href="../member-ui/user.css">
+ <script src="../release-config.js" defer></script><script src="../safety/context.js" defer></script>
+ <script src="../safety/reader.js" defer></script><script src="../safety/guest-reader.js" defer></script>
+ <script src="config.js" defer></script><script src="client.js" defer></script><script src="theme.js" defer></script>
+ <script src="probe.js" defer></script><script src="session.js" defer></script><script src="hold.js" defer></script><script src="ui.js" defer></script>
+ <script src="preserved-end.js" defer></script>
+</head>
+<body><main>
+ <header class="brand"><span class="brand-mark">FC</span><div><h1>FOCURVE</h1><p>Windows 프로그램 연결</p></div></header>
+ <section class="card" aria-labelledby="connection-heading">
+  <h2 id="connection-heading">이 브라우저와 연결하기</h2>
+  <p class="note">이 설치의 Windows 프로그램과 연결만 확인합니다. 계정·비밀번호·집중 기록을 읽거나 서비스를 시작하지 않습니다.</p>
+  <button id="connect-native" type="button">Windows 프로그램 연결 확인</button>
+  <p id="native-status" role="status" aria-live="polite">버튼을 누르면 연결을 확인합니다.</p>
+  <button id="verify-runtime" type="button" hidden>서비스 기동·종료·재기동 확인</button>
+  <p class="note">서비스 검증은 별도 실행 승인이 필요합니다. 완료 안내까지 이 창을 열어 두세요.</p>
+  <p id="runtime-status" role="status" aria-live="polite">서비스 검증은 아직 시작하지 않았습니다.</p>
+ </section>
+ <section id="hold-section" class="card" aria-labelledby="hold-heading" hidden>
+  <h2 id="hold-heading">보존된 중단 상태</h2>
+  <p class="note">별도 승인이 있을 때만 현재 의무와 회원 신원을 확인합니다. 성공해도 서비스나 집중을 시작하지 않습니다.</p>
+  <button id="recover-product-hold" type="button" hidden>보존된 중단 상태 안전 확인</button>
+  <p id="hold-status" role="status" aria-live="polite">현재 설치에 승인된 복구 범위가 있어야 진행할 수 있습니다.</p>
+ </section>
+ <section id="user-session-section" class="card" aria-labelledby="usage-heading" hidden>
+  <h2 id="usage-heading">FOCURVE 사용</h2>
+  <p><strong>이 탭은 서비스 연결 유지용입니다.</strong> 사용 중에는 주소를 바꾸거나 새로고침·닫기 하지 마세요. 연결이 끊겨도 서비스가 자동으로 정상 종료되는 것은 아닙니다.</p>
+  <ol><li>이 탭에서 ‘서비스 시작’을 한 번 누르고 준비 완료를 기다립니다.</li><li>‘집중 팝업을 새 탭으로 열기’를 누릅니다. 주소를 이 탭에 붙여넣지 마세요.</li><li>새 탭에서 집중을 사용합니다. 집중 종료 후 이 제어 탭으로 돌아와 ‘서비스 정상 종료’를 누르고 완료 안내를 기다립니다.</li></ol>
+  <button id="open-user-session" hidden type="button">서비스 시작</button>
+  <button id="stop-user-session" hidden disabled type="button">서비스 정상 종료</button>
+  <a id="session-dashboard" hidden target="_blank" rel="noopener noreferrer">웹 대시보드 열기</a>
+  <a id="session-popup" href="../member-ui/popup.html" target="_blank" rel="noopener noreferrer" hidden>집중 팝업을 새 탭으로 열기</a>
+  <p id="session-status" role="status" aria-live="polite">정상 사용 모드 승인이 있어야 서비스를 시작합니다.</p>
+ </section>
+ <section id="preserved-end-section" class="card" hidden>
+  <h2>보존된 집중 종료·복원</h2>
+  <p>승인된 기존 세션의 종료만 확인합니다. 새 집중이나 서비스 재개 권한은 부여하지 않습니다.</p>
+  <button id="preserved-end-inspect" type="button">종료 대상 확인</button>
+  <button id="preserved-end-local" type="button" disabled>기존 집중 종료·로컬 복원</button>
+  <button id="preserved-end-reconcile" type="button" disabled>종료 기록 전송 확인</button>
+  <p id="preserved-end-status" role="status">현재 신원과 종료 권한 확인이 필요합니다.</p>
+ </section>
+</main></body></html>

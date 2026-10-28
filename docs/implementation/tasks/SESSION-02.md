@@ -78,7 +78,7 @@ Snapshot/가져오기 safe 상한과 사이트·메모 증가 방어, API 자동
 
 ### 최종 로컬 실행 결과 — 2026-10-09
 
-Backend 전체120/120·패키징 PASS, Frontend113/113·빌드 PASS. 격리 MySQL57490의 실제 HTTP/DB import8·execution7·note4·policy6 및 기존 Event1.2 HTTP2 시험 통과. 실제 Chrome/회원 Extension NOT RUN. 일반 session.version 극단 경계 계약은 조율 필요하므로 전체 D03/MVP/병합 완료로 바꾸지 않는다. 증거: C:\Users\dahun\capstone-project\.reviews\pr18-20261009\PR18_병합차단_로컬수정_검증보고서.md 및 merge-boundary 로그.
+Backend 전체120/120·패키징 PASS, Frontend113/113·빌드 PASS. 격리 MySQL57490의 실제 HTTP/DB import8·execution7·note4·policy6 및 기존 Event1.2 HTTP2 시험 통과. 실제 Chrome/회원 Extension NOT RUN. 일반 session.version 극단 경계 계약은 조율 필요하므로 전체 D03/MVP/병합 완료로 바꾸지 않는다. 증거: <LOCAL_PATH_REDACTED> 및 merge-boundary 로그.
 
 ## 2026-10-09 D-03 session.version 최종 호환 처리
 
@@ -102,4 +102,63 @@ Backend 전체120/120·패키징 PASS, Frontend113/113·빌드 PASS. 격리 MySQ
 - 동일 트랜잭션에서 구간 종료·확인된 시간 집계·ENDED 또는 START_FAILED·명령 ACK·잠금 해제를 수행한다. 늦은 구 revision APPLY는 감사 기록만 남기며 종료 상태/시간/버전을 되돌리지 않는다. 동일 report_id/동일 원문은 DUPLICATE, 다른 원문은 REPORT_CONFLICT이다.
 - Codex 실행: Backend138/138·패키징, Frontend114/114·빌드 PASS. 추가 HTTP/MySQL 테스트10개(복수 하위 사례 포함), 별도 독립 HTTP 재현 probe PASS. 격리 MySQL8.4.8 127.0.0.1:60046/focurve_contract_test, 합성 회원/설치/보고 사용. 실제 Chrome·회원 Core/Content 통합 NOT RUN. 응답 유실은 클라이언트가 첫 결과를 무시하고 재전송한 모의 사례이며 Server 프로세스 강제 중단은 NOT RUN.
 - MAX/MAX+1/Long.MAX_VALUE 버전 원본·frozen Snapshot 보존 및 잠금 해제 확인. 운영 Snapshot1.2 기본 OFF 유지(테스트 프로필만 ON). D01/D05 자동복구 전체 미구현 경계 유지. AC-SESSION-02/03/04의 -01/-03 중 Server 합성 보고 부분만 검증했으며 실제 적용/해제·전체 AC·MVP 완료로 승격하지 않는다.
-- 증거: C:\Users\dahun\capstone-project\.reviews\pr18-20261009\PR18_RELEASED_보고순서_수정검증보고서.md 및 released-order 로그. 후속: 독립 재리뷰, 실제 Core 해제 증거·역순/재전송 통합. 이번 Commit/Push/PR 업데이트/병합 없음.
+- 증거: <LOCAL_PATH_REDACTED> 및 released-order 로그. 후속: 독립 재리뷰, 실제 Core 해제 증거·역순/재전송 통합. 이번 Commit/Push/PR 업데이트/병합 없음.
+
+
+## 2026-10-28 r7 실제 수용·후속 실행 증거 보존
+
+- 담당 영역: Codex 통합 검증 / 브랜치 `codex/mandatory-mvp-integration-20261025` / 기준 `90ad32be5d282f3b44c917a29e156dffc5e29187`. 기존 팀 배정은 변경하지 않음.
+- 실제 회원 2분 세션과 정책 세션의 ENDED·잠금 해제 확인, BLOCK·RECORD·일반 영상·직접 Shorts 제한 및 검색 결과 Shorts 숨김 확인. 클릭으로 진입하는 SPA Shorts는 별도 실제 미검증.
+- 대시보드·통계 실제 표시: 접근 7, 차단 5, 반복 4. YouTube 기록 품질은 PARTIAL이며 완전 수집으로 승격하지 않음.
+- `extension/safety/guest-reader.js`의 연결 해제 후 보존 회원 자료 ACK 대조 범위 누락 수정. 명시 승인 후 같은 r7에 1파일+무결성만 적용, 실제 조회 BLOCKED/pendingOutbox10 → CLEAR_LOCAL_ONLY/모든 의무0. 자료·DNR 변경 없이 읽기만 검증.
+- 현재 r7은 HOLD이며 Server·MySQL 정상 종료 및 포트 해제. 비회원 START와 재기동 데이터 보존 실제 수용은 미실행.
+- `distribution/installer/product_runtime_entry.py`: 기존 최초 실패를 덮어쓰지 않으면서 실행별 최초 실패도 불변 보존하는 수정은 독립 소스에만 반영. 기존 실행의 누락된 실패를 소급 생성하지 않음. HOLD·END·Cleanup·START 허용 계약은 변경하지 않음.
+- 현재 차단 근거: 원래 실패 08:04:42 KST, 후속 READY 08:57:15 KST. 이전 실패를 후속 실행 원인으로 사용하면 정식 타임라인 검증 위반. 이전 성공 HOLD 작업의 재사용도 금지. 미래 기록 보완만으로 현재 HOLD가 해소되지는 않음.
+- 검증: Extension 전체591 PASS, 배포/실행 계약 전체364 PASS. 자동 결과는 실제 비회원 수용을 대체하지 않음.
+- 증거 위치: 저장소 상위 `outputs/focurve-mvp-integration-20261025/actual-current-r7-20261028/resume-reader-fix-60min/guest-reader-fix/`, 릴리스 준비 `outputs/focurve-mvp-integration-20261025/release-preparation-20261028/`.
+- 다음 행동: 현재 실행의 신뢰 가능한 Native 실패 증거 또는 이를 대신할 정식 처리 계약의 설계·검증 근거를 확보한 후 별도 실제 적용·재개 승인을 확인. 현재 안전 판정을 정상 실행 권한으로 간주하지 않음. `MVP_FINAL_COMPLETE=false`. Git index·Commit·Push·Merge 변경 없음.
+
+
+## 2026-10-28 실행 엔진 분리 실험
+
+- 브랜치: `codex/execution-engine-review-20261028` / 기준 HEAD `90ad32be5d282f3b44c917a29e156dffc5e29187` + SHA 기준 최신 소스 복사
+- 상태: 실험 구현, 기존 제품 대체 금지. 담당: Codex(검토·독립 검증).
+- 기준: TF-05/06/07, AC-SESSION-02-01~03 및 기존 원장/소유권/ACK 계약 유지.
+- 공통 문서 이벤트 계층 1차 구현. 최종 회귀 656건: 655 PASS / 1 FAIL.
+- SPA URL·sender URL 변경 통합 반례가 기존 Core/실험 모두 CLEANUP_REQUIRED→UNKNOWN. 실제 Chrome NOT_RUN.
+- 상세: [선택적 재구축 검토](../실행엔진_선택적재구축_검토_20261028.md). 다음 작업은 동일 문서 경로 변경의 정식 권한 인계 설계·구현.
+
+
+## 2026-10-28 Shorts 8영역 동등 P0 통합
+
+사용자 최신 기준으로 진입·DOM/재생·Core/Worker·SPA URL·문서 생명주기·권한/Binding·반복/복원·END/재기동을 모두 P0로 관리한다. 브랜치 `codex/execution-engine-review-20261028`, 기준 HEAD `90ad32be5d282f3b44c917a29e156dffc5e29187`와 독립 후보 소스를 사용한다. 기존 설치·통합 작업 공간은 변경하지 않았다.
+
+전체 Extension 회귀 690/690 PASS. 신뢰된 실험 모드의 제한적 문서 인계, 비회원 D1 문서 retirement 연결, 같은 시각의 이전 COMMITTED 오인과 pending/ready 조정 결함을 수정했다. 원본 proof·복원 원장·5초 기한·소유권 검사는 유지한다. 실제 Chrome 8영역은 모두 NOT_RUN이며 BFCache 정상 복원·실제 Native 재연결·Server/DB 수용은 미확인이다. 전체 완료로 판정하지 않는다.
+
+검토 ZIP SHA-256: `3335acea5823435e04e1da9dcd2591406a1412001fbce8d49db923338d6c865d`. 실제 설치/서비스/START·END 승인은 별도로 요청했으며 승인 전 실행하지 않는다. 상세: [8영역 P0 통합 기록](../Shorts_8영역_P0_통합_20261028.md). `SHORTS_STABILIZATION_COMPLETE=false`, `MVP_FINAL_COMPLETE=false`.
+
+
+## 2026-10-28 서비스 시작 전 승인 만료 설치의 정식 재개
+
+- 브랜치: codex/execution-engine-review-20261028; 기준 90ad32be5d282f3b44c917a29e156dffc5e29187. 기존 미커밋 변경 보존.
+- 기존 INSTALLED + nativeLink 상태는 최초 등록/정상 STOPPED 갱신 양쪽에서 거절됨을 같은 합성 설치로 재현. native_setup.py / session_update.py만 수정. 동일 신원·만료된 기존 승인·미실행·실패/HOLD 없음·Native 등록 검증 후 기존 prepare/apply 경로 재사용. 설치 상태 변경 없음.
+- 관련 독립 회귀 67/67, 격리 Python의 원본→2파일 적용·미실행 갱신·정상 종료 갱신 Native 실컴파일 3경로 PASS. 실제 설치 적용/서비스/Chrome 수용은 승인 전 NOT_RUN.
+- 기존 5초·소유권·실제 로컬/DB 기동 게이트 유지. 증거: outputs/focurve-shorts-p0-integrated-20261028/pre-service-renewal-20261028/ (작업 루트 기준).
+
+
+## 2026-10-28 READY 큐 대기 인과 재현·최소 수정
+
+- 독립 브랜치 codex/execution-engine-review-20261028, 기준 90ad32be5d282f3b44c917a29e156dffc5e29187. 기존 변경 보존.
+- 기존 실제 세션 354c1411-aec9-45ac-a22e-959de7b129db는 읽기 전용 로그에서 최초 로컬 실패 코드/이벤트 처리 로그를 확보하지 못함. 이번 독립 재현을 실제 사건 원인으로 확정하지 않음.
+- 같은 탐색 지연·Root READY 입력과 실제 Core/원장/5초 검사에서 이전 경로 RUNNING, 수정 전 조정기 UNKNOWN(REVALIDATION_REQUIRED), 수정 후 RUNNING→정상 END 재현. Chrome 전송·탐색 지연·IndexedDB·clock은 fixture.
+- 문서 수신 순서/observer epoch를 정책 큐와 분리하고 READY/COMMITTED hint만 별도 전달. 전달 시 문서·URL·탐색 epoch 확인, 중복/구문/비활성/이전 문서 거절. Core·P1·D1·5초·소유권·적용 ACK 변경 없음.
+- 관련 68/68 및 전체 Extension 704/704 PASS, 회원·비회원 Core 번들 재생성·구문 PASS. 기존 승인 ZIP 미변경, 새 릴리스 ZIP 미생성. 실제 설치/Chrome/DB/START/END/Cleanup/복구/Git 게시 없음.
+- 증거: outputs/focurve-shorts-p0-integrated-20261028/ready-queue-fix-20261028/ (작업 루트 기준). 실제 Chrome 수용은 별도 승인·현재 안전 조건을 충족해야 함.
+
+
+## 2026-10-28 READY 큐 수정 통합 후보 확정
+
+- 기존 704/704 회귀·관련 68건·정식 갱신 67건은 SHA 대조로 재사용. 추가 제품 코드 변경 없이 패키징·정합성·취소 CLI만 검사.
+- 후보 ZIP SHA-256: 47505bd3313293350fda304903844c978d2feb4b63c9e511fd5caf97f85317ae. Manifest 4412/ZIP4413, source parity960/build input144 PASS. READY 소스2/번들2 및 viewport 수정 포함 확인.
+- 보존된 UNKNOWN 설치는 현재 새 START 대상 재사용 불가. 독립 설치1/최대60분/회원·비회원 정책 각1/30193·30194의 승인안을 준비했으며 실제 실행 승인·기동 없음. BFCache·Native 재연결·END·재기동은 실제 미검증.
+- 근거: outputs/focurve-ready-final-candidate-20261028/ (작업 루트 기준). MVP_FINAL_COMPLETE=false.

@@ -1,0 +1,25 @@
+{
+  "contract": "FOCURVE_USER_INSTALL_1",
+  "webPort": 18447,
+  "mysqlPort": 18448,
+  "browserMode": "regular_manual",
+  "runtimes": {
+    "javaHome": "",
+    "mysqlHome": "",
+    "chrome": ""
+  },
+  "mail": {
+    "enabled": false,
+    "host": "",
+    "port": 587,
+    "from": "",
+    "username": "",
+    "tls": true,
+    "ssl": false
+  },
+  "externalOAuth": {
+    "googleEnabled": false,
+    "kakaoEnabled": false
+  },
+  "notes": "동봉한 런타임을 사용하며 runtimes의 외부 경로는 사용하지 않습니다. 비밀번호는 이 파일이나 채팅에 넣지 않습니다. SMTP 비밀번호는 현재 Windows 사용자용 보호 저장소로 설치 시 전달합니다. 포트는 설치 후 변경하지 않습니다."
+}

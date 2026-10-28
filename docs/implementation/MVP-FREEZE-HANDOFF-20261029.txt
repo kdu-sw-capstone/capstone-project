@@ -1,0 +1,52 @@
+FOCURVE 필수 MVP 코드 동결 및 추가 MVP 인계 — 2026-10-29
+
+현재 상태
+- 로컬 통합 브랜치: codex/mandatory-mvp-freeze-20261029.
+- 시작 Git HEAD: 90ad32be5d282f3b44c917a29e156dffc5e29187 (원격 develop). 이 값은 새 구현 Commit SHA가 아니다.
+- 구현은 미커밋 작업 파일에 있으며 별도 FREEZE-MANIFEST.json의 파일 SHA/내용 집합 SHA로 식별한다. Commit·Push·PR 생성·Merge는 미실행이다.
+- 동결 참조 설치 ZIP: 5bcdced239ead3fa458106c2683054cbd4a6e0d248aa04f538c8229112a6b662.
+- 최신 후보의 실제 Chrome 수용 NOT_RUN. 이전 실제 정책 수용 FAIL/UNKNOWN. MVP_FINAL_COMPLETE=false. 코드 리뷰 준비와 제품 릴리스 승인을 구분한다.
+
+구성·빌드
+1. Web: frontend. 저장소 Node24.19.x/lock 사용. npm --prefix frontend ci; npm --prefix frontend test; npm --prefix frontend run build.
+2. Core/Content: extension. npm --prefix extension ci. extension에서 node scripts/build-member-worker.js; node scripts/build-a1.mjs; node scripts/build-member-a1.mjs; node scripts/check.js.
+   독립 전체 회귀: node --test --test-concurrency=2 tests/*.test.js tests/*.test.mjs tests/*.test.cjs (extension에서).
+   추가 Content 순수시험: node --test content-tests/changes.test.mjs content-tests/detection.test.mjs.
+   content-tests/browser.test.mjs 및 브라우저 harness는 실제 Chrome 기동이므로 이번 통합 준비에서 NOT_RUN. 임의 우회 실행 금지.
+3. 설치형 Server: runtime-server/pom.xml. JDK21, bash backend/mvnw -f runtime-server/pom.xml -B -ntp verify. Windows는 backend\mvnw.cmd 사용.
+   기존 backend 개발 Server는 별도 모듈로 보존한다. 두 API/동명 클래스를 한 JVM에 등록하지 않는다.
+4. DB: 기존 backend와 설치형 runtime-server의 각 Flyway migration을 보존한다. 실제 DB 파일·데이터·dump는 포함하지 않는다. 새 migration 번호는 승인된 공통 Git 기준선에서 모듈별 중복 검사 후 결정한다.
+5. 배포·Native: distribution. python -B -m unittest discover -s distribution/tests -p 'test_*.py'. NativeLinkHost.cs는 원래 정식 설치 절차로만 등록한다. 임의 .exe/인증서/계정 정보를 저장소에 넣지 않는다.
+6. 패키징: scripts/build_user_web.py로 설치용 미결속 Web를 빌드하고 package-integrated-candidate.py를 사용한다. 일반 npm build는 설치용 VITE 결속 값을 부여하지 않는다. runtime vendor는 승인된 검증 패키지를 별도로 공급한다. Git 소스 ZIP은 설치용 ZIP이 아니다.
+
+검증 범위
+PASS: Extension747/747, Content 순수시험4/4, Web226/226 및 TypeScript/Vite build, runtime-server56/56 및 verify/JAR, 기존 backend24개 비DB 단위시험 및 package, 배포 계약67/67, Windows Native C# 합성 계약40개 및 Python pipe 시험2경로.
+초기 누락 shared fixture와 runtime-server 빌드 정의를 보완했다. PR17의 Node HTTP 인증 도구에는 합성 loopback 주소만 검증하는 시험 전용 provider를 연결했다. 실제 HTTPS 설치 provider는 제품 코드 그대로이며 별도 주소 결속 회귀로 검증한다. 이 시험 도구는 실제 Chrome/TLS 결속 검증이 아니다. 모의 시계 재현 시험은 Date/타이머/fixture 시간의 혼합을 제거했다. 초기 실패 로그는 외부 감사 산출물에 보존한다. 제품 5초 기한을 늘리지 않았다.
+NOT_RUN: 이번 통합 후보의 실제 DB 전체 HTTP 회귀, 실제 회원/비회원 Chrome 정책 END/복원/재기동, Native 실제 재연결. 원격 CI는 게시 전이므로 아직 실행되지 않았다.
+PR17/21/22의 기존 원격 CI success는 각 원격 head의 과거 검증이며 이 미커밋 통합 후보의 CI 결과가 아니다.
+
+PR 처리
+- #17 head92691c55a7c39e810db567bda80445d3bd1a3806. Core 담당 윤종민. open, develop에 개별 mergeable.
+- #21 head86b0e9ed66e3ae89cb180920b121fbd96f581317. Content 담당 채지민. open/Draft, develop에 개별 mergeable.
+- 최신 후보와의 합성에서는33개 PR/파일 충돌 항목(32개 고유 파일)을 의미 검토했다. 이전 실행 엔진/오래된 UI로 되돌리지 않고 최신 후속 구현을 유지한다. 원격에만 있던115경로를 가져오고 동일61·clean 합성1을 확인했다. CONNECT/WAKE 및 NR01 응답 확인 문서는 양쪽을 함께 보존했다.
+- 생성 bundle은 소스를 선택한 뒤 재생성한다. 원격 전체를 덮어쓰는 ours/theirs 병합을 하지 않았다. 실제 Git merge commit/ancestry 병합은 미실행이다.
+- 새 통합 PR은 #17/#21의 frozen successor라는 사실과 남은 P0를 명시한다. 게시 후 두 담당자 기능 리뷰/CI를 받는다. 구 PR을 그대로 추가 Merge하면 구 구현이 재유입될 수 있으므로, 새 PR 통합 여부 결정 후 담당자가 원래 PR을 superseded 처리하거나 남은 변경만 새 공통 base로 이관한다. 이번에는 원 PR 상태/브랜치/본문을 변경하지 않는다.
+- #22 head a29d02c97724f437d6c059c6d49eca40bd37e197, docs/additional-mvp7개는 필수 통합에서 제외한다. 원격 Draft와 별도 작업 공간의 후속 미커밋 설계 모두 보존한다. 설계 head를 최신 제품 base라고 사용하지 않는다.
+
+추가 MVP 3인 인계
+김다훈: frontend/src, runtime-server/src/main, backend/src/main 및 모듈별 migration, 최신 UI·공통 API/DB/계약 통합. Shorts P0 수정은 별도 안정화 브랜치에서 계속하고 필수 동결 기준선과 섞지 않는다.
+윤종민: extension/a1, member-a1, execution, background 및 src의 Core·DNR·원장·복구. 추가 runtime 사용량/예산은 별도 namespace·계약 승인 뒤 연결한다. 기존 focus END가 새 runtime 의무를 지우지 않게 한다.
+채지민: extension/content, a0/shorts-effect.mjs, Content 전용 시험/서비스별 제한·이미지/키워드 등 추가 기능. 원장 밖 DOM 변경·허위 복원 ACK를 만들지 않는다.
+공유 검토: D06/Wire/소유권·Binding·증거·측정 경계, API/DB 버전, generated bundle/공유 manifest. 이 경로는 소유자 단독으로 동시 수정하지 않고 명시적 작은 변경을 통합한다. 새 CODEOWNERS 강제 규칙이나 팀원 담당자를 임의 변경하지 않는다.
+
+착수 기준
+- 지금 가능: 별도 공간에서 추가 MVP 계약 검토, 기존 PR22 보존·차이 검토, 새 fixture/모델/비시각 설계 준비. 기존 실패 설치는 사용하지 않는다.
+- 제품 통합 base: 이 후보의 Commit/게시 및 리뷰가 승인된 뒤 실제 불변 Git SHA를 발급한다. 그 SHA에서 additional-mvp-base와 각 담당 브랜치를 만든다. 아직 발급되지 않은 Commit SHA를 만들어 적지 않는다.
+- 제안 브랜치: codex/additional-mvp-server-web-20261029, codex/additional-mvp-core-20261029, codex/additional-mvp-content-20261029. 아직 생성하지 않았다. 기존 담당 작업 공간을 reset/rebase하거나 덮어쓰지 않는다.
+- PR22의 FIN-03 측정 기준, FIN-04 D06, FIN-05 신규 Wire 및 현행 후속 HC 항목은 공동 기술 검토/구현 승인 상태를 확인한다. 확정된 사용자 DEC-01~07 정책을 다시 미확정으로 돌리지 않는다. 공통 계약이 필요한 연결은 합의 전 임의 구현하지 않는다.
+
+남은 P0
+실제 STORE_UNCONFIRMED 최초 경로 미확정. 새 진단 저장 수정의 실제 Chrome 확인, Shorts 직접/검색/추천/SPA/새로고침/뒤·앞/BFCache/다중 탭 유지, 회원·비회원 정책 정상 END·DOM/Binding/DNR 복원·잠금/미ACK·Native 재연결·재기동/내용 보존 미완료. 기존 UNKNOWN/HOLD를 CLEAR로 바꾸거나 실패 기록을 소급 생성하지 않는다.
+
+게시 승인 경계
+후보 파일/Manifest와 Commit 계획 검토 후, 명시 승인 시에만 로컬 Commit→이 브랜치 Push→develop 대상 Draft PR 생성을 수행한다. 기존 PR17/21/22 수정·종료와 develop Merge는 별도 담당자/사용자 승인이다. Commit 승인과 실제 제품 실행 승인은 서로 다르다. 실제 Chrome 수용 미완료를 PR 본문에 명시한다. 자동 Merge/Ready 전환은 하지 않는다.

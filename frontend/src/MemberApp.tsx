@@ -1,5 +1,10 @@
+import { SiteMark } from "./FocusShared";
+import { requestedWorkspaceView } from "./workspaceNavigation";
+import { submittedSiteHost } from "./siteHostConfirmation";
+import { metricPercentage } from "./metricPercentage";
 import {SocialSignup, SocialEmailVerify} from "./SocialSignup";
 import SocialButtons from "./SocialButtons";
+import {siteDisplayNameError} from "./siteDisplayName";
 import EmailSignup, {clearSignupProgress} from "./EmailSignup";
 import Sessions from "./FocusSessions";
 import Records from "./BehaviorRecords";
@@ -11,6 +16,7 @@ import { Login, MailRequest, VerifyPending, TokenForm, AuthComplete } from "./Au
 import { Brand, ForestPanel, Sidebar, WorkspaceHeader } from "./UiLayout";
 import {
   ApiError,
+  UiError,
   message,
   refreshCsrf,
   clearCsrf,
@@ -18,7 +24,7 @@ import {
 } from "./api";
 
 function statusLabel(value: unknown): string {
-  const labels: Record<string,string> = {STARTING:"시작 확인 중",RUNNING:"집중 진행 중",ENDING:"해제 확인 중",UNKNOWN:"결과 확인 필요",ENDED:"종료",FAILED:"시작 실패",START_FAILED:"시작 실패",UNCONFIRMED:"미확인",NOT_COLLECTED:"미수집",BLOCKED_SITE_ACCESS:"사이트 차단",RECORDED_ACCESS:"허용하고 기록",BLOCKED_FEATURE_ACCESS:"기능 차단",SITE:"사이트",FEATURE:"사이트 내부 기능",YOUTUBE_SHORTS:"YouTube Shorts",COMPLETE:"수집 완료",PARTIAL:"일부 수집",PENDING:"반영 대기",REVIEW_REQUIRED:"추가 확인 필요",NO_DATA:"자료 없음",CONFIRMED:"확인됨",FOCUS:"집중",DISTRACTION:"방해",GENERAL:"일반",ALLOW:"허용",BLOCK:"전체 차단",RECORD:"허용하고 기록"};
+  const labels: Record<string,string> = {STARTING:"시작 확인 중",NATIVE_VERIFYING:"문서 전환 확인 중",EFFECT_VERIFYING:"제한 적용 확인 중",RUNNING:"집중 진행 중",ENDING:"해제 확인 중",UNKNOWN:"결과 확인 필요",ENDED:"종료",FAILED:"시작 실패",START_FAILED:"시작 실패",UNCONFIRMED:"미확인",NOT_COLLECTED:"미수집",BLOCKED_SITE_ACCESS:"사이트 차단",RECORDED_ACCESS:"허용하고 기록",BLOCKED_FEATURE_ACCESS:"기능 차단",SITE:"사이트",FEATURE:"사이트 내부 기능",YOUTUBE_SHORTS:"YouTube Shorts",COMPLETE:"수집 완료",PARTIAL:"일부 수집",PENDING:"반영 대기",REVIEW_REQUIRED:"추가 확인 필요",NO_DATA:"자료 없음",CONFIRMED:"확인됨",FOCUS:"집중",DISTRACTION:"방해",GENERAL:"일반",ALLOW:"허용",BLOCK:"전체 차단",RECORD:"허용하고 기록"};
   return value == null ? "미확인 / 자료 없음" : labels[String(value)] ?? String(value);
 }
 type User = {
@@ -95,7 +101,7 @@ export default function MemberApp() {
         if (disposed || generation !== authGeneration.current) return;
         setUser(result);
         if (window.location.hash.startsWith("#social-link")) setTab("account");
-        else setTab(current => current === "login" || current === "signup" ? "dashboard" : current);
+        else setTab(current => current === "login" || current === "signup" ? requestedWorkspaceView(window.location.search) : current);
       })
       .catch((e) => {
         if (disposed || generation !== authGeneration.current) return;
@@ -147,7 +153,7 @@ export default function MemberApp() {
     const currentUser = await request<User>("/auth/me");
     // Resolve the new identity before revealing member data from any previous session.
     setUser(currentUser);
-    setTab("dashboard");
+    setTab(requestedWorkspaceView(window.location.search));
     if (!window.location.hash.startsWith("#link?")) window.history.replaceState(null, "", window.location.pathname + window.location.search);
     setHash(window.location.hash);
   }
@@ -319,6 +325,9 @@ function DevTerms({compact=false}:{compact?:boolean}) {
 }
 function Sites() {
   const state = useAction();
+  const [siteQuery,setSiteQuery]=useState("");
+  const [sitePurpose,setSitePurpose]=useState("ALL");
+  const [siteOrder,setSiteOrder]=useState("asc");
   const [items, setItems] = useState<Site[]>([]),
     [cursor, setCursor] = useState<string | null>(null),
     [loaded, setLoaded] = useState(false),
@@ -334,16 +343,22 @@ function Sites() {
     [sub, setSub] = useState(true),
     [shorts, setShorts] = useState(false),
     [key, setKey] = useState(() => crypto.randomUUID());
+  const visibleSites=items.filter(site=>(sitePurpose==="ALL"||site.purpose===sitePurpose)&&
+    (site.display_name+" "+site.canonical_host).toLocaleLowerCase().includes(siteQuery.trim().toLocaleLowerCase()))
+    .sort((a,b)=>(siteOrder==="asc"?1:-1)*a.display_name.localeCompare(b.display_name,"ko"));
   async function load(next: string | null = null) {
     const page = await request<Page<Site>>(
       "/sites" + (next ? "?cursor=" + encodeURIComponent(next) : ""),
     );
-    setItems((old) => (next ? [...old, ...page.items] : page.items));
+    setItems((old) => next
+      ? [...new Map([...old, ...page.items].map(site => [site.site_id, site])).values()]
+      : page.items);
     setCursor(page.next_cursor);
     setLoaded(true);
+    return page;
   }
   useEffect(() => {
-    void state.run(() => load());
+    void state.run(async () => { await load(); });
   }, []);
   function edit(site: Site | null) {
     setSelected(site);
@@ -375,8 +390,11 @@ function Sites() {
           ? [{ feature_code: "YOUTUBE_SHORTS", enabled: true }]
           : [],
       };
+      const nameError = siteDisplayNameError(name);
+      if (nameError) throw new UiError(nameError);
+      let saved: Site;
       try {
-        await request(
+        saved = await request<Site>(
           selected ? "/sites/" + selected.site_id : "/sites",
           selected ? "PATCH" : "POST",
           body,
@@ -387,7 +405,35 @@ function Sites() {
           setLatest(await request<Site>("/sites/" + selected.site_id));
         throw e;
       }
-      await load();
+      const unconfirmed = () => new UiError(
+        "저장 응답의 목록 반영을 확인하지 못했습니다. 입력을 보존했습니다. 다시 저장하지 말고 현재 상태를 확인하세요.",
+      );
+      if (!saved || !/^[1-9][0-9]*$/.test(saved.site_id) || !Number.isInteger(saved.version)
+          || saved.version < 1 || !Array.isArray(saved.feature_policies)) throw unconfirmed();
+      // A matching response and readback can both contain a silently changed policy.
+      // Confirm the submitted intent before clearing the form or announcing success.
+      const enabled = (features: Site['feature_policies']) => features.filter(feature => feature.enabled)
+        .map(feature => feature.feature_code).sort().join('|');
+      if (saved.canonical_host !== submittedSiteHost(body.url) || selected && (saved.site_id !== selected.site_id || saved.version <= selected.version) || saved.display_name !== body.display_name
+          || saved.purpose !== body.purpose || saved.access_policy !== body.access_policy
+          || saved.include_subdomains !== body.include_subdomains
+          || enabled(saved.feature_policies) !== enabled(body.feature_policies)) throw unconfirmed();
+      const page = await load();
+      let observed = page.items.find(site => site.site_id === saved.site_id);
+      // A newly created site can be outside the first page. Confirm its own API
+      // record before showing it; never infer success from an empty final page.
+      if (!observed && page.next_cursor) observed = await request<Site>("/sites/" + saved.site_id);
+      const features = (site: Site) => site.feature_policies
+        .map(feature => `${feature.feature_code}:${feature.enabled}`).sort().join("|");
+      if (!observed || !Array.isArray(observed.feature_policies) || observed.site_id !== saved.site_id
+          || observed.version < saved.version || observed.canonical_host !== saved.canonical_host
+          || observed.display_name !== saved.display_name || observed.purpose !== saved.purpose
+          || observed.access_policy !== saved.access_policy || observed.include_subdomains !== saved.include_subdomains
+          || features(observed) !== features(saved)) throw unconfirmed();
+      if (!page.items.some(site => site.site_id === saved.site_id)) {
+        const confirmed = observed;
+        setItems(items => [confirmed, ...items]);
+      }
       edit(null);
       setNotice(
         "설정을 저장했습니다. 현재 세션은 유지하고 다음 세션에 적용합니다.",
@@ -398,12 +444,19 @@ function Sites() {
     <section className="page sites">
       <header className="focus-heading"><h3>사이트 관리</h3><p>사이트를 목적에 맞게 분류하고, 집중 중 적용할 방식을 정하세요.</p></header>
       {loaded && <dl className="metrics site-summary">{[["조회한 사이트", items.length], ["집중 대상", items.filter(s => s.purpose === "FOCUS").length], ["방해 대상", items.filter(s => s.purpose === "DISTRACTION").length], ["일반 이용", items.filter(s => s.purpose === "GENERAL").length]].map(([label, value]) => <div key={label}><dt>{label}</dt><dd>{value}개</dd></div>)}</dl>}
-      <ul className="site-list">
+      <div className="site-controls">
+        <label>사이트 검색<input type="search" value={siteQuery} onChange={e=>setSiteQuery(e.target.value)} placeholder="이름 또는 도메인으로 검색"/></label>
+        <label>이름 정렬<select value={siteOrder} onChange={e=>setSiteOrder(e.target.value)}><option value="asc">이름순 ↑</option><option value="desc">이름순 ↓</option></select></label>
+        <div className="site-purpose-tabs" role="group" aria-label="사이트 분류 필터">{[["ALL","전체"],["FOCUS","집중"],["DISTRACTION","방해"],["GENERAL","일반"]].map(([value,text])=><button key={value} type="button" aria-pressed={sitePurpose===value} onClick={()=>setSitePurpose(value)}>{text}</button>)}</div>
+      </div>
+      <p className="muted">조회한 사이트 안에서 검색·분류합니다.{cursor ? " 더 보기로 나머지 사이트를 불러올 수 있어요." : ""} 저장된 정책과 현재 세션은 바뀌지 않아요.</p>
+      <div className="site-workspace"><section className="site-list-panel" aria-label="등록 사이트"><h4>등록 사이트</h4><ul className="site-list">
         {!loaded && <li className="empty-state" role="status">사이트를 확인하고 있습니다.</li>}
         {loaded && items.length === 0 && <li className="empty-state"><h4>등록된 사이트가 없습니다.</h4><p>사이트 등록에서 주소와 적용할 정책을 저장하세요.</p></li>}
-        {items.map((site) => (
+        {loaded && items.length>0 && visibleSites.length===0 && <li className="empty-state" role="status">검색 조건에 맞는 사이트가 없습니다.</li>}
+        {visibleSites.map((site) => (
           <li key={site.site_id}>
-            <div className="site-identity"><strong>{site.display_name}</strong><small>{site.canonical_host}</small></div><span className={"badge " + site.purpose}>{({FOCUS:"집중",DISTRACTION:"방해",GENERAL:"일반"} as Record<string,string>)[site.purpose]}</span><span className={"badge " + site.access_policy}>{({ALLOW:"허용",BLOCK:"전체 차단",RECORD:"허용하고 기록"} as Record<string,string>)[site.access_policy]}</span>
+            <div className="site-identity"><SiteMark host={site.canonical_host}/><strong>{site.display_name}</strong><small>{site.canonical_host}</small></div><span className={"badge " + site.purpose}>{({FOCUS:"집중",DISTRACTION:"방해",GENERAL:"일반"} as Record<string,string>)[site.purpose]}</span><span className={"badge " + site.access_policy}>{({ALLOW:"허용",BLOCK:"전체 차단",RECORD:"허용하고 기록"} as Record<string,string>)[site.access_policy]}</span>
             <button disabled={state.busy} onClick={() => edit(site)}>
               수정
             </button>
@@ -424,10 +477,19 @@ function Sites() {
                     key: deleteKeys.get(deleting.site_id),
                     version: deleting.version,
                   });
+                  // DELETE acknowledgement alone is not proof of the final resource state.
+                  const unconfirmed = () => new UiError('삭제 결과를 확인하지 못했습니다. 선택을 보존했습니다. 다시 삭제하지 말고 현재 상태를 확인하세요.');
+                  try {
+                    await request<Site>('/sites/' + deleting.site_id);
+                    throw unconfirmed();
+                  } catch (error) {
+                    if (!(error instanceof ApiError && error.status === 404)) throw error;
+                  }
+                  const page = await load();
+                  if (page.items.some(site => site.site_id === deleting.site_id)) throw unconfirmed();
                   deleteKeys.delete(deleting.site_id);
                   setDeleting(null);
                   if (selected?.site_id === deleting.site_id) edit(null);
-                  await load();
                   setNotice("사이트를 삭제했습니다. 과거 기록과 현재 세션 정책은 유지됩니다.");
                 });
       }}>삭제 확인</button><button disabled={state.busy} onClick={() => setDeleting(null)}>삭제 취소</button></section>}
@@ -435,13 +497,13 @@ function Sites() {
         <button
           disabled={state.busy}
           onClick={() => {
-            void state.run(() => load(cursor));
+            void state.run(async () => { await load(cursor); });
           }}
         >
           더 보기
         </button>
       )}
-      <form
+      </section><form className="site-editor"
         onSubmit={submit}
         onChange={() => {
           setKey(crypto.randomUUID());
@@ -453,6 +515,7 @@ function Sites() {
         <label>
           URL 또는 도메인{" "}
           <input
+            disabled={state.busy}
             value={url}
             onChange={(e) => setUrl(e.target.value)}
             required
@@ -462,14 +525,17 @@ function Sites() {
         <label>
           사이트 이름{" "}
           <input
+            disabled={state.busy}
             value={name}
             onChange={(e) => setName(e.target.value)}
+            ref={(node) => { if (node) node.setCustomValidity(siteDisplayNameError(name)); }}
             required
-            maxLength={100}
+            maxLength={200}
           />
         </label>
         <label>
           <input
+            disabled={state.busy}
             type="checkbox"
             checked={sub}
             onChange={(e) => setSub(e.target.checked)}
@@ -480,6 +546,7 @@ function Sites() {
         <label>
           목적{" "}
           <select
+            disabled={state.busy}
             aria-label="목적"
             value={purpose}
             onChange={(e) => {
@@ -495,6 +562,7 @@ function Sites() {
         <label>
           접근 정책{" "}
           <select
+            disabled={state.busy}
             aria-label="접근 정책"
             value={policy}
             onChange={(e) => setPolicy(e.target.value)}
@@ -511,6 +579,7 @@ function Sites() {
         </label>
         <label>
           <input
+            disabled={state.busy}
             type="checkbox"
             checked={shorts}
             onChange={(e) => setShorts(e.target.checked)}
@@ -524,7 +593,7 @@ function Sites() {
             새 사이트 등록
           </button>
         )}
-      </form>
+      </form></div>
       {latest && (
         <section className="site-conflict">
           <h4>서버 최신 값</h4>
@@ -551,7 +620,7 @@ function Sites() {
   );
 }
 function ExtensionHelp() {
-  return <section className="connection-help card"><h4>확장 프로그램 연결이 필요합니다</h4><p>Chrome에 FOCURVE 확장 프로그램을 설치하고, 확장 프로그램에서 회원 연결을 요청한 뒤 이 계정으로 승인하세요. 연결 후 아래 상태를 다시 확인하세요.</p><p className="muted">현재 검증 환경에는 실행 가능한 확장 프로그램 패키지가 없고 연결 승인 절차도 통합 대기 중입니다. 담당자가 제공하는 설치 패키지와 연결 안내가 필요합니다. 사이트 설정·기록 조회는 웹에서 사용할 수 있습니다.</p></section>;
+  return <section className="connection-help card"><h4>확장 프로그램 연결이 필요합니다</h4><p>Chrome에 FOCURVE 확장 프로그램을 설치하고, 확장 프로그램에서 회원 연결을 요청한 뒤 이 계정으로 승인하세요. 연결 후 아래 상태를 다시 확인하세요.</p><p className="muted">설치된 FOCURVE 팝업의 계정 연결 안내를 따르세요. 연결 승인만으로 집중이 시작되지는 않으며, 실제 적용 상태는 집중 세션 화면에서 확인합니다.</p></section>;
 }
 function DateRange({
   from,
@@ -602,7 +671,7 @@ function Metrics({ data }: { data: Record<string, unknown> }) {
               : key === "active_duration_ms" && typeof data[key] === "number"
                 ? Math.floor(Number(data[key]) / 3600000) + "시간 " + Math.floor(Number(data[key]) % 3600000 / 60000) + "분"
               : key === "repeat_ratio" && typeof data[key] === "number"
-                ? data[key].toFixed(1)
+                ? metricPercentage(data[key]) ?? "미확인 / 자료 없음"
                 : key === "quality" ? statusLabel(data[key]) : key === "as_of" ? <QueryTimestamp value={data[key]} /> : String(data[key])}
           </dd>
         </div>
@@ -681,7 +750,7 @@ function Statistics({
         {targets.map((t) => (
           <tr key={String(t.host)}><td>
             {String(t.host)}
-            </td><td>{t.total_access == null ? "미확인 / 자료 없음" : String(t.total_access)}</td><td>{t.repeat_access == null ? "미확인 / 자료 없음" : String(t.repeat_access)}</td><td>{t.blocked_access == null ? "미확인" : String(t.blocked_access)}</td><td>{typeof t.repeat_ratio === "number" ? t.repeat_ratio.toFixed(1) + "%" : "자료 없음"}</td><td>{statusLabel(t.quality)}</td><td>
+            </td><td>{t.total_access == null ? "미확인 / 자료 없음" : String(t.total_access)}</td><td>{t.repeat_access == null ? "미확인 / 자료 없음" : String(t.repeat_access)}</td><td>{t.blocked_access == null ? "미확인" : String(t.blocked_access)}</td><td>{metricPercentage(t.repeat_ratio) !== null ? metricPercentage(t.repeat_ratio) + "%" : "자료 없음"}</td><td>{statusLabel(t.quality)}</td><td>
             <button disabled={state.busy} onClick={() => records(String(t.host), range)}>
               이 대상의 기록
             </button>

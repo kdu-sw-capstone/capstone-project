@@ -39,7 +39,7 @@ describe("API 재전송 계약 (HTTP 모의 검증)", () => {
     );
     vi.stubGlobal("fetch", fetch);
     await expect(socialAuthorizationPath("kakao", "link")).resolves.toBe(
-      "/api/v1/auth/social/kakao/authorize?mode=link&return_path=%2F",
+      "/api/v1/auth/social/kakao/authorize?mode=link&return_path=%2Fsettings",
     );
     expect(fetch).toHaveBeenLastCalledWith(
       expect.stringContaining("/kakao/authorize"),

@@ -6,7 +6,7 @@
 
 Server는 IP·이메일 bucket 해제 시각의 최댓값을 오류 Retry-After와 발송 성공 resend_after_seconds에 반영. Web은 최초 발송 거절과 재발송 대기를 분·초로 표시하고 번호 확인 제한과 분리. 기준: API 명세의 가입 인증번호 및 2026-10-10 제한 안내 항목. 코드: AuthRateLimits.checkAll/retryAt/secondsUntil, ApiFailure/ApiErrors, EmailSignupCodes.request, EmailSignup.run/sendCode.
 
-최종 제품 코드 자동 검증: Backend146/146·verify/package, Frontend121/121·build PASS. 실제HTTP·격리MySQL·Mailpit28/28 PASS(복합제한·만료직전2초·실제만료뒤재요청 포함). 내장브라우저5176에서 최초 제한 안내/번호 입력 미표시, 정상 발송/입력창, 새로고침 복원, 이탈 후 요청 전 재진입을 직접 확인. 외부SMTP/실제Chrome/OAuth는 이번에 미검증. 자세한 근거는 로컬 `C:\Users\dahun\capstone-project\.reviews\email-auth-20261010\FOCURVE_이메일인증_제한안내_수정검증보고서.md` 참조. 보고서는 수정 clone 밖 로컬 검토 산출물이며 게시하지 않음.
+최종 제품 코드 자동 검증: Backend146/146·verify/package, Frontend121/121·build PASS. 실제HTTP·격리MySQL·Mailpit28/28 PASS(복합제한·만료직전2초·실제만료뒤재요청 포함). 내장브라우저5176에서 최초 제한 안내/번호 입력 미표시, 정상 발송/입력창, 새로고침 복원, 이탈 후 요청 전 재진입을 직접 확인. 외부SMTP/실제Chrome/OAuth는 이번에 미검증. 자세한 근거는 로컬 `<LOCAL_PATH_REDACTED> 참조. 보고서는 수정 clone 밖 로컬 검토 산출물이며 게시하지 않음.
 
 상태: 로컬 수정 검토 대기. 독립 재리뷰 전 Commit·Push·PR 생성 안 함. AC-AUTH-01-01~03 전체 완료 승격 안 함. 기존 계정 실패 원인/입력창 누락은 재현되지 않은 미확정으로 유지. 기존 사용자 직접 확인은 자동/직접 브라우저 검증과 구분.
 

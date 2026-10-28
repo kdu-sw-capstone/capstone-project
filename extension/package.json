@@ -1,0 +1,22 @@
+{
+  "name": "focurve-extension-core",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=24 <25"
+  },
+  "scripts": {
+    "test": "node --test tests/*.test.js tests/*.test.mjs tests/*.test.cjs",
+    "check": "node scripts/check.js",
+    "build:harness": "node scripts/build-harness.js",
+    "build:member-worker": "node scripts/build-member-worker.js",
+    "test:popup-ui": "python3 tests/ui/popup_ui.py",
+    "build:a1": "node scripts/build-a1.mjs",
+    "build:member-a1": "node scripts/build-member-a1.mjs"
+  },
+  "devDependencies": {
+    "fake-indexeddb": "6.2.5",
+    "jsdom": "27.4.0"
+  }
+}

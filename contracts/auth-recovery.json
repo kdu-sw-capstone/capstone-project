@@ -1,0 +1,45 @@
+{
+  "contract": "FOCURVE_MEMBER_REAUTH_SCOPE_1",
+  "purpose": "REAUTHENTICATION_ONLY_NOT_FOCUS_OR_HOLD_RECOVERY",
+  "serverReadyEndpoint": {
+    "method": "GET",
+    "path": "/api/v1/install/auth-recovery",
+    "headers": [
+      "X-Installation-Id",
+      "X-Installation-Proof"
+    ],
+    "requires": [
+      "hash-pinned owner-provisioned scope",
+      "unexpired operation at most 20 minutes",
+      "exact executor/member/origin/callback",
+      "current dedicated schema and no session/lock/unresolved Receipt"
+    ],
+    "responseContract": "FOCURVE_MEMBER_REAUTH_READY_1",
+    "focus_allowed": false
+  },
+  "mutations": [
+    "existing auth/login",
+    "scoped extension-link-requests/evidence/approval/claim",
+    "scoped new extension-tokens exchange"
+  ],
+  "neverAllowed": [
+    "extension-tokens/refresh replay",
+    "session START or END by recovery",
+    "policy changes",
+    "automatic HOLD state transition"
+  ],
+  "extensionActions": [
+    "RECOVER_BEGIN",
+    "RECOVER_CONFIRM"
+  ],
+  "popup": "member-ui/popup.html",
+  "scopeFile": "<installation>/auth-recovery-grant.json",
+  "scopeEnvironment": [
+    "FOCURVE_AUTH_RECOVERY_GRANT",
+    "FOCURVE_AUTH_RECOVERY_GRANT_SHA256"
+  ],
+  "ownerPreparation": "install_core.recovery_server_env after separately approved dedicated DB startup; current read-only DB check, no process spawn or HOLD mutation",
+  "shutdown": "close_recovery_scope preserves grant evidence, deny further auth, drain requests, verify local obligations/current dedicated DB, normally stop owned services only; preserve uncertainty",
+  "existingHolds": "No direct status edit and no recovery merely because authentication succeeds",
+  "exampleOnly": "distribution/auth-recovery-scope.example.json is invalid until exact independently verified approved bindings are supplied"
+}

@@ -1,0 +1,9 @@
+{
+  "manifest_version": 3,
+  "name": "FOCURVE Shorts 독립 검증 — Core 미연결",
+  "version": "0.1.0",
+  "permissions": ["activeTab"],
+  "action": {"default_popup": "popup.html"},
+  "content_scripts": [{"matches": ["https://www.youtube.com/*", "https://youtube.com/*"], "js": ["bootstrap.js"], "run_at": "document_idle"}],
+  "web_accessible_resources": [{"resources": ["content/*.mjs"], "matches": ["https://www.youtube.com/*", "https://youtube.com/*"]}]
+}

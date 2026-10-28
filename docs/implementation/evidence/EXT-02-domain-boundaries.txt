@@ -1,0 +1,221 @@
+EXT-02 guest domain boundaries
+Base: 2931b385c99e10ee22c7b278877874275a6d87aa
+Codex Linux / Node 24.19.0 / npm 11.9.0
+
+Before fix: updated regression tests against original guest source
+✔ site matching accepts exact host and HTTP(S), and rejects suffix lookalikes (3.653841ms)
+✔ exact-host policy does not match subdomains (0.617896ms)
+✔ rule generation applies BLOCK only and skips existing rule IDs (0.681792ms)
+✔ guest APPLY expires before execution and leaves no blocking rule (2.701239ms)
+✔ guest APPLY at the exact deadline is rejected before installing rules (4.223083ms)
+✔ worker recovery rejects an invalid APPLY deadline: undefined (2.225229ms)
+✔ worker recovery rejects an invalid APPLY deadline: invalid (1.655406ms)
+✔ worker recovery rejects an invalid APPLY deadline:  (1.65193ms)
+✔ guest session from a different installation owner is rejected before recovery (0.723235ms)
+✔ worker reconnect retains a RUNNING session when journal rules match (0.849757ms)
+✔ worker reconnect releases the session when journal rules do not match (0.795193ms)
+✖ guest matcher and generated DNR regex agree on host boundaries (subdomains=false) (1.372518ms)
+✖ guest matcher and generated DNR regex agree on host boundaries (subdomains=true) (1.040836ms)
+✖ guest domain matching preserves explicit www and uses IDNA ASCII host (0.649733ms)
+✖ guest start diverts only BLOCK tabs including trailing dots; end preserves unrelated rules (1.952406ms)
+✖ guest current snapshot stays fixed and the next session uses changed BLOCK/ALLOW settings (2.323337ms)
+ℹ tests 16
+ℹ suites 0
+ℹ pass 11
+ℹ fail 5
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 95.501444
+
+✖ failing tests:
+
+test at tests/session-core.test.mjs:192:3
+✖ guest matcher and generated DNR regex agree on host boundaries (subdomains=false) (1.372518ms)
+  AssertionError [ERR_ASSERTION]: Core: https://example.com./
+
+  false !== true
+
+      at TestContext.<anonymous> (file:///tmp/focurve-domain-baseline-0dt7jjs7/tests/session-core.test.mjs:199:14)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1382:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:960:18)
+      at Test.postRun (node:internal/test_runner/test:1522:19)
+      at Test.run (node:internal/test_runner/test:1447:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:960:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests/session-core.test.mjs:192:3
+✖ guest matcher and generated DNR regex agree on host boundaries (subdomains=true) (1.040836ms)
+  AssertionError [ERR_ASSERTION]: Core: https://example.com./
+
+  false !== true
+
+      at TestContext.<anonymous> (file:///tmp/focurve-domain-baseline-0dt7jjs7/tests/session-core.test.mjs:199:14)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1382:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:960:18)
+      at Test.postRun (node:internal/test_runner/test:1522:19)
+      at Test.run (node:internal/test_runner/test:1447:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:960:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests/session-core.test.mjs:208:1
+✖ guest domain matching preserves explicit www and uses IDNA ASCII host (0.649733ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+
+  false !== true
+
+      at TestContext.<anonymous> (file:///tmp/focurve-domain-baseline-0dt7jjs7/tests/session-core.test.mjs:217:12)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1382:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:960:18)
+      at Test.postRun (node:internal/test_runner/test:1522:19)
+      at Test.run (node:internal/test_runner/test:1447:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:960:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests/session-core.test.mjs:229:1
+✖ guest start diverts only BLOCK tabs including trailing dots; end preserves unrelated rules (1.952406ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
+  + actual - expected
+
+  + []
+  - [
+  -   1,
+  -   2,
+  -   7
+  - ]
+
+      at TestContext.<anonymous> (file:///tmp/focurve-domain-baseline-0dt7jjs7/tests/session-core.test.mjs:246:10)
+      at async Test.run (node:internal/test_runner/test:1389:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:960:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: [],
+    expected: [ 1, 2, 7 ],
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+
+test at tests/session-core.test.mjs:255:1
+✖ guest current snapshot stays fixed and the next session uses changed BLOCK/ALLOW settings (2.323337ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+
+  false !== true
+
+      at TestContext.<anonymous> (file:///tmp/focurve-domain-baseline-0dt7jjs7/tests/session-core.test.mjs:273:10)
+      at async Test.run (node:internal/test_runner/test:1389:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:960:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+Exit: 1
+
+Command: npm test
+
+> focurve-extension-core@0.1.0 test
+> node --test tests/*.test.js tests/*.test.mjs
+
+✔ site matching accepts exact host and HTTP(S), and rejects suffix lookalikes (3.423622ms)
+✔ exact-host policy does not match subdomains (0.757477ms)
+✔ rule generation applies BLOCK only and skips existing rule IDs (0.913994ms)
+✔ guest APPLY expires before execution and leaves no blocking rule (2.829534ms)
+✔ guest APPLY at the exact deadline is rejected before installing rules (1.196441ms)
+✔ worker recovery rejects an invalid APPLY deadline: undefined (2.587518ms)
+✔ worker recovery rejects an invalid APPLY deadline: invalid (2.71504ms)
+✔ worker recovery rejects an invalid APPLY deadline:  (2.656286ms)
+✔ guest session from a different installation owner is rejected before recovery (3.005059ms)
+✔ worker reconnect retains a RUNNING session when journal rules match (0.989247ms)
+✔ worker reconnect releases the session when journal rules do not match (0.77949ms)
+✔ guest matcher and generated DNR regex agree on host boundaries (subdomains=false) (3.222158ms)
+✔ guest matcher and generated DNR regex agree on host boundaries (subdomains=true) (0.958532ms)
+✔ guest domain matching preserves explicit www and uses IDNA ASCII host (0.843738ms)
+✔ guest start diverts only BLOCK tabs including trailing dots; end preserves unrelated rules (1.877753ms)
+✔ guest current snapshot stays fixed and the next session uses changed BLOCK/ALLOW settings (2.332492ms)
+✔ site layer: HTTP(S), exact host, subdomain boundary, www preserved, ALLOW/RECORD untouched (2.500405ms)
+✔ reject malformed/overlapping snapshot before constructing rules (0.507518ms)
+✔ AC-EXT-02-01 partial: durable journal precedes DNR, actual rules and open tabs confirmed (2.653727ms)
+✔ AC-EXT-02-01/02 partial: executor, revision, owner, ending and reconciliation reject without mutation (0.839641ms)
+✔ AC-EXT-02-02 partial: expired/missing/invalid APPLY deadline cannot add rules (1.623027ms)
+✔ trusted member owner matches snapshot; payload cannot override context owner (0.626339ms)
+✔ duplicate command and re-created worker do not add new rules (1.002909ms)
+✔ AC-EXT-02-03 partial: missing rules after restart only inspected; old APPLY never reinstalled (0.564805ms)
+✔ snapshot changes with same command rejected; immutable copy kept (0.588181ms)
+✔ BOUND-17 partial: pre-apply persistence failure makes no browser changes (0.444694ms)
+✔ unsupported regex reported; no journal success or rules installed (0.29108ms)
+✔ apply failure cleans only owned rules; never claims APPLIED (0.747141ms)
+✔ partial apply observation rolls back and does not return success (0.407898ms)
+✔ expiry during journal commit prevents late APPLY (0.385864ms)
+✔ termination racing with apply removes rules before reporting failure (0.421499ms)
+✔ release keeps unrelated rules; re-created worker can retry release (0.789015ms)
+✔ rule ID collision does not delete another feature rule (0.523282ms)
+✔ release failure remains unconfirmed; later release retries (0.613989ms)
+✔ failed rollback is surfaced and journal retained (0.318813ms)
+✔ empty BLOCK set and all-ALLOW snapshot perform no DNR additions (0.280095ms)
+✔ open-tab redirect not confirmed: fail and roll back after bounded retries (0.766721ms)
+✔ tab closed during redirect is not a live unprotected target (1.028797ms)
+✔ post-apply storage failure rolls back; storage uncertainty remains explicit (0.552176ms)
+✔ foreign-owner inspection rejected without disclosing journal (0.358883ms)
+✔ release can clean expired apply rules; deadline only limits APPLY (0.393776ms)
+✔ partial rule loss on re-created worker is UNCONFIRMED and not reapplied (0.582161ms)
+ℹ tests 42
+ℹ suites 0
+ℹ pass 42
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 106.338308
+
+Exit: 0
+
+Command: npm run check
+
+> focurve-extension-core@0.1.0 check
+> node scripts/check.js
+
+JavaScript syntax checks passed (not ESLint).
+npm notice
+npm notice New major version of npm available! 11.9.0 -> 12.2.0
+npm notice Changelog: https://github.com/npm/cli/releases/tag/v12.2.0
+npm notice To update run: npm install -g npm@12.2.0
+npm notice
+
+Exit: 0
+
+Command: npm run build:harness
+
+> focurve-extension-core@0.1.0 build:harness
+> node scripts/build-harness.js
+
+Harness built: .chrome-harness/manifest.json (test only, no product build).
+
+Exit: 0
+
+Actual browser attempt: Chromium 151.0.7922.173, Python Playwright persistent disposable profile.
+Command-line extension load produced no worker; after excluding Playwright disable-extensions default, no worker. CDP Extensions.loadUnpacked with dedicated extension-debugging flag returned: Loading of unpacked extensions is disabled by the administrator.
+Browser extension functional validation: BLOCKED / NOT RUN. No policy bypass or product manifest permission change. Node tests use Chrome/storage mocks and JS RegExp, not actual DNR validation. Windows Chrome validation awaits user execution of README domain procedure.

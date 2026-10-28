@@ -67,3 +67,17 @@
 담당 김다훈(Server/API/DB·연결Frontend), 브랜치 codex/server-event12-integration, 시작develop76df34ea6be1c591be33c29606c24fc654f61932. 기존 담당 배정 유지. 상태: 담당 구현 검토 대기 / 실제Extension통합 미검증. 최신 사용자 지시로 담당 코드 전달용Commit·Push·develop PR을 진행하며 전체MVP완료나 병합으로 처리하지 않는다.
 
 [게시 검증·실행환경·주체·남은 조건](../Server_최신수정본_게시검증_2026-10-09.md) · [실제 API·Event1.2·구형 호환·Core 절차](../Extension_Server_연동가이드.md). Backend 최종107/107(기존106+실제HTTP합성1), Frontend104/104·build PASS. 설치/APPLIED는합성, 실제Chrome/회원Core통합/Content감지는미검증. Snapshot1.2 신규발급OFF. 전체AC를 통과로 승격하지 않는다.
+
+
+## 2026-10-28 r7 실제 수용·후속 실행 증거 보존
+
+- 담당 영역: Codex 통합 검증 / 브랜치 `codex/mandatory-mvp-integration-20261025` / 기준 `90ad32be5d282f3b44c917a29e156dffc5e29187`. 기존 팀 배정은 변경하지 않음.
+- 실제 회원 2분 세션과 정책 세션의 ENDED·잠금 해제 확인, BLOCK·RECORD·일반 영상·직접 Shorts 제한 및 검색 결과 Shorts 숨김 확인. 클릭으로 진입하는 SPA Shorts는 별도 실제 미검증.
+- 대시보드·통계 실제 표시: 접근 7, 차단 5, 반복 4. YouTube 기록 품질은 PARTIAL이며 완전 수집으로 승격하지 않음.
+- `extension/safety/guest-reader.js`의 연결 해제 후 보존 회원 자료 ACK 대조 범위 누락 수정. 명시 승인 후 같은 r7에 1파일+무결성만 적용, 실제 조회 BLOCKED/pendingOutbox10 → CLEAR_LOCAL_ONLY/모든 의무0. 자료·DNR 변경 없이 읽기만 검증.
+- 현재 r7은 HOLD이며 Server·MySQL 정상 종료 및 포트 해제. 비회원 START와 재기동 데이터 보존 실제 수용은 미실행.
+- `distribution/installer/product_runtime_entry.py`: 기존 최초 실패를 덮어쓰지 않으면서 실행별 최초 실패도 불변 보존하는 수정은 독립 소스에만 반영. 기존 실행의 누락된 실패를 소급 생성하지 않음. HOLD·END·Cleanup·START 허용 계약은 변경하지 않음.
+- 현재 차단 근거: 원래 실패 08:04:42 KST, 후속 READY 08:57:15 KST. 이전 실패를 후속 실행 원인으로 사용하면 정식 타임라인 검증 위반. 이전 성공 HOLD 작업의 재사용도 금지. 미래 기록 보완만으로 현재 HOLD가 해소되지는 않음.
+- 검증: Extension 전체591 PASS, 배포/실행 계약 전체364 PASS. 자동 결과는 실제 비회원 수용을 대체하지 않음.
+- 증거 위치: 저장소 상위 `outputs/focurve-mvp-integration-20261025/actual-current-r7-20261028/resume-reader-fix-60min/guest-reader-fix/`, 릴리스 준비 `outputs/focurve-mvp-integration-20261025/release-preparation-20261028/`.
+- 다음 행동: 현재 실행의 신뢰 가능한 Native 실패 증거 또는 이를 대신할 정식 처리 계약의 설계·검증 근거를 확보한 후 별도 실제 적용·재개 승인을 확인. 현재 안전 판정을 정상 실행 권한으로 간주하지 않음. `MVP_FINAL_COMPLETE=false`. Git index·Commit·Push·Merge 변경 없음.
