@@ -9,11 +9,13 @@ import static kr.ac.kdu.focurve.MemberAuth.*;
 
 /** RC2 configuration persistence. No D06/Content writes and no direct policy execution. */
 final class AdditionalConfigStore {
+ record ApplyState(String state,Long appliedRevision){}
  /** Trusted server adapter, never a request-supplied capability boolean or artifact hash. */
  interface Admission {
   void verify(Identity principal,String executor,String binding,boolean mutation);
   /** Must persist the canonical package/outbox in the caller's transaction or throw. */
   void publish(String binding,String configId,long revision,JsonNode value,boolean deleted);
+  default ApplyState appliedState(Map<String,Object> savedConfig){return new ApplyState("PENDING",null);}
  }
  private final MemberAuth a;
  private final AdditionalConfigContract contract;
@@ -117,6 +119,7 @@ final class AdditionalConfigStore {
  private String utc(Object value){return new java.time.format.DateTimeFormatterBuilder().appendInstant(3).toFormatter().format(java.time.Instant.parse(instant(value)));}
  private ObjectNode record(Map<String,Object> row) {
   ObjectNode result=a.obj("config_id",row.get("config_id"),"executor_id",row.get("executor_id"),"version",row.get("version"),"value",parse(row.get("value_json")),"deleted_at",row.get("deleted_at")==null?null:utc(row.get("deleted_at")),"saved_state","SAVED","runtime_apply_state","PENDING","saved_runtime_revision",row.get("saved_runtime_revision"),"applied_runtime_revision",null,"next_focus_revision",row.get("saved_runtime_revision"),"updated_at",utc(row.get("updated_at")));
+  var applied=admission.appliedState(row);result.put("runtime_apply_state",applied.state());if(applied.appliedRevision()!=null)result.put("applied_runtime_revision",applied.appliedRevision());
   contract.validate("ConfigRecord",result);return result;
  }
 }
