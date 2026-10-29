@@ -1,5 +1,23 @@
 # POLICY-03 · 유튜브 쇼츠 차단
 
+## 2026-10-29 야간 Shorts·문서 안정화
+
+- 담당: 김다훈 영역의 Codex 안정화 작업. `fix/shorts-stability`, 시작 `9868a0f5914d7a173c102fc198a9a908b043381f`(원격 develop과 동일). 독립 Worktree `C:/Users/dahun/.codex/worktrees/shorts-stability-20261029/capstone-project`; 추가 MVP와 기존 실패 설치는 수정하지 않음.
+- 기준: AC-POLICY-03-01~03, 기존 동작규칙의 초기/SPA/새 DOM 재적용 및 소유 변경분 복원. D06·Wire·ACK·Binding·Journal·기한·소유권 계약은 유지.
+- 재사용 증거: 기존 Shorts·SPA continuation 보고와 실제 UNKNOWN 수용 중단 보고. 실제 최초 STORE_UNCONFIRMED 경로는 미확정, firstFailure=ABSENT와 미해소 의무는 보존. 기존 747 PASS를 이번 Chrome PASS로 확대하지 않음.
+- 결함 1 / `711a54f`: 기존 anchor의 href 또는 rich shelf의 is-shorts 속성만 변경되면 observer가 새 대상을 발견하지 못함. 기존 observer attributeFilter에 href/is-shorts 추가. 상대·절대·protocol-relative 링크, rich shelf 및 일반 영상 query 오탐 방지, 회원/비회원 실제 Content·Core·원장 모듈의 정상 END 복원 시험 추가. 확정된 시험 설정으로 변경 전 7건 중 6 FAIL/1 PASS, 수정 후 7/7 PASS. 최초 단독 재현 4 FAIL/1 PASS와 통합 시험 작성 중 설정/기대값 오류도 로컬 로그에 보존.
+- 결함 2 / `dc3fb6a`: A→B→A Root COMMITTED에서 BEFORE를 관측하지 못하면 과거 A의 REPLACED_ROOT_OBSERVED를 유지하여 새 COMMITTED의 재검사까지 억제. 동일 현재 문서의 중복 COMMITTED만 기존 준비 상태를 유지하도록 수정. 재활성화는 COMMITTED_NOT_READY로 시작하며 과거 READY를 재사용하거나 새 READY/적용 성공을 생성하지 않음. 신규 2건 수정 전 FAIL→수정 후 PASS, 관련 coordinator/READY 36/36 PASS. 실제 Chrome BFCache의 이벤트 순서·정책 수용 결과는 아님.
+- 제품 범위: 소스 2파일과 회원/비회원 Content/Core 생성 번들 4개. 기존 durable plan→DOM 적용 순서·END 복원·sender/owner/generation·기한·ACK 유지. 공유 메시지·Schema·복원 계약 변경 없음. Web/Server/Native/추가 MVP 소스 변경 없음.
+- Windows Node v24.19.0, lockfile npm ci: 최종 Extension **756/756 PASS**, 실패/취소/스킵0. `cd extension; node --test --test-concurrency=2 --test-reporter=tap tests/*.test.js tests/*.test.mjs tests/*.test.cjs`. JSDOM·fake-indexeddb·모의 Chrome/fixture clock을 사용하는 합성 검증이며 실제 Chrome이 아님. 결함 1 직후 754 PASS도 보존.
+- `node extension/scripts/build-a1.mjs`, `build-member-a1.mjs` 재생성 후 양쪽 content/core 4번들과 generator 출력 byte parity·VM 구문 PASS. `node scripts/check.js` PASS. extension/manifest.json 변경 없음, 명시된 파일 참조 존재 확인 PASS.
+- 검토 패키지 준비용 unbound Web TypeScript/Vite build PASS, Java21 runtime-server verify **58/58 PASS**(실패/오류/스킵0, 합성 SMTP/JDBC·제품 DB 미사용) 및 JAR 빌드 PASS. backend/운영 DB·실제 Native 시험은 새로 실행하지 않음.
+- 로컬 증거: `.local/shorts-night/attribute-integrated-before.tap`, `attribute-integrated-final.tap`, `recommit-before.tap`, `recommit-after.tap`, `full-regression-final.tap`, `syntax-final.log`, `bundle-manifest-parity-final.json`, `verification-summary.json`, `runtime-verify.log`, `web-build.log`. 원본 과거 Chrome 실패 보고는 기존 위치 그대로 보존.
+- 새 검토 후보: `.local/shorts-night/package/FOCURVE-0.1.25-shorts-night-20261029.zip`, SHA-256 `152cbe78785a9dd98d3796aff67fc703e8aca495091c5a3ddeae3549c6ede633`. Manifest4404/ZIP4405/source952/build input146 전 항목 일치 및 Java helper 재컴파일·설치 취소 CLI `PASS_NO_INSTALL_CALLED`. 실제 설치/서비스 기동0. 기존 ZIP/설치는 그대로 보존하며 새 수정 수용에 구 ZIP을 사용하지 않음. 기존 패키지의 vendor만 Manifest hash 검증 후 재사용.
+- 패키지 제품 소스 Git `dc3fb6a127e8f7a39b99f9cffc8b00b77b73d0b7`, 그 뒤 변경은 이 기록뿐. 기존 생성기의 BUILD-PROVENANCE.baseGitSHA는 최초 baseline `90ad32b`를 유지하므로 현재 HEAD로 해석하지 않음; 현재 제품 SHA와 파일별 일치는 `.local/shorts-night/package-git-source-receipt.json` 및 SOURCE-BUILD-MANIFEST.json에 결속. 새 패키지는 검토용이며 실제 수용 완료 상태가 아님.
+- 다음 날 최소 실제 수용: 새 패키지/명시된 실행 승인·기한으로 독립 환경 1개에서 회원 정책 1회. 직접 Shorts, 검색·추천과 동적 href/is-shorts 재사용, SPA·새로고침·뒤/앞·BFCache 경로를 확인하고 정상 END 후 DOM·Binding·Journal·DNR·Receipt/ACK·서버 잠금을 함께 확인. PASS 때만 비회원 1회, Worker/Native 재연결·동일 설치 재기동과 데이터 내용 비교. UNKNOWN/HOLD/소유권 불일치 시 재시도·강제 END/Cleanup 없이 보존·승인된 소유 서비스 종료 절차 적용. 이 기록은 실제 실행 승인이 아님.
+- 남은 위험: 과거 실제 STORE_UNCONFIRMED의 최초 원인 미확정, 기존 실패 설치의 UNKNOWN·Binding·Journal·DNR·잠금 의무 미해소. 이번 두 독립 반례 수정을 역사 사건 원인 확정이나 복원 완료로 확대하지 않음. 문서 재활성화 시험은 Root bookkeeping 경계만 검증; 실제 BFCache·기존 Content 복원·정식 P1 재결속·장시간 Native 경로는 수용 대기.
+- 실제 Chrome·Native 설치/등록/정책 START·운영 DB·기존 UNKNOWN/HOLD 복구: NOT_RUN(야간 제외). `MVP_FINAL_COMPLETE=false`.
+
 단계: 필수 MVP · 설계 담당 영역: Web·Server·Extension
 
 ## 작업 상태
