@@ -239,7 +239,7 @@ D06 메시지·규칙 ID/priority/freeze 및 D09 응답유실 추가 API는 계�
 - 동일 트랜잭션에서 구간 종료·확인된 시간 집계·ENDED 또는 START_FAILED·명령 ACK·잠금 해제를 수행한다. 늦은 구 revision APPLY는 감사 기록만 남기며 종료 상태/시간/버전을 되돌리지 않는다. 동일 report_id/동일 원문은 DUPLICATE, 다른 원문은 REPORT_CONFLICT이다.
 - Codex 실행: Backend138/138·패키징, Frontend114/114·빌드 PASS. 추가 HTTP/MySQL 테스트10개(복수 하위 사례 포함), 별도 독립 HTTP 재현 probe PASS. 격리 MySQL8.4.8 127.0.0.1:60046/focurve_contract_test, 합성 회원/설치/보고 사용. 실제 Chrome·회원 Core/Content 통합 NOT RUN. 응답 유실은 클라이언트가 첫 결과를 무시하고 재전송한 모의 사례이며 Server 프로세스 강제 중단은 NOT RUN.
 - MAX/MAX+1/Long.MAX_VALUE 버전 원본·frozen Snapshot 보존 및 잠금 해제 확인. 운영 Snapshot1.2 기본 OFF 유지(테스트 프로필만 ON). D01/D05 자동복구 전체 미구현 경계 유지. AC-SESSION-02/03/04의 -01/-03 중 Server 합성 보고 부분만 검증했으며 실제 적용/해제·전체 AC·MVP 완료로 승격하지 않는다.
-- 증거: C:\Users\dahun\capstone-project\.reviews\pr18-20261009\PR18_RELEASED_보고순서_수정검증보고서.md 및 released-order 로그. 후속: 독립 재리뷰, 실제 Core 해제 증거·역순/재전송 통합. 이번 Commit/Push/PR 업데이트/병합 없음.
+- 증거: <LOCAL_PATH_REDACTED> 및 released-order 로그. 후속: 독립 재리뷰, 실제 Core 해제 증거·역순/재전송 통합. 이번 Commit/Push/PR 업데이트/병합 없음.
 
 ## 2026-10-10 APPLY 기간 전달 사용자 확정·로컬 구현
 
@@ -266,3 +266,20 @@ Backend154/154, Frontend121/121, HTTP131 PASS/1계약 BLOCKED. 실제 Chrome·Ed
 - 검증 주체는 Codex 자동·HTTP·실제 임시 DB/메일 수신·합성 설치/실행 보고다. 시간 제한 경계는 격리 DB 시각을 조절한 재현이며 실제 한 시간 대기가 아니다. 실제 Chrome·Edge·외부 OAuth·외부 SMTP·회원 Core/Content 통합은 이번 검증 NOT RUN이다.
 - 과거 기간 미전달 BLOCKED는 당시 Server 상태이며 PR #19로 Server 전달은 해결됐다. Core의 소수점9자리 시각 파싱·기간 검증/영속 결속 및 실제 회원 실행은 후속 통합 대기다. D-01·D-05 자동복구 전체는 미구현, Snapshot1.2 신규 발급 기본 OFF를 유지한다.
 - 상태: 검증된 결함 수정본 Draft PR 게시 준비/팀 리뷰·통합 대기. 전체 작업카드·93개 수용 기준·필수 MVP를 완료로 변경하지 않는다. 실행 로그와 게시 결과는 `FOCURVE_1단계_F1_F4_게시검증보고서.md`에 남긴다. develop 병합은 수행하지 않는다.
+
+
+### 2026-10-10 로컬 Web 실행 조회 알림 — EXT-02 지연 개선
+
+사용자의 실제 시작 지연 개선 지시에 따라 개발 Web의 기존 sessions POST/end 성공 뒤 `FOCURVE_EXECUTION_WAKE` 알림을 추가한다. 공통 envelope 유지, owner_context=null은 이 무권한 hint 전용, payload는 executor_id만. Core는 설정된 정확한 Web origin·top-frame·LINKED·executor를 확인하고 기존 인증 commands/session 조회를 즉시 실행한다. 응답 received는 명령 성공/실행 상태가 아니다. 기존 Server API/enum/권한·D06 Content 계약을 변경하지 않는다. 개발용 manifest 외부 연결 허용은 localhost/127.0.0.1 HTTP이며 운영 origin은 후속 검토. [필드·검증·실제 Chrome 미검증 범위](../../implementation/evidence/EXT-02-2026-10-10-execution-wake.md).
+
+### 2026-10-10 현재 브라우저 연결 확인 — 로컬 Web EXT-02
+
+사용자 시작/종료 즉시 연결 지시에 따라 `FOCURVE_EXECUTION_CONNECT`(공통 envelope, owner_context=null, payload={})를 추가한다. 정확한 auth.web_origin·top-frame/tab·LINKED 검증 후 기존 인증 coordinator 조회/heartbeat를 완료하고 현재 executor_id만 반환한다. Web은 현재 로그인 계정의 기존 설치 목록과 대조하고 시작 전에 재확인한다. 인증/연결 미확인 시 예전 설치로 임의 시작하지 않는다. WAKE는 명령 성공이 아닌 조회 알림이며 실행 중 후속 조회 하나를 보존한다. 기존 Server API/enum/권한·Snapshot gate 및 D06 Content 계약은 유지한다. [정확한 필드·오류·timeout·검증 범위](../../implementation/evidence/EXT-02-2026-10-10-current-browser.md).
+
+## 2026-10-27 NR01 보고 확인의 후속 조회 제거 계약 (통합 후보)
+
+API-EXEC-02의 요청·report_id/원문 멱등성·인증·소유권·Event/Snapshot 의미는 유지한다. NR01 APPLIED 보고 응답에는 선택적인 `execution_confirmation`을 추가한다: `{contract:"NR01_REPORT_CONFIRMATION_1",report_id,command_id,state}`. state는 같은 보고 처리 트랜잭션의 현재 세션에서 session_id/owner_user_id/executor_id/policy_snapshot_id/desired_revision/execution_status/time_accounting_mode/native_transition_contract/dom_transition_contract/first_nr_failure/first_dp_failure와 각 전이의 transition_id/phase/root_generation만 투영한다. 자격값·원본 Snapshot·정책·interval은 포함하지 않는다. DUPLICATE도 재적용 없이 현재 투영을 반환해 과거 RUNNING으로 되돌리지 않는다.
+
+클라이언트는 envelope의 계약·report_id·command_id를 검증한 뒤 기존 후속 GET과 동일한 세션/회원/설치/정책/revision/전이/세대/실패 검사를 수행한다. ACK ACCEPTED만으로 RUNNING을 인정하지 않는다. 신규 필드가 없는 구 서버는 기존 GET 조회를 유지하고, 필드가 있는데 불일치하면 안전하게 거절한다. 보고 순서·Outbox·재전송 ID는 유지한다. 원자적 응답은 추가 조회 왕복을 제거할 뿐 5초 NR 기한이나 늦은 응답 승인 조건을 바꾸지 않는다.
+
+NR 전이 시작 후 기존 50ms 확인 예약은 즉시 예약으로 우선 처리한다. 이미 실행 중인 확인은 병렬 실행하지 않고 기존 직렬 큐/dirty 표식을 사용한다. UI 요청 때문에 미뤄진 즉시 예약 우선순위도 유지한다. 실제 설치 적용/Chrome 수용은 별도 승인 전 미실행이다.

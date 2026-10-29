@@ -1,0 +1,46 @@
+FOCURVE EXT-02 current workspace revalidation
+Date: 2026-10-08 Asia/Seoul
+Repository: C:\FOCURVE\capstone-project
+Branch: feature/extension-core-ext-02
+Code under test: cf7910e1acea40d21c3dde3e7d65c14b05e05b53
+Executor: Codex, Windows PowerShell
+Directory: C:\FOCURVE\capstone-project\extension
+
+Environment
+- Node v24.21.0, official nodejs.org Windows ZIP SHA256 verified against official SHASUMS256.txt:
+  158f7685b44de51f6c0df1d153526cbcd3e1bc739a8dfc607721cef75de9e541
+- npm 11.19.0
+- package-lock v3; no external npm dependencies
+- Chrome executable file version 154.0.8037.98 was present. Codex did not run Chrome UI.
+- No environment variables, Web, Server, DB, or member account were used.
+
+Commands and results
+1. npm.cmd ci --ignore-scripts --audit=false --fund=false --cache .npm-cache
+   Directory: extension. Result: success, up to date. Zero external dependencies.
+2. npm.cmd test
+   Directory: extension. Result: 26 passed, 0 failed, 0 skipped.
+   Target: real source modules; DNR, tabs, journal, and trusted Core context are mocked.
+3. npm.cmd run check
+   Directory: extension. Result: JavaScript syntax checks passed. This is not ESLint.
+4. npm.cmd run build:harness
+   Directory: extension. Result: success; generated .chrome-harness/manifest.json.
+   This is a test-only unpacked harness, not the product extension build.
+
+One initial test invocation did not start because the temporary Node directory was not
+on PATH for npm child processes. After adding the verified Node directory to this
+PowerShell process PATH, all commands above completed successfully. No test or
+expected result was weakened.
+
+Coverage mapping
+- AC-EXT-02-01 partial: owner/revision/desired-state guard and observed DNR/tab result.
+- AC-EXT-02-02 partial: executor/snapshot scope and expiry rejection.
+- AC-EXT-02-03 partial: journal and actual-rule inspection; no stale automatic APPLY.
+- BOUND-17 partial: injected persistence, DNR, rollback, and ownership failures.
+- These tests use mocks for Chrome APIs and do not establish real Chrome behavior,
+  real IndexedDB quota behavior, product authentication, Server reconciliation,
+  ExecutionReport delivery, or full session recovery.
+
+User Chrome run
+- Earlier user execution on 2026-10-08 reported TEST_RUN_FINISHED_USE_NEW_TEST_PROFILE.
+- Commit cf7910e added a new-run preparation step. The updated fixture has not yet
+  been rerun by the user; the Chrome scenario remains pending and is not passed.

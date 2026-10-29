@@ -62,3 +62,13 @@ it("최초 소셜 가입은 인증 이메일·필수 동의 후 확정하고 대
 });
 
 it("가입 버튼 문구에서도 기존 login 인증 경로를 유지한다",async()=>{const navigate=vi.fn();render(<SocialButtons signup navigate={navigate}/>);const button=screen.getByRole("button",{name:"Google로 가입"});await waitFor(()=>expect(button).toBeEnabled());fireEvent.click(button);await waitFor(()=>expect(navigate).toHaveBeenCalled());expect(authorize).toHaveBeenLastCalledWith("google","login");});
+
+it('MEMBER Runtime 미설정 제공자 응답은 네트워크 실패와 구분하고 재시도 이동하지 않는다',async()=>{
+ authorize.mockRejectedValue(new ApiError('PROVIDER_NOT_CONFIGURED',503)); const navigate=vi.fn();render(<SocialButtons navigate={navigate}/>);
+ await waitFor(()=>expect(screen.getByText('Google 로그인은 아직 사용할 수 없습니다. 이메일로 로그인해 주세요.')).toBeInTheDocument());
+ expect(screen.getByRole('button',{name:'Google로 로그인'})).toBeDisabled();expect(screen.queryByRole('button',{name:'소셜 연결 다시 확인'})).not.toBeInTheDocument();expect(navigate).not.toHaveBeenCalled();
+});
+it('MEMBER Runtime 코드라도 인증 거절은 미설정 상태로 숨기지 않는다',async()=>{
+ authorize.mockRejectedValue(new ApiError('UNAUTHORIZED_SENDER',403));render(<SocialButtons/>);
+ expect(await screen.findByRole('button',{name:'소셜 연결 다시 확인'})).toBeEnabled();expect(screen.queryByText('Google 로그인은 아직 사용할 수 없습니다. 이메일로 로그인해 주세요.')).not.toBeInTheDocument();
+});

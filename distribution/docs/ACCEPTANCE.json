@@ -1,0 +1,53 @@
+{
+  "candidate": "0.1.25-integrated-user-lifecycle",
+  "status": "NEW_USER_INSTALLATION_NOT_ACCEPTED",
+  "baseline": {
+    "release": "FOCURVE-R3-0.1.24-launcher-r1.zip",
+    "sha256": "6e6f5d194977d958ddf4d0ffc2ac439cfba2942a8f4c7b2e9820e978f015ebfe",
+    "mandatoryImplementation": "33/33_COMPLETE_ORIGINAL_SCOPE",
+    "independentAcceptance": "99/99_PASS_ORIGINAL_SCOPE",
+    "publicYouTubeShortsDigitalAudio": "PASS_CHROME155_156_REUSED_SCOPED",
+    "integrationNormalStopRestartPersistence": "PASS_ORIGINAL_R3_SCOPED",
+    "automaticallyPromotedToNewCandidate": false
+  },
+  "newCodeVerification": "Build-time provenance and file hashes: ../BUILD-PROVENANCE.json and ../MANIFEST.json. Current user procedure: USER-RUNBOOK-CURRENT.md. Automatic/package checks do not prove this installation actual Chrome acceptance.",
+  "newInstallationRequired": [
+    {
+      "id": "INSTALL_FIRST_LAUNCH",
+      "status": "NOT_EXECUTED_APPROVAL_REQUIRED"
+    },
+    {
+      "id": "PERSONAL_SIGNUP_LOGIN_LOGOUT_RELOGIN",
+      "status": "NOT_EXECUTED_SMTP_CONFIGURATION_AND_APPROVAL_REQUIRED"
+    },
+    {
+      "id": "EXTENSION_LINK_AND_IDENTITY",
+      "status": "NOT_EXECUTED_APPROVAL_REQUIRED"
+    },
+    {
+      "id": "LOCAL_SERVER_DB_PREFLIGHT",
+      "status": "NOT_EXECUTED_APPROVAL_REQUIRED"
+    },
+    {
+      "id": "START_RUNNING_END",
+      "status": "NOT_EXECUTED_SEPARATE_APPROVAL_REQUIRED"
+    },
+    {
+      "id": "BLOCK_RECORD_SHORTS",
+      "status": "NOT_EXECUTED_SEPARATE_APPROVAL_REQUIRED"
+    },
+    {
+      "id": "RECORDS_STATS_RECEIPTS",
+      "status": "NOT_EXECUTED_SEPARATE_APPROVAL_REQUIRED"
+    },
+    {
+      "id": "NORMAL_STOP_RESTART_DATA",
+      "status": "NOT_EXECUTED_APPROVAL_REQUIRED"
+    }
+  ],
+  "physicalListening": "PENDING_SEPARATE_NON_DEPLOYMENT_GATE",
+  "existingDefaultProfile2": "UNCHANGED_UPDATE_SEPARATE_BLOCKED",
+  "newInstallReleaseComplete": false,
+  "MVP_FINAL_COMPLETE": false,
+  "statusScope": "PACKAGE_BUILD_TIME_NOT_LIVE_RUNTIME"
+}

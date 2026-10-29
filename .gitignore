@@ -50,4 +50,5 @@ application-local.properties
 
 # Local tooling and TypeScript build cache
 .local/
+.tools/
 *.tsbuildinfo

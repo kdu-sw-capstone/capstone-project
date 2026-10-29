@@ -1,0 +1,313 @@
+{
+  "review": "Manual context review 2026-10-29; no raw match values exported",
+  "findings": [
+    {
+      "path": "backend/src/test/java/kr/ac/kdu/focurve/HostPolicyIntegrationTest.java",
+      "line": 52,
+      "kind": "credential_url",
+      "reason": "Invalid credential-bearing URL rejection fixture; no live account",
+      "textLF_SHA256": "97b271d839aab9847f18ffecfcc7a2b11d8875967eac2a21cdba9243885ce056"
+    },
+    {
+      "path": "backend/src/test/java/kr/ac/kdu/focurve/RequiredMvpIntegrationTest.java",
+      "line": 166,
+      "kind": "credential_url",
+      "reason": "Invalid credential-bearing URL rejection fixture; no live account",
+      "textLF_SHA256": "ae875b63d1c3d3b760deafa71bd7744b1c14175395b38942062a846bebd5326f"
+    },
+    {
+      "path": "backend/src/test/java/kr/ac/kdu/focurve/SmtpMailDeliveryTest.java",
+      "line": 115,
+      "kind": "credential_url",
+      "reason": "Invalid credential-bearing URL rejection fixture; no live account",
+      "textLF_SHA256": "8605c26ac1fc7b481d38675eb15c495189102a9c8b89777724a75c50dc9c2d9f"
+    },
+    {
+      "path": "distribution/tests/test_native_contract.py",
+      "line": 30,
+      "kind": "sensitive_literal",
+      "reason": "Synthetic test credential/sentinel/assertion with mocked or disposable local scope; no user credential",
+      "textLF_SHA256": "88918faf6016821cc61460eff3fc9141c8444c00d8cbef62326475bcb14b0875"
+    },
+    {
+      "path": "extension/tests/member-access.test.mjs",
+      "line": 71,
+      "kind": "sensitive_literal",
+      "reason": "Synthetic test credential/sentinel/assertion with mocked or disposable local scope; no user credential",
+      "textLF_SHA256": "3dccca2b19c84b2b35fab103bf7d7d939345895d27cc0de4fcaac8188fe22280"
+    },
+    {
+      "path": "extension/tests/member-access.test.mjs",
+      "line": 82,
+      "kind": "sensitive_literal",
+      "reason": "Synthetic test credential/sentinel/assertion with mocked or disposable local scope; no user credential",
+      "textLF_SHA256": "3dccca2b19c84b2b35fab103bf7d7d939345895d27cc0de4fcaac8188fe22280"
+    },
+    {
+      "path": "extension/tests/member-auth.test.mjs",
+      "line": 138,
+      "kind": "credential_url",
+      "reason": "Invalid credential-bearing URL rejection fixture; no live account",
+      "textLF_SHA256": "3b655ce65ca05aea317369bb9fad08bad094f8874cc290b9137c94d07e024071"
+    },
+    {
+      "path": "extension/tests/member-delivery-worker-restart.test.mjs",
+      "line": 29,
+      "kind": "sensitive_literal",
+      "reason": "Synthetic test credential/sentinel/assertion with mocked or disposable local scope; no user credential",
+      "textLF_SHA256": "7f8caae8408ae4881fbba8512d762c247c0ace3f3d443b31d24ad007f8c6272c"
+    },
+    {
+      "path": "extension/tests/member-durable-diagnostic.test.mjs",
+      "line": 38,
+      "kind": "sensitive_literal",
+      "reason": "Synthetic test credential/sentinel/assertion with mocked or disposable local scope; no user credential",
+      "textLF_SHA256": "e5823525f0ac6315f835055b7d28c23be4ca6decf7877d0949d8a8046d8e8d4e"
+    },
+    {
+      "path": "extension/tests/member-durable-diagnostic.test.mjs",
+      "line": 38,
+      "kind": "sensitive_literal",
+      "reason": "Synthetic test credential/sentinel/assertion with mocked or disposable local scope; no user credential",
+      "textLF_SHA256": "e5823525f0ac6315f835055b7d28c23be4ca6decf7877d0949d8a8046d8e8d4e"
+    },
+    {
+      "path": "extension/tests/member-events.test.mjs",
+      "line": 165,
+      "kind": "credential_url",
+      "reason": "Invalid credential-bearing URL rejection fixture; no live account",
+      "textLF_SHA256": "afcf3448e5dc791e6a6a6f774f379d41f7d47577e9af9e4dcebb2e85f00fe3a7"
+    },
+    {
+      "path": "extension/tests/member-events.test.mjs",
+      "line": 16,
+      "kind": "sensitive_literal",
+      "reason": "Synthetic test credential/sentinel/assertion with mocked or disposable local scope; no user credential",
+      "textLF_SHA256": "afcf3448e5dc791e6a6a6f774f379d41f7d47577e9af9e4dcebb2e85f00fe3a7"
+    },
+    {
+      "path": "extension/tests/member-events.test.mjs",
+      "line": 25,
+      "kind": "sensitive_literal",
+      "reason": "Synthetic test credential/sentinel/assertion with mocked or disposable local scope; no user credential",
+      "textLF_SHA256": "afcf3448e5dc791e6a6a6f774f379d41f7d47577e9af9e4dcebb2e85f00fe3a7"
+    },
+    {
+      "path": "extension/tests/member-execution-client.test.mjs",
+      "line": 150,
+      "kind": "credential_url",
+      "reason": "Invalid credential-bearing URL rejection fixture; no live account",
+      "textLF_SHA256": "28920a424616c7a0d4812e1f32489867130b40aa40ca0c5bb7332fada9f730b5"
+    },
+    {
+      "path": "extension/tests/member-execution-client.test.mjs",
+      "line": 9,
+      "kind": "sensitive_literal",
+      "reason": "Synthetic test credential/sentinel/assertion with mocked or disposable local scope; no user credential",
+      "textLF_SHA256": "28920a424616c7a0d4812e1f32489867130b40aa40ca0c5bb7332fada9f730b5"
+    },
+    {
+      "path": "extension/tests/member-execution-client.test.mjs",
+      "line": 106,
+      "kind": "sensitive_literal",
+      "reason": "Synthetic test credential/sentinel/assertion with mocked or disposable local scope; no user credential",
+      "textLF_SHA256": "28920a424616c7a0d4812e1f32489867130b40aa40ca0c5bb7332fada9f730b5"
+    },
+    {
+      "path": "extension/tests/member-execution-loop.test.mjs",
+      "line": 16,
+      "kind": "sensitive_literal",
+      "reason": "Synthetic test credential/sentinel/assertion with mocked or disposable local scope; no user credential",
+      "textLF_SHA256": "8ce8aa96bde3ccbfd8a8b75e6e5f2d19d7e896da1477d91c2c435191c6b73e9c"
+    },
+    {
+      "path": "extension/tests/member-original-review.test.mjs",
+      "line": 9,
+      "kind": "sensitive_literal",
+      "reason": "Synthetic test credential/sentinel/assertion with mocked or disposable local scope; no user credential",
+      "textLF_SHA256": "524d06edb382bf2318ff33f2a146e8bd4d74f54b47bde063b3f6cba0ec072820"
+    },
+    {
+      "path": "extension/tests/member-preserved-end.test.mjs",
+      "line": 95,
+      "kind": "sensitive_literal",
+      "reason": "Synthetic test credential/sentinel/assertion with mocked or disposable local scope; no user credential",
+      "textLF_SHA256": "0d1d71f12c922b54a347c63256f92ea1f4f88b12bcde47742ee33208901ef24e"
+    },
+    {
+      "path": "extension/tests/member-preserved-end.test.mjs",
+      "line": 95,
+      "kind": "sensitive_literal",
+      "reason": "Synthetic test credential/sentinel/assertion with mocked or disposable local scope; no user credential",
+      "textLF_SHA256": "0d1d71f12c922b54a347c63256f92ea1f4f88b12bcde47742ee33208901ef24e"
+    },
+    {
+      "path": "extension/tests/member-reauthentication.test.cjs",
+      "line": 5,
+      "kind": "sensitive_literal",
+      "reason": "Synthetic test credential/sentinel/assertion with mocked or disposable local scope; no user credential",
+      "textLF_SHA256": "0be90211bf8c80f1d6faa957bfc8c4ca9d83d5b5ba4664e805ff33a907b4341c"
+    },
+    {
+      "path": "extension/tests/member-reauthentication.test.cjs",
+      "line": 5,
+      "kind": "sensitive_literal",
+      "reason": "Synthetic test credential/sentinel/assertion with mocked or disposable local scope; no user credential",
+      "textLF_SHA256": "0be90211bf8c80f1d6faa957bfc8c4ca9d83d5b5ba4664e805ff33a907b4341c"
+    },
+    {
+      "path": "extension/tests/member-reauthentication.test.cjs",
+      "line": 78,
+      "kind": "sensitive_literal",
+      "reason": "Synthetic test credential/sentinel/assertion with mocked or disposable local scope; no user credential",
+      "textLF_SHA256": "0be90211bf8c80f1d6faa957bfc8c4ca9d83d5b5ba4664e805ff33a907b4341c"
+    },
+    {
+      "path": "extension/tests/member-web-lifecycle.test.cjs",
+      "line": 7,
+      "kind": "sensitive_literal",
+      "reason": "Synthetic test credential/sentinel/assertion with mocked or disposable local scope; no user credential",
+      "textLF_SHA256": "13e2be08426fe83619323dcc20088cf054eb1a58b1162280d97280dd4567c60c"
+    },
+    {
+      "path": "extension/tests/member-web-lifecycle.test.cjs",
+      "line": 7,
+      "kind": "sensitive_literal",
+      "reason": "Synthetic test credential/sentinel/assertion with mocked or disposable local scope; no user credential",
+      "textLF_SHA256": "13e2be08426fe83619323dcc20088cf054eb1a58b1162280d97280dd4567c60c"
+    },
+    {
+      "path": "extension/tests/native-hold-transition.test.cjs",
+      "line": 12,
+      "kind": "sensitive_literal",
+      "reason": "Synthetic test credential/sentinel/assertion with mocked or disposable local scope; no user credential",
+      "textLF_SHA256": "0701816091c8dfaf9e942bd042bfc2e45b3a036d5b0899322945077275bb20b0"
+    },
+    {
+      "path": "extension/tests/native-hold-transition.test.cjs",
+      "line": 12,
+      "kind": "sensitive_literal",
+      "reason": "Synthetic test credential/sentinel/assertion with mocked or disposable local scope; no user credential",
+      "textLF_SHA256": "0701816091c8dfaf9e942bd042bfc2e45b3a036d5b0899322945077275bb20b0"
+    },
+    {
+      "path": "extension/tests/pending-start-ledger-audit.test.cjs",
+      "line": 6,
+      "kind": "sensitive_literal",
+      "reason": "Synthetic test credential/sentinel/assertion with mocked or disposable local scope; no user credential",
+      "textLF_SHA256": "2de16f3305247798bb79ee7404d58007fee4c0929c25b8023a4e09271f358fd8"
+    },
+    {
+      "path": "extension/tests/pending-start-ledger-audit.test.cjs",
+      "line": 6,
+      "kind": "sensitive_literal",
+      "reason": "Synthetic test credential/sentinel/assertion with mocked or disposable local scope; no user credential",
+      "textLF_SHA256": "2de16f3305247798bb79ee7404d58007fee4c0929c25b8023a4e09271f358fd8"
+    },
+    {
+      "path": "extension/tests/safety-ui-hold-diagnostic.test.cjs",
+      "line": 17,
+      "kind": "sensitive_literal",
+      "reason": "Synthetic test credential/sentinel/assertion with mocked or disposable local scope; no user credential",
+      "textLF_SHA256": "59b078a0ab0cc9c03243d696ef07342f5969acd690444049f416c6015960535f"
+    },
+    {
+      "path": "extension/tests/session-core.test.mjs",
+      "line": 189,
+      "kind": "credential_url",
+      "reason": "Invalid credential-bearing URL rejection fixture; no live account",
+      "textLF_SHA256": "d819c9ea640ecee6d9660f650c4e235680b2f48fc2cf573efd8a7a6972e27925"
+    },
+    {
+      "path": "extension/tests/ui/member_event_recovery_worker.py",
+      "line": 64,
+      "kind": "sensitive_literal",
+      "reason": "Synthetic test credential/sentinel/assertion with mocked or disposable local scope; no user credential",
+      "textLF_SHA256": "699aafae4ad92a1118c5288195478f5f2f070bb53ddacc0bd1e6cd0a25553b08"
+    },
+    {
+      "path": "extension/tests/ui/member_execution_worker.py",
+      "line": 50,
+      "kind": "sensitive_literal",
+      "reason": "Synthetic test credential/sentinel/assertion with mocked or disposable local scope; no user credential",
+      "textLF_SHA256": "ddbcbf33bb026c3de75f1c84d651593c5a27abcb8eacb957b23484f2c260b325"
+    },
+    {
+      "path": "extension/tests/ui/member_fetch_worker.py",
+      "line": 35,
+      "kind": "sensitive_literal",
+      "reason": "Synthetic test credential/sentinel/assertion with mocked or disposable local scope; no user credential",
+      "textLF_SHA256": "20e0d9263c786ed7eb99b494408c0c1ebe89010377568294aead91882fad1827"
+    },
+    {
+      "path": "extension/tests/user-guest-safety.test.cjs",
+      "line": 15,
+      "kind": "sensitive_literal",
+      "reason": "Synthetic test credential/sentinel/assertion with mocked or disposable local scope; no user credential",
+      "textLF_SHA256": "e232ca30576af78b870b8530186eab4b5df82720cfef0c3de073ff7617612a7b"
+    },
+    {
+      "path": "extension/tests/user-guest-safety.test.cjs",
+      "line": 48,
+      "kind": "sensitive_literal",
+      "reason": "Synthetic test credential/sentinel/assertion with mocked or disposable local scope; no user credential",
+      "textLF_SHA256": "e232ca30576af78b870b8530186eab4b5df82720cfef0c3de073ff7617612a7b"
+    },
+    {
+      "path": "extension/tests/user-guest-safety.test.cjs",
+      "line": 66,
+      "kind": "sensitive_literal",
+      "reason": "Synthetic test credential/sentinel/assertion with mocked or disposable local scope; no user credential",
+      "textLF_SHA256": "e232ca30576af78b870b8530186eab4b5df82720cfef0c3de073ff7617612a7b"
+    },
+    {
+      "path": "extension/tests/user-guest-safety.test.cjs",
+      "line": 83,
+      "kind": "sensitive_literal",
+      "reason": "Synthetic test credential/sentinel/assertion with mocked or disposable local scope; no user credential",
+      "textLF_SHA256": "e232ca30576af78b870b8530186eab4b5df82720cfef0c3de073ff7617612a7b"
+    },
+    {
+      "path": "extension/tests/user-guest-safety.test.cjs",
+      "line": 83,
+      "kind": "sensitive_literal",
+      "reason": "Synthetic test credential/sentinel/assertion with mocked or disposable local scope; no user credential",
+      "textLF_SHA256": "e232ca30576af78b870b8530186eab4b5df82720cfef0c3de073ff7617612a7b"
+    },
+    {
+      "path": "extension/tests/user-popup.test.cjs",
+      "line": 26,
+      "kind": "sensitive_literal",
+      "reason": "Synthetic test credential/sentinel/assertion with mocked or disposable local scope; no user credential",
+      "textLF_SHA256": "a59427c3546a3a0de04c314488d2894be1540ec29d640c1cb3e220f037488875"
+    },
+    {
+      "path": "frontend/src/SessionSerialization.test.ts",
+      "line": 8,
+      "kind": "sensitive_literal",
+      "reason": "Synthetic test credential/sentinel/assertion with mocked or disposable local scope; no user credential",
+      "textLF_SHA256": "9508fbf42183cea7498f58cef3107bfcbb2cbffa0b2d916373fad3a5a34a3bee"
+    },
+    {
+      "path": "runtime-server/src/test/java/kr/ac/kdu/focurve/SmtpMailDeliveryTest.java",
+      "line": 115,
+      "kind": "credential_url",
+      "reason": "Invalid credential-bearing URL rejection fixture; no live account",
+      "textLF_SHA256": "8605c26ac1fc7b481d38675eb15c495189102a9c8b89777724a75c50dc9c2d9f"
+    },
+    {
+      "path": "scripts/cloud-setup.sh",
+      "line": 32,
+      "kind": "sensitive_literal",
+      "reason": "Environment generation expression, not a secret value",
+      "textLF_SHA256": "a9920d25e55c5b6f94f4e362a42243ea093b6f986d57cbcab36704d4741e72d7"
+    },
+    {
+      "path": "scripts/cloud-setup.sh",
+      "line": 32,
+      "kind": "sensitive_literal",
+      "reason": "Environment generation expression, not a secret value",
+      "textLF_SHA256": "a9920d25e55c5b6f94f4e362a42243ea093b6f986d57cbcab36704d4741e72d7"
+    }
+  ]
+}

@@ -1,3 +1,27 @@
+// Serialize cookie-changing auth work with CSRF bootstrap and provider probes.
+// Session rotation, CSRF validation and server ownership rules remain unchanged.
+let sessionQueue: Promise<void> | null = null;
+let csrfScheduled: Promise<string> | null = null;
+function serializeSession<T>(run: () => Promise<T>): Promise<T> {
+  const work = sessionQueue ? sessionQueue.then(run) : run();
+  const tail = work.then(() => {}, () => {});
+  sessionQueue = tail;
+  void tail.then(() => { if (sessionQueue === tail) sessionQueue = null; });
+  return work;
+}
+export async function refreshCsrf(): Promise<string> {
+  if (csrfScheduled) return csrfScheduled;
+  const pending = serializeSession(refreshCsrfDirect); csrfScheduled = pending;
+  try { return await pending; } finally { if (csrfScheduled === pending) csrfScheduled = null; }
+}
+export function socialAuthorizationPath(provider: string, mode: "login" | "link") {
+  return serializeSession(() => socialAuthorizationPathDirect(provider, mode));
+}
+export function request<T>(path: string, method = "GET", body?: unknown, options: {key?: string; version?: number; challenge?: boolean; signal?: AbortSignal} = {}): Promise<T> {
+  const work = () => requestDirect<T>(path, method, body, options);
+  return method !== "GET" && path.startsWith("/auth/") ? serializeSession(work) : work();
+}
+
 export class UiError extends Error {}
 
 export class ApiError extends Error {
@@ -14,11 +38,12 @@ let csrf: string | null = null;
 let csrfPending: Promise<string> | null = null;
 let csrfGeneration = 0;
 export function clearCsrf() {
+  csrfScheduled = null;
   csrf = null;
   csrfGeneration++;
   csrfPending = null;
 }
-export async function refreshCsrf(): Promise<string> {
+async function refreshCsrfDirect(): Promise<string> {
   // One bootstrap per page: concurrent probes must share the same HttpOnly session.
   if (csrfPending) return csrfPending;
   const generation = csrfGeneration;
@@ -33,12 +58,12 @@ export async function refreshCsrf(): Promise<string> {
   csrfPending = pending;
   try { return await pending; } finally { if (csrfPending === pending) csrfPending = null; }
 }
-export async function socialAuthorizationPath(
+async function socialAuthorizationPathDirect(
   provider: string,
   mode: "login" | "link",
 ) {
-  await refreshCsrf();
-  const path = `/api/v1/auth/social/${provider}/authorize?mode=${mode}&return_path=%2F`;
+  await refreshCsrfDirect();
+  const path = `/api/v1/auth/social/${provider}/authorize?mode=${mode}&return_path=${mode === "link" ? "%2Fsettings" : "%2Fdashboard"}`;
   // A manual redirect never sends the browser's fetch to the external provider.
   // Keep configuration errors in this screen. A successful redirect is opaque;
   // navigation creates a fresh state and the unused probe state expires normally.
@@ -55,7 +80,7 @@ export async function socialAuthorizationPath(
   }
   throw new ApiError(code, response.status);
 }
-export async function request<T>(
+async function requestDirect<T>(
   path: string,
   method = "GET",
   body?: unknown,
@@ -71,7 +96,7 @@ export async function request<T>(
   };
   if (method !== "GET" && !options.challenge) {
     // The cookie may have rotated in another tab or expired since the last request.
-    headers["X-CSRF-Token"] = await refreshCsrf();
+    headers["X-CSRF-Token"] = await refreshCsrfDirect();
   }
   if (options.key) headers["Idempotency-Key"] = options.key;
   if (options.version !== undefined)
@@ -118,7 +143,7 @@ export async function request<T>(
       // never replay challenge consumption or bypass Origin/CSRF protection.
       if (!protectionRecovered && method !== "GET" && !options.challenge && error instanceof ApiError && error.status === 403 && error.code === "CSRF_OR_ORIGIN_INVALID") {
         protectionRecovered = true;
-        headers["X-CSRF-Token"] = await refreshCsrf();
+        headers["X-CSRF-Token"] = await refreshCsrfDirect();
         continue;
       }
       const transient =
@@ -196,13 +221,17 @@ export function message(error: unknown) {
     CSRF_OR_ORIGIN_INVALID:
       "요청 인증에 실패했습니다. 다시 로그인하거나 화면을 새로고침하세요.",
     MAIL_UNAVAILABLE:
-      "메일 서비스 설정 또는 연결을 확인하세요. 가입 성공으로 처리하지 않았습니다.",
+      "메일 서비스 설정 또는 연결을 확인하세요. 메일 요청을 완료하지 못했습니다.",
     PROVIDER_UNAVAILABLE: "소셜 인증 설정이 없어 사용할 수 없습니다.",
+    PROVIDER_NOT_CONFIGURED: "소셜 인증 설정이 없어 사용할 수 없습니다.",
+    EMAIL_PROVIDER_NOT_CONFIGURED: "메일 서비스 설정 또는 연결을 확인하세요. 메일 요청을 완료하지 못했습니다.",
     LINK_APPROVAL_CONTRACT_UNRESOLVED:
       "확장 프로그램 연결 확인 절차가 준비되지 않아 연결할 수 없습니다. 연결 완료로 처리하지 않았습니다.",
     EXECUTOR_OFFLINE: "실행할 Extension의 연결이 확인되지 않습니다.",
     SNAPSHOT_COMPATIBILITY_REQUIRED: "이 Extension의 정책 버전 호환성 검증이 필요합니다. 검증 완료 후 집중을 시작할 수 있습니다.",
     ACTIVE_SESSION_EXISTS: "이미 실행 중이거나 결과 확인 중인 세션이 있습니다.",
+    INSTALLATION_START_WINDOW_CLOSED:
+      "설정한 집중 시간으로 이번 실행 기한 안에 안전하게 마칠 수 없어 시작 요청이 거절됐습니다. 다시 누르거나 기한을 늘리지 말고 정상 종료 안내를 확인해 주세요.",
     ACTIVE_EXECUTION_OR_LINK:
       "실제 정책 해제와 현재 설치의 연결 종료를 먼저 확인하세요.",
     RATE_LIMITED: "요청이 너무 많습니다. 잠시 후 다시 시도하세요.",
@@ -210,5 +239,5 @@ export function message(error: unknown) {
       "기존 계정과 충돌합니다. 자동으로 계정을 합치지 않습니다.",
     INVALID_STATE: "소셜 인증 요청을 확인할 수 없습니다.",
   };
-  return messages[error.code] ?? `요청 실패 (${error.code})`;
+  return messages[error.code] ?? "요청을 완료하지 못했습니다. 입력을 유지했으니 연결 상태와 안내를 확인해 주세요.";
 }

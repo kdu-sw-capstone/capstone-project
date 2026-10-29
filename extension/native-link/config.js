@@ -1,0 +1,1 @@
+globalThis.FOCURVE_NATIVE_LINK_CONFIG=null;

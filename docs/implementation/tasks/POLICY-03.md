@@ -88,3 +88,12 @@
 - 검증 주체는 Codex 자동·HTTP·실제 임시 DB/메일 수신·합성 설치/실행 보고다. 시간 제한 경계는 격리 DB 시각을 조절한 재현이며 실제 한 시간 대기가 아니다. 실제 Chrome·Edge·외부 OAuth·외부 SMTP·회원 Core/Content 통합은 이번 검증 NOT RUN이다.
 - 과거 기간 미전달 BLOCKED는 당시 Server 상태이며 PR #19로 Server 전달은 해결됐다. Core의 소수점9자리 시각 파싱·기간 검증/영속 결속 및 실제 회원 실행은 후속 통합 대기다. D-01·D-05 자동복구 전체는 미구현, Snapshot1.2 신규 발급 기본 OFF를 유지한다.
 - 상태: 검증된 결함 수정본 Draft PR 게시 준비/팀 리뷰·통합 대기. 전체 작업카드·93개 수용 기준·필수 MVP를 완료로 변경하지 않는다. 실행 로그와 게시 결과는 `FOCURVE_1단계_F1_F4_게시검증보고서.md`에 남긴다. develop 병합은 수행하지 않는다.
+
+
+## 2026-10-28 Shorts 8영역 동등 P0 통합
+
+사용자 최신 기준으로 진입·DOM/재생·Core/Worker·SPA URL·문서 생명주기·권한/Binding·반복/복원·END/재기동을 모두 P0로 관리한다. 브랜치 `codex/execution-engine-review-20261028`, 기준 HEAD `90ad32be5d282f3b44c917a29e156dffc5e29187`와 독립 후보 소스를 사용한다. 기존 설치·통합 작업 공간은 변경하지 않았다.
+
+전체 Extension 회귀 690/690 PASS. 신뢰된 실험 모드의 제한적 문서 인계, 비회원 D1 문서 retirement 연결, 같은 시각의 이전 COMMITTED 오인과 pending/ready 조정 결함을 수정했다. 원본 proof·복원 원장·5초 기한·소유권 검사는 유지한다. 실제 Chrome 8영역은 모두 NOT_RUN이며 BFCache 정상 복원·실제 Native 재연결·Server/DB 수용은 미확인이다. 전체 완료로 판정하지 않는다.
+
+검토 ZIP SHA-256: `3335acea5823435e04e1da9dcd2591406a1412001fbce8d49db923338d6c865d`. 실제 설치/서비스/START·END 승인은 별도로 요청했으며 승인 전 실행하지 않는다. 상세: [8영역 P0 통합 기록](../Shorts_8영역_P0_통합_20261028.md). `SHORTS_STABILIZATION_COMPLETE=false`, `MVP_FINAL_COMPLETE=false`.

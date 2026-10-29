@@ -1,0 +1,9 @@
+# Historical regression input is verified by its exact original byte hash.
+distribution/tests/fixtures/session_update_before_unused_renewal.py -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
+# Bundle equality and embedded JSON must not depend on Windows autocrlf.
+extension/**/*.js text eol=lf
+extension/**/*.mjs text eol=lf
+extension/**/*.cjs text eol=lf
+extension/**/*.json text eol=lf
+extension/**/*.html text eol=lf
+extension/**/*.css text eol=lf

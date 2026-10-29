@@ -1,0 +1,376 @@
+{
+  "binaryRepairs": [
+    {
+      "path": "docs/implementation/evidence/EXT-02-2026-10-09/ui-main-dark.png",
+      "oldFrozenSHA256": "26b5cda78441e84186788484bccfd6625d2caa0fe74d84dc1119f2f891c8b279",
+      "restoredSHA256": "4183d3b6cfec3e00912fff71ae8cc7f345b04e9604fd7a6f8a06e194949aa4ed",
+      "originGitCommit": "92691c55a7c39e810db567bda80445d3bd1a3806",
+      "reason": "Restore original PNG binary bytes; previous frozen copy had CRLF byte removal"
+    },
+    {
+      "path": "docs/implementation/evidence/popup-ui/edit-light.png",
+      "oldFrozenSHA256": "d15c9caa0166203ee8c68cc0f71b0f1ebcb473f93ccc9b25d7a3f8db959d8bd8",
+      "restoredSHA256": "9a5648e410a68aa20eb7a0db2f8425c20eae659b4d2265ef15fd50cb55c52d35",
+      "originGitCommit": "92691c55a7c39e810db567bda80445d3bd1a3806",
+      "reason": "Restore original PNG binary bytes; previous frozen copy had CRLF byte removal"
+    },
+    {
+      "path": "docs/implementation/evidence/popup-ui/main-dark.png",
+      "oldFrozenSHA256": "8f1ca625269f5a9281d4187e8ea993add3fc4beef578e8a748a0edf52a5e049f",
+      "restoredSHA256": "181371a20f0501fc6834769a77be4f91b553982967ce856d85ebce42a1719733",
+      "originGitCommit": "92691c55a7c39e810db567bda80445d3bd1a3806",
+      "reason": "Restore original PNG binary bytes; previous frozen copy had CRLF byte removal"
+    },
+    {
+      "path": "docs/implementation/evidence/popup-ui/main-light.png",
+      "oldFrozenSHA256": "e18b78beb2f9187ec61b1b59c311dd203dbef18b14e8a98126e04900d9b87fa9",
+      "restoredSHA256": "94a33750975b767b3061259ea2fac95d3e4453053817926e5cd6ac9de85bead1",
+      "originGitCommit": "92691c55a7c39e810db567bda80445d3bd1a3806",
+      "reason": "Restore original PNG binary bytes; previous frozen copy had CRLF byte removal"
+    },
+    {
+      "path": "docs/implementation/evidence/popup-ui/result-light.png",
+      "oldFrozenSHA256": "afe973ad0660d0950d1985c7e6223482846c1c8227947b7cac42ca93a491e3e5",
+      "restoredSHA256": "632346f581a1c6dbd2bbc26c3195a606edcefb953fb5365654d33f227a2da5f6",
+      "originGitCommit": "92691c55a7c39e810db567bda80445d3bd1a3806",
+      "reason": "Restore original PNG binary bytes; previous frozen copy had CRLF byte removal"
+    },
+    {
+      "path": "docs/implementation/evidence/popup-ui/running-light.png",
+      "oldFrozenSHA256": "5e5979e112635021fcb2718e5d1bce609fe2caf882300270fd7fbe89f82e8408",
+      "restoredSHA256": "0760cc6b04a86dafaa245fec169dffd7a0e5f881e34bf433a539fac6d856bbd8",
+      "originGitCommit": "92691c55a7c39e810db567bda80445d3bd1a3806",
+      "reason": "Restore original PNG binary bytes; previous frozen copy had CRLF byte removal"
+    },
+    {
+      "path": "docs/implementation/evidence/popup-ui/sites-light.png",
+      "oldFrozenSHA256": "ccf48476dd551803b3411434db763c94c4b4305837bb46472dd1e0d4d9ae9318",
+      "restoredSHA256": "5b449ba4e3a95bf1a0d196ec57e6d29e0eeace70eec59d06a13c1b68bee9b350",
+      "originGitCommit": "92691c55a7c39e810db567bda80445d3bd1a3806",
+      "reason": "Restore original PNG binary bytes; previous frozen copy had CRLF byte removal"
+    }
+  ],
+  "whitespaceNormalized": [
+    "distribution/docs/USER-RUNBOOK-CURRENT.md",
+    "docs/implementation/ADDITIONAL_MVP_BASELINE_HANDOFF.md",
+    "extension/a1/content.mjs",
+    "extension/a1/core.mjs",
+    "extension/background/access-store.js",
+    "extension/background/session-core.js",
+    "extension/integration/member-a1-adapter.mjs",
+    "extension/member-a1/content.mjs",
+    "extension/member-a1/core.mjs",
+    "extension/member-ui/developer.html",
+    "extension/popup/a1-trial-ui.js",
+    "extension/popup/developer.html",
+    "extension/popup/developer.js",
+    "extension/popup/member-auth-ui.js",
+    "extension/popup/popup-ui.js",
+    "extension/popup/popup.html",
+    "extension/popup/popup.js",
+    "extension/tests/member-dom-finalize-race.test.mjs",
+    "extension/tests/shorts-scan-preservation.test.mjs",
+    "runtime-server/src/main/java/kr/ac/kdu/focurve/IsolatedFixture.java",
+    "runtime-server/src/main/java/kr/ac/kdu/focurve/MemberApi.java",
+    "runtime-server/src/main/java/kr/ac/kdu/focurve/MemberAuth.java",
+    "runtime-server/src/main/java/kr/ac/kdu/focurve/MemberExecution.java"
+  ],
+  "documentLocalPathsRedacted": [
+    "docs/design/02_시스템_테크설계/04_API_연동.md",
+    "docs/design/02_시스템_테크설계/11_인증_실행복구_가져오기_연결계약.md",
+    "docs/implementation/ADDITIONAL_MVP_BASELINE_HANDOFF.md",
+    "docs/implementation/Content_Control_2026-10-10.md",
+    "docs/implementation/Content_Control_Windows_검증.md",
+    "docs/implementation/Content_D06_다훈계약안_검토의견_2026-10-11.md",
+    "docs/implementation/Content_Shorts_2026-10-10.md",
+    "docs/implementation/Extension_Server_연동가이드.md",
+    "docs/implementation/FOCURVE_D01_D10_검증체크리스트.md",
+    "docs/implementation/PR18_F2_가져오기_수정검증_2026-10-09.md",
+    "docs/implementation/PR18_리뷰수정_재검증_2026-10-09.md",
+    "docs/implementation/tasks/AUTH-01.md",
+    "docs/implementation/tasks/EXT-02.md",
+    "docs/implementation/tasks/SESSION-01.md",
+    "docs/implementation/tasks/SESSION-02.md",
+    "docs/implementation/tasks/SESSION-03.md",
+    "docs/implementation/tasks/SESSION-04.md",
+    "extension/README-guest-backup.md"
+  ],
+  "deviationsFromFrozenManifest": [
+    {
+      "path": "README.md",
+      "frozenSHA256": "02a19899962fad08e13d20eb1f339c9eecf1915e4c6cd8b195af66d42e65ede0",
+      "publicationWorkingSHA256": "19460260349568c3de855fe10ef8585f968a0a81993d933231b5926420ef5653"
+    },
+    {
+      "path": "distribution/docs/USER-RUNBOOK-CURRENT.md",
+      "frozenSHA256": "78b5527ba395c1dfac5f66fb4566632cddd7991b49dadeb8b38c12f0ff73ff84",
+      "publicationWorkingSHA256": "f5f6e12bbf768523679671d02b99e97e4d0dab3f1decd209c6e01e0d7b6b296e"
+    },
+    {
+      "path": "distribution/tests/test_unused_setup_renewal.py",
+      "frozenSHA256": "68ae487f667510ff6f9d8abc86dafc032a2da7d2f8f3b273dbe388758f26110c",
+      "publicationWorkingSHA256": "37928ed462167f0483f963d6818c568cce8d976c6dabafba7e4d3a7fa063aaa0"
+    },
+    {
+      "path": "docs/design/02_시스템_테크설계/04_API_연동.md",
+      "frozenSHA256": "8d8ea4daae7bce99d6e8f4fc5f6191baaa4284a1090de5ee188bc38a8669d160",
+      "publicationWorkingSHA256": "ef1a7858e92bb91653ecefb022b53bd919e5ed22af9a4e00244507deebedbe85"
+    },
+    {
+      "path": "docs/design/02_시스템_테크설계/11_인증_실행복구_가져오기_연결계약.md",
+      "frozenSHA256": "a96b6b0809017ea4e227def60006206bf5e3c56fe61e462068c36c10736ebc7b",
+      "publicationWorkingSHA256": "18af1b56b48ba5f4c5e7ca6899ffd4cad6bfd5c125d90769dc985ff66b5ecabb"
+    },
+    {
+      "path": "docs/implementation/Content_Control_2026-10-10.md",
+      "frozenSHA256": "0d5252397f8bfb819d4f7313514eb549a974f6330aba6c3aacc1f5bcd3525564",
+      "publicationWorkingSHA256": "c705c97ca7e7d8c6598f1518ef5c699633803837fbbad1b149d166b914023d43"
+    },
+    {
+      "path": "docs/implementation/Content_Control_Windows_검증.md",
+      "frozenSHA256": "a8a9873a7577aa818d32080f0b69715a627c25df8e36cf0141d90e60fc73e4e6",
+      "publicationWorkingSHA256": "d340f9ce9aaba8a69cedcc3049a4136fef82a30a944584cf2808bb60c40ab3fe"
+    },
+    {
+      "path": "docs/implementation/Content_D06_다훈계약안_검토의견_2026-10-11.md",
+      "frozenSHA256": "350eea3263724dd26040212d5ba2a882e71e2ea7e3d957d53f97746e080ebdfb",
+      "publicationWorkingSHA256": "9ab6a37f99d1032a7b85bf4db1a7081bd6349be1eb5c8266ac2613e7a9307900"
+    },
+    {
+      "path": "docs/implementation/Content_Shorts_2026-10-10.md",
+      "frozenSHA256": "8c495a4a843e3c7e907cc64c0d76853c9657f9d9960cdb746e9a7240734d1e36",
+      "publicationWorkingSHA256": "b06a33cb7c3815e8421a9fc89058608fb9a4bf53921b1d715667921f42ac9104"
+    },
+    {
+      "path": "docs/implementation/Extension_Server_연동가이드.md",
+      "frozenSHA256": "39525f0ccc71866959e8ea7fbf21ae7c427a7185fdace7557f2a04bdff3a5c60",
+      "publicationWorkingSHA256": "471858622fd3641715b2ec277f5b90f3e6a3dc40b28d051da536b1d198e8d4b7"
+    },
+    {
+      "path": "docs/implementation/FOCURVE_D01_D10_검증체크리스트.md",
+      "frozenSHA256": "cb057396aced0304167d816313de6b9938dc7a81a7121a24e55e77aa284bf38c",
+      "publicationWorkingSHA256": "e3e31d61807b12a6ae92149e2ddeab5ae507e36e501dd3c3bdceba8bdeeedb67"
+    },
+    {
+      "path": "docs/implementation/PR18_F2_가져오기_수정검증_2026-10-09.md",
+      "frozenSHA256": "b4de533d7c2580873d9f8925a81f60c1afe3b0c35f86adb3d912d9344a0ec5c1",
+      "publicationWorkingSHA256": "f135f4e9a413cf54a0724ced7cde2448020a17735f86719f5b335f8e201b3b2e"
+    },
+    {
+      "path": "docs/implementation/PR18_리뷰수정_재검증_2026-10-09.md",
+      "frozenSHA256": "ffc3b4d55c7e8b7905bb9cf799020e14e5ac8442e185e6c3cde2ec264bd2cfa2",
+      "publicationWorkingSHA256": "bf4e42555b19af88ebd5dfdd18550fd04fee1a098c3237a7423b839865160a7e"
+    },
+    {
+      "path": "docs/implementation/evidence/EXT-02-2026-10-09/ui-main-dark.png",
+      "frozenSHA256": "26b5cda78441e84186788484bccfd6625d2caa0fe74d84dc1119f2f891c8b279",
+      "publicationWorkingSHA256": "4183d3b6cfec3e00912fff71ae8cc7f345b04e9604fd7a6f8a06e194949aa4ed"
+    },
+    {
+      "path": "docs/implementation/evidence/popup-ui/edit-light.png",
+      "frozenSHA256": "d15c9caa0166203ee8c68cc0f71b0f1ebcb473f93ccc9b25d7a3f8db959d8bd8",
+      "publicationWorkingSHA256": "9a5648e410a68aa20eb7a0db2f8425c20eae659b4d2265ef15fd50cb55c52d35"
+    },
+    {
+      "path": "docs/implementation/evidence/popup-ui/main-dark.png",
+      "frozenSHA256": "8f1ca625269f5a9281d4187e8ea993add3fc4beef578e8a748a0edf52a5e049f",
+      "publicationWorkingSHA256": "181371a20f0501fc6834769a77be4f91b553982967ce856d85ebce42a1719733"
+    },
+    {
+      "path": "docs/implementation/evidence/popup-ui/main-light.png",
+      "frozenSHA256": "e18b78beb2f9187ec61b1b59c311dd203dbef18b14e8a98126e04900d9b87fa9",
+      "publicationWorkingSHA256": "94a33750975b767b3061259ea2fac95d3e4453053817926e5cd6ac9de85bead1"
+    },
+    {
+      "path": "docs/implementation/evidence/popup-ui/result-light.png",
+      "frozenSHA256": "afe973ad0660d0950d1985c7e6223482846c1c8227947b7cac42ca93a491e3e5",
+      "publicationWorkingSHA256": "632346f581a1c6dbd2bbc26c3195a606edcefb953fb5365654d33f227a2da5f6"
+    },
+    {
+      "path": "docs/implementation/evidence/popup-ui/running-light.png",
+      "frozenSHA256": "5e5979e112635021fcb2718e5d1bce609fe2caf882300270fd7fbe89f82e8408",
+      "publicationWorkingSHA256": "0760cc6b04a86dafaa245fec169dffd7a0e5f881e34bf433a539fac6d856bbd8"
+    },
+    {
+      "path": "docs/implementation/evidence/popup-ui/sites-light.png",
+      "frozenSHA256": "ccf48476dd551803b3411434db763c94c4b4305837bb46472dd1e0d4d9ae9318",
+      "publicationWorkingSHA256": "5b449ba4e3a95bf1a0d196ec57e6d29e0eeace70eec59d06a13c1b68bee9b350"
+    },
+    {
+      "path": "docs/implementation/tasks/AUTH-01.md",
+      "frozenSHA256": "6f8adb0cb79acf8bbbc549a8aa4d4633a10eccaeddc5508c65526548d01748c9",
+      "publicationWorkingSHA256": "e60247e692dc989bccc4ea2beda181cb83429579f1bd485155abf8b3ab3a4c6c"
+    },
+    {
+      "path": "docs/implementation/tasks/EXT-02.md",
+      "frozenSHA256": "de4f6368f611db5fc1f3b90a66f1bdd09b08b15a347fb7e6d199dd4c56b6be62",
+      "publicationWorkingSHA256": "399755cce26db37344785873f098ee5aa1f521fbcc86033bd7513d2fae5aa48a"
+    },
+    {
+      "path": "docs/implementation/tasks/SESSION-01.md",
+      "frozenSHA256": "639cb374406c37ae88bb7d68fcb066cce4b3eb4104623bc5a9500d8443a85d43",
+      "publicationWorkingSHA256": "26e4517797b1a7f5984523095d51b8a37ea7b881e62f0745bad449316ed3c368"
+    },
+    {
+      "path": "docs/implementation/tasks/SESSION-02.md",
+      "frozenSHA256": "797cb0e7a0e924b801e127ca242fe2f714e1ee988596d3fa45bf81818c6cec58",
+      "publicationWorkingSHA256": "29e8d8991fc0e8fe7372d81610d7ecaaba2c452d5101bfd10939cdf389f12bd5"
+    },
+    {
+      "path": "docs/implementation/tasks/SESSION-03.md",
+      "frozenSHA256": "78a1aa7ea8038edfc62c0610a42167e8dff140713ad7cba2b5ed0f87ba2ba106",
+      "publicationWorkingSHA256": "2da23d39596335a2a6bbf9da2cc7511a2ab16b904f008693d325521ee0b845a9"
+    },
+    {
+      "path": "docs/implementation/tasks/SESSION-04.md",
+      "frozenSHA256": "3bb67bf90ebb65f8b90894c1e68034bc089772ddd99e01115b89006fe3c398fd",
+      "publicationWorkingSHA256": "54f5a09366589835f497a1d532b05572de9fa76ce3924c38c6b22416d9c03f45"
+    },
+    {
+      "path": "extension/README-guest-backup.md",
+      "frozenSHA256": "e4c7d7d084638d20e3482a54ca49ea33273b5f84efe285419a612dbdcda116bf",
+      "publicationWorkingSHA256": "e37851af341acfc06d0b1feed84480fab213db6c64222442a70b721df6465b6a"
+    },
+    {
+      "path": "extension/a1/content.bundle.js",
+      "frozenSHA256": "c0e835b7499e9863e482932d4f25319acd2039ef9c19bfae4f565fa9521c80f7",
+      "publicationWorkingSHA256": "19873a0bb09312393e3c07a3d4d6df18e777c269b80001b9507a9aa78d7985bf"
+    },
+    {
+      "path": "extension/a1/content.mjs",
+      "frozenSHA256": "a4d3583a6c346d02a8b7aa6295b32ffd91eaa4de1f241de11733104547c779f5",
+      "publicationWorkingSHA256": "805a03c4208990a21fb3a81f50eaa16e3443ba89236439caee66f057ed78be58"
+    },
+    {
+      "path": "extension/a1/core.mjs",
+      "frozenSHA256": "d5bb3d307680406c9f0732f3e87e4d26b406dd99a148ba65ae0bcc7ba4dbf221",
+      "publicationWorkingSHA256": "05c80a6601f57d5c52fad5a3c88ff442c9ca0bbb922e1a9710d70c896dea57e8"
+    },
+    {
+      "path": "extension/background/a1-core.bundle.js",
+      "frozenSHA256": "96c3312e637bf1bf374fd956c3060666f39f3bdb2bcee3ce974413af00b81b06",
+      "publicationWorkingSHA256": "de4dd0126da485435360d0643b46b2156ec5d1830869b1f29f23901e7c2be98b"
+    },
+    {
+      "path": "extension/background/access-store.js",
+      "frozenSHA256": "1edf6c8b599d5cb7abec42c2dc259fe9b16e8ec8425741b209b886137dc276ef",
+      "publicationWorkingSHA256": "267f9697620f9a1be97e549dda5c770ac664dc88ad825fbad1070d1f655aeb79"
+    },
+    {
+      "path": "extension/background/member-a1-core.bundle.js",
+      "frozenSHA256": "9f65c79e6071b8b24535703fd9ff6344cb9dba501915b4bf61b184fe0e4e80ba",
+      "publicationWorkingSHA256": "fb9b3a347d85a47905d7f7275c3e427a22cea10d8a34548440ecb8aae8e03989"
+    },
+    {
+      "path": "extension/background/session-core.js",
+      "frozenSHA256": "6cecdd4aad65293ae2c8007934e14ff13b0322adfc5dd69f7bf0a565483226c0",
+      "publicationWorkingSHA256": "4973d9b0dd1897b801d5521233bf48555b1d1918fcfb000c61b6b544ae8b4471"
+    },
+    {
+      "path": "extension/integration/member-a1-adapter.bundle.js",
+      "frozenSHA256": "2c1d7c4c411c3df5941c1d62d6b8ddedbf5a20b2a285f16d007a47aa3a9b22e7",
+      "publicationWorkingSHA256": "179998ccb65f44d654d9912cfc0245b355bd2a4870d590a20187b8487a3efd84"
+    },
+    {
+      "path": "extension/integration/member-a1-adapter.mjs",
+      "frozenSHA256": "c50d4c5f8ec7a56768cb40c2a76eed17d9d7612c1a5ab88ff8d48cfc3bce74af",
+      "publicationWorkingSHA256": "f90e1fcbd943e97ad9b8e29b0d2f344b3d28e4310d7378870cc08f07ee2d2d90"
+    },
+    {
+      "path": "extension/member-a1/content.bundle.js",
+      "frozenSHA256": "13193841b728b53f0ecc15b2b37d9006b62e6ff95619785f0819bcd8c6c9ac5f",
+      "publicationWorkingSHA256": "1c6e9e5c01952eda9af44b97971cde8a15d68dcf1b4cd496074b95bdb35d99e6"
+    },
+    {
+      "path": "extension/member-a1/content.mjs",
+      "frozenSHA256": "3dbe6bbd0b1078c8a6388edbc467b83d36bb9103d67b38f35038f97f33a3397d",
+      "publicationWorkingSHA256": "5aaab741ea681c291acbe016eb683ce018ae005d9e75565661b26d2fc395306c"
+    },
+    {
+      "path": "extension/member-a1/core.mjs",
+      "frozenSHA256": "7ddf0bdbf036192ccea8da2c2814440dbe94e1f865bf136253c921e86756de91",
+      "publicationWorkingSHA256": "b5e4c41f96d220cbe4262d381ba324e2312b2cf74080199316a0bc0a0a27b9c6"
+    },
+    {
+      "path": "extension/member-ui/developer.html",
+      "frozenSHA256": "c75273ea9e3cfd8d0d4f926650cf644bb8d6785294ebeb8d7142b82059686da2",
+      "publicationWorkingSHA256": "fe54264ac8cfdc85aaec38821d62e9e3c09ce3903a3f029d0bbf37e6f4f2dbfc"
+    },
+    {
+      "path": "extension/popup/a1-trial-ui.js",
+      "frozenSHA256": "9064a538c4fad1468b12830badf7df3f7671b64eb08ae18ad2686d445562600c",
+      "publicationWorkingSHA256": "c37c45c4b94c17bab94330fa9ebf5525d2bf65fdbd6670fda450854a73552053"
+    },
+    {
+      "path": "extension/popup/developer.html",
+      "frozenSHA256": "0f5561da593c877cd9944807ef5db736b5ebda7308b38c4e61c47b3d296dc682",
+      "publicationWorkingSHA256": "32991fe7c0e22d282303a4a775b855db4cebe9431173dd2c8159d659ed5e7ef6"
+    },
+    {
+      "path": "extension/popup/developer.js",
+      "frozenSHA256": "aa6b9544df6cb3ff998fd4cf4534006d28122b4ab4cd5c81a59e27afd9e62ed7",
+      "publicationWorkingSHA256": "4cc5a7f520eb0ac057d68fc9d2be73da9e46a41505682001b788204ddde9d92f"
+    },
+    {
+      "path": "extension/popup/member-auth-ui.js",
+      "frozenSHA256": "4e8f18a0abc61f8ae73938111916b85206d79949d5a46eb77721b33b58c00060",
+      "publicationWorkingSHA256": "121669e6a5a6a85dc4ba5905d302460ea273507ed25679aa3f0ea2c3cc9e8614"
+    },
+    {
+      "path": "extension/popup/popup-ui.js",
+      "frozenSHA256": "fc593a55ca467df25a908b8687f4104fdb763812cbc0d70eb938baa48471dbf9",
+      "publicationWorkingSHA256": "7b9b5089bb081a6ca0b58aeb1a5a51dd0ac773509f485f0ad3953c3b0c2365e9"
+    },
+    {
+      "path": "extension/popup/popup.html",
+      "frozenSHA256": "9205c31932fce3dba2a8204682ed0130fe69a39e2ed22db616f1c428a1737fd9",
+      "publicationWorkingSHA256": "05302a159645f45d645d37436d0be05356d0aeb14ed2813bae935cff2c0d9cce"
+    },
+    {
+      "path": "extension/popup/popup.js",
+      "frozenSHA256": "2487a53e8b1f247e442a493520a1b25e397364c16048d7b3e5ba90ec2c6ecc03",
+      "publicationWorkingSHA256": "90fe215323492d7b42a340d25f2c77f17d7a8aafe62d58510916dca27992bc64"
+    },
+    {
+      "path": "extension/tests/member-dom-finalize-race.test.mjs",
+      "frozenSHA256": "1c43eb2bfdf9bfd943c8bbd947c84d4e3c10b539ea64fed53ba7ee8a5f4ede47",
+      "publicationWorkingSHA256": "22ca4895573baad5a23440992f404a3f5f8a12325312ec3505c28bee937731cc"
+    },
+    {
+      "path": "extension/tests/shorts-scan-preservation.test.mjs",
+      "frozenSHA256": "cd50a108dee6c59de624281904d6a71a3e33f76330b712c39e19fd75fdc3a452",
+      "publicationWorkingSHA256": "e6bfd78795711af3f74a207222aeadc196c95d6a5093918782ca0d24e4a81673"
+    },
+    {
+      "path": "frontend/src/MetricPercentage.test.tsx",
+      "frozenSHA256": "b220c39c877ff3f407196b8aa342a65d3cff8d38bd80f0eed2956954a4754ff1",
+      "publicationWorkingSHA256": "d3473db85fbb9e0971e460298ff7a3561eb0b55e48f09d28b022f28cfb0d0c63"
+    },
+    {
+      "path": "runtime-server/src/main/java/kr/ac/kdu/focurve/IsolatedFixture.java",
+      "frozenSHA256": "86d0750da402231db0c58c86d7ff36ed14ad5c36a1d5d7845e29f254eaf218d1",
+      "publicationWorkingSHA256": "24af5cc461e70281979603c0e103c88c29eb16fb723581923886b7892c540034"
+    },
+    {
+      "path": "runtime-server/src/main/java/kr/ac/kdu/focurve/MemberApi.java",
+      "frozenSHA256": "ef4435834d98a52d21208afd57e6cfc2e66032444c1cc60ebf035fdcb8855531",
+      "publicationWorkingSHA256": "fb01838974e4e8b4e3cc54114e8241cef81575fae2104a37efa91aa800873453"
+    },
+    {
+      "path": "runtime-server/src/main/java/kr/ac/kdu/focurve/MemberAuth.java",
+      "frozenSHA256": "351be2a64127511f1a2c4fd9ce33477ae69f0139f58ea36055e3a70afb47889f",
+      "publicationWorkingSHA256": "1a0164050845b4122cc505d8ddbef80d266e3de2bcab595e5dea67e143671fbb"
+    },
+    {
+      "path": "runtime-server/src/main/java/kr/ac/kdu/focurve/MemberExecution.java",
+      "frozenSHA256": "8080ae731e368d103d7811bee5607eeb7faa6f1b84669eca12d204bd78c0e771",
+      "publicationWorkingSHA256": "f188a5903de030e0ee861a15600256087323ae726d56598ee9fa3157ef4a1711"
+    }
+  ],
+  "notes": "Only whitespace normalization and derived bundles, original PR image byte restoration, documentation privacy/guide changes, and repository-local historical test fixture repair. Actual source tree is identified by published Git SHA; original frozen manifest remains an immutable input record.",
+  "workingHashNote": "Raw bytes at publication preparation. Git text filters canonicalize line endings; published Git blobs are authoritative.",
+  "ciPortabilityFixes": [
+    "frontend/src/MetricPercentage.test.tsx: remove unsupported ByRoleOptions.exact, preserve exact string name matching/assertions",
+    "distribution/tests/test_unused_setup_renewal.py: Windows compiler scope matches existing native test; Windows still executes full case, Linux skips two Windows-only compiler tests"
+  ]
+}

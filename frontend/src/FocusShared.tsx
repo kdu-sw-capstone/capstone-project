@@ -2,14 +2,14 @@ import { useRef, useState } from "react";
 import { ApiError, message, request } from "./api";
 
 export type Page<T> = { items: T[]; next_cursor: string | null };
-export type Session = { version?:number|string; version_increment_blocked?:boolean; session_id: string; execution_status: string; record_status: string; duration_minutes: number; active_duration_ms: number; started_at?: string; planned_end_at?: string; ended_at?: string; end_reason?: string; overrun_ms?: number; automatic_recovery_supported?: boolean; time_accounting_mode?: string };
+export type Session = { executor_id?:string; version?:number|string; version_increment_blocked?:boolean; session_id: string; execution_status: string; record_status: string; duration_minutes: number; active_duration_ms: number; started_at?: string; planned_end_at?: string; ended_at?: string; end_reason?: string; overrun_ms?: number; automatic_recovery_supported?: boolean; time_accounting_mode?: string };
 export type PolicySite = { site_id: string; canonical_host: string; display_name?: string; purpose?: string; include_subdomains?: boolean; access_policy: string; feature_policies?: {feature_code:string;enabled:boolean}[] };
 export type Policy = { sites?: PolicySite[] };
-export type Access = { event_id:string; session_id:string; occurred_at:string; target_host:string; target_key:string; feature_code?:string; event_type:string; is_repeat:boolean; target_access_index:number; quality:string; reason?:string|null; blocked_reasons?:string[]|null; matched_policy_host?:string|null; repeat_count?:number; policy?:Policy };
+export type Access = { event_id:string; session_id:string; occurred_at:string; target_host:string; target_key:string; feature_code?:string; event_type:string; is_repeat:boolean; target_access_index:number; quality:string; reason?:string|null; blocked_reasons?:string[]|null; matched_policy_host?:string|null; repeat_count?:number; policy?:Policy; snapshot?:Policy };
 export const seoulDay = (date = new Date()) => new Intl.DateTimeFormat("en-CA", {timeZone:"Asia/Seoul",year:"numeric",month:"2-digit",day:"2-digit"}).format(date);
 export const dateTime = (value?:string) => value ? new Date(value).toLocaleString("ko-KR",{timeZone:"Asia/Seoul",hour12:false}) : "시작 미확인";
 export const clockTime = (value?:string) => value ? new Date(value).toLocaleTimeString("en-GB",{timeZone:"Asia/Seoul",hour12:false}) : "—";
-export function label(value?:string) { return ({STARTING:"시작 확인 중",RUNNING:"집중 진행 중",ENDING:"해제 확인 중",ENDED:"종료 완료",START_FAILED:"시작 실패",UNKNOWN:"결과 확인 필요",PENDING:"반영 대기",PARTIAL:"일부 수집",COMPLETE:"수집 완료",NO_DATA:"자료 없음",CONFIRMED:"확인됨",UNCONFIRMED:"미확인",REVIEW_REQUIRED:"추가 확인 필요",BLOCK:"전체 차단",RECORD:"허용하고 기록",ALLOW:"허용",FOCUS:"집중",DISTRACTION:"방해",GENERAL:"일반"} as Record<string,string>)[value??""] ?? value ?? "미확인"; }
+export function label(value?:string) { return ({STARTING:"시작 확인 중",NATIVE_VERIFYING:"문서 전환 확인 중",EFFECT_VERIFYING:"제한 적용 확인 중",RUNNING:"집중 진행 중",ENDING:"해제 확인 중",ENDED:"종료 완료",START_FAILED:"시작 실패",UNKNOWN:"결과 확인 필요",PENDING:"반영 대기",PARTIAL:"일부 수집",COMPLETE:"수집 완료",NO_DATA:"자료 없음",CONFIRMED:"확인됨",UNCONFIRMED:"미확인",REVIEW_REQUIRED:"추가 확인 필요",BLOCK:"전체 차단",RECORD:"허용하고 기록",ALLOW:"허용",FOCUS:"집중",DISTRACTION:"방해",GENERAL:"일반"} as Record<string,string>)[value??""] ?? value ?? "미확인"; }
 const reasonNames:Record<string,string> = {USER_SITE:"사이트 정책 차단",ADULT_DOMAIN:"성인 사이트 제한",KEYWORD:"키워드 제한",FEATURE:"내부 기능 제한"};
 export function blockingReasonLabel(item:Access) {
   if (item.event_type==="RECORDED_ACCESS") return "";
@@ -31,5 +31,10 @@ export async function allPages<T>(path:string, signal?:AbortSignal):Promise<T[]>
   return items;
 }
 export function Kpi({title,value,hint}:{title:string;value:string;hint:string}) {return <div className="focus-kpi"><h4>{title}</h4><strong>{value}</strong><small>{hint}</small></div>;}
-export function SiteMark({host}:{host:string}) {return <span className="site-mark" aria-hidden="true">{host==="youtube.com"?<img src="/assets/figma/session-youtube.png" alt=""/>:<img src="/assets/figma/light-imgDashIconGlobe.svg" alt=""/>}</span>;}
+const siteArtwork:Record<string,string> = {"github.com": "/assets/figma/site-github-com.png", "instagram.com": "/assets/figma/site-instagram-com.png", "news.ycombinator.com": "/assets/figma/site-news-ycombinator-com.png", "notion.so": "/assets/figma/site-notion-so.png", "reddit.com": "/assets/figma/site-reddit-com.png", "wikipedia.org": "/assets/figma/site-wikipedia-org.png", "x.com": "/assets/figma/site-x-com.png", "youtube.com": "/assets/figma/site-youtube-com.png"};
+export function SiteMark({host}:{host:string}) {
+ const canonical=host.toLowerCase().replace(/^www\./,"");
+ const asset=siteArtwork[canonical]??"/assets/figma/light-imgDashIconGlobe.svg";
+ return <span className="site-mark" aria-hidden="true"><img src={asset} alt=""/></span>;
+}
 export function DateFields({from,to,onFrom,onTo}:{from:string;to:string;onFrom:(s:string)=>void;onTo:(s:string)=>void}) {return <><label>시작 날짜<input type="date" value={from} onChange={e=>onFrom(e.currentTarget.value)} onInput={e=>onFrom(e.currentTarget.value)}/></label><label>종료 날짜<input type="date" value={to} onChange={e=>onTo(e.currentTarget.value)} onInput={e=>onTo(e.currentTarget.value)}/></label></>;}

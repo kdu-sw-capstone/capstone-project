@@ -1,0 +1,9 @@
+(()=>{// Root-only, separate durable admission namespace. No credential stored here.
+class RootAuthority {
+ constructor(db){this.db=db;}
+ async current(){return this.db.transaction('readonly',(tx,done)=>{const q=tx.objectStore('metadata').get('member:root-authority');q.onsuccess=()=>done(q.result??null);});}
+ async claim(identity,session){let failure;try{return await this.db.transaction('readwrite',(tx,done)=>{const md=tx.objectStore('metadata'),q=md.get('member:root-authority');q.onsuccess=()=>{const old=q.result,same=old?.authority===identity.authority&&old.owner_key===identity.owner_key&&old.executor_id===identity.executor_id&&old.session_id===session;if(old?.phase==='ACTIVE'&&!same){failure=Error('ROOT_OBLIGATION_EXISTS');tx.abort();return;}if(same&&old.phase==='ACTIVE'){done(old);return;}const row={key:'member:root-authority',...identity,session_id:session,epoch:crypto.randomUUID(),phase:'ACTIVE'};md.put(row);done(row);};});}catch(e){throw failure??e;}}
+ async released(identity,session){let failure;try{return await this.db.transaction('readwrite',(tx,done)=>{const md=tx.objectStore('metadata'),q=md.get('member:root-authority');q.onsuccess=()=>{const r=q.result;if(!r||r.authority!==identity.authority||r.owner_key!==identity.owner_key||r.executor_id!==identity.executor_id||r.session_id!==session){failure=Error('OWNER_MISMATCH');tx.abort();return;}md.put({...r,phase:'RELEASED'});done(true);};});}catch(e){throw failure??e;}}
+ async idle(){if((await this.current())?.phase==='ACTIVE')throw Error('ROOT_OBLIGATION_EXISTS');return true;}
+}
+;globalThis.FocurveMemberRoot={RootAuthority};})();

@@ -1,0 +1,14 @@
+.brand{position:relative;margin-bottom:24px}.badge{margin-left:auto;font-size:11px;color:var(--mark);background:var(--card);border:1px solid var(--border);padding:4px 8px;border-radius:20px}.eyebrow{font-size:12px;color:var(--mark);margin-bottom:12px}.focus-card h2{font-size:22px;letter-spacing:-.5px}.focus-card .note{margin-top:12px}.button-link{display:block;text-align:center;text-decoration:none;border:1px solid var(--border);border-radius:12px;padding:10px 12px;margin:12px 0;color:var(--text);font-weight:500}.button-link[aria-disabled=true]{pointer-events:none;opacity:.5}.button-link:focus-visible{outline:2px solid var(--accent);outline-offset:3px}#notice{color:var(--muted);font-size:13px;overflow-wrap:anywhere;margin:12px 0}#connection button{margin-top:12px}#end{margin-top:10px}details{font-size:12px;color:var(--muted);margin-top:16px}footer{margin-top:24px;text-align:center;font-size:11px;color:var(--muted)}
+
+/* Basic MVP Figma ext_member 333:2566 / 78:969; preserve native controls. */
+main{padding:24px;min-height:595px;border-radius:16px}
+.brand{height:32px;margin-bottom:12px}.brand-mark{width:28px;height:28px;border-radius:8px;font-size:13px;background:var(--accent)}
+.brand h1{font-size:18px;line-height:26px}.brand p{display:none}
+.badge{display:block;margin:0 0 12px;padding:0;border:0;border-radius:0;background:none;font-size:13px;color:var(--muted)}
+.workspace-links{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px}
+.workspace-links .button-link{margin:0;min-height:36px;padding:7px 8px;font-size:13px;border-radius:8px}
+.workspace-links a:first-child{background:var(--accent);color:white;border-color:var(--accent)}
+.focus-card h2{font-size:18px;line-height:27px;letter-spacing:normal}.focus-card .note{font-size:14px;margin-top:0}
+.focus-card label{font-size:14px;color:var(--text)}
+:root[data-theme=light] input:not([type=checkbox]),:root[data-theme=light] .secondary{background:#edf6ff}
+@media(max-width:399px){body{width:100%;min-width:280px}main{padding:20px}.workspace-links{grid-template-columns:1fr 1fr}}

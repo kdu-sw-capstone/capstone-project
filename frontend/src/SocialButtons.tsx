@@ -29,7 +29,7 @@ export default function SocialButtons({ link = false, signup = false, providers 
       for (const provider of providerIds) {
         let result: Availability = "available";
         try { await socialAuthorizationPath(provider, "login"); }
-        catch (failure) { result = failure instanceof ApiError && failure.code === "PROVIDER_UNAVAILABLE" ? "unconfigured" : "error"; }
+        catch (failure) { result = failure instanceof ApiError && (failure.code === "PROVIDER_UNAVAILABLE" || failure.status === 503 && failure.code === "PROVIDER_NOT_CONFIGURED") ? "unconfigured" : "error"; }
         if (!disposed) setAvailability(old => ({ ...old, [provider]: result }));
       }
     }

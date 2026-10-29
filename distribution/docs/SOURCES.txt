@@ -1,0 +1,9 @@
+원래 R3 사용자 팝업 CSS/디자인 토큰과 검증된 인증·세션·정책 모듈을 재사용합니다.
+공식 기능 근거(새 설치 검증 PASS를 뜻하지 않음):
+https://developer.chrome.com/docs/extensions/reference/manifest/key
+https://nodejs.org/download/release/v22.4.0/docs/api/globals.html#websocket
+https://developer.chrome.com/docs/extensions/get-started/tutorial/hello-world
+https://groups.google.com/a/chromium.org/g/chromium-extensions/c/1-g8EFx2BBY/m/S0ET5wPjCAAJ
+새 설치의 공개 manifest key로 Extension ID를 고정하고 실제 실행 ID와 대조합니다.
+Node 24 내장 WebSocket을 사용하므로 배포 런처는 개발 경로의 Playwright 패키지에 의존하지 않습니다.
+일반 Chrome137 이후 제거된 --load-extension 플래그는 일반 사용자 모드에서 쓰지 않습니다. 공식 수동 로드 승인 후 새 전용 프로필만 결속합니다.
