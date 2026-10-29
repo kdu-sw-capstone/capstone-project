@@ -1,0 +1,1557 @@
+{
+  "revision": "AMVP-CONTRACT-20261029-RC1",
+  "namespace": "/api/v1/amvp",
+  "status": "REVIEW_PENDING",
+  "required_headers": {
+    "W": [
+      "focurve_session HttpOnly cookie (existing)",
+      "Origin exact match",
+      "X-CSRF-Token for mutations"
+    ],
+    "E": [
+      "Authorization:Bearer <existing installation token>"
+    ]
+  },
+  "GET_body": "No body; Empty schema validates contract fixture placeholder only. No JSON {} body required on network GET.",
+  "max_batch_bytes": 1048576,
+  "path_parameters": "All *_id variables canonical UUID except legacy site_id numeric string; server checks ownership before lookup result disclosure",
+  "query_definitions": {
+    "None": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {},
+      "required": []
+    },
+    "ConfigList": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "executor_id": {
+          "type": "string",
+          "format": "uuid",
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+        },
+        "cursor": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 2048
+        },
+        "limit": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 100
+        },
+        "kind": {
+          "type": "string",
+          "enum": [
+            "CONTENT",
+            "SITE_TIME",
+            "FOCUS_SCHEDULE",
+            "CADENCE"
+          ]
+        }
+      },
+      "required": [
+        "executor_id"
+      ]
+    },
+    "Executor": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "executor_id": {
+          "type": "string",
+          "format": "uuid",
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+        }
+      },
+      "required": [
+        "executor_id"
+      ]
+    },
+    "UsageDay": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "executor_id": {
+          "type": "string",
+          "format": "uuid",
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+        },
+        "date": {
+          "type": "string",
+          "format": "date"
+        }
+      },
+      "required": [
+        "executor_id",
+        "date"
+      ]
+    },
+    "Statistics": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "executor_id": {
+          "type": "string",
+          "format": "uuid",
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+        },
+        "scope": {
+          "type": "string",
+          "enum": [
+            "INSTALLATION",
+            "ACCOUNT_TOTAL"
+          ]
+        },
+        "from_date": {
+          "type": "string",
+          "format": "date"
+        },
+        "to_date": {
+          "type": "string",
+          "format": "date"
+        }
+      },
+      "required": [
+        "scope",
+        "from_date",
+        "to_date"
+      ]
+    }
+  },
+  "operations": [
+    {
+      "id": "CAP-01",
+      "method": "POST",
+      "path": "/api/v1/amvp/capabilities/negotiations",
+      "auth": "E",
+      "body_schema": "CapabilityOffer",
+      "response_schema": "CapabilitySelection",
+      "success_status": 200,
+      "query_schema": "None",
+      "precondition": null,
+      "implemented_at_baseline": false,
+      "capability_required": false,
+      "transaction": "owner lock -> precondition/idempotency -> immutable payload -> projections/outbox -> commit",
+      "errors": {
+        "400": [
+          "VALIDATION_FAILED"
+        ],
+        "401": [
+          "UNAUTHENTICATED"
+        ],
+        "403": [
+          "FORBIDDEN_EXECUTOR"
+        ],
+        "409": [
+          "IDEMPOTENCY_CONFLICT",
+          "STALE_OWNER",
+          "RELEASE_UNCONFIRMED"
+        ],
+        "412": [
+          "VERSION_CONFLICT"
+        ],
+        "422": [
+          "VALIDATION_FAILED",
+          "VERSION_LIMIT",
+          "INVALID_TIMEZONE"
+        ],
+        "429": [
+          "RATE_LIMITED"
+        ],
+        "503": [
+          "UNSUPPORTED_CONTRACT",
+          "CAPABILITY_NOT_VERIFIED",
+          "TEMPORARILY_UNAVAILABLE"
+        ],
+        "404": [
+          "RESOURCE_NOT_FOUND"
+        ],
+        "428": [
+          "PRECONDITION_REQUIRED"
+        ],
+        "413": [
+          "TOO_LARGE"
+        ]
+      }
+    },
+    {
+      "id": "CFG-01",
+      "method": "GET",
+      "path": "/api/v1/amvp/configs",
+      "auth": "W_OR_E",
+      "body_schema": "Empty",
+      "response_schema": "ConfigList",
+      "success_status": 200,
+      "query_schema": "ConfigList",
+      "precondition": null,
+      "implemented_at_baseline": false,
+      "capability_required": true,
+      "transaction": "Read authorized consistent snapshot; no state mutation",
+      "errors": {
+        "400": [
+          "VALIDATION_FAILED"
+        ],
+        "401": [
+          "UNAUTHENTICATED"
+        ],
+        "403": [
+          "FORBIDDEN_EXECUTOR"
+        ],
+        "409": [
+          "IDEMPOTENCY_CONFLICT",
+          "STALE_OWNER",
+          "RELEASE_UNCONFIRMED"
+        ],
+        "412": [
+          "VERSION_CONFLICT"
+        ],
+        "422": [
+          "VALIDATION_FAILED",
+          "VERSION_LIMIT",
+          "INVALID_TIMEZONE"
+        ],
+        "429": [
+          "RATE_LIMITED"
+        ],
+        "503": [
+          "UNSUPPORTED_CONTRACT",
+          "CAPABILITY_NOT_VERIFIED",
+          "TEMPORARILY_UNAVAILABLE"
+        ],
+        "404": [
+          "RESOURCE_NOT_FOUND"
+        ],
+        "428": [
+          "PRECONDITION_REQUIRED"
+        ],
+        "413": [
+          "TOO_LARGE"
+        ]
+      }
+    },
+    {
+      "id": "CFG-02",
+      "method": "GET",
+      "path": "/api/v1/amvp/configs/{config_id}",
+      "auth": "W_OR_E",
+      "body_schema": "Empty",
+      "response_schema": "ConfigRecord",
+      "success_status": 200,
+      "query_schema": "None",
+      "precondition": null,
+      "implemented_at_baseline": false,
+      "capability_required": true,
+      "transaction": "Read authorized consistent snapshot; no state mutation",
+      "errors": {
+        "400": [
+          "VALIDATION_FAILED"
+        ],
+        "401": [
+          "UNAUTHENTICATED"
+        ],
+        "403": [
+          "FORBIDDEN_EXECUTOR"
+        ],
+        "409": [
+          "IDEMPOTENCY_CONFLICT",
+          "STALE_OWNER",
+          "RELEASE_UNCONFIRMED"
+        ],
+        "412": [
+          "VERSION_CONFLICT"
+        ],
+        "422": [
+          "VALIDATION_FAILED",
+          "VERSION_LIMIT",
+          "INVALID_TIMEZONE"
+        ],
+        "429": [
+          "RATE_LIMITED"
+        ],
+        "503": [
+          "UNSUPPORTED_CONTRACT",
+          "CAPABILITY_NOT_VERIFIED",
+          "TEMPORARILY_UNAVAILABLE"
+        ],
+        "404": [
+          "RESOURCE_NOT_FOUND"
+        ],
+        "428": [
+          "PRECONDITION_REQUIRED"
+        ],
+        "413": [
+          "TOO_LARGE"
+        ]
+      }
+    },
+    {
+      "id": "CFG-03",
+      "method": "PUT",
+      "path": "/api/v1/amvp/configs/{config_id}",
+      "auth": "W_OR_E",
+      "body_schema": "ConfigWrite",
+      "response_schema": "ConfigRecord",
+      "success_status": 200,
+      "query_schema": "None",
+      "precondition": "CREATE: If-None-Match:* ; UPDATE: If-Match:\"<safe version>\"; Idempotency-Key:UUID",
+      "implemented_at_baseline": false,
+      "capability_required": true,
+      "transaction": "owner lock -> precondition/idempotency -> immutable payload -> projections/outbox -> commit",
+      "errors": {
+        "400": [
+          "VALIDATION_FAILED"
+        ],
+        "401": [
+          "UNAUTHENTICATED"
+        ],
+        "403": [
+          "FORBIDDEN_EXECUTOR"
+        ],
+        "409": [
+          "IDEMPOTENCY_CONFLICT",
+          "STALE_OWNER",
+          "RELEASE_UNCONFIRMED"
+        ],
+        "412": [
+          "VERSION_CONFLICT"
+        ],
+        "422": [
+          "VALIDATION_FAILED",
+          "VERSION_LIMIT",
+          "INVALID_TIMEZONE"
+        ],
+        "429": [
+          "RATE_LIMITED"
+        ],
+        "503": [
+          "UNSUPPORTED_CONTRACT",
+          "CAPABILITY_NOT_VERIFIED",
+          "TEMPORARILY_UNAVAILABLE"
+        ],
+        "404": [
+          "RESOURCE_NOT_FOUND"
+        ],
+        "428": [
+          "PRECONDITION_REQUIRED"
+        ],
+        "413": [
+          "TOO_LARGE"
+        ]
+      }
+    },
+    {
+      "id": "CFG-04",
+      "method": "DELETE",
+      "path": "/api/v1/amvp/configs/{config_id}",
+      "auth": "W_OR_E",
+      "body_schema": "Empty",
+      "response_schema": "OperationState",
+      "success_status": 202,
+      "query_schema": "None",
+      "precondition": "If-Match:\"<safe version>\"; Idempotency-Key:UUID; soft delete only",
+      "implemented_at_baseline": false,
+      "capability_required": true,
+      "transaction": "owner lock -> precondition/idempotency -> immutable payload -> projections/outbox -> commit",
+      "errors": {
+        "400": [
+          "VALIDATION_FAILED"
+        ],
+        "401": [
+          "UNAUTHENTICATED"
+        ],
+        "403": [
+          "FORBIDDEN_EXECUTOR"
+        ],
+        "409": [
+          "IDEMPOTENCY_CONFLICT",
+          "STALE_OWNER",
+          "RELEASE_UNCONFIRMED"
+        ],
+        "412": [
+          "VERSION_CONFLICT"
+        ],
+        "422": [
+          "VALIDATION_FAILED",
+          "VERSION_LIMIT",
+          "INVALID_TIMEZONE"
+        ],
+        "429": [
+          "RATE_LIMITED"
+        ],
+        "503": [
+          "UNSUPPORTED_CONTRACT",
+          "CAPABILITY_NOT_VERIFIED",
+          "TEMPORARILY_UNAVAILABLE"
+        ],
+        "404": [
+          "RESOURCE_NOT_FOUND"
+        ],
+        "428": [
+          "PRECONDITION_REQUIRED"
+        ],
+        "413": [
+          "TOO_LARGE"
+        ]
+      }
+    },
+    {
+      "id": "PKG-01",
+      "method": "GET",
+      "path": "/api/v1/amvp/runtime-packages/current",
+      "auth": "E",
+      "body_schema": "Empty",
+      "response_schema": "RuntimePackage",
+      "success_status": 200,
+      "query_schema": "Executor",
+      "precondition": null,
+      "implemented_at_baseline": false,
+      "capability_required": true,
+      "transaction": "Read authorized consistent snapshot; no state mutation",
+      "errors": {
+        "400": [
+          "VALIDATION_FAILED"
+        ],
+        "401": [
+          "UNAUTHENTICATED"
+        ],
+        "403": [
+          "FORBIDDEN_EXECUTOR"
+        ],
+        "409": [
+          "IDEMPOTENCY_CONFLICT",
+          "STALE_OWNER",
+          "RELEASE_UNCONFIRMED"
+        ],
+        "412": [
+          "VERSION_CONFLICT"
+        ],
+        "422": [
+          "VALIDATION_FAILED",
+          "VERSION_LIMIT",
+          "INVALID_TIMEZONE"
+        ],
+        "429": [
+          "RATE_LIMITED"
+        ],
+        "503": [
+          "UNSUPPORTED_CONTRACT",
+          "CAPABILITY_NOT_VERIFIED",
+          "TEMPORARILY_UNAVAILABLE"
+        ],
+        "404": [
+          "RESOURCE_NOT_FOUND"
+        ],
+        "428": [
+          "PRECONDITION_REQUIRED"
+        ],
+        "413": [
+          "TOO_LARGE"
+        ]
+      }
+    },
+    {
+      "id": "FOC-01",
+      "method": "POST",
+      "path": "/api/v1/amvp/focus-attachments",
+      "auth": "W_OR_E",
+      "body_schema": "FocusAttachmentRequest",
+      "response_schema": "FocusAttachment",
+      "success_status": 201,
+      "query_schema": "None",
+      "precondition": "Idempotency-Key:UUID; verified same-owner frozen focus Snapshot required",
+      "implemented_at_baseline": false,
+      "capability_required": true,
+      "transaction": "owner lock -> precondition/idempotency -> immutable payload -> projections/outbox -> commit",
+      "errors": {
+        "400": [
+          "VALIDATION_FAILED"
+        ],
+        "401": [
+          "UNAUTHENTICATED"
+        ],
+        "403": [
+          "FORBIDDEN_EXECUTOR"
+        ],
+        "409": [
+          "IDEMPOTENCY_CONFLICT",
+          "STALE_OWNER",
+          "RELEASE_UNCONFIRMED"
+        ],
+        "412": [
+          "VERSION_CONFLICT"
+        ],
+        "422": [
+          "VALIDATION_FAILED",
+          "VERSION_LIMIT",
+          "INVALID_TIMEZONE"
+        ],
+        "429": [
+          "RATE_LIMITED"
+        ],
+        "503": [
+          "UNSUPPORTED_CONTRACT",
+          "CAPABILITY_NOT_VERIFIED",
+          "TEMPORARILY_UNAVAILABLE"
+        ],
+        "404": [
+          "RESOURCE_NOT_FOUND"
+        ],
+        "428": [
+          "PRECONDITION_REQUIRED"
+        ],
+        "413": [
+          "TOO_LARGE"
+        ]
+      }
+    },
+    {
+      "id": "USG-01",
+      "method": "POST",
+      "path": "/api/v1/amvp/usage/batch",
+      "auth": "E",
+      "body_schema": "UsageBatch",
+      "response_schema": "BatchAck",
+      "success_status": 200,
+      "query_schema": "None",
+      "precondition": null,
+      "implemented_at_baseline": false,
+      "capability_required": true,
+      "transaction": "owner lock -> precondition/idempotency -> immutable payload -> projections/outbox -> commit",
+      "errors": {
+        "400": [
+          "VALIDATION_FAILED"
+        ],
+        "401": [
+          "UNAUTHENTICATED"
+        ],
+        "403": [
+          "FORBIDDEN_EXECUTOR"
+        ],
+        "409": [
+          "IDEMPOTENCY_CONFLICT",
+          "STALE_OWNER",
+          "RELEASE_UNCONFIRMED"
+        ],
+        "412": [
+          "VERSION_CONFLICT"
+        ],
+        "422": [
+          "VALIDATION_FAILED",
+          "VERSION_LIMIT",
+          "INVALID_TIMEZONE"
+        ],
+        "429": [
+          "RATE_LIMITED"
+        ],
+        "503": [
+          "UNSUPPORTED_CONTRACT",
+          "CAPABILITY_NOT_VERIFIED",
+          "TEMPORARILY_UNAVAILABLE"
+        ],
+        "404": [
+          "RESOURCE_NOT_FOUND"
+        ],
+        "428": [
+          "PRECONDITION_REQUIRED"
+        ],
+        "413": [
+          "TOO_LARGE"
+        ]
+      }
+    },
+    {
+      "id": "USG-02",
+      "method": "POST",
+      "path": "/api/v1/amvp/usage/status",
+      "auth": "E",
+      "body_schema": "StatusRequest",
+      "response_schema": "StatusResponse",
+      "success_status": 200,
+      "query_schema": "None",
+      "precondition": null,
+      "implemented_at_baseline": false,
+      "capability_required": true,
+      "transaction": "owner lock -> precondition/idempotency -> immutable payload -> projections/outbox -> commit",
+      "errors": {
+        "400": [
+          "VALIDATION_FAILED"
+        ],
+        "401": [
+          "UNAUTHENTICATED"
+        ],
+        "403": [
+          "FORBIDDEN_EXECUTOR"
+        ],
+        "409": [
+          "IDEMPOTENCY_CONFLICT",
+          "STALE_OWNER",
+          "RELEASE_UNCONFIRMED"
+        ],
+        "412": [
+          "VERSION_CONFLICT"
+        ],
+        "422": [
+          "VALIDATION_FAILED",
+          "VERSION_LIMIT",
+          "INVALID_TIMEZONE"
+        ],
+        "429": [
+          "RATE_LIMITED"
+        ],
+        "503": [
+          "UNSUPPORTED_CONTRACT",
+          "CAPABILITY_NOT_VERIFIED",
+          "TEMPORARILY_UNAVAILABLE"
+        ],
+        "404": [
+          "RESOURCE_NOT_FOUND"
+        ],
+        "428": [
+          "PRECONDITION_REQUIRED"
+        ],
+        "413": [
+          "TOO_LARGE"
+        ]
+      }
+    },
+    {
+      "id": "RPT-01",
+      "method": "POST",
+      "path": "/api/v1/amvp/reports/batch",
+      "auth": "E",
+      "body_schema": "ReportBatch",
+      "response_schema": "BatchAck",
+      "success_status": 200,
+      "query_schema": "None",
+      "precondition": null,
+      "implemented_at_baseline": false,
+      "capability_required": true,
+      "transaction": "owner lock -> precondition/idempotency -> immutable payload -> projections/outbox -> commit",
+      "errors": {
+        "400": [
+          "VALIDATION_FAILED"
+        ],
+        "401": [
+          "UNAUTHENTICATED"
+        ],
+        "403": [
+          "FORBIDDEN_EXECUTOR"
+        ],
+        "409": [
+          "IDEMPOTENCY_CONFLICT",
+          "STALE_OWNER",
+          "RELEASE_UNCONFIRMED"
+        ],
+        "412": [
+          "VERSION_CONFLICT"
+        ],
+        "422": [
+          "VALIDATION_FAILED",
+          "VERSION_LIMIT",
+          "INVALID_TIMEZONE"
+        ],
+        "429": [
+          "RATE_LIMITED"
+        ],
+        "503": [
+          "UNSUPPORTED_CONTRACT",
+          "CAPABILITY_NOT_VERIFIED",
+          "TEMPORARILY_UNAVAILABLE"
+        ],
+        "404": [
+          "RESOURCE_NOT_FOUND"
+        ],
+        "428": [
+          "PRECONDITION_REQUIRED"
+        ],
+        "413": [
+          "TOO_LARGE"
+        ]
+      }
+    },
+    {
+      "id": "RPT-02",
+      "method": "POST",
+      "path": "/api/v1/amvp/reports/status",
+      "auth": "E",
+      "body_schema": "StatusRequest",
+      "response_schema": "StatusResponse",
+      "success_status": 200,
+      "query_schema": "None",
+      "precondition": null,
+      "implemented_at_baseline": false,
+      "capability_required": true,
+      "transaction": "owner lock -> precondition/idempotency -> immutable payload -> projections/outbox -> commit",
+      "errors": {
+        "400": [
+          "VALIDATION_FAILED"
+        ],
+        "401": [
+          "UNAUTHENTICATED"
+        ],
+        "403": [
+          "FORBIDDEN_EXECUTOR"
+        ],
+        "409": [
+          "IDEMPOTENCY_CONFLICT",
+          "STALE_OWNER",
+          "RELEASE_UNCONFIRMED"
+        ],
+        "412": [
+          "VERSION_CONFLICT"
+        ],
+        "422": [
+          "VALIDATION_FAILED",
+          "VERSION_LIMIT",
+          "INVALID_TIMEZONE"
+        ],
+        "429": [
+          "RATE_LIMITED"
+        ],
+        "503": [
+          "UNSUPPORTED_CONTRACT",
+          "CAPABILITY_NOT_VERIFIED",
+          "TEMPORARILY_UNAVAILABLE"
+        ],
+        "404": [
+          "RESOURCE_NOT_FOUND"
+        ],
+        "428": [
+          "PRECONDITION_REQUIRED"
+        ],
+        "413": [
+          "TOO_LARGE"
+        ]
+      }
+    },
+    {
+      "id": "EVT-01",
+      "method": "POST",
+      "path": "/api/v1/amvp/events/batch",
+      "auth": "E",
+      "body_schema": "EventBatch",
+      "response_schema": "BatchAck",
+      "success_status": 200,
+      "query_schema": "None",
+      "precondition": null,
+      "implemented_at_baseline": false,
+      "capability_required": true,
+      "transaction": "owner lock -> precondition/idempotency -> immutable payload -> projections/outbox -> commit",
+      "errors": {
+        "400": [
+          "VALIDATION_FAILED"
+        ],
+        "401": [
+          "UNAUTHENTICATED"
+        ],
+        "403": [
+          "FORBIDDEN_EXECUTOR"
+        ],
+        "409": [
+          "IDEMPOTENCY_CONFLICT",
+          "STALE_OWNER",
+          "RELEASE_UNCONFIRMED"
+        ],
+        "412": [
+          "VERSION_CONFLICT"
+        ],
+        "422": [
+          "VALIDATION_FAILED",
+          "VERSION_LIMIT",
+          "INVALID_TIMEZONE"
+        ],
+        "429": [
+          "RATE_LIMITED"
+        ],
+        "503": [
+          "UNSUPPORTED_CONTRACT",
+          "CAPABILITY_NOT_VERIFIED",
+          "TEMPORARILY_UNAVAILABLE"
+        ],
+        "404": [
+          "RESOURCE_NOT_FOUND"
+        ],
+        "428": [
+          "PRECONDITION_REQUIRED"
+        ],
+        "413": [
+          "TOO_LARGE"
+        ]
+      }
+    },
+    {
+      "id": "EVT-02",
+      "method": "POST",
+      "path": "/api/v1/amvp/events/status",
+      "auth": "E",
+      "body_schema": "StatusRequest",
+      "response_schema": "StatusResponse",
+      "success_status": 200,
+      "query_schema": "None",
+      "precondition": null,
+      "implemented_at_baseline": false,
+      "capability_required": true,
+      "transaction": "owner lock -> precondition/idempotency -> immutable payload -> projections/outbox -> commit",
+      "errors": {
+        "400": [
+          "VALIDATION_FAILED"
+        ],
+        "401": [
+          "UNAUTHENTICATED"
+        ],
+        "403": [
+          "FORBIDDEN_EXECUTOR"
+        ],
+        "409": [
+          "IDEMPOTENCY_CONFLICT",
+          "STALE_OWNER",
+          "RELEASE_UNCONFIRMED"
+        ],
+        "412": [
+          "VERSION_CONFLICT"
+        ],
+        "422": [
+          "VALIDATION_FAILED",
+          "VERSION_LIMIT",
+          "INVALID_TIMEZONE"
+        ],
+        "429": [
+          "RATE_LIMITED"
+        ],
+        "503": [
+          "UNSUPPORTED_CONTRACT",
+          "CAPABILITY_NOT_VERIFIED",
+          "TEMPORARILY_UNAVAILABLE"
+        ],
+        "404": [
+          "RESOURCE_NOT_FOUND"
+        ],
+        "428": [
+          "PRECONDITION_REQUIRED"
+        ],
+        "413": [
+          "TOO_LARGE"
+        ]
+      }
+    },
+    {
+      "id": "DAY-01",
+      "method": "GET",
+      "path": "/api/v1/amvp/site-time-policies/{policy_id}/usage",
+      "auth": "W_OR_E",
+      "body_schema": "Empty",
+      "response_schema": "DailyUsage",
+      "success_status": 200,
+      "query_schema": "UsageDay",
+      "precondition": null,
+      "implemented_at_baseline": false,
+      "capability_required": true,
+      "transaction": "Read authorized consistent snapshot; no state mutation",
+      "errors": {
+        "400": [
+          "VALIDATION_FAILED"
+        ],
+        "401": [
+          "UNAUTHENTICATED"
+        ],
+        "403": [
+          "FORBIDDEN_EXECUTOR"
+        ],
+        "409": [
+          "IDEMPOTENCY_CONFLICT",
+          "STALE_OWNER",
+          "RELEASE_UNCONFIRMED"
+        ],
+        "412": [
+          "VERSION_CONFLICT"
+        ],
+        "422": [
+          "VALIDATION_FAILED",
+          "VERSION_LIMIT",
+          "INVALID_TIMEZONE"
+        ],
+        "429": [
+          "RATE_LIMITED"
+        ],
+        "503": [
+          "UNSUPPORTED_CONTRACT",
+          "CAPABILITY_NOT_VERIFIED",
+          "TEMPORARILY_UNAVAILABLE"
+        ],
+        "404": [
+          "RESOURCE_NOT_FOUND"
+        ],
+        "428": [
+          "PRECONDITION_REQUIRED"
+        ],
+        "413": [
+          "TOO_LARGE"
+        ]
+      }
+    },
+    {
+      "id": "TZ-01",
+      "method": "PUT",
+      "path": "/api/v1/amvp/timezone",
+      "auth": "W",
+      "body_schema": "TimezoneWrite",
+      "response_schema": "TimezoneRecord",
+      "success_status": 200,
+      "query_schema": "None",
+      "precondition": "If-Match:\"<safe version>\"; Idempotency-Key:UUID",
+      "implemented_at_baseline": false,
+      "capability_required": true,
+      "transaction": "owner lock -> precondition/idempotency -> immutable payload -> projections/outbox -> commit",
+      "errors": {
+        "400": [
+          "VALIDATION_FAILED"
+        ],
+        "401": [
+          "UNAUTHENTICATED"
+        ],
+        "403": [
+          "FORBIDDEN_EXECUTOR"
+        ],
+        "409": [
+          "IDEMPOTENCY_CONFLICT",
+          "STALE_OWNER",
+          "RELEASE_UNCONFIRMED"
+        ],
+        "412": [
+          "VERSION_CONFLICT"
+        ],
+        "422": [
+          "VALIDATION_FAILED",
+          "VERSION_LIMIT",
+          "INVALID_TIMEZONE"
+        ],
+        "429": [
+          "RATE_LIMITED"
+        ],
+        "503": [
+          "UNSUPPORTED_CONTRACT",
+          "CAPABILITY_NOT_VERIFIED",
+          "TEMPORARILY_UNAVAILABLE"
+        ],
+        "404": [
+          "RESOURCE_NOT_FOUND"
+        ],
+        "428": [
+          "PRECONDITION_REQUIRED"
+        ],
+        "413": [
+          "TOO_LARGE"
+        ]
+      }
+    },
+    {
+      "id": "TZ-02",
+      "method": "GET",
+      "path": "/api/v1/amvp/timezone",
+      "auth": "W_OR_E",
+      "body_schema": "Empty",
+      "response_schema": "TimezoneRecord",
+      "success_status": 200,
+      "query_schema": "Executor",
+      "precondition": null,
+      "implemented_at_baseline": false,
+      "capability_required": true,
+      "transaction": "Read authorized consistent snapshot; no state mutation",
+      "errors": {
+        "400": [
+          "VALIDATION_FAILED"
+        ],
+        "401": [
+          "UNAUTHENTICATED"
+        ],
+        "403": [
+          "FORBIDDEN_EXECUTOR"
+        ],
+        "409": [
+          "IDEMPOTENCY_CONFLICT",
+          "STALE_OWNER",
+          "RELEASE_UNCONFIRMED"
+        ],
+        "412": [
+          "VERSION_CONFLICT"
+        ],
+        "422": [
+          "VALIDATION_FAILED",
+          "VERSION_LIMIT",
+          "INVALID_TIMEZONE"
+        ],
+        "429": [
+          "RATE_LIMITED"
+        ],
+        "503": [
+          "UNSUPPORTED_CONTRACT",
+          "CAPABILITY_NOT_VERIFIED",
+          "TEMPORARILY_UNAVAILABLE"
+        ],
+        "404": [
+          "RESOURCE_NOT_FOUND"
+        ],
+        "428": [
+          "PRECONDITION_REQUIRED"
+        ],
+        "413": [
+          "TOO_LARGE"
+        ]
+      }
+    },
+    {
+      "id": "STA-01",
+      "method": "GET",
+      "path": "/api/v1/amvp/statistics/browser-usage",
+      "auth": "W_OR_E",
+      "body_schema": "Empty",
+      "response_schema": "Statistics",
+      "success_status": 200,
+      "query_schema": "Statistics",
+      "precondition": null,
+      "implemented_at_baseline": false,
+      "capability_required": true,
+      "transaction": "Read authorized consistent snapshot; no state mutation",
+      "errors": {
+        "400": [
+          "VALIDATION_FAILED"
+        ],
+        "401": [
+          "UNAUTHENTICATED"
+        ],
+        "403": [
+          "FORBIDDEN_EXECUTOR"
+        ],
+        "409": [
+          "IDEMPOTENCY_CONFLICT",
+          "STALE_OWNER",
+          "RELEASE_UNCONFIRMED"
+        ],
+        "412": [
+          "VERSION_CONFLICT"
+        ],
+        "422": [
+          "VALIDATION_FAILED",
+          "VERSION_LIMIT",
+          "INVALID_TIMEZONE"
+        ],
+        "429": [
+          "RATE_LIMITED"
+        ],
+        "503": [
+          "UNSUPPORTED_CONTRACT",
+          "CAPABILITY_NOT_VERIFIED",
+          "TEMPORARILY_UNAVAILABLE"
+        ],
+        "404": [
+          "RESOURCE_NOT_FOUND"
+        ],
+        "428": [
+          "PRECONDITION_REQUIRED"
+        ],
+        "413": [
+          "TOO_LARGE"
+        ]
+      }
+    },
+    {
+      "id": "IMP-01",
+      "method": "POST",
+      "path": "/api/v1/amvp/imports/completed-usage",
+      "auth": "W",
+      "body_schema": "ImportSelection",
+      "response_schema": "ImportResult",
+      "success_status": 200,
+      "query_schema": "None",
+      "precondition": "Idempotency-Key:UUID; proven source binding + explicit selection",
+      "implemented_at_baseline": false,
+      "capability_required": true,
+      "transaction": "owner lock -> precondition/idempotency -> immutable payload -> projections/outbox -> commit",
+      "errors": {
+        "400": [
+          "VALIDATION_FAILED"
+        ],
+        "401": [
+          "UNAUTHENTICATED"
+        ],
+        "403": [
+          "FORBIDDEN_EXECUTOR"
+        ],
+        "409": [
+          "IDEMPOTENCY_CONFLICT",
+          "STALE_OWNER",
+          "RELEASE_UNCONFIRMED"
+        ],
+        "412": [
+          "VERSION_CONFLICT"
+        ],
+        "422": [
+          "VALIDATION_FAILED",
+          "VERSION_LIMIT",
+          "INVALID_TIMEZONE"
+        ],
+        "429": [
+          "RATE_LIMITED"
+        ],
+        "503": [
+          "UNSUPPORTED_CONTRACT",
+          "CAPABILITY_NOT_VERIFIED",
+          "TEMPORARILY_UNAVAILABLE"
+        ],
+        "404": [
+          "RESOURCE_NOT_FOUND"
+        ],
+        "428": [
+          "PRECONDITION_REQUIRED"
+        ],
+        "413": [
+          "TOO_LARGE"
+        ]
+      }
+    },
+    {
+      "id": "OWN-01",
+      "method": "POST",
+      "path": "/api/v1/amvp/owner-transfers",
+      "auth": "E",
+      "body_schema": "OwnerTransfer",
+      "response_schema": "TransferState",
+      "success_status": 202,
+      "query_schema": "None",
+      "precondition": "old+new authenticated binding proofs; never trust body alone",
+      "implemented_at_baseline": false,
+      "capability_required": true,
+      "transaction": "owner lock -> precondition/idempotency -> immutable payload -> projections/outbox -> commit",
+      "errors": {
+        "400": [
+          "VALIDATION_FAILED"
+        ],
+        "401": [
+          "UNAUTHENTICATED"
+        ],
+        "403": [
+          "FORBIDDEN_EXECUTOR"
+        ],
+        "409": [
+          "IDEMPOTENCY_CONFLICT",
+          "STALE_OWNER",
+          "RELEASE_UNCONFIRMED"
+        ],
+        "412": [
+          "VERSION_CONFLICT"
+        ],
+        "422": [
+          "VALIDATION_FAILED",
+          "VERSION_LIMIT",
+          "INVALID_TIMEZONE"
+        ],
+        "429": [
+          "RATE_LIMITED"
+        ],
+        "503": [
+          "UNSUPPORTED_CONTRACT",
+          "CAPABILITY_NOT_VERIFIED",
+          "TEMPORARILY_UNAVAILABLE"
+        ],
+        "404": [
+          "RESOURCE_NOT_FOUND"
+        ],
+        "428": [
+          "PRECONDITION_REQUIRED"
+        ],
+        "413": [
+          "TOO_LARGE"
+        ]
+      }
+    },
+    {
+      "id": "OWN-02",
+      "method": "GET",
+      "path": "/api/v1/amvp/owner-transfers/{transfer_id}",
+      "auth": "E",
+      "body_schema": "Empty",
+      "response_schema": "TransferState",
+      "success_status": 200,
+      "query_schema": "None",
+      "precondition": null,
+      "implemented_at_baseline": false,
+      "capability_required": true,
+      "transaction": "Read authorized consistent snapshot; no state mutation",
+      "errors": {
+        "400": [
+          "VALIDATION_FAILED"
+        ],
+        "401": [
+          "UNAUTHENTICATED"
+        ],
+        "403": [
+          "FORBIDDEN_EXECUTOR"
+        ],
+        "409": [
+          "IDEMPOTENCY_CONFLICT",
+          "STALE_OWNER",
+          "RELEASE_UNCONFIRMED"
+        ],
+        "412": [
+          "VERSION_CONFLICT"
+        ],
+        "422": [
+          "VALIDATION_FAILED",
+          "VERSION_LIMIT",
+          "INVALID_TIMEZONE"
+        ],
+        "429": [
+          "RATE_LIMITED"
+        ],
+        "503": [
+          "UNSUPPORTED_CONTRACT",
+          "CAPABILITY_NOT_VERIFIED",
+          "TEMPORARILY_UNAVAILABLE"
+        ],
+        "404": [
+          "RESOURCE_NOT_FOUND"
+        ],
+        "428": [
+          "PRECONDITION_REQUIRED"
+        ],
+        "413": [
+          "TOO_LARGE"
+        ]
+      }
+    },
+    {
+      "id": "FOC-02",
+      "method": "POST",
+      "path": "/api/v1/amvp/focus/{session_id}/commands",
+      "auth": "W_OR_E",
+      "body_schema": "FocusControl",
+      "response_schema": "FocusState",
+      "success_status": 202,
+      "query_schema": "None",
+      "precondition": "If-Match:\"<safe version>\"; Idempotency-Key:UUID; coordinated Server/Core focus extension capability",
+      "implemented_at_baseline": false,
+      "capability_required": true,
+      "transaction": "owner lock -> precondition/idempotency -> immutable payload -> projections/outbox -> commit",
+      "errors": {
+        "400": [
+          "VALIDATION_FAILED"
+        ],
+        "401": [
+          "UNAUTHENTICATED"
+        ],
+        "403": [
+          "FORBIDDEN_EXECUTOR"
+        ],
+        "409": [
+          "IDEMPOTENCY_CONFLICT",
+          "STALE_OWNER",
+          "RELEASE_UNCONFIRMED"
+        ],
+        "412": [
+          "VERSION_CONFLICT"
+        ],
+        "422": [
+          "VALIDATION_FAILED",
+          "VERSION_LIMIT",
+          "INVALID_TIMEZONE"
+        ],
+        "429": [
+          "RATE_LIMITED"
+        ],
+        "503": [
+          "UNSUPPORTED_CONTRACT",
+          "CAPABILITY_NOT_VERIFIED",
+          "TEMPORARILY_UNAVAILABLE"
+        ],
+        "404": [
+          "RESOURCE_NOT_FOUND"
+        ],
+        "428": [
+          "PRECONDITION_REQUIRED"
+        ],
+        "413": [
+          "TOO_LARGE"
+        ]
+      }
+    },
+    {
+      "id": "FOC-03",
+      "method": "GET",
+      "path": "/api/v1/amvp/focus/{session_id}/state",
+      "auth": "W_OR_E",
+      "body_schema": "Empty",
+      "response_schema": "FocusState",
+      "success_status": 200,
+      "query_schema": "None",
+      "precondition": null,
+      "implemented_at_baseline": false,
+      "capability_required": true,
+      "transaction": "Read authorized consistent snapshot; no state mutation",
+      "errors": {
+        "400": [
+          "VALIDATION_FAILED"
+        ],
+        "401": [
+          "UNAUTHENTICATED"
+        ],
+        "403": [
+          "FORBIDDEN_EXECUTOR"
+        ],
+        "409": [
+          "IDEMPOTENCY_CONFLICT",
+          "STALE_OWNER",
+          "RELEASE_UNCONFIRMED"
+        ],
+        "412": [
+          "VERSION_CONFLICT"
+        ],
+        "422": [
+          "VALIDATION_FAILED",
+          "VERSION_LIMIT",
+          "INVALID_TIMEZONE"
+        ],
+        "429": [
+          "RATE_LIMITED"
+        ],
+        "503": [
+          "UNSUPPORTED_CONTRACT",
+          "CAPABILITY_NOT_VERIFIED",
+          "TEMPORARILY_UNAVAILABLE"
+        ],
+        "404": [
+          "RESOURCE_NOT_FOUND"
+        ],
+        "428": [
+          "PRECONDITION_REQUIRED"
+        ],
+        "413": [
+          "TOO_LARGE"
+        ]
+      }
+    },
+    {
+      "id": "OP-01",
+      "method": "GET",
+      "path": "/api/v1/amvp/operations/{operation_id}",
+      "auth": "W_OR_E",
+      "body_schema": "Empty",
+      "response_schema": "OperationState",
+      "success_status": 200,
+      "query_schema": "None",
+      "precondition": null,
+      "implemented_at_baseline": false,
+      "capability_required": true,
+      "transaction": "Read authorized consistent snapshot; no state mutation",
+      "errors": {
+        "400": [
+          "VALIDATION_FAILED"
+        ],
+        "401": [
+          "UNAUTHENTICATED"
+        ],
+        "403": [
+          "FORBIDDEN_EXECUTOR"
+        ],
+        "409": [
+          "IDEMPOTENCY_CONFLICT",
+          "STALE_OWNER",
+          "RELEASE_UNCONFIRMED"
+        ],
+        "412": [
+          "VERSION_CONFLICT"
+        ],
+        "422": [
+          "VALIDATION_FAILED",
+          "VERSION_LIMIT",
+          "INVALID_TIMEZONE"
+        ],
+        "429": [
+          "RATE_LIMITED"
+        ],
+        "503": [
+          "UNSUPPORTED_CONTRACT",
+          "CAPABILITY_NOT_VERIFIED",
+          "TEMPORARILY_UNAVAILABLE"
+        ],
+        "404": [
+          "RESOURCE_NOT_FOUND"
+        ],
+        "428": [
+          "PRECONDITION_REQUIRED"
+        ],
+        "413": [
+          "TOO_LARGE"
+        ]
+      }
+    },
+    {
+      "id": "UI-01",
+      "method": "GET",
+      "path": "/api/v1/amvp/installations/{executor_id}/state",
+      "auth": "W_OR_E",
+      "body_schema": "Empty",
+      "response_schema": "UIState",
+      "success_status": 200,
+      "query_schema": "None",
+      "precondition": null,
+      "implemented_at_baseline": false,
+      "capability_required": true,
+      "transaction": "Read authorized consistent snapshot; no state mutation",
+      "errors": {
+        "400": [
+          "VALIDATION_FAILED"
+        ],
+        "401": [
+          "UNAUTHENTICATED"
+        ],
+        "403": [
+          "FORBIDDEN_EXECUTOR"
+        ],
+        "409": [
+          "IDEMPOTENCY_CONFLICT",
+          "STALE_OWNER",
+          "RELEASE_UNCONFIRMED"
+        ],
+        "412": [
+          "VERSION_CONFLICT"
+        ],
+        "422": [
+          "VALIDATION_FAILED",
+          "VERSION_LIMIT",
+          "INVALID_TIMEZONE"
+        ],
+        "429": [
+          "RATE_LIMITED"
+        ],
+        "503": [
+          "UNSUPPORTED_CONTRACT",
+          "CAPABILITY_NOT_VERIFIED",
+          "TEMPORARILY_UNAVAILABLE"
+        ],
+        "404": [
+          "RESOURCE_NOT_FOUND"
+        ],
+        "428": [
+          "PRECONDITION_REQUIRED"
+        ],
+        "413": [
+          "TOO_LARGE"
+        ]
+      }
+    },
+    {
+      "id": "ART-01",
+      "method": "GET",
+      "path": "/api/v1/amvp/artifacts/{artifact_id}",
+      "auth": "W_OR_E",
+      "body_schema": "Empty",
+      "response_schema": "ArtifactDescriptor",
+      "success_status": 200,
+      "query_schema": "None",
+      "precondition": null,
+      "implemented_at_baseline": false,
+      "capability_required": true,
+      "transaction": "Read authorized consistent snapshot; no state mutation",
+      "errors": {
+        "400": [
+          "VALIDATION_FAILED"
+        ],
+        "401": [
+          "UNAUTHENTICATED"
+        ],
+        "403": [
+          "FORBIDDEN_EXECUTOR"
+        ],
+        "409": [
+          "IDEMPOTENCY_CONFLICT",
+          "STALE_OWNER",
+          "RELEASE_UNCONFIRMED"
+        ],
+        "412": [
+          "VERSION_CONFLICT"
+        ],
+        "422": [
+          "VALIDATION_FAILED",
+          "VERSION_LIMIT",
+          "INVALID_TIMEZONE"
+        ],
+        "429": [
+          "RATE_LIMITED"
+        ],
+        "503": [
+          "UNSUPPORTED_CONTRACT",
+          "CAPABILITY_NOT_VERIFIED",
+          "TEMPORARILY_UNAVAILABLE"
+        ],
+        "404": [
+          "RESOURCE_NOT_FOUND"
+        ],
+        "428": [
+          "PRECONDITION_REQUIRED"
+        ],
+        "413": [
+          "TOO_LARGE"
+        ]
+      }
+    }
+  ],
+  "legacy_reuse": [
+    {
+      "method": "GET/POST/PATCH/DELETE",
+      "path": "/api/v1/sites",
+      "status": "EXISTING; preserve exact API and optimistic concurrency"
+    },
+    {
+      "method": "GET/POST",
+      "path": "/api/v1/sessions",
+      "status": "EXISTING; duration_minutes root1..180 and frozen Snapshot unchanged"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/sessions/{session_id}/pause|resume",
+      "status": "DESIGNED_BUT_RUNTIME_UNSUPPORTED; do not fake success or extend old D06 enums"
+    },
+    {
+      "method": "GET/PUT",
+      "path": "/api/v1/sessions/{session_id}/note",
+      "status": "EXISTING module-specific route: inspect implementation; optional note failures never roll back actual release"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/events/batch",
+      "status": "EXISTING Event1.1/1.2 only; new events use amvp namespace"
+    },
+    {
+      "method": "GET/POST/PATCH/DELETE",
+      "path": "/api/v1/schedules[/{id}]",
+      "status": "EXISTING_DESIGN; implementation absent at baseline; retain exact approved API and use explicit versioned adapter for RC1 model"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/schedule-occurrences/claim",
+      "status": "EXISTING_DESIGN; atomic occurrence claim before actual focus execution"
+    },
+    {
+      "method": "POST/GET",
+      "path": "/api/v1/analysis-jobs[/{id}]",
+      "status": "EXISTING_DESIGN_ASYNC; do not replace with synchronous feedback API"
+    },
+    {
+      "method": "PUT",
+      "path": "/api/v1/analysis-consent",
+      "status": "EXISTING_DESIGN; accepted+notice_version; no automatic settings change"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/usage-segments/batch",
+      "status": "EXISTING_DESIGN_FOCUS_BOUND; new always-on RUNTIME_USAGE must not be routed here"
+    },
+    {
+      "method": "POST/PUT/GET",
+      "path": "/api/v1/guest-imports[/{batch_id}/items/{source_item_id}]",
+      "status": "EXISTING_COMPLETED_IMPORT; preserve ownership/selection semantics; new usage import receipt must reuse source proof"
+    }
+  ]
+}

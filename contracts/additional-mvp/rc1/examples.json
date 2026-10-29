@@ -1,0 +1,1498 @@
+{
+  "notice": "Synthetic shape examples only; not HTTP success or product acceptance. Cross-field coherent examples are wire-fixtures.json.",
+  "definitions": {
+    "Empty": {},
+    "Uuid": "00000000-0000-4000-8000-000000000001",
+    "Hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "Utc": "2026-10-29T00:00:00.000Z",
+    "Version": 1,
+    "Host": "video.example.test",
+    "Quality": "COMPLETE",
+    "HostScope": {
+      "host": "video.example.test",
+      "include_subdomains": false
+    },
+    "FeatureSetting": {
+      "feature_id": "YT-01",
+      "enabled": false,
+      "required": true
+    },
+    "KeywordConfig": {
+      "enabled": false,
+      "match_profile": "URL_BOUNDARY_1",
+      "terms": [],
+      "exceptions": [],
+      "scope": "FOCUS_FROZEN"
+    },
+    "AdultConfig": {
+      "enabled": false,
+      "artifact_id": null,
+      "artifact_sha256": null,
+      "custom_hosts": [],
+      "exceptions": [],
+      "scope": "FOCUS_FROZEN"
+    },
+    "BlurConfig": {
+      "enabled": false,
+      "sensitivity": "HIGH",
+      "model_profile_id": null,
+      "profile_sha256": null,
+      "scope": "FOCUS_FROZEN"
+    },
+    "ContentConfig": {
+      "kind": "CONTENT",
+      "features": [],
+      "keyword": {
+        "enabled": false,
+        "match_profile": "URL_BOUNDARY_1",
+        "terms": [],
+        "exceptions": [],
+        "scope": "FOCUS_FROZEN"
+      },
+      "adult": {
+        "enabled": false,
+        "artifact_id": null,
+        "artifact_sha256": null,
+        "custom_hosts": [],
+        "exceptions": [],
+        "scope": "FOCUS_FROZEN"
+      },
+      "blur": {
+        "enabled": false,
+        "sensitivity": "HIGH",
+        "model_profile_id": null,
+        "profile_sha256": null,
+        "scope": "FOCUS_FROZEN"
+      }
+    },
+    "Window": {
+      "window_id": "00000000-0000-4000-8000-000000000001",
+      "kind": "BLOCK_WINDOW",
+      "enabled": false,
+      "when": {
+        "recurrence": "ONCE",
+        "start_at": "2026-10-29T00:00:00.000Z",
+        "end_at": "2026-10-29T00:00:00.000Z"
+      }
+    },
+    "SiteTimePolicy": {
+      "kind": "SITE_TIME",
+      "policy_id": "00000000-0000-4000-8000-000000000001",
+      "version": 1,
+      "site_id": null,
+      "scope": {
+        "host": "video.example.test",
+        "include_subdomains": false
+      },
+      "enabled": false,
+      "tracking_scope": "BROWSER_ALWAYS",
+      "daily_limit_ms": null,
+      "windows": []
+    },
+    "FocusSchedule": {
+      "kind": "FOCUS_SCHEDULE",
+      "schedule_id": "00000000-0000-4000-8000-000000000001",
+      "enabled": false,
+      "when": {
+        "recurrence": "ONCE",
+        "start_at": "2026-10-29T00:00:00.000Z",
+        "end_at": "2026-10-29T00:00:00.000Z"
+      },
+      "duration_minutes": 1,
+      "conflict": "WAIT_FIXED_END",
+      "minimum_remaining_ms": 60000
+    },
+    "CadenceConfig": {
+      "kind": "CADENCE",
+      "enabled": false,
+      "focus_minutes": 1,
+      "rest_minutes": 1,
+      "cycles": 1,
+      "auto_start_next": false,
+      "rest_clock": "ELAPSED_WALL_CLOCK",
+      "missed_focus": "WAIT_USER",
+      "deadline_at": null
+    },
+    "ConfigValue": {
+      "kind": "CONTENT",
+      "features": [],
+      "keyword": {
+        "enabled": false,
+        "match_profile": "URL_BOUNDARY_1",
+        "terms": [],
+        "exceptions": [],
+        "scope": "FOCUS_FROZEN"
+      },
+      "adult": {
+        "enabled": false,
+        "artifact_id": null,
+        "artifact_sha256": null,
+        "custom_hosts": [],
+        "exceptions": [],
+        "scope": "FOCUS_FROZEN"
+      },
+      "blur": {
+        "enabled": false,
+        "sensitivity": "HIGH",
+        "model_profile_id": null,
+        "profile_sha256": null,
+        "scope": "FOCUS_FROZEN"
+      }
+    },
+    "ConfigWrite": {
+      "executor_id": "00000000-0000-4000-8000-000000000001",
+      "value": {
+        "kind": "CONTENT",
+        "features": [],
+        "keyword": {
+          "enabled": false,
+          "match_profile": "URL_BOUNDARY_1",
+          "terms": [],
+          "exceptions": [],
+          "scope": "FOCUS_FROZEN"
+        },
+        "adult": {
+          "enabled": false,
+          "artifact_id": null,
+          "artifact_sha256": null,
+          "custom_hosts": [],
+          "exceptions": [],
+          "scope": "FOCUS_FROZEN"
+        },
+        "blur": {
+          "enabled": false,
+          "sensitivity": "HIGH",
+          "model_profile_id": null,
+          "profile_sha256": null,
+          "scope": "FOCUS_FROZEN"
+        }
+      }
+    },
+    "ConfigRecord": {
+      "config_id": "00000000-0000-4000-8000-000000000001",
+      "executor_id": "00000000-0000-4000-8000-000000000001",
+      "version": 1,
+      "value": {
+        "kind": "CONTENT",
+        "features": [],
+        "keyword": {
+          "enabled": false,
+          "match_profile": "URL_BOUNDARY_1",
+          "terms": [],
+          "exceptions": [],
+          "scope": "FOCUS_FROZEN"
+        },
+        "adult": {
+          "enabled": false,
+          "artifact_id": null,
+          "artifact_sha256": null,
+          "custom_hosts": [],
+          "exceptions": [],
+          "scope": "FOCUS_FROZEN"
+        },
+        "blur": {
+          "enabled": false,
+          "sensitivity": "HIGH",
+          "model_profile_id": null,
+          "profile_sha256": null,
+          "scope": "FOCUS_FROZEN"
+        }
+      },
+      "deleted_at": null,
+      "saved_state": "SAVED",
+      "runtime_apply_state": "PENDING",
+      "saved_runtime_revision": 1,
+      "applied_runtime_revision": null,
+      "next_focus_revision": 1,
+      "updated_at": "2026-10-29T00:00:00.000Z"
+    },
+    "ConfigList": {
+      "items": [],
+      "next_cursor": null,
+      "has_more": false
+    },
+    "FocusRef": {
+      "session_id": "00000000-0000-4000-8000-000000000001",
+      "snapshot_id": "00000000-0000-4000-8000-000000000001",
+      "snapshot_format": "1.1",
+      "snapshot_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+      "desired_revision": 1
+    },
+    "RuntimePackage": {
+      "contract_revision": "AMVP-CONTRACT-20261029-RC1",
+      "format_version": "AMVP_RUNTIME_PACKAGE_1",
+      "package_id": "00000000-0000-4000-8000-000000000001",
+      "owner_binding_id": "00000000-0000-4000-8000-000000000001",
+      "executor_id": "00000000-0000-4000-8000-000000000001",
+      "runtime_revision": 1,
+      "issued_at": "2026-10-29T00:00:00.000Z",
+      "payload_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+      "timezone": "Asia/Seoul",
+      "timezone_version": 1,
+      "time_match_strategy": "ALL_MATCHING_CONSTRAINTS",
+      "runtime_policies": [],
+      "next_focus_revision": 1,
+      "focus_defaults": null,
+      "capability_receipt_id": "00000000-0000-4000-8000-000000000001",
+      "stream": "RUNTIME_POLICY"
+    },
+    "FocusAttachment": {
+      "format_version": "AMVP_FOCUS_ATTACHMENT_1",
+      "attachment_id": "00000000-0000-4000-8000-000000000001",
+      "owner_binding_id": "00000000-0000-4000-8000-000000000001",
+      "executor_id": "00000000-0000-4000-8000-000000000001",
+      "focus_ref": {
+        "session_id": "00000000-0000-4000-8000-000000000001",
+        "snapshot_id": "00000000-0000-4000-8000-000000000001",
+        "snapshot_format": "1.1",
+        "snapshot_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+        "desired_revision": 1
+      },
+      "config_revision": 1,
+      "content": {
+        "kind": "CONTENT",
+        "features": [],
+        "keyword": {
+          "enabled": false,
+          "match_profile": "URL_BOUNDARY_1",
+          "terms": [],
+          "exceptions": [],
+          "scope": "FOCUS_FROZEN"
+        },
+        "adult": {
+          "enabled": false,
+          "artifact_id": null,
+          "artifact_sha256": null,
+          "custom_hosts": [],
+          "exceptions": [],
+          "scope": "FOCUS_FROZEN"
+        },
+        "blur": {
+          "enabled": false,
+          "sensitivity": "HIGH",
+          "model_profile_id": null,
+          "profile_sha256": null,
+          "scope": "FOCUS_FROZEN"
+        }
+      },
+      "capability_receipt_id": "00000000-0000-4000-8000-000000000001",
+      "payload_sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+    },
+    "Streams": {
+      "RUNTIME_POLICY": [
+        "AMVP_RUNTIME_PACKAGE_1"
+      ],
+      "RUNTIME_USAGE": [
+        "AMVP_BROWSER_USAGE_1"
+      ],
+      "RUNTIME_REPORT": [
+        "AMVP_RUNTIME_REPORT_1"
+      ],
+      "ADDITIONAL_CONTENT": [
+        "AMVP_CONTENT_1"
+      ],
+      "ADDITIONAL_EVENT": [
+        "AMVP_ACCESS_EVENT_1"
+      ],
+      "FOCUS_CONTROL": [
+        "AMVP_FOCUS_CONTROL_1"
+      ]
+    },
+    "CapabilityOffer": {
+      "negotiation_id": "00000000-0000-4000-8000-000000000001",
+      "executor_id": "00000000-0000-4000-8000-000000000001",
+      "artifact_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+      "contract_revision": "AMVP-CONTRACT-20261029-RC1",
+      "supported": {
+        "RUNTIME_POLICY": [
+          "AMVP_RUNTIME_PACKAGE_1"
+        ],
+        "RUNTIME_USAGE": [
+          "AMVP_BROWSER_USAGE_1"
+        ],
+        "RUNTIME_REPORT": [
+          "AMVP_RUNTIME_REPORT_1"
+        ],
+        "ADDITIONAL_CONTENT": [
+          "AMVP_CONTENT_1"
+        ],
+        "ADDITIONAL_EVENT": [
+          "AMVP_ACCESS_EVENT_1"
+        ],
+        "FOCUS_CONTROL": [
+          "AMVP_FOCUS_CONTROL_1"
+        ]
+      },
+      "feature_registry_version": "AMVP_FEATURES_1",
+      "supported_feature_ids": []
+    },
+    "CapabilitySelection": {
+      "negotiation_id": "00000000-0000-4000-8000-000000000001",
+      "executor_id": "00000000-0000-4000-8000-000000000001",
+      "result": "SELECTED_VERIFIED",
+      "capability_receipt_id": "00000000-0000-4000-8000-000000000001",
+      "verified_artifact_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+      "verification_ref": "x",
+      "selected": {
+        "RUNTIME_POLICY": "AMVP_RUNTIME_PACKAGE_1",
+        "RUNTIME_USAGE": "AMVP_BROWSER_USAGE_1",
+        "RUNTIME_REPORT": "AMVP_RUNTIME_REPORT_1",
+        "ADDITIONAL_CONTENT": "AMVP_CONTENT_1",
+        "ADDITIONAL_EVENT": "AMVP_ACCESS_EVENT_1",
+        "FOCUS_CONTROL": "AMVP_FOCUS_CONTROL_1"
+      },
+      "expires_at": "2026-10-29T00:00:00.000Z",
+      "selected_feature_ids": [],
+      "owner_binding_id": "00000000-0000-4000-8000-000000000001",
+      "owner_epoch": 1
+    },
+    "BindingScope": {
+      "owner_binding_id": "00000000-0000-4000-8000-000000000001",
+      "owner_epoch": 1,
+      "executor_id": "00000000-0000-4000-8000-000000000001",
+      "runtime_execution_id": "00000000-0000-4000-8000-000000000001",
+      "package_id": "00000000-0000-4000-8000-000000000001",
+      "runtime_revision": 1,
+      "binding_id": "00000000-0000-4000-8000-000000000001",
+      "scope_epoch": "00000000-0000-4000-8000-000000000001",
+      "generation": 1,
+      "tab_id": 0,
+      "frame_id": 0,
+      "document_id": "x",
+      "document_instance_id": "00000000-0000-4000-8000-000000000001",
+      "url_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+      "focus_ref": null
+    },
+    "Projection": {
+      "features": [],
+      "content": null,
+      "access_block_reasons": [],
+      "host": "video.example.test",
+      "matched_policy_host": null,
+      "artifact_ids": []
+    },
+    "Control": {
+      "type": "D06_ADDITIONAL_CONTROL",
+      "schema_version": "AMVP_CONTENT_1",
+      "request_id": "00000000-0000-4000-8000-000000000001",
+      "payload": {
+        "operation_id": "00000000-0000-4000-8000-000000000001",
+        "semantic_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+        "scope": {
+          "owner_binding_id": "00000000-0000-4000-8000-000000000001",
+          "owner_epoch": 1,
+          "executor_id": "00000000-0000-4000-8000-000000000001",
+          "runtime_execution_id": "00000000-0000-4000-8000-000000000001",
+          "package_id": "00000000-0000-4000-8000-000000000001",
+          "runtime_revision": 1,
+          "binding_id": "00000000-0000-4000-8000-000000000001",
+          "scope_epoch": "00000000-0000-4000-8000-000000000001",
+          "generation": 1,
+          "tab_id": 0,
+          "frame_id": 0,
+          "document_id": "x",
+          "document_instance_id": "00000000-0000-4000-8000-000000000001",
+          "url_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+          "focus_ref": null
+        },
+        "channel_credential": "0000000000000000000000000000000000000000000000000000000000000000",
+        "control_seq": 1,
+        "operation": "APPLY",
+        "projection": {
+          "features": [],
+          "content": null,
+          "access_block_reasons": [],
+          "host": "video.example.test",
+          "matched_policy_host": null,
+          "artifact_ids": []
+        },
+        "cleanup_grant_id": "00000000-0000-4000-8000-000000000001",
+        "execute_before": "2026-10-29T00:00:00.000Z"
+      },
+      "stream": "ADDITIONAL_CONTENT"
+    },
+    "EffectEvidence": {
+      "feature_id": "YT-01",
+      "result": "APPLIED",
+      "observer_ready": false,
+      "eligible_target_count": 0,
+      "restricted_target_count": 0,
+      "error_count": 0,
+      "media_stopped": null,
+      "ledger_sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+    },
+    "ContentResult": {
+      "type": "D06_ADDITIONAL_RESULT",
+      "schema_version": "AMVP_CONTENT_1",
+      "request_id": "00000000-0000-4000-8000-000000000001",
+      "operation_id": "00000000-0000-4000-8000-000000000001",
+      "semantic_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+      "scope": {
+        "owner_binding_id": "00000000-0000-4000-8000-000000000001",
+        "owner_epoch": 1,
+        "executor_id": "00000000-0000-4000-8000-000000000001",
+        "runtime_execution_id": "00000000-0000-4000-8000-000000000001",
+        "package_id": "00000000-0000-4000-8000-000000000001",
+        "runtime_revision": 1,
+        "binding_id": "00000000-0000-4000-8000-000000000001",
+        "scope_epoch": "00000000-0000-4000-8000-000000000001",
+        "generation": 1,
+        "tab_id": 0,
+        "frame_id": 0,
+        "document_id": "x",
+        "document_instance_id": "00000000-0000-4000-8000-000000000001",
+        "url_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+        "focus_ref": null
+      },
+      "control_seq": 1,
+      "status": "ACK",
+      "result_state": "RECEIVED",
+      "effects": [],
+      "remaining_claim_count": 0,
+      "footprint_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+      "observed_at": "2026-10-29T00:00:00.000Z",
+      "error_code": null,
+      "stream": "ADDITIONAL_CONTENT"
+    },
+    "PolicyAttribution": {
+      "policy_id": "00000000-0000-4000-8000-000000000001",
+      "policy_version": 1,
+      "matched_policy_host": "video.example.test"
+    },
+    "UsageSegment": {
+      "segment_id": "00000000-0000-4000-8000-000000000001",
+      "owner_binding_id": "00000000-0000-4000-8000-000000000001",
+      "executor_id": "00000000-0000-4000-8000-000000000001",
+      "collector_epoch": "00000000-0000-4000-8000-000000000001",
+      "local_usage_seq": 1,
+      "previous_segment_sha256": null,
+      "package_id": "00000000-0000-4000-8000-000000000001",
+      "runtime_revision": 1,
+      "actual_host": "video.example.test",
+      "start_at": "2026-10-29T00:00:00.000Z",
+      "end_at": "2026-10-29T00:00:00.000Z",
+      "confirmed_ms": 0,
+      "uncertain_ms": 0,
+      "day_start_at": "2026-10-29T00:00:00.000Z",
+      "day_end_at": "2026-10-29T00:00:00.000Z",
+      "timezone": "Asia/Seoul",
+      "timezone_version": 1,
+      "enforcement_day_chain_id": "00000000-0000-4000-8000-000000000001",
+      "policy_attributions": [],
+      "focus_ref": null,
+      "quality": "COMPLETE",
+      "payload_sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+    },
+    "UsageBatch": {
+      "stream": "RUNTIME_USAGE",
+      "schema_version": "AMVP_BROWSER_USAGE_1",
+      "batch_id": "00000000-0000-4000-8000-000000000001",
+      "executor_id": "00000000-0000-4000-8000-000000000001",
+      "segments": [
+        {
+          "segment_id": "00000000-0000-4000-8000-000000000001",
+          "owner_binding_id": "00000000-0000-4000-8000-000000000001",
+          "executor_id": "00000000-0000-4000-8000-000000000001",
+          "collector_epoch": "00000000-0000-4000-8000-000000000001",
+          "local_usage_seq": 1,
+          "previous_segment_sha256": null,
+          "package_id": "00000000-0000-4000-8000-000000000001",
+          "runtime_revision": 1,
+          "actual_host": "video.example.test",
+          "start_at": "2026-10-29T00:00:00.000Z",
+          "end_at": "2026-10-29T00:00:00.000Z",
+          "confirmed_ms": 0,
+          "uncertain_ms": 0,
+          "day_start_at": "2026-10-29T00:00:00.000Z",
+          "day_end_at": "2026-10-29T00:00:00.000Z",
+          "timezone": "Asia/Seoul",
+          "timezone_version": 1,
+          "enforcement_day_chain_id": "00000000-0000-4000-8000-000000000001",
+          "policy_attributions": [],
+          "focus_ref": null,
+          "quality": "COMPLETE",
+          "payload_sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+        }
+      ]
+    },
+    "ItemAck": {
+      "item_id": "00000000-0000-4000-8000-000000000001",
+      "payload_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+      "status": "ACCEPTED",
+      "error_code": null
+    },
+    "BatchAck": {
+      "batch_id": "00000000-0000-4000-8000-000000000001",
+      "items": []
+    },
+    "StatusRequest": {
+      "item_ids": [
+        "00000000-0000-4000-8000-000000000001"
+      ]
+    },
+    "StatusResponse": {
+      "items": []
+    },
+    "RuntimeReport": {
+      "report_id": "00000000-0000-4000-8000-000000000001",
+      "owner_binding_id": "00000000-0000-4000-8000-000000000001",
+      "executor_id": "00000000-0000-4000-8000-000000000001",
+      "runtime_execution_id": "00000000-0000-4000-8000-000000000001",
+      "report_epoch": "00000000-0000-4000-8000-000000000001",
+      "report_seq": 1,
+      "operation_id": "00000000-0000-4000-8000-000000000001",
+      "package_id": "00000000-0000-4000-8000-000000000001",
+      "runtime_revision": 1,
+      "state": "PENDING",
+      "reason": "CONFIG_CHANGE",
+      "evidence_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+      "observed_at": "2026-10-29T00:00:00.000Z",
+      "payload_sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+    },
+    "ReportBatch": {
+      "stream": "RUNTIME_REPORT",
+      "schema_version": "AMVP_RUNTIME_REPORT_1",
+      "batch_id": "00000000-0000-4000-8000-000000000001",
+      "executor_id": "00000000-0000-4000-8000-000000000001",
+      "reports": [
+        {
+          "report_id": "00000000-0000-4000-8000-000000000001",
+          "owner_binding_id": "00000000-0000-4000-8000-000000000001",
+          "executor_id": "00000000-0000-4000-8000-000000000001",
+          "runtime_execution_id": "00000000-0000-4000-8000-000000000001",
+          "report_epoch": "00000000-0000-4000-8000-000000000001",
+          "report_seq": 1,
+          "operation_id": "00000000-0000-4000-8000-000000000001",
+          "package_id": "00000000-0000-4000-8000-000000000001",
+          "runtime_revision": 1,
+          "state": "PENDING",
+          "reason": "CONFIG_CHANGE",
+          "evidence_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+          "observed_at": "2026-10-29T00:00:00.000Z",
+          "payload_sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+        }
+      ]
+    },
+    "AccessEvent": {
+      "event_id": "00000000-0000-4000-8000-000000000001",
+      "schema_version": "AMVP_ACCESS_EVENT_1",
+      "owner_binding_id": "00000000-0000-4000-8000-000000000001",
+      "executor_id": "00000000-0000-4000-8000-000000000001",
+      "event_epoch": "00000000-0000-4000-8000-000000000001",
+      "local_event_seq": 1,
+      "navigation_id": "00000000-0000-4000-8000-000000000001",
+      "analysis_group_id": "00000000-0000-4000-8000-000000000001",
+      "occurred_at": "2026-10-29T00:00:00.000Z",
+      "target_kind": "SITE",
+      "target_host": "video.example.test",
+      "target_key": "video.example.test",
+      "matched_policy_host": null,
+      "feature_id": null,
+      "event_type": "RECORDED_ACCESS",
+      "blocked_reasons": [],
+      "package_id": "00000000-0000-4000-8000-000000000001",
+      "runtime_revision": 1,
+      "focus_ref": null,
+      "quality": "COMPLETE",
+      "payload_sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+    },
+    "EventBatch": {
+      "stream": "ADDITIONAL_EVENT",
+      "schema_version": "AMVP_ACCESS_EVENT_1",
+      "batch_id": "00000000-0000-4000-8000-000000000001",
+      "executor_id": "00000000-0000-4000-8000-000000000001",
+      "events": [
+        {
+          "event_id": "00000000-0000-4000-8000-000000000001",
+          "schema_version": "AMVP_ACCESS_EVENT_1",
+          "owner_binding_id": "00000000-0000-4000-8000-000000000001",
+          "executor_id": "00000000-0000-4000-8000-000000000001",
+          "event_epoch": "00000000-0000-4000-8000-000000000001",
+          "local_event_seq": 1,
+          "navigation_id": "00000000-0000-4000-8000-000000000001",
+          "analysis_group_id": "00000000-0000-4000-8000-000000000001",
+          "occurred_at": "2026-10-29T00:00:00.000Z",
+          "target_kind": "SITE",
+          "target_host": "video.example.test",
+          "target_key": "video.example.test",
+          "matched_policy_host": null,
+          "feature_id": null,
+          "event_type": "RECORDED_ACCESS",
+          "blocked_reasons": [],
+          "package_id": "00000000-0000-4000-8000-000000000001",
+          "runtime_revision": 1,
+          "focus_ref": null,
+          "quality": "COMPLETE",
+          "payload_sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+        }
+      ]
+    },
+    "TimezoneWrite": {
+      "timezone": "Asia/Seoul"
+    },
+    "TimezoneRecord": {
+      "timezone_change_id": "00000000-0000-4000-8000-000000000001",
+      "desired_timezone": "Asia/Seoul",
+      "desired_version": 1,
+      "applied_timezone": "Asia/Seoul",
+      "applied_version": 1,
+      "effective_at": "2026-10-29T00:00:00.000Z",
+      "status": "PENDING_CURRENT_DAY_END",
+      "budget_reset": false
+    },
+    "DailyUsage": {
+      "policy_id": "00000000-0000-4000-8000-000000000001",
+      "executor_id": "00000000-0000-4000-8000-000000000001",
+      "day_start_at": "2026-10-29T00:00:00.000Z",
+      "day_end_at": "2026-10-29T00:00:00.000Z",
+      "timezone": "Asia/Seoul",
+      "timezone_version": 1,
+      "day_kind": "NORMAL",
+      "confirmed_ms": null,
+      "budget_carry_debit_ms": 0,
+      "remaining_ms": null,
+      "daily_limit_ms": null,
+      "active_reasons": [],
+      "enforcement_state": "PENDING",
+      "next_usable_at": null,
+      "next_usable_status": "KNOWN",
+      "quality": "COMPLETE",
+      "as_of": "2026-10-29T00:00:00.000Z"
+    },
+    "Statistics": {
+      "scope": "INSTALLATION",
+      "quota_debit": false,
+      "aggregation": "SUM_OF_DEVICE_USAGE",
+      "from_date": "2026-10-29",
+      "to_date": "2026-10-29",
+      "browser_ms": null,
+      "focus_ms": null,
+      "repeat_count": null,
+      "repeat_ratio": null,
+      "quality": "COMPLETE",
+      "as_of": "2026-10-29T00:00:00.000Z"
+    },
+    "CompletedImportItem": {
+      "source_installation_id": "00000000-0000-4000-8000-000000000001",
+      "source_record_id": "00000000-0000-4000-8000-000000000001",
+      "source_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+      "record_state": "COMPLETED",
+      "completed_at": "2026-10-29T00:00:00.000Z",
+      "segment_manifest_sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+    },
+    "ImportSelection": {
+      "request_id": "00000000-0000-4000-8000-000000000001",
+      "executor_id": "00000000-0000-4000-8000-000000000001",
+      "explicit_selection": true,
+      "items": [
+        {
+          "source_installation_id": "00000000-0000-4000-8000-000000000001",
+          "source_record_id": "00000000-0000-4000-8000-000000000001",
+          "source_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+          "record_state": "COMPLETED",
+          "completed_at": "2026-10-29T00:00:00.000Z",
+          "segment_manifest_sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+        }
+      ]
+    },
+    "ImportResult": {
+      "request_id": "00000000-0000-4000-8000-000000000001",
+      "items": [],
+      "quota_debit": false,
+      "source_deleted": false
+    },
+    "OwnerTransfer": {
+      "transfer_id": "00000000-0000-4000-8000-000000000001",
+      "from_owner_binding_id": "00000000-0000-4000-8000-000000000001",
+      "to_owner_binding_id": "00000000-0000-4000-8000-000000000001",
+      "executor_id": "00000000-0000-4000-8000-000000000001",
+      "expected_owner_epoch": 1,
+      "enforcement_day_chain_id": "00000000-0000-4000-8000-000000000001"
+    },
+    "TransferState": {
+      "transfer_id": "00000000-0000-4000-8000-000000000001",
+      "state": "FENCED",
+      "old_capture_closed": false,
+      "old_rules_released": false,
+      "new_capture_open": false,
+      "source_deleted": false,
+      "new_owner_epoch": null
+    },
+    "FocusCommand": {
+      "operation_id": "00000000-0000-4000-8000-000000000001",
+      "focus_ref": {
+        "session_id": "00000000-0000-4000-8000-000000000001",
+        "snapshot_id": "00000000-0000-4000-8000-000000000001",
+        "snapshot_format": "1.1",
+        "snapshot_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+        "desired_revision": 1
+      },
+      "action": "START",
+      "expected_version": 1,
+      "attachment_id": null,
+      "duration_minutes": null
+    },
+    "FocusState": {
+      "operation_id": "00000000-0000-4000-8000-000000000001",
+      "focus_ref": {
+        "session_id": "00000000-0000-4000-8000-000000000001",
+        "snapshot_id": "00000000-0000-4000-8000-000000000001",
+        "snapshot_format": "1.1",
+        "snapshot_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+        "desired_revision": 1
+      },
+      "state": "STARTING",
+      "confirmed_ms": 0,
+      "remaining_ms": 0,
+      "runtime_policy_unchanged": true,
+      "last_error_code": null
+    },
+    "OperationState": {
+      "operation_id": "00000000-0000-4000-8000-000000000001",
+      "state": "PENDING",
+      "actual_effect_confirmed": false,
+      "error_code": null
+    },
+    "UIState": {
+      "config_version": 1,
+      "saved_state": "SAVING",
+      "applied_revision": null,
+      "runtime_state": "PENDING",
+      "focus_state": "IDLE",
+      "quality": "COMPLETE",
+      "as_of": "2026-10-29T00:00:00.000Z"
+    },
+    "ArtifactDescriptor": {
+      "artifact_id": "00000000-0000-4000-8000-000000000001",
+      "kind": "ADULT_DOMAINS",
+      "version": 1,
+      "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+      "size_bytes": 1,
+      "source_commit": "x",
+      "source_urls": [
+        "https://example.invalid/artifact"
+      ],
+      "license_refs": [
+        "x"
+      ],
+      "license_review": "PENDING",
+      "built_at": "2026-10-29T00:00:00.000Z",
+      "remote_executable_code": false
+    },
+    "Error": {
+      "error": {
+        "code": "VALIDATION_FAILED",
+        "retryable": false
+      },
+      "request_id": "00000000-0000-4000-8000-000000000001"
+    },
+    "FocusAttachmentRequest": {
+      "executor_id": "00000000-0000-4000-8000-000000000001",
+      "focus_ref": {
+        "session_id": "00000000-0000-4000-8000-000000000001",
+        "snapshot_id": "00000000-0000-4000-8000-000000000001",
+        "snapshot_format": "1.1",
+        "snapshot_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+        "desired_revision": 1
+      },
+      "config_revision": 1
+    },
+    "FocusControl": {
+      "stream": "FOCUS_CONTROL",
+      "schema_version": "AMVP_FOCUS_CONTROL_1",
+      "request_id": "00000000-0000-4000-8000-000000000001",
+      "command": {
+        "operation_id": "00000000-0000-4000-8000-000000000001",
+        "focus_ref": {
+          "session_id": "00000000-0000-4000-8000-000000000001",
+          "snapshot_id": "00000000-0000-4000-8000-000000000001",
+          "snapshot_format": "1.1",
+          "snapshot_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+          "desired_revision": 1
+        },
+        "action": "START",
+        "expected_version": 1,
+        "attachment_id": null,
+        "duration_minutes": null
+      },
+      "owner_binding_id": "00000000-0000-4000-8000-000000000001",
+      "executor_id": "00000000-0000-4000-8000-000000000001",
+      "owner_epoch": 1,
+      "capability_receipt_id": "00000000-0000-4000-8000-000000000001",
+      "execute_before": "2026-10-29T00:00:05.000Z"
+    }
+  },
+  "api": [
+    {
+      "id": "CAP-01",
+      "request": {
+        "negotiation_id": "00000000-0000-4000-8000-000000000001",
+        "executor_id": "00000000-0000-4000-8000-000000000001",
+        "artifact_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+        "contract_revision": "AMVP-CONTRACT-20261029-RC1",
+        "supported": {
+          "RUNTIME_POLICY": [
+            "AMVP_RUNTIME_PACKAGE_1"
+          ],
+          "RUNTIME_USAGE": [
+            "AMVP_BROWSER_USAGE_1"
+          ],
+          "RUNTIME_REPORT": [
+            "AMVP_RUNTIME_REPORT_1"
+          ],
+          "ADDITIONAL_CONTENT": [
+            "AMVP_CONTENT_1"
+          ],
+          "ADDITIONAL_EVENT": [
+            "AMVP_ACCESS_EVENT_1"
+          ],
+          "FOCUS_CONTROL": [
+            "AMVP_FOCUS_CONTROL_1"
+          ]
+        },
+        "feature_registry_version": "AMVP_FEATURES_1",
+        "supported_feature_ids": []
+      },
+      "response": {
+        "negotiation_id": "00000000-0000-4000-8000-000000000001",
+        "executor_id": "00000000-0000-4000-8000-000000000001",
+        "result": "SELECTED_VERIFIED",
+        "capability_receipt_id": "00000000-0000-4000-8000-000000000001",
+        "verified_artifact_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+        "verification_ref": "x",
+        "selected": {
+          "RUNTIME_POLICY": "AMVP_RUNTIME_PACKAGE_1",
+          "RUNTIME_USAGE": "AMVP_BROWSER_USAGE_1",
+          "RUNTIME_REPORT": "AMVP_RUNTIME_REPORT_1",
+          "ADDITIONAL_CONTENT": "AMVP_CONTENT_1",
+          "ADDITIONAL_EVENT": "AMVP_ACCESS_EVENT_1",
+          "FOCUS_CONTROL": "AMVP_FOCUS_CONTROL_1"
+        },
+        "expires_at": "2026-10-29T00:00:00.000Z",
+        "selected_feature_ids": [],
+        "owner_binding_id": "00000000-0000-4000-8000-000000000001",
+        "owner_epoch": 1
+      },
+      "query": {}
+    },
+    {
+      "id": "CFG-01",
+      "request": {},
+      "response": {
+        "items": [],
+        "next_cursor": null,
+        "has_more": false
+      },
+      "query": {
+        "executor_id": "00000000-0000-4000-8000-000000000001"
+      }
+    },
+    {
+      "id": "CFG-02",
+      "request": {},
+      "response": {
+        "config_id": "00000000-0000-4000-8000-000000000001",
+        "executor_id": "00000000-0000-4000-8000-000000000001",
+        "version": 1,
+        "value": {
+          "kind": "CONTENT",
+          "features": [],
+          "keyword": {
+            "enabled": false,
+            "match_profile": "URL_BOUNDARY_1",
+            "terms": [],
+            "exceptions": [],
+            "scope": "FOCUS_FROZEN"
+          },
+          "adult": {
+            "enabled": false,
+            "artifact_id": null,
+            "artifact_sha256": null,
+            "custom_hosts": [],
+            "exceptions": [],
+            "scope": "FOCUS_FROZEN"
+          },
+          "blur": {
+            "enabled": false,
+            "sensitivity": "HIGH",
+            "model_profile_id": null,
+            "profile_sha256": null,
+            "scope": "FOCUS_FROZEN"
+          }
+        },
+        "deleted_at": null,
+        "saved_state": "SAVED",
+        "runtime_apply_state": "PENDING",
+        "saved_runtime_revision": 1,
+        "applied_runtime_revision": null,
+        "next_focus_revision": 1,
+        "updated_at": "2026-10-29T00:00:00.000Z"
+      },
+      "query": {}
+    },
+    {
+      "id": "CFG-03",
+      "request": {
+        "executor_id": "00000000-0000-4000-8000-000000000001",
+        "value": {
+          "kind": "CONTENT",
+          "features": [],
+          "keyword": {
+            "enabled": false,
+            "match_profile": "URL_BOUNDARY_1",
+            "terms": [],
+            "exceptions": [],
+            "scope": "FOCUS_FROZEN"
+          },
+          "adult": {
+            "enabled": false,
+            "artifact_id": null,
+            "artifact_sha256": null,
+            "custom_hosts": [],
+            "exceptions": [],
+            "scope": "FOCUS_FROZEN"
+          },
+          "blur": {
+            "enabled": false,
+            "sensitivity": "HIGH",
+            "model_profile_id": null,
+            "profile_sha256": null,
+            "scope": "FOCUS_FROZEN"
+          }
+        }
+      },
+      "response": {
+        "config_id": "00000000-0000-4000-8000-000000000001",
+        "executor_id": "00000000-0000-4000-8000-000000000001",
+        "version": 1,
+        "value": {
+          "kind": "CONTENT",
+          "features": [],
+          "keyword": {
+            "enabled": false,
+            "match_profile": "URL_BOUNDARY_1",
+            "terms": [],
+            "exceptions": [],
+            "scope": "FOCUS_FROZEN"
+          },
+          "adult": {
+            "enabled": false,
+            "artifact_id": null,
+            "artifact_sha256": null,
+            "custom_hosts": [],
+            "exceptions": [],
+            "scope": "FOCUS_FROZEN"
+          },
+          "blur": {
+            "enabled": false,
+            "sensitivity": "HIGH",
+            "model_profile_id": null,
+            "profile_sha256": null,
+            "scope": "FOCUS_FROZEN"
+          }
+        },
+        "deleted_at": null,
+        "saved_state": "SAVED",
+        "runtime_apply_state": "PENDING",
+        "saved_runtime_revision": 1,
+        "applied_runtime_revision": null,
+        "next_focus_revision": 1,
+        "updated_at": "2026-10-29T00:00:00.000Z"
+      },
+      "query": {}
+    },
+    {
+      "id": "CFG-04",
+      "request": {},
+      "response": {
+        "operation_id": "00000000-0000-4000-8000-000000000001",
+        "state": "PENDING",
+        "actual_effect_confirmed": false,
+        "error_code": null
+      },
+      "query": {}
+    },
+    {
+      "id": "PKG-01",
+      "request": {},
+      "response": {
+        "contract_revision": "AMVP-CONTRACT-20261029-RC1",
+        "format_version": "AMVP_RUNTIME_PACKAGE_1",
+        "package_id": "00000000-0000-4000-8000-000000000001",
+        "owner_binding_id": "00000000-0000-4000-8000-000000000001",
+        "executor_id": "00000000-0000-4000-8000-000000000001",
+        "runtime_revision": 1,
+        "issued_at": "2026-10-29T00:00:00.000Z",
+        "payload_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+        "timezone": "Asia/Seoul",
+        "timezone_version": 1,
+        "time_match_strategy": "ALL_MATCHING_CONSTRAINTS",
+        "runtime_policies": [],
+        "next_focus_revision": 1,
+        "focus_defaults": null,
+        "capability_receipt_id": "00000000-0000-4000-8000-000000000001",
+        "stream": "RUNTIME_POLICY"
+      },
+      "query": {
+        "executor_id": "00000000-0000-4000-8000-000000000001"
+      }
+    },
+    {
+      "id": "FOC-01",
+      "request": {
+        "executor_id": "00000000-0000-4000-8000-000000000001",
+        "focus_ref": {
+          "session_id": "00000000-0000-4000-8000-000000000001",
+          "snapshot_id": "00000000-0000-4000-8000-000000000001",
+          "snapshot_format": "1.1",
+          "snapshot_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+          "desired_revision": 1
+        },
+        "config_revision": 1
+      },
+      "response": {
+        "format_version": "AMVP_FOCUS_ATTACHMENT_1",
+        "attachment_id": "00000000-0000-4000-8000-000000000001",
+        "owner_binding_id": "00000000-0000-4000-8000-000000000001",
+        "executor_id": "00000000-0000-4000-8000-000000000001",
+        "focus_ref": {
+          "session_id": "00000000-0000-4000-8000-000000000001",
+          "snapshot_id": "00000000-0000-4000-8000-000000000001",
+          "snapshot_format": "1.1",
+          "snapshot_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+          "desired_revision": 1
+        },
+        "config_revision": 1,
+        "content": {
+          "kind": "CONTENT",
+          "features": [],
+          "keyword": {
+            "enabled": false,
+            "match_profile": "URL_BOUNDARY_1",
+            "terms": [],
+            "exceptions": [],
+            "scope": "FOCUS_FROZEN"
+          },
+          "adult": {
+            "enabled": false,
+            "artifact_id": null,
+            "artifact_sha256": null,
+            "custom_hosts": [],
+            "exceptions": [],
+            "scope": "FOCUS_FROZEN"
+          },
+          "blur": {
+            "enabled": false,
+            "sensitivity": "HIGH",
+            "model_profile_id": null,
+            "profile_sha256": null,
+            "scope": "FOCUS_FROZEN"
+          }
+        },
+        "capability_receipt_id": "00000000-0000-4000-8000-000000000001",
+        "payload_sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+      },
+      "query": {}
+    },
+    {
+      "id": "USG-01",
+      "request": {
+        "stream": "RUNTIME_USAGE",
+        "schema_version": "AMVP_BROWSER_USAGE_1",
+        "batch_id": "00000000-0000-4000-8000-000000000001",
+        "executor_id": "00000000-0000-4000-8000-000000000001",
+        "segments": [
+          {
+            "segment_id": "00000000-0000-4000-8000-000000000001",
+            "owner_binding_id": "00000000-0000-4000-8000-000000000001",
+            "executor_id": "00000000-0000-4000-8000-000000000001",
+            "collector_epoch": "00000000-0000-4000-8000-000000000001",
+            "local_usage_seq": 1,
+            "previous_segment_sha256": null,
+            "package_id": "00000000-0000-4000-8000-000000000001",
+            "runtime_revision": 1,
+            "actual_host": "video.example.test",
+            "start_at": "2026-10-29T00:00:00.000Z",
+            "end_at": "2026-10-29T00:00:00.000Z",
+            "confirmed_ms": 0,
+            "uncertain_ms": 0,
+            "day_start_at": "2026-10-29T00:00:00.000Z",
+            "day_end_at": "2026-10-29T00:00:00.000Z",
+            "timezone": "Asia/Seoul",
+            "timezone_version": 1,
+            "enforcement_day_chain_id": "00000000-0000-4000-8000-000000000001",
+            "policy_attributions": [],
+            "focus_ref": null,
+            "quality": "COMPLETE",
+            "payload_sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+          }
+        ]
+      },
+      "response": {
+        "batch_id": "00000000-0000-4000-8000-000000000001",
+        "items": []
+      },
+      "query": {}
+    },
+    {
+      "id": "USG-02",
+      "request": {
+        "item_ids": [
+          "00000000-0000-4000-8000-000000000001"
+        ]
+      },
+      "response": {
+        "items": []
+      },
+      "query": {}
+    },
+    {
+      "id": "RPT-01",
+      "request": {
+        "stream": "RUNTIME_REPORT",
+        "schema_version": "AMVP_RUNTIME_REPORT_1",
+        "batch_id": "00000000-0000-4000-8000-000000000001",
+        "executor_id": "00000000-0000-4000-8000-000000000001",
+        "reports": [
+          {
+            "report_id": "00000000-0000-4000-8000-000000000001",
+            "owner_binding_id": "00000000-0000-4000-8000-000000000001",
+            "executor_id": "00000000-0000-4000-8000-000000000001",
+            "runtime_execution_id": "00000000-0000-4000-8000-000000000001",
+            "report_epoch": "00000000-0000-4000-8000-000000000001",
+            "report_seq": 1,
+            "operation_id": "00000000-0000-4000-8000-000000000001",
+            "package_id": "00000000-0000-4000-8000-000000000001",
+            "runtime_revision": 1,
+            "state": "PENDING",
+            "reason": "CONFIG_CHANGE",
+            "evidence_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+            "observed_at": "2026-10-29T00:00:00.000Z",
+            "payload_sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+          }
+        ]
+      },
+      "response": {
+        "batch_id": "00000000-0000-4000-8000-000000000001",
+        "items": []
+      },
+      "query": {}
+    },
+    {
+      "id": "RPT-02",
+      "request": {
+        "item_ids": [
+          "00000000-0000-4000-8000-000000000001"
+        ]
+      },
+      "response": {
+        "items": []
+      },
+      "query": {}
+    },
+    {
+      "id": "EVT-01",
+      "request": {
+        "stream": "ADDITIONAL_EVENT",
+        "schema_version": "AMVP_ACCESS_EVENT_1",
+        "batch_id": "00000000-0000-4000-8000-000000000001",
+        "executor_id": "00000000-0000-4000-8000-000000000001",
+        "events": [
+          {
+            "event_id": "00000000-0000-4000-8000-000000000001",
+            "schema_version": "AMVP_ACCESS_EVENT_1",
+            "owner_binding_id": "00000000-0000-4000-8000-000000000001",
+            "executor_id": "00000000-0000-4000-8000-000000000001",
+            "event_epoch": "00000000-0000-4000-8000-000000000001",
+            "local_event_seq": 1,
+            "navigation_id": "00000000-0000-4000-8000-000000000001",
+            "analysis_group_id": "00000000-0000-4000-8000-000000000001",
+            "occurred_at": "2026-10-29T00:00:00.000Z",
+            "target_kind": "SITE",
+            "target_host": "video.example.test",
+            "target_key": "video.example.test",
+            "matched_policy_host": null,
+            "feature_id": null,
+            "event_type": "RECORDED_ACCESS",
+            "blocked_reasons": [],
+            "package_id": "00000000-0000-4000-8000-000000000001",
+            "runtime_revision": 1,
+            "focus_ref": null,
+            "quality": "COMPLETE",
+            "payload_sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+          }
+        ]
+      },
+      "response": {
+        "batch_id": "00000000-0000-4000-8000-000000000001",
+        "items": []
+      },
+      "query": {}
+    },
+    {
+      "id": "EVT-02",
+      "request": {
+        "item_ids": [
+          "00000000-0000-4000-8000-000000000001"
+        ]
+      },
+      "response": {
+        "items": []
+      },
+      "query": {}
+    },
+    {
+      "id": "DAY-01",
+      "request": {},
+      "response": {
+        "policy_id": "00000000-0000-4000-8000-000000000001",
+        "executor_id": "00000000-0000-4000-8000-000000000001",
+        "day_start_at": "2026-10-29T00:00:00.000Z",
+        "day_end_at": "2026-10-29T00:00:00.000Z",
+        "timezone": "Asia/Seoul",
+        "timezone_version": 1,
+        "day_kind": "NORMAL",
+        "confirmed_ms": null,
+        "budget_carry_debit_ms": 0,
+        "remaining_ms": null,
+        "daily_limit_ms": null,
+        "active_reasons": [],
+        "enforcement_state": "PENDING",
+        "next_usable_at": null,
+        "next_usable_status": "KNOWN",
+        "quality": "COMPLETE",
+        "as_of": "2026-10-29T00:00:00.000Z"
+      },
+      "query": {
+        "executor_id": "00000000-0000-4000-8000-000000000001",
+        "date": "2026-10-29"
+      }
+    },
+    {
+      "id": "TZ-01",
+      "request": {
+        "timezone": "Asia/Seoul"
+      },
+      "response": {
+        "timezone_change_id": "00000000-0000-4000-8000-000000000001",
+        "desired_timezone": "Asia/Seoul",
+        "desired_version": 1,
+        "applied_timezone": "Asia/Seoul",
+        "applied_version": 1,
+        "effective_at": "2026-10-29T00:00:00.000Z",
+        "status": "PENDING_CURRENT_DAY_END",
+        "budget_reset": false
+      },
+      "query": {}
+    },
+    {
+      "id": "TZ-02",
+      "request": {},
+      "response": {
+        "timezone_change_id": "00000000-0000-4000-8000-000000000001",
+        "desired_timezone": "Asia/Seoul",
+        "desired_version": 1,
+        "applied_timezone": "Asia/Seoul",
+        "applied_version": 1,
+        "effective_at": "2026-10-29T00:00:00.000Z",
+        "status": "PENDING_CURRENT_DAY_END",
+        "budget_reset": false
+      },
+      "query": {
+        "executor_id": "00000000-0000-4000-8000-000000000001"
+      }
+    },
+    {
+      "id": "STA-01",
+      "request": {},
+      "response": {
+        "scope": "INSTALLATION",
+        "quota_debit": false,
+        "aggregation": "SUM_OF_DEVICE_USAGE",
+        "from_date": "2026-10-29",
+        "to_date": "2026-10-29",
+        "browser_ms": null,
+        "focus_ms": null,
+        "repeat_count": null,
+        "repeat_ratio": null,
+        "quality": "COMPLETE",
+        "as_of": "2026-10-29T00:00:00.000Z"
+      },
+      "query": {
+        "scope": "INSTALLATION",
+        "from_date": "2026-10-29",
+        "to_date": "2026-10-29"
+      }
+    },
+    {
+      "id": "IMP-01",
+      "request": {
+        "request_id": "00000000-0000-4000-8000-000000000001",
+        "executor_id": "00000000-0000-4000-8000-000000000001",
+        "explicit_selection": true,
+        "items": [
+          {
+            "source_installation_id": "00000000-0000-4000-8000-000000000001",
+            "source_record_id": "00000000-0000-4000-8000-000000000001",
+            "source_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+            "record_state": "COMPLETED",
+            "completed_at": "2026-10-29T00:00:00.000Z",
+            "segment_manifest_sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+          }
+        ]
+      },
+      "response": {
+        "request_id": "00000000-0000-4000-8000-000000000001",
+        "items": [],
+        "quota_debit": false,
+        "source_deleted": false
+      },
+      "query": {}
+    },
+    {
+      "id": "OWN-01",
+      "request": {
+        "transfer_id": "00000000-0000-4000-8000-000000000001",
+        "from_owner_binding_id": "00000000-0000-4000-8000-000000000001",
+        "to_owner_binding_id": "00000000-0000-4000-8000-000000000001",
+        "executor_id": "00000000-0000-4000-8000-000000000001",
+        "expected_owner_epoch": 1,
+        "enforcement_day_chain_id": "00000000-0000-4000-8000-000000000001"
+      },
+      "response": {
+        "transfer_id": "00000000-0000-4000-8000-000000000001",
+        "state": "FENCED",
+        "old_capture_closed": false,
+        "old_rules_released": false,
+        "new_capture_open": false,
+        "source_deleted": false,
+        "new_owner_epoch": null
+      },
+      "query": {}
+    },
+    {
+      "id": "OWN-02",
+      "request": {},
+      "response": {
+        "transfer_id": "00000000-0000-4000-8000-000000000001",
+        "state": "FENCED",
+        "old_capture_closed": false,
+        "old_rules_released": false,
+        "new_capture_open": false,
+        "source_deleted": false,
+        "new_owner_epoch": null
+      },
+      "query": {}
+    },
+    {
+      "id": "FOC-02",
+      "request": {
+        "stream": "FOCUS_CONTROL",
+        "schema_version": "AMVP_FOCUS_CONTROL_1",
+        "request_id": "00000000-0000-4000-8000-000000000001",
+        "command": {
+          "operation_id": "00000000-0000-4000-8000-000000000001",
+          "focus_ref": {
+            "session_id": "00000000-0000-4000-8000-000000000001",
+            "snapshot_id": "00000000-0000-4000-8000-000000000001",
+            "snapshot_format": "1.1",
+            "snapshot_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+            "desired_revision": 1
+          },
+          "action": "START",
+          "expected_version": 1,
+          "attachment_id": null,
+          "duration_minutes": null
+        },
+        "owner_binding_id": "00000000-0000-4000-8000-000000000001",
+        "executor_id": "00000000-0000-4000-8000-000000000001",
+        "owner_epoch": 1,
+        "capability_receipt_id": "00000000-0000-4000-8000-000000000001",
+        "execute_before": "2026-10-29T00:00:05.000Z"
+      },
+      "response": {
+        "operation_id": "00000000-0000-4000-8000-000000000001",
+        "focus_ref": {
+          "session_id": "00000000-0000-4000-8000-000000000001",
+          "snapshot_id": "00000000-0000-4000-8000-000000000001",
+          "snapshot_format": "1.1",
+          "snapshot_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+          "desired_revision": 1
+        },
+        "state": "STARTING",
+        "confirmed_ms": 0,
+        "remaining_ms": 0,
+        "runtime_policy_unchanged": true,
+        "last_error_code": null
+      },
+      "query": {}
+    },
+    {
+      "id": "FOC-03",
+      "request": {},
+      "response": {
+        "operation_id": "00000000-0000-4000-8000-000000000001",
+        "focus_ref": {
+          "session_id": "00000000-0000-4000-8000-000000000001",
+          "snapshot_id": "00000000-0000-4000-8000-000000000001",
+          "snapshot_format": "1.1",
+          "snapshot_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+          "desired_revision": 1
+        },
+        "state": "STARTING",
+        "confirmed_ms": 0,
+        "remaining_ms": 0,
+        "runtime_policy_unchanged": true,
+        "last_error_code": null
+      },
+      "query": {}
+    },
+    {
+      "id": "OP-01",
+      "request": {},
+      "response": {
+        "operation_id": "00000000-0000-4000-8000-000000000001",
+        "state": "PENDING",
+        "actual_effect_confirmed": false,
+        "error_code": null
+      },
+      "query": {}
+    },
+    {
+      "id": "UI-01",
+      "request": {},
+      "response": {
+        "config_version": 1,
+        "saved_state": "SAVING",
+        "applied_revision": null,
+        "runtime_state": "PENDING",
+        "focus_state": "IDLE",
+        "quality": "COMPLETE",
+        "as_of": "2026-10-29T00:00:00.000Z"
+      },
+      "query": {}
+    },
+    {
+      "id": "ART-01",
+      "request": {},
+      "response": {
+        "artifact_id": "00000000-0000-4000-8000-000000000001",
+        "kind": "ADULT_DOMAINS",
+        "version": 1,
+        "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+        "size_bytes": 1,
+        "source_commit": "x",
+        "source_urls": [
+          "https://example.invalid/artifact"
+        ],
+        "license_refs": [
+          "x"
+        ],
+        "license_review": "PENDING",
+        "built_at": "2026-10-29T00:00:00.000Z",
+        "remote_executable_code": false
+      },
+      "query": {}
+    }
+  ]
+}

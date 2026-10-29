@@ -1,0 +1,76 @@
+{
+  "kind": "REAL_ISOLATED_MYSQL_SQL_PROBE",
+  "cases": [
+    {
+      "module": "backend",
+      "case": "baseline migrations + additive candidate DDL",
+      "result": "PASS",
+      "legacy_tables": 31,
+      "new_tables": 17
+    },
+    {
+      "module": "backend",
+      "case": "same segment unique key prevents duplicate insert",
+      "result": "PASS"
+    },
+    {
+      "module": "backend",
+      "case": "negative interval CHECK rejection",
+      "result": "PASS"
+    },
+    {
+      "module": "backend",
+      "case": "unknown owner FK rejection",
+      "result": "PASS"
+    },
+    {
+      "module": "backend",
+      "case": "rollback leaves no artifact",
+      "result": "PASS"
+    },
+    {
+      "module": "backend",
+      "case": "import dedup identity; no automatic quota rows",
+      "result": "PASS"
+    },
+    {
+      "module": "runtime-server",
+      "case": "baseline migrations + additive candidate DDL",
+      "result": "PASS",
+      "legacy_tables": 31,
+      "new_tables": 17
+    },
+    {
+      "module": "runtime-server",
+      "case": "same segment unique key prevents duplicate insert",
+      "result": "PASS"
+    },
+    {
+      "module": "runtime-server",
+      "case": "negative interval CHECK rejection",
+      "result": "PASS"
+    },
+    {
+      "module": "runtime-server",
+      "case": "unknown owner FK rejection",
+      "result": "PASS"
+    },
+    {
+      "module": "runtime-server",
+      "case": "rollback leaves no artifact",
+      "result": "PASS"
+    },
+    {
+      "module": "runtime-server",
+      "case": "import dedup identity; no automatic quota rows",
+      "result": "PASS"
+    }
+  ],
+  "not_tested": [
+    "application HTTP auth",
+    "concurrent Server transactions",
+    "actual Chrome",
+    "actual production migration",
+    "raw payload schema enforced by application"
+  ]
+}

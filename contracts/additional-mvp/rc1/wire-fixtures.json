@@ -1,0 +1,250 @@
+{
+  "notice": "All IDs/proofs/effects are SYNTHETIC. No real sender/native/Chrome verification is claimed.",
+  "messages": [
+    {
+      "schema": "Control",
+      "value": {
+        "type": "D06_ADDITIONAL_CONTROL",
+        "schema_version": "AMVP_CONTENT_1",
+        "request_id": "00000000-0000-4000-8000-000000000001",
+        "payload": {
+          "operation_id": "00000000-0000-4000-8000-000000000001",
+          "semantic_sha256": "0df5d4cbc16ea3bad510829fc1c3a9436a523ca1ad6290ad791a421a0ef95e1b",
+          "scope": {
+            "owner_binding_id": "00000000-0000-4000-8000-000000000001",
+            "owner_epoch": 1,
+            "executor_id": "00000000-0000-4000-8000-000000000001",
+            "runtime_execution_id": "00000000-0000-4000-8000-000000000001",
+            "package_id": "00000000-0000-4000-8000-000000000001",
+            "runtime_revision": 1,
+            "binding_id": "00000000-0000-4000-8000-000000000001",
+            "scope_epoch": "00000000-0000-4000-8000-000000000001",
+            "generation": 1,
+            "tab_id": 0,
+            "frame_id": 0,
+            "document_id": "x",
+            "document_instance_id": "00000000-0000-4000-8000-000000000001",
+            "url_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+            "focus_ref": {
+              "session_id": "00000000-0000-4000-8000-000000000001",
+              "snapshot_id": "00000000-0000-4000-8000-000000000001",
+              "snapshot_format": "1.1",
+              "snapshot_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+              "desired_revision": 1
+            }
+          },
+          "channel_credential": "0000000000000000000000000000000000000000000000000000000000000000",
+          "control_seq": 1,
+          "operation": "APPLY",
+          "projection": {
+            "features": [
+              {
+                "feature_id": "YT-02",
+                "enabled": true,
+                "required": true
+              }
+            ],
+            "content": null,
+            "access_block_reasons": [],
+            "host": "video.example.test",
+            "matched_policy_host": null,
+            "artifact_ids": []
+          },
+          "cleanup_grant_id": "00000000-0000-4000-8000-000000000001",
+          "execute_before": "2026-10-29T00:00:05.000Z"
+        },
+        "stream": "ADDITIONAL_CONTENT"
+      }
+    },
+    {
+      "schema": "ContentResult",
+      "value": {
+        "type": "D06_ADDITIONAL_RESULT",
+        "schema_version": "AMVP_CONTENT_1",
+        "request_id": "00000000-0000-4000-8000-000000000001",
+        "operation_id": "00000000-0000-4000-8000-000000000001",
+        "semantic_sha256": "0df5d4cbc16ea3bad510829fc1c3a9436a523ca1ad6290ad791a421a0ef95e1b",
+        "scope": {
+          "owner_binding_id": "00000000-0000-4000-8000-000000000001",
+          "owner_epoch": 1,
+          "executor_id": "00000000-0000-4000-8000-000000000001",
+          "runtime_execution_id": "00000000-0000-4000-8000-000000000001",
+          "package_id": "00000000-0000-4000-8000-000000000001",
+          "runtime_revision": 1,
+          "binding_id": "00000000-0000-4000-8000-000000000001",
+          "scope_epoch": "00000000-0000-4000-8000-000000000001",
+          "generation": 1,
+          "tab_id": 0,
+          "frame_id": 0,
+          "document_id": "x",
+          "document_instance_id": "00000000-0000-4000-8000-000000000001",
+          "url_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+          "focus_ref": {
+            "session_id": "00000000-0000-4000-8000-000000000001",
+            "snapshot_id": "00000000-0000-4000-8000-000000000001",
+            "snapshot_format": "1.1",
+            "snapshot_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+            "desired_revision": 1
+          }
+        },
+        "control_seq": 1,
+        "status": "ACK",
+        "result_state": "APPLIED",
+        "effects": [
+          {
+            "feature_id": "YT-02",
+            "result": "APPLIED",
+            "observer_ready": true,
+            "eligible_target_count": 1,
+            "restricted_target_count": 1,
+            "error_count": 0,
+            "media_stopped": true,
+            "ledger_sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+          }
+        ],
+        "remaining_claim_count": 0,
+        "footprint_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+        "observed_at": "2026-10-29T00:00:00.000Z",
+        "error_code": null,
+        "stream": "ADDITIONAL_CONTENT"
+      }
+    },
+    {
+      "schema": "Control",
+      "value": {
+        "type": "D06_ADDITIONAL_CONTROL",
+        "schema_version": "AMVP_CONTENT_1",
+        "request_id": "00000000-0000-4000-8000-000000000003",
+        "payload": {
+          "operation_id": "00000000-0000-4000-8000-000000000004",
+          "semantic_sha256": "9c93fb666f181a76e660b9020f761bfccaea39421376ccbf32d1951335bcd135",
+          "scope": {
+            "owner_binding_id": "00000000-0000-4000-8000-000000000001",
+            "owner_epoch": 1,
+            "executor_id": "00000000-0000-4000-8000-000000000001",
+            "runtime_execution_id": "00000000-0000-4000-8000-000000000001",
+            "package_id": "00000000-0000-4000-8000-000000000001",
+            "runtime_revision": 1,
+            "binding_id": "00000000-0000-4000-8000-000000000001",
+            "scope_epoch": "00000000-0000-4000-8000-000000000001",
+            "generation": 1,
+            "tab_id": 0,
+            "frame_id": 0,
+            "document_id": "x",
+            "document_instance_id": "00000000-0000-4000-8000-000000000001",
+            "url_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+            "focus_ref": {
+              "session_id": "00000000-0000-4000-8000-000000000001",
+              "snapshot_id": "00000000-0000-4000-8000-000000000001",
+              "snapshot_format": "1.1",
+              "snapshot_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+              "desired_revision": 1
+            }
+          },
+          "channel_credential": "0000000000000000000000000000000000000000000000000000000000000000",
+          "control_seq": 2,
+          "operation": "RELEASE",
+          "cleanup_grant_id": "00000000-0000-4000-8000-000000000001",
+          "release_mode": "NORMAL",
+          "expected_footprint_sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+        },
+        "stream": "ADDITIONAL_CONTENT"
+      }
+    },
+    {
+      "schema": "ContentResult",
+      "value": {
+        "type": "D06_ADDITIONAL_RESULT",
+        "schema_version": "AMVP_CONTENT_1",
+        "request_id": "00000000-0000-4000-8000-000000000003",
+        "operation_id": "00000000-0000-4000-8000-000000000004",
+        "semantic_sha256": "9c93fb666f181a76e660b9020f761bfccaea39421376ccbf32d1951335bcd135",
+        "scope": {
+          "owner_binding_id": "00000000-0000-4000-8000-000000000001",
+          "owner_epoch": 1,
+          "executor_id": "00000000-0000-4000-8000-000000000001",
+          "runtime_execution_id": "00000000-0000-4000-8000-000000000001",
+          "package_id": "00000000-0000-4000-8000-000000000001",
+          "runtime_revision": 1,
+          "binding_id": "00000000-0000-4000-8000-000000000001",
+          "scope_epoch": "00000000-0000-4000-8000-000000000001",
+          "generation": 1,
+          "tab_id": 0,
+          "frame_id": 0,
+          "document_id": "x",
+          "document_instance_id": "00000000-0000-4000-8000-000000000001",
+          "url_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+          "focus_ref": {
+            "session_id": "00000000-0000-4000-8000-000000000001",
+            "snapshot_id": "00000000-0000-4000-8000-000000000001",
+            "snapshot_format": "1.1",
+            "snapshot_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+            "desired_revision": 1
+          }
+        },
+        "control_seq": 2,
+        "status": "ACK",
+        "result_state": "RELEASED",
+        "effects": [],
+        "remaining_claim_count": 0,
+        "footprint_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+        "observed_at": "2026-10-29T00:00:00.000Z",
+        "error_code": null,
+        "stream": "ADDITIONAL_CONTENT"
+      }
+    },
+    {
+      "schema": "ContentResult",
+      "value": {
+        "type": "D06_ADDITIONAL_RESULT",
+        "schema_version": "AMVP_CONTENT_1",
+        "request_id": "00000000-0000-4000-8000-000000000001",
+        "operation_id": "00000000-0000-4000-8000-000000000001",
+        "semantic_sha256": "0df5d4cbc16ea3bad510829fc1c3a9436a523ca1ad6290ad791a421a0ef95e1b",
+        "scope": {
+          "owner_binding_id": "00000000-0000-4000-8000-000000000001",
+          "owner_epoch": 1,
+          "executor_id": "00000000-0000-4000-8000-000000000001",
+          "runtime_execution_id": "00000000-0000-4000-8000-000000000001",
+          "package_id": "00000000-0000-4000-8000-000000000001",
+          "runtime_revision": 1,
+          "binding_id": "00000000-0000-4000-8000-000000000001",
+          "scope_epoch": "00000000-0000-4000-8000-000000000001",
+          "generation": 1,
+          "tab_id": 0,
+          "frame_id": 0,
+          "document_id": "x",
+          "document_instance_id": "00000000-0000-4000-8000-000000000001",
+          "url_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+          "focus_ref": {
+            "session_id": "00000000-0000-4000-8000-000000000001",
+            "snapshot_id": "00000000-0000-4000-8000-000000000001",
+            "snapshot_format": "1.1",
+            "snapshot_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+            "desired_revision": 1
+          }
+        },
+        "control_seq": 1,
+        "status": "NACK",
+        "result_state": "UNSUPPORTED",
+        "effects": [],
+        "remaining_claim_count": 0,
+        "footprint_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+        "observed_at": "2026-10-29T00:00:00.000Z",
+        "error_code": "UNSUPPORTED_CONTRACT",
+        "stream": "ADDITIONAL_CONTENT"
+      }
+    }
+  ],
+  "canonical_vector": {
+    "value": {
+      "a": 9007199254740991,
+      "label": "한글",
+      "nested": {
+        "enabled": true,
+        "empty": null
+      }
+    },
+    "sha256": "22710e2bf1ec2fe40fed2fc5121a1eec3942f1f4f1d6d73e77d3a93c0cba3ffa"
+  }
+}

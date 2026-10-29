@@ -1,0 +1,24 @@
+{
+  "revision": "AMVP-CONTRACT-20261029-RC1",
+  "recorded_at": "2026-10-29T02:08:41.203195+00:00",
+  "python": "3.14.7",
+  "python_tests": {
+    "run": 133,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "result": "PASS"
+  },
+  "node_tests": {
+    "run": 3,
+    "result": "PASS"
+  },
+  "mysql_sql_probe": {
+    "run": 12,
+    "result": "PASS",
+    "evidence": "mysql-result.json"
+  },
+  "product_chrome": "NOT_RUN",
+  "human_approval": "REVIEW_PENDING",
+  "product_files_changed": 0
+}
