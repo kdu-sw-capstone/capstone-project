@@ -58,11 +58,32 @@ CI `additional-web-server.yml` targets the existing integration branch; it uses 
 | Actual 16-option/keyword/adult/blur effect | NOT_RUN | Content/registry/license/profile/ACK and runtime capability; no activation merely because a setting is saved |
 | Focus scheduler/cadence execution | NOT_RUN | Core occurrence/fixed-end/claim execution; this slice stores the approved setting, not execution success |
 | Usage ingest/resolution/timezone/quota projections | NOT_RUN | Requires verified clock/anchor and durable Core collector; do not accept client TRUSTED strings |
-| Browser usage/day/record statistics API | NOT_RUN | Separate next slice; raw receipt and measurement quality remain distinct |
+| Browser usage statistics API | IMPLEMENTED / TESTED | Slice 2 below; day/quota and runtime event/focus projections remain separate |
 | Existing member/guest transfer/import | REUSED | Legacy paths unchanged; new adapter requires verified source and owner transfer contract |
 
 Keep development enabled for independent query/UI work. Do not turn an absent runtime publisher into a no-op production success. Do not reuse failed installations or change contract files to unblock this slice.
 
 ## Resume point
 
-After the settings slice is published, implement independent read-side usage/statistics projection and its quality/null states against RC2 fixtures and isolated MySQL, then connect only verified existing sources. Runtime activation/operational migration remains gated. PR Merge/develop changes are not authorized.
+Settings and read-side browser statistics are on Draft PR #25. Next implementation boundary is the verified capability/artifact/RuntimePackage publisher and the authoritative collector/clock/day-budget projection. These require the real Core/Content producer and owner/restore integration, not another mock success. Day/quota API cannot invent day_kind, live local debit or actual restriction state from the current server cache. Runtime activation/operational migration remains gated. PR Merge/develop changes are not authorized.
+
+
+## Slice 2 — browser usage read projection, quality UI and scoped exceptions
+
+**IMPLEMENTED / TESTED; production runtime sources BLOCKED.**
+
+- Adds STA-01 `/api/v1/amvp/statistics/browser-usage` without changing the RC2 API/Schema. Exact date/scope query validation (inclusive max366 days), Web-only ACCOUNT_TOTAL, installation-bearer scope restriction, owner-bound historical rows and capability gate. Read queries never debit quota, mutate raw segments or reassign ownership.
+- COUNTED database projection is required; client `TRUSTED` text alone is insufficient. QUARANTINED/legacy/unconfirmed rows are excluded. A corrected resolution additionally requires its matching VERIFIED anchor and uses the corrected day boundary with the preserved capture timezone. Source and raw hashes are not rewritten.
+- Counted browser time is a SUM_OF_DEVICE_USAGE, never unioned with focus time. Missing focus/repeat projections remain null. Absent coverage evidence means PARTIAL, never a fabricated COMPLETE. No counted data yields UNKNOWN/NO_DATA with browser_ms=null, not zero. Large scans (>50000 source rows) fail visibly rather than truncate; a future indexed/day projection remains necessary for scale.
+- UI reuses the existing panel/styles and adds explicit date/installation/account scope, query/error/loading/retry states and null labels. Old scope results clear immediately when filters change. Existing mandatory session/access statistics remain unchanged.
+- Content host/exception editor now preserves include_subdomains per row. Keyword/adult exceptions and custom hosts are editable without flattening existing scope flags; credential-bearing host URLs are rejected visibly.
+- Both new controllers reject limited reauthentication/preserved-END service channels, even if the opt-in property is mistakenly enabled. Database availability failures return a bounded error, never a saved/apply success.
+- Local verification: final Web242/242 PASS, TypeScript/Vite build PASS; affected component/host/time-window regressions also PASS. Server full80 PASS with real isolated MySQL (16 DB/HTTP tests), plus restricted-channel2 PASS independently. No skipped DB tests were relabeled as executed. New tests include quarantine exclusion, client TRUSTED rejection, member separation, historical owner retention, date rules, pending/verified anchor and corrected-day behavior, read-only quota and HTTP NO_DATA response.
+- PR: https://github.com/kdu-sw-capstone/capstone-project/pull/25 (Draft). Commits df6928d / b9f3872 / d9f4452 establish settings/CI; subsequent read-side commit is in the same PR. First CI failed on the fresh Docker DB's default ai_ci vs expected bin collation; d9f4452 only initializes the verified-empty disposable schema, and CI run40879918643 passed. No existing table/operational DB was converted. Latest-head CI is checked separately.
+
+### Remaining boundaries
+
+- Production Admission/artifact verification, canonical package/outbox issuance and frozen Attachment remain unconnected. API default stays disabled; no runtime success is claimed.
+- Raw usage/report/event ingestion, privileged clock proof/anchor issuance, live quota floor/day_kind and owner-transfer saga need the approved producer/authority path. No new unverified upload source was substituted.
+- Actual scheduling/cadence/content effects, operational migration and Figma/Chrome/Native acceptance are NOT_RUN. Existing failed installations/credentials/DB and Shorts/Core/Content branches remain untouched.
+- Implementation and test preparation may be reviewed/integrated through PR25; deployment and policy acceptance require those runtime boundaries. No Merge or develop mutation has been performed.

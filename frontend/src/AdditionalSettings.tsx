@@ -1,6 +1,7 @@
 import {useEffect,useRef,useState} from "react";
 import {ApiError,message} from "./api";
 import {Panel,Toggle,canonicalDraftHost} from "./AdditionalUi";
+import HostScopeEditor,{type HostScope} from "./HostScopeEditor";
 import TimeRuleEditor,{WhenEditor,type TimeWindow,type RuleWhen} from "./TimeRuleEditor";
 import {internalFeatures} from "./additionalFeatures";
 import {configWrite,configDelete,listConfigs,type ConfigRecord,type ConfigValue} from "./additionalConfigApi";
@@ -22,7 +23,7 @@ export default function AdditionalSettings({installations}:{installations:{execu
  const [busy,setBusy]=useState(false),[loaded,setLoaded]=useState(false),[error,setError]=useState(""),[notice,setNotice]=useState("");
  const deletePending=useRef<ReturnType<typeof configDelete>|null>(null);
  const generation=useRef(0),pending=useRef<ReturnType<typeof configWrite>|null>(null);
- const [keywordText,setKeywordText]=useState(""),[adultText,setAdultText]=useState("");
+ const [keywordText,setKeywordText]=useState("");
  const [retry,setRetry]=useState(0),[confirmDelete,setConfirmDelete]=useState<ConfigRecord|null>(null);
  useEffect(()=>{if(executor&&!installations.some(i=>i.executor_id===executor))setExecutor("");},[installations,executor]);
  useEffect(()=>{
@@ -31,7 +32,7 @@ export default function AdditionalSettings({installations}:{installations:{execu
   void listConfigs(executor,controller.signal).then(data=>{if(current===generation.current){setRows(data);setLoaded(true);}}).catch(e=>{if(current===generation.current&&!controller.signal.aborted)setError(message(e));}).finally(()=>{if(current===generation.current)setBusy(false);});
   return()=>{++generation.current;controller.abort();};
  },[executor,retry]);
- function openEditor(next:Editor){setEditor(next);setKeywordText(((next.value.keyword as Nested|undefined)?.terms as string[]|undefined)?.join("\n")??"");setAdultText(((next.value.adult as Nested|undefined)?.custom_hosts as {host:string}[]|undefined)?.map(h=>h.host).join("\n")??"");}
+ function openEditor(next:Editor){setEditor(next);setKeywordText(((next.value.keyword as Nested|undefined)?.terms as string[]|undefined)?.join("\n")??"");}
  function change(patch:Partial<ConfigValue>){pending.current=null;setNotice("");setEditor(old=>old?{...old,value:{...old.value,...patch}}:null);}
  async function save(){
   if(!editor||busy)return;setBusy(true);setError("");setNotice("");const current=generation.current;
@@ -63,8 +64,10 @@ export default function AdditionalSettings({installations}:{installations:{execu
     {internalFeatures.map(([feature_id,title,description])=><Toggle key={feature_id} title={title} description={description} checked={(value.features as Feature[]).find(f=>f.feature_id===feature_id)?.enabled??false} onChange={enabled=>change({features:[...(value.features as Feature[]).filter(f=>f.feature_id!==feature_id),{feature_id,enabled,required:true}]})}/>)}
     <Toggle title="URL 키워드 제한" checked={Boolean((value.keyword as Nested).enabled)} onChange={enabled=>nested("keyword",{enabled})}/>
     <label>키워드 · 한 줄에 하나<textarea value={keywordText} onChange={e=>{setKeywordText(e.target.value);nested("keyword",{terms:e.target.value.split("\n").map(s=>s.trim()).filter(Boolean)});}}/></label>
+    <HostScopeEditor title="키워드 예외" rows={(value.keyword as Nested).exceptions as HostScope[]} onChange={exceptions=>nested("keyword",{exceptions})}/>
     <Toggle title="성인 사이트 제한" checked={Boolean((value.adult as Nested).enabled)} onChange={enabled=>nested("adult",{enabled})}/>
-    <label>직접 추가할 성인 사이트 · 한 줄에 하나<textarea value={adultText} onChange={e=>{setAdultText(e.target.value);nested("adult",{custom_hosts:e.target.value.split("\n").map(host=>host.trim()).filter(Boolean).map(host=>({host,include_subdomains:false}))});}}/></label>
+    <HostScopeEditor title="성인 사이트 직접 목록" rows={(value.adult as Nested).custom_hosts as HostScope[]} onChange={custom_hosts=>nested("adult",{custom_hosts})}/>
+    <HostScopeEditor title="성인 사이트 예외" rows={(value.adult as Nested).exceptions as HostScope[]} onChange={exceptions=>nested("adult",{exceptions})}/>
     <Toggle title="이미지 블러" checked={Boolean((value.blur as Nested).enabled)} onChange={enabled=>nested("blur",{enabled})}/><p>블러 민감도는 높음입니다. 검증된 모델·목록이 없으면 실행이 제한되며 저장만으로 활성화되지 않습니다.</p>
    </>}
    {value.kind==="CADENCE"&&<><label>집중 시간(분)<input type="number" min={1} max={180} value={Number(value.focus_minutes)} onChange={e=>change({focus_minutes:e.target.valueAsNumber})}/></label><label>휴식 시간(분)<input type="number" min={1} max={180} value={Number(value.rest_minutes)} onChange={e=>change({rest_minutes:e.target.valueAsNumber})}/></label><label>반복 횟수<input type="number" min={1} max={12} value={Number(value.cycles)} onChange={e=>change({cycles:e.target.valueAsNumber})}/></label><Toggle title="다음 집중 자동 시작" checked={Boolean(value.auto_start_next)} onChange={auto_start_next=>change({auto_start_next})}/><p>놓친 집중은 사용자 확인을 기다립니다. 휴식은 실제 경과 시간을 사용합니다.</p></>}

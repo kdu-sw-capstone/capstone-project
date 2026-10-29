@@ -22,11 +22,12 @@ final class AdditionalConfigApi {
  private final PlatformTransactionManager manager;
  private final ObjectProvider<AdditionalConfigStore.Admission> admissions;
  AdditionalConfigApi(MemberAuth auth,PlatformTransactionManager manager,ObjectProvider<AdditionalConfigStore.Admission> admissions){this.auth=auth;this.manager=manager;this.admissions=admissions;}
+ static void normalChannel(MemberAuth auth){check((auth.recoveryGrant==null||auth.recoveryGrant.isBlank())&&(auth.preservedEndGrant==null||auth.preservedEndGrant.isBlank()),503,"UNSUPPORTED_CONTRACT");}
  @RequestMapping({"/api/v1/amvp/configs","/api/v1/amvp/configs/{configId}"})
  ResponseEntity<?> handle(HttpServletRequest req,@PathVariable(required=false)String configId,@RequestBody(required=false)String raw) {
   try {
    return new TransactionTemplate(manager).execute(tx->{
-    boolean mutation=!req.getMethod().equals("GET");Identity identity=auth.identity(req,mutation);
+    boolean mutation=!req.getMethod().equals("GET");Identity identity=auth.identity(req,mutation);normalChannel(auth);
     var admission=admissions.getIfAvailable();check(admission!=null,503,"CAPABILITY_NOT_VERIFIED");
     var store=new AdditionalConfigStore(auth,manager,admission);String method=req.getMethod();
     if(method.equals("GET")) {
@@ -51,5 +52,6 @@ final class AdditionalConfigApi {
   }catch(Failure failure){return ResponseEntity.status(failure.status).body(auth.obj("error",Map.of("code",failure.code,"retryable",false),"request_id",id()));}
   catch(IllegalArgumentException failure){return ResponseEntity.unprocessableEntity().body(auth.obj("error",Map.of("code","VALIDATION_FAILED","retryable",false),"request_id",id()));}
   catch(org.springframework.dao.DataIntegrityViolationException failure){return ResponseEntity.status(409).body(auth.obj("error",Map.of("code","IDEMPOTENCY_CONFLICT","retryable",false),"request_id",id()));}
+  catch(org.springframework.dao.DataAccessException failure){return ResponseEntity.status(503).body(auth.obj("error",Map.of("code","TEMPORARILY_UNAVAILABLE","retryable",false),"request_id",id()));}
  }
 }
