@@ -61,3 +61,9 @@
 - 실제 연동 확인 (모의 응답 제외):
 - 검토·통합 근거:
 - 남은 문제:
+
+
+## 2026-10-29 김다훈 Web·Server 설정 연결
+
+- RC2 e2b3fc3 기준 담당 feature 브랜치. 저장·조회·버전·소유권·멱등 transaction과 기존 UI 연결의 상세/검증/미완료는 [담당 작업카드](ADDITIONAL-WEB-SERVER-20261029.md)를 따른다.
+- 자동/격리 DB 검증과 실제 Core·Content 실행을 구분한다. Extension 실행 완료·운영 migration·실제 Chrome 수용으로 판정하지 않는다. 기존 담당 배정은 유지한다.
