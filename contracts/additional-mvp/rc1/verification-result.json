@@ -1,24 +1,54 @@
 {
-  "revision": "AMVP-CONTRACT-20261029-RC1",
-  "recorded_at": "2026-10-29T02:12:03.264722+00:00",
+  "revision": "AMVP-CONTRACT-20261029-RC2",
+  "recorded_at": "2026-10-29T08:13:08.418871+00:00",
   "python": "3.14.7",
   "python_tests": {
+    "run": 210,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "result": "PASS",
+    "breakdown": {
+      "original_reviewed_test_ids": 135,
+      "new_schema_shapes": 17,
+      "core_content_review": 58
+    }
+  },
+  "node_tests": {
+    "run": 5,
+    "failures": 0,
+    "result": "PASS"
+  },
+  "mysql_sql_probe": {
+    "run": 18,
+    "result": "PASS",
+    "evidence": "mysql-result.json",
+    "tables_per_candidate": 19,
+    "mode": "REAL_ISOLATED_MYSQL_SQL_PROBE",
+    "port": 33328
+  },
+  "product_chrome": "NOT_RUN",
+  "human_approval": "REVIEW_PENDING",
+  "product_files_changed": 0,
+  "rc1_historical": {
+    "python": 135,
+    "node": 3,
+    "mysql": 12,
+    "not_summed_with_rc2": true
+  },
+  "review_tests": {
+    "run": 58,
+    "result": "PASS",
+    "source": "core-review-evidence.json"
+  },
+  "original_135_regression": {
     "run": 135,
     "failures": 0,
     "errors": 0,
     "skipped": 0,
-    "result": "PASS"
-  },
-  "node_tests": {
-    "run": 3,
-    "result": "PASS"
-  },
-  "mysql_sql_probe": {
-    "run": 12,
     "result": "PASS",
-    "evidence": "mysql-result.json"
+    "mode": "same test IDs extracted from reviewed Git object; not additional tests in total"
   },
-  "product_chrome": "NOT_RUN",
-  "human_approval": "REVIEW_PENDING",
-  "product_files_changed": 0
+  "schema_definitions": 77,
+  "legacy_lock_files": 174
 }

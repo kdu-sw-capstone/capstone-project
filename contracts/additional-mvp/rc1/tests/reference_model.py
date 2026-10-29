@@ -78,7 +78,7 @@ def weekly_local(date, hour, zone):
     if candidate.astimezone(UTC).astimezone(z).replace(tzinfo=None)!=naive:return None
     return candidate.astimezone(UTC) # earlier fold only
 
-def validate_semantics(kind, x):
+def validate_semantics(kind, x, issued=None, prior_claims=None, prior_footprint_sha256=None):
     """Additional semantic invariants; Schema validation must run first."""
     if kind=='ContentConfig':
         ids=[f['feature_id'] for f in x['features']]
@@ -105,15 +105,12 @@ def validate_semantics(kind, x):
         if x['event_type']!='RECORDED_ACCESS' and not x['blocked_reasons']:raise ValueError('BLOCK_REASON_REQUIRED')
         if (x['event_type']=='BLOCKED_FEATURE_ACCESS') != (x['target_kind']=='FEATURE'):raise ValueError('EVENT_KIND_MISMATCH')
     elif kind=='ContentResult':
-        success_states={'RECEIVED','APPLYING','APPLIED','NOT_APPLICABLE','RELEASED'}
-        if (x['status']=='ACK') != (x['result_state'] in success_states):raise ValueError('ACK_STATE_MISMATCH')
-        if x['result_state']=='RELEASED' and x['remaining_claim_count']!=0:raise ValueError('UNRELEASED_OWN_CLAIMS')
-        if x['result_state']=='APPLIED':
-            if not x['effects']:raise ValueError('NO_EFFECT_EVIDENCE')
-            for e in x['effects']:
-                if not e['observer_ready'] or e['error_count'] or e['result'] not in ('APPLIED','NOT_APPLICABLE'):raise ValueError('INVALID_EVIDENCE')
-                if e['restricted_target_count']>e['eligible_target_count']:raise ValueError('INVALID_COUNTS')
-                if e['result']=='APPLIED' and e['eligible_target_count']!=e['restricted_target_count']:raise ValueError('INCOMPLETE_EFFECT')
+        ack_states={'RECEIVED','APPLYING','OBSERVING','APPLIED','NOT_APPLICABLE','RELEASED'}
+        if (x['status']=='ACK') != (x['result_state'] in ack_states):raise ValueError('ACK_STATE_MISMATCH')
+        from review_reference import ContentOperationRegistry
+        if issued is None:raise ValueError('MISSING_ISSUED_OPERATION')
+        registry=ContentOperationRegistry();registry.issue(issued,prior_claims,prior_footprint_sha256)
+        registry.validate(x)
     elif kind=='TransferState':
         if x['new_capture_open'] and not(x['state']=='COMMITTED' and x['old_capture_closed'] and x['old_rules_released']):raise ValueError('DUAL_OWNER')
     elif kind=='FocusCommand':
@@ -154,7 +151,7 @@ class Focus:
     def end(self,released):self.state='ENDED' if released else 'UNKNOWN'
 
 class Receiver:
-    """Single-collector reference receiver. In production, transaction+unique keys required."""
+    """RC1 legacy fixture oracle only. New usage-v2 uses review_reference.ClockedReceiver."""
     def __init__(self, owner, executor):
         self.owner,self.executor=owner,executor;self.items={};self.positions={};self.last={};self.intervals=[];self.total=0
     def receive(self,item):
@@ -194,6 +191,7 @@ class ControlReceiver:
         if operation in self.receipts:
             if self.receipts[operation]!=semantic:raise ValueError('IDEMPOTENCY_CONFLICT')
             return 'DUPLICATE'
+        if not isinstance(seq,int) or isinstance(seq,bool) or not 1<=seq<=9007199254740991:raise ValueError('CONTROL_SEQUENCE_LIMIT')
         if seq<=self.seq:raise ValueError('STALE_SEQUENCE')
         if seq!=self.seq+1:return 'PENDING_DEPENDENCY'
         self.receipts[operation]=semantic;self.seq=seq;self.effects+=1

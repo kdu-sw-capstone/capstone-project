@@ -61,13 +61,20 @@ CREATE TABLE amvp_usage_segments (
  uncertain_ms BIGINT NOT NULL,
  payload_json JSON NOT NULL,
  payload_sha256 CHAR(64) COLLATE ascii_bin NOT NULL,
+ clock_epoch VARCHAR(100) COLLATE ascii_bin NULL,
+ clock_boot_id VARCHAR(100) COLLATE ascii_bin NULL,
+ mono_start_ms BIGINT NULL,
+ mono_end_ms BIGINT NULL,
+ measurement_state VARCHAR(24) NOT NULL DEFAULT 'LEGACY_UNCONFIRMED',
  UNIQUE KEY uq_amvp_usage_seq(executor_id,collector_epoch,local_usage_seq),
  KEY ix_amvp_usage_owner_time(owner_binding_id,start_at,segment_id),
  FOREIGN KEY(owner_binding_id) REFERENCES amvp_owner_bindings(binding_id) ON DELETE RESTRICT,
  FOREIGN KEY(executor_id) REFERENCES extension_installations(id) ON DELETE RESTRICT,
  CHECK(start_at<end_at),
  CHECK(confirmed_ms>=0 AND uncertain_ms>=0),
- CHECK(local_usage_seq BETWEEN 1 AND 9007199254740991)
+ CHECK(local_usage_seq BETWEEN 1 AND 9007199254740991),
+ CHECK(measurement_state IN ('LEGACY_UNCONFIRMED','QUARANTINED','COUNTED')),
+ CHECK((clock_epoch IS NULL AND clock_boot_id IS NULL AND mono_start_ms IS NULL AND mono_end_ms IS NULL) OR (clock_epoch IS NOT NULL AND clock_boot_id IS NOT NULL AND mono_start_ms IS NOT NULL AND mono_end_ms IS NOT NULL AND mono_start_ms>=0 AND mono_end_ms>mono_start_ms AND mono_end_ms<=9007199254740991))
 ) ENGINE=InnoDB;
 CREATE TABLE amvp_day_budgets (
  executor_id CHAR(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_bin NOT NULL,
@@ -203,4 +210,37 @@ CREATE TABLE amvp_artifacts (
  license_review VARCHAR(16) NOT NULL,
  UNIQUE KEY uq_amvp_artifact(kind,version),
  CHECK(license_review IN ('PENDING','APPROVED'))
+) ENGINE=InnoDB;
+CREATE TABLE amvp_clock_anchors (
+ anchor_id VARCHAR(100) COLLATE ascii_bin PRIMARY KEY,
+ owner_binding_id CHAR(36) COLLATE ascii_bin NOT NULL,
+ executor_id CHAR(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_bin NOT NULL,
+ clock_epoch VARCHAR(100) COLLATE ascii_bin NOT NULL,
+ boot_id VARCHAR(100) COLLATE ascii_bin NOT NULL,
+ anchor_mono_ms BIGINT NOT NULL,
+ anchor_utc DATETIME(3) NOT NULL,
+ verification_state VARCHAR(16) NOT NULL,
+ proof_sha256 CHAR(64) COLLATE ascii_bin NOT NULL,
+ FOREIGN KEY(owner_binding_id) REFERENCES amvp_owner_bindings(binding_id) ON DELETE RESTRICT,
+ FOREIGN KEY(executor_id) REFERENCES extension_installations(id) ON DELETE RESTRICT,
+ CHECK(verification_state IN ('PENDING','VERIFIED')),
+ CHECK(anchor_mono_ms BETWEEN 0 AND 9007199254740991)
+) ENGINE=InnoDB;
+CREATE TABLE amvp_clock_resolutions (
+ resolution_id CHAR(36) COLLATE ascii_bin PRIMARY KEY,
+ segment_id CHAR(36) COLLATE ascii_bin NOT NULL,
+ anchor_id VARCHAR(100) COLLATE ascii_bin NOT NULL,
+ source_hash CHAR(64) COLLATE ascii_bin NOT NULL,
+ evidence_sha256 CHAR(64) COLLATE ascii_bin NOT NULL,
+ confirmed_ms BIGINT NOT NULL,
+ resolved_start_at DATETIME(3) NOT NULL,
+ resolved_end_at DATETIME(3) NOT NULL,
+ day_start_at DATETIME(3) NOT NULL,
+ day_end_at DATETIME(3) NOT NULL,
+ payload_json JSON NOT NULL,
+ UNIQUE KEY uq_amvp_resolution_segment(segment_id),
+ FOREIGN KEY(segment_id) REFERENCES amvp_usage_segments(segment_id) ON DELETE RESTRICT,
+ FOREIGN KEY(anchor_id) REFERENCES amvp_clock_anchors(anchor_id) ON DELETE RESTRICT,
+ CHECK(confirmed_ms>=0),
+ CHECK(day_start_at<=resolved_start_at AND resolved_start_at<resolved_end_at AND resolved_end_at<=day_end_at)
 ) ENGINE=InnoDB;

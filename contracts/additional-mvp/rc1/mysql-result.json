@@ -6,7 +6,7 @@
       "case": "baseline migrations + additive candidate DDL",
       "result": "PASS",
       "legacy_tables": 31,
-      "new_tables": 17
+      "new_tables": 19
     },
     {
       "module": "backend",
@@ -31,6 +31,21 @@
     {
       "module": "backend",
       "case": "import dedup identity; no automatic quota rows",
+      "result": "PASS"
+    },
+    {
+      "module": "backend",
+      "case": "distinct monotonic intervals may share UTC; quarantined raw is not confirmed aggregate",
+      "result": "PASS"
+    },
+    {
+      "module": "backend",
+      "case": "invalid monotonic interval CHECK rejection",
+      "result": "PASS"
+    },
+    {
+      "module": "backend",
+      "case": "separate resolution keeps raw unchanged; unique segment resolution prevents duplicate aggregation",
       "result": "PASS"
     },
     {
@@ -38,7 +53,7 @@
       "case": "baseline migrations + additive candidate DDL",
       "result": "PASS",
       "legacy_tables": 31,
-      "new_tables": 17
+      "new_tables": 19
     },
     {
       "module": "runtime-server",
@@ -63,6 +78,21 @@
     {
       "module": "runtime-server",
       "case": "import dedup identity; no automatic quota rows",
+      "result": "PASS"
+    },
+    {
+      "module": "runtime-server",
+      "case": "distinct monotonic intervals may share UTC; quarantined raw is not confirmed aggregate",
+      "result": "PASS"
+    },
+    {
+      "module": "runtime-server",
+      "case": "invalid monotonic interval CHECK rejection",
+      "result": "PASS"
+    },
+    {
+      "module": "runtime-server",
+      "case": "separate resolution keeps raw unchanged; unique segment resolution prevents duplicate aggregation",
       "result": "PASS"
     }
   ],

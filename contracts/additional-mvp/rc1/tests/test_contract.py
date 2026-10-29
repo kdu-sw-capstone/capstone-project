@@ -68,9 +68,10 @@ class SchemaTests(unittest.TestCase):
         h=load('source-evidence.json')['poc_history'];self.assertEqual(h['checkpoint_5_seconds'],'FAIL')
         self.assertEqual(h['new_chrome_in_this_pr'],'NOT_RUN');self.assertEqual(h['foreground_2h'],'NOT_RUN')
     def test_coherent_wire_fixtures(self):
-        for m in load('wire-fixtures.json')['messages']:
+        messages=load('wire-fixtures.json')['messages']
+        for m in messages:
             validator(m['schema']).validate(m['value'])
-            if m['schema']=='ContentResult':validate_semantics('ContentResult',m['value'])
+            if m['schema']=='ContentResult':validate_semantics('ContentResult',m['value'],issued=messages[m['issued_control_index']]['value'],prior_claims=m.get('prior_claims'),prior_footprint_sha256=m.get('prior_footprint_sha256'))
             else:
                 p=m['value']['payload'];self.assertEqual(p['semantic_sha256'],digest(p,('semantic_sha256','channel_credential')))
     def test_both_sql_candidates_differ_only_executor_collation(self):

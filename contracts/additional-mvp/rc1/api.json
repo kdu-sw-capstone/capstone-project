@@ -1,5 +1,5 @@
 {
-  "revision": "AMVP-CONTRACT-20261029-RC1",
+  "revision": "AMVP-CONTRACT-20261029-RC2",
   "namespace": "/api/v1/amvp",
   "status": "REVIEW_PENDING",
   "required_headers": {
@@ -512,7 +512,7 @@
       "path": "/api/v1/amvp/usage/batch",
       "auth": "E",
       "body_schema": "UsageBatch",
-      "response_schema": "BatchAck",
+      "response_schema": "UsageBatchAck",
       "success_status": 200,
       "query_schema": "None",
       "precondition": null,
@@ -567,7 +567,7 @@
       "path": "/api/v1/amvp/usage/status",
       "auth": "E",
       "body_schema": "StatusRequest",
-      "response_schema": "StatusResponse",
+      "response_schema": "UsageStatusResponse",
       "success_status": 200,
       "query_schema": "None",
       "precondition": null,
@@ -1618,5 +1618,12 @@
       "response": "202 existing AnalysisJob; poll GET /api/v1/analysis-jobs/{id}",
       "auto_apply": false
     }
+  },
+  "review_status": "CHANGES_REQUESTED_REVISED_AWAITING_HUMAN_REVIEW",
+  "usage_v2_semantics": {
+    "raw_ack": "ACCEPTED/DUPLICATE means immutable raw durability, not countable quality",
+    "measurement_state": "COUNTED/QUARANTINED is independent of ACK",
+    "sequence": "quarantined raw keeps seq/hash chain; later normal intervals can advance",
+    "resolution": "ClockResolution is a privileged server-side verified projection, not a public self-attestation API"
   }
 }

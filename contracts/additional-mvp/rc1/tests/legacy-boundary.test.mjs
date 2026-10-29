@@ -19,3 +19,16 @@ test('Python contract canonical hash agrees with existing JS canonical for the s
   const v=fixtures.canonical_vector;
   assert.equal(createHash('sha256').update(guestCanonical(v.value),'utf8').digest('hex'),v.sha256);
 });
+
+test('RC2 cleanup null sequence is isolated from both legacy validators',()=>{
+  const cleanup=fixtures.messages[5].value;
+  assert.equal(cleanup.payload.release_mode,'CLEANUP_ONLY');
+  assert.equal(cleanup.payload.control_seq,null);
+  assert.equal(guestValid(cleanup,'control_request'),false);
+  assert.equal(memberValid(cleanup,'control_request'),false);
+});
+
+test('RC2 cleanup semantic digest agrees across Python and existing JS canonical',()=>{
+  const {semantic_sha256,channel_credential,...semantic}=fixtures.messages[5].value.payload;
+  assert.equal(createHash('sha256').update(guestCanonical(semantic),'utf8').digest('hex'),semantic_sha256);
+});

@@ -18,7 +18,7 @@ URL_BOUNDARY_1 후보: http(s) 파싱→UTS46 nontransitional/STD3 host→host/p
 
 기존 Event1.2는 기존 endpoint/raw/집계 그룹(session_id,target_key)/index−1 반복 semantics를 보존한다. 신규 AMVP_ACCESS_EVENT_1은 별도 endpoint/table이며 migration으로 구형 raw를 고치지 않는다. actual target_host==target_key(정규화 실제host), matched_policy_host는 실제 매치된 정책host(없으면null). FEATURE는 YT-02/IG-02 실제 route 접근만; 댓글/흑백 토글은 접근이벤트가 아니다. Core는 한 navigation+binding에 최종 확정 한 이벤트만 발급, blocked reason freeze 후 늦은 classifier가 기존 event를 수정하지 않는다. 차단은 다른 classifier 대기 없이 즉시, 후속 정보는 별도 진단 report.
 
-RECORDED_ACCESS는 RECORD대상 실제 접근, ALLOW는 허용 의도이지 모든 브라우징 수집 동의가 아니므로 접근기록을 만들지 않는다. blocked SITE/FEATURE는 실제정책·증거와 reason이 필요. dedup(event_id,hash)와 unique(executor,event_epoch,seq), nav identity 중복을 추가 검증한다. 권장 신규 반복 group=(owner_binding,analysis_group_id,target_key), analysis_group는 사용자day 범위이며 focus의 기존 group을 소급 교체하지 않는다. sort=(occurred_at,event_epoch,seq,event_id)로 안정화, 동일 timestamp도 unique event를 보존한다. 집계 n건의 repeat=max(n−1,0), ratio=repeat/n(n0이면null). 기간 경계에서 전체group index를 먼저 계산하고 조회구간에 투영하는 안과 조회구간 내 재계산 대안을 검토해야 한다. RC1 권장은 전체day group index 보존이며 조회기간에 count한 event의 repeat flag 합이다.
+RECORDED_ACCESS는 RECORD대상 실제 접근, ALLOW는 허용 의도이지 모든 브라우징 수집 동의가 아니므로 접근기록을 만들지 않는다. blocked SITE/FEATURE는 실제정책·증거와 reason이 필요. dedup(event_id,hash)와 unique(executor,event_epoch,seq), nav identity 중복을 추가 검증한다. 권장 신규 반복 group=(owner_binding,analysis_group_id,target_key), analysis_group는 사용자day 범위이며 focus의 기존 group을 소급 교체하지 않는다. sort=(occurred_at,event_epoch,seq,event_id)로 안정화, 동일 timestamp도 unique event를 보존한다. 집계 n건의 repeat=max(n−1,0), ratio=repeat/n(n0이면null). 기간 경계에서 전체group index를 먼저 계산하고 조회구간에 투영하는 안과 조회구간 내 재계산 대안을 검토해야 한다. RC2 권장은 전체day group index 보존이며 조회기간에 count한 event의 repeat flag 합이다.
 
 usage는 physical segment 합, policy attribution은 drilldown 전용이어서 account 합계를 늘리지 않는다. guest import 완료 history는 analysis projection에만 포함하고 source provenance/quality 유지; current quota와 분리한다. quality UNKNOWN/NOT_COLLECTED/NO_DATA/PARTIAL/COMPLETE를 0과 구분. session note 저장 실패는 이미 해제된 session을 다시 RUNNING으로 돌리지 않는다.
 
@@ -35,3 +35,25 @@ file BeixHumD7TSoo9xMVzJkhO / node3053:8252, 기존 UI_BINDINGS 13쌍 유지. �
 | UI-CON-05 40/44px·외부token·팝업폭 | node별 시각 확인 전 미검증 |
 
 UIState는 저장·실제runtime·focus·수집quality를 분리한다. 저장성공→적용완료로 바꾸지 않는다. Empty/Loading/Error/dirty편집/취소/저장중/412/오프라인/미지원/UNKNOWN/부분해제 상태, applied/desired zone·효력시각·잔여한도·다음사용시각불명 안내를 모두 마련한다. 기존 잠정44개를 확정 누락 목록으로 재사용하지 않는다. 최종frame 갱신시 기존03_UI_검수.md UI_BINDINGS/수용기준만 갱신하며 3인 실행프롬프트 전체 재작성 불필요. actual API왕복/Chrome/LightDark/1280·1440·1920/팝업/zoom/keyboard/대비는 제품 PR에서 증거를 남긴다.
+
+## RC2 T-01~03: 실제 결과 집합과 증거
+
+`AMVP_CONTENT_2` Control의 Projection.features가 요청 원본이다. content.features는 호환 mirror로만 허용하고 enabled/required까지 동일해야 한다. 등록된 issued operation에서 요청·owner/full scope·epoch/generation·semantic hash·scan/profile·요청 ID를 조회한 후 응답을 대조한다. 응답 body를 곧 발급 기록으로 믿지 않는다. 같은 semantic 재시도는 새 request_id/채널 credential 허용, 의미가 달라지면 충돌이다.
+
+결과 집합은 활성 FEATURE 각 1개 + 활성 KEYWORD/BLUR/ADULT_DOMAIN 각 1개 + block reason이 있으면 PAGE_GATE 1개다. 최대 16+4개. 필수 옵션 전부를 포함하며 중복·누락·미요청 결과는 거절한다. UPDATE에서 사라진 자기 claim도 RELEASE 결과로 포함하고, RELEASE는 실제 prior footprint 전체와 대조한다. 사용하지 않는 feature를 결과에 채워 성공을 부풀리지 않는다.
+
+| 대상 | APPLIED/NOT_APPLICABLE 기준 | 실패·해제 |
+|---|---|---|
+| YT-02/IG-02 direct viewer | 현재 route profile/scan, 실제 viewer≥1·media≥1, 모든 대상 stopped/hidden/inert, playing/stop_error=0, media_stopped=true | 대상0/증거 부족은 OBSERVING/UNCONFIRMED, APPLIED나 N/A 금지. 재생 정지 실패는 FAILED/부분이면 PARTIAL |
+| 일반 entry surface/기타 옵션 | 현재 전체 scan+observer, eligible>0이고 모두 restriction 확인. eligible0인 정상 비viewer만 NOT_APPLICABLE | DOM/SPA 생성 시 새 scan·현재 generation으로 재평가. N/A는 기능 적용 성공과 다름 |
+| BLUR 독립 정책 | model profile/hash·현재 image generation, 대상 전체 분류, 민감 결과 mask 또는 사용자 reveal intent, click 재가림 준비 | 실패 mask를 유지해도 분류 성공 아님. stale 결과 적용 금지. 실패는 FAILED/PARTIAL+원장 보존 |
+| KEYWORD 독립 정책 | URL_BOUNDARY_1·현재 URL hash·policy hash, MATCH 시 Core 확정 block reason+별도 PAGE_GATE 증거 | 검사 불가/예외 불일치 실패, 원본 URL/query 전송 금지. NOMATCH는 검사 수행 결과이며 차단 효과 주장이 아님 |
+| ADULT_DOMAIN/PAGE_GATE | 검증 artifact의 검사 결과와 Core reason 대조, 게이트 DOM·media 증거 별도 | Content는 DNR 적용 성공을 주장할 수 없음. DNR은 Core 재조회 보고 |
+
+형상 원본은 EffectEvidence(kind FEATURE), ContentPolicyEvidence(kind CONTENT_POLICY의4분기)이다. 모든 effect는 owner_binding_id/evidence_scope_sha256/scan_id/action/result/remaining_claim_count와 타입별 profile 또는 policy hash를 결속한다. keyword/blur만 켜도 features=[]로 독립 적용·해제할 수 있다. wire fixture와 content-review-fixtures의9시퀀스는 단독·복합·게이트·해제를 표현한다.
+
+RECEIVED/APPLYING는 접수/진행이다. 모든 예상 결과가 APPLIED 또는 적절한 N/A이면 APPLIED, 전부 N/A이면 NOT_APPLICABLE, 일부 실패면 PARTIAL NACK, 전체 실패면 FAILED/UNCONFIRMED NACK이다. root remaining count는 자기 effect 합이며, 개별 실패를 root ACK로 감추지 않는다. 전역 UNSUPPORTED/FAILED NACK은 오류코드를 가진 무효과 거절로만 허용한다.
+
+RELEASED는 prior own footprint·policy/profile/scan이 맞고 자기 remaining0, DOM/observer/resource 정리와 다른 owner 보존이 모두 확인된 경우뿐이다. media ownership이 있었다면 USER_CONTROL_RESTORED 또는 다른 owner가 유지하는 STILL_BLOCKED_OTHER_OWNER를 증명한다. 강제 autoplay/무조건 unmute로 복원하지 않는다. 관측된 DOM pause는 실제 오디오 출력 수용 증거가 아니므로 audio_verification은 NOT_VERIFIED만 허용한다. 실제 viewer·오디오/SPA·BFCache 수용은 채지민의 독립 Chrome 시험이 필요하다.
+
+REVIEW_PENDING: 실제 selector/profile·영상/오디오 복원·이미지 generation 검증·추가 보안 채널 구현·성능·16개 페이지 수용. T-01/02/03의 모델 PASS는 제품 Shorts P0 해결이나 Figma 구현 완료를 뜻하지 않는다.

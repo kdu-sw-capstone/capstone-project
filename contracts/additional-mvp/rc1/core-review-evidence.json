@@ -1,0 +1,183 @@
+{
+  "reviewed_sha": "bf62f1520ac06e5d507c54b8f06d93fdd4553ef3",
+  "revision": "AMVP-CONTRACT-20261029-RC2",
+  "approval": "CHANGES_REQUESTED; revision proposed for re-review, no human approval implied",
+  "review_source": "User-forwarded official Core review. At initial GitHub query no submitted review object was visible. Do not fabricate a GitHub review receipt.",
+  "legacy_schema_definitions": [
+    "Empty",
+    "Uuid",
+    "Hash",
+    "Utc",
+    "Version",
+    "Host",
+    "Quality",
+    "HostScope",
+    "FeatureSetting",
+    "KeywordConfig",
+    "AdultConfig",
+    "BlurConfig",
+    "ContentConfig",
+    "Window",
+    "SiteTimePolicy",
+    "FocusSchedule",
+    "CadenceConfig",
+    "ConfigValue",
+    "ConfigWrite",
+    "ConfigRecord",
+    "ConfigList",
+    "FocusRef",
+    "RuntimePackage",
+    "FocusAttachment",
+    "Streams",
+    "CapabilityOffer",
+    "CapabilitySelection",
+    "BindingScope",
+    "Projection",
+    "Control",
+    "EffectEvidence",
+    "ContentResult",
+    "PolicyAttribution",
+    "UsageSegment",
+    "UsageBatch",
+    "ItemAck",
+    "BatchAck",
+    "StatusRequest",
+    "StatusResponse",
+    "RuntimeReport",
+    "ReportBatch",
+    "AccessEvent",
+    "EventBatch",
+    "TimezoneWrite",
+    "TimezoneRecord",
+    "DailyUsage",
+    "Statistics",
+    "CompletedImportItem",
+    "ImportSelection",
+    "ImportResult",
+    "OwnerTransfer",
+    "TransferState",
+    "FocusCommand",
+    "FocusState",
+    "OperationState",
+    "UIState",
+    "ArtifactDescriptor",
+    "Error",
+    "FocusAttachmentRequest",
+    "FocusControl"
+  ],
+  "actual_chrome": "NOT_RUN",
+  "new_product_runtime": "NOT_IMPLEMENTED",
+  "review_sources": {
+    "core": "User-forwarded official Core review, CHANGES_REQUESTED; no fabricated GitHub approval",
+    "content": {
+      "review_id": 5694156354,
+      "url": "https://github.com/kdu-sw-capstone/capstone-project/pull/24#pullrequestreview-5694156354",
+      "state": "CHANGES_REQUESTED",
+      "reviewed_sha": "bf62f1520ac06e5d507c54b8f06d93fdd4553ef3"
+    }
+  },
+  "before_core_details": {
+    "run": 4,
+    "failures": 3,
+    "errors": 1,
+    "cases": [
+      {
+        "id": "CR-01",
+        "result": "FAIL",
+        "counterexample": "CLEANUP_ONLY null seq rejected by RC1 Control schema at normal max sequence"
+      },
+      {
+        "id": "CR-02",
+        "result": "ERROR",
+        "counterexample": "Receiver.receive raises OVERLAPPING_USAGE for distinct monotonic intervals with overlapping UTC"
+      },
+      {
+        "id": "CR-03",
+        "result": "FAIL",
+        "counterexample": "Literal RC1 uniform sender prose rejects valid Worker-to-Content evidence without sender.tab; document-model reproduction, not product execution"
+      },
+      {
+        "id": "CR-04",
+        "result": "FAIL",
+        "counterexample": "RC1 dynamic-only compiler description reproduced against two fake stores removes runtime instead of legacy focus; document-model reproduction, not product execution"
+      }
+    ]
+  },
+  "before": {
+    "run": 11,
+    "failures": 10,
+    "errors": 1,
+    "unexpected_success": false,
+    "cases": [
+      {
+        "id": "test_core_review.CoreCounterexamples.test_cleanup_after_max_safe_sequence",
+        "result": "FAIL"
+      },
+      {
+        "id": "test_core_review.CoreCounterexamples.test_focus_session_end_preserves_same_id_dynamic_runtime",
+        "result": "FAIL"
+      },
+      {
+        "id": "test_core_review.CoreCounterexamples.test_worker_to_content_does_not_require_nonexistent_sender_tab",
+        "result": "FAIL"
+      },
+      {
+        "id": "test_content_review.ContentCounterexamples.test_blur_only_has_distinct_result_schema",
+        "result": "FAIL"
+      },
+      {
+        "id": "test_content_review.ContentCounterexamples.test_duplicate_feature_result_is_rejected",
+        "result": "FAIL"
+      },
+      {
+        "id": "test_content_review.ContentCounterexamples.test_keyword_only_has_distinct_result_schema",
+        "result": "FAIL"
+      },
+      {
+        "id": "test_content_review.ContentCounterexamples.test_media_stop_false_is_not_applied",
+        "result": "FAIL"
+      },
+      {
+        "id": "test_content_review.ContentCounterexamples.test_required_option_missing_is_rejected",
+        "result": "FAIL"
+      },
+      {
+        "id": "test_content_review.ContentCounterexamples.test_unrequested_feature_result_is_rejected",
+        "result": "FAIL"
+      },
+      {
+        "id": "test_content_review.ContentCounterexamples.test_zero_viewer_media_is_not_applied",
+        "result": "FAIL"
+      },
+      {
+        "id": "test_core_review.CoreCounterexamples.test_clock_rollback_does_not_drop_distinct_real_interval",
+        "result": "ERROR"
+      }
+    ]
+  },
+  "original_regression": {
+    "tests": 135,
+    "id_list_sha256": "75cacfa003a1c581d138e15f1a79f3202dfa136e6e6b16e9d235e45dd41142eb",
+    "expectations_weakened": false
+  },
+  "unique_issues": [
+    "C-01=T-04 Cleanup",
+    "C-02 Clock ledger",
+    "C-03 Directional sender",
+    "C-04 Dual DNR",
+    "T-01 Media proof",
+    "T-02 Exact effect set",
+    "T-03 Independent policy effects"
+  ],
+  "after_review_tests": {
+    "run": 58,
+    "core": 37,
+    "content": 21,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "result": "PASS"
+  },
+  "before_model_limit": "C-03/C-04 reproduce literal RC1 prose with fake sender/store, not product execution",
+  "human_reapproval": "REVIEW_PENDING"
+}

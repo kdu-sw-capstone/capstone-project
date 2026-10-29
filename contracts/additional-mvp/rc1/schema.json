@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "urn:focurve:additional:rc1:schema",
-  "title": "AMVP-CONTRACT-20261029-RC1",
+  "$id": "urn:focurve:additional:rc2:schema",
+  "title": "AMVP-CONTRACT-20261029-RC2",
   "$defs": {
     "Empty": {
       "type": "object",
@@ -829,7 +829,7 @@
       "additionalProperties": false,
       "properties": {
         "contract_revision": {
-          "const": "AMVP-CONTRACT-20261029-RC1"
+          "const": "AMVP-CONTRACT-20261029-RC2"
         },
         "format_version": {
           "const": "AMVP_RUNTIME_PACKAGE_1"
@@ -1075,7 +1075,7 @@
           "pattern": "^[a-f0-9]{64}$"
         },
         "contract_revision": {
-          "const": "AMVP-CONTRACT-20261029-RC1"
+          "const": "AMVP-CONTRACT-20261029-RC2"
         },
         "supported": {
           "$ref": "#/$defs/Streams"
@@ -1159,13 +1159,13 @@
               "const": "AMVP_RUNTIME_PACKAGE_1"
             },
             "RUNTIME_USAGE": {
-              "const": "AMVP_BROWSER_USAGE_1"
+              "const": "AMVP_BROWSER_USAGE_2"
             },
             "RUNTIME_REPORT": {
               "const": "AMVP_RUNTIME_REPORT_1"
             },
             "ADDITIONAL_CONTENT": {
-              "const": "AMVP_CONTENT_1"
+              "const": "AMVP_CONTENT_2"
             },
             "ADDITIONAL_EVENT": {
               "const": "AMVP_ACCESS_EVENT_1"
@@ -1400,6 +1400,9 @@
           "minItems": 0,
           "maxItems": 10,
           "uniqueItems": true
+        },
+        "document_context": {
+          "$ref": "#/$defs/DocumentContext"
         }
       },
       "required": [
@@ -1408,7 +1411,8 @@
         "access_block_reasons",
         "host",
         "matched_policy_host",
-        "artifact_ids"
+        "artifact_ids",
+        "document_context"
       ]
     },
     "Control": {
@@ -1419,7 +1423,7 @@
           "const": "D06_ADDITIONAL_CONTROL"
         },
         "schema_version": {
-          "const": "AMVP_CONTENT_1"
+          "const": "AMVP_CONTENT_2"
         },
         "request_id": {
           "type": "string",
@@ -1520,11 +1524,7 @@
                   "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
                 },
                 "release_mode": {
-                  "type": "string",
-                  "enum": [
-                    "NORMAL",
-                    "CLEANUP_ONLY"
-                  ]
+                  "const": "NORMAL"
                 },
                 "expected_footprint_sha256": {
                   "type": "string",
@@ -1580,6 +1580,57 @@
                 "control_seq",
                 "operation"
               ]
+            },
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "operation_id": {
+                  "type": "string",
+                  "format": "uuid",
+                  "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+                },
+                "semantic_sha256": {
+                  "type": "string",
+                  "pattern": "^[a-f0-9]{64}$"
+                },
+                "scope": {
+                  "$ref": "#/$defs/BindingScope"
+                },
+                "channel_credential": {
+                  "type": "string",
+                  "pattern": "^[a-f0-9]{64}$"
+                },
+                "control_seq": {
+                  "const": null
+                },
+                "operation": {
+                  "const": "RELEASE"
+                },
+                "cleanup_grant_id": {
+                  "type": "string",
+                  "format": "uuid",
+                  "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+                },
+                "release_mode": {
+                  "const": "CLEANUP_ONLY"
+                },
+                "expected_footprint_sha256": {
+                  "type": "string",
+                  "pattern": "^[a-f0-9]{64}$"
+                }
+              },
+              "required": [
+                "operation_id",
+                "semantic_sha256",
+                "scope",
+                "channel_credential",
+                "control_seq",
+                "operation",
+                "cleanup_grant_id",
+                "release_mode",
+                "expected_footprint_sha256"
+              ]
             }
           ]
         },
@@ -1599,6 +1650,68 @@
       "type": "object",
       "additionalProperties": false,
       "properties": {
+        "kind": {
+          "const": "FEATURE"
+        },
+        "owner_binding_id": {
+          "type": "string",
+          "format": "uuid",
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+        },
+        "evidence_scope_sha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "action": {
+          "type": "string",
+          "enum": [
+            "APPLY",
+            "RELEASE"
+          ]
+        },
+        "result": {
+          "type": "string",
+          "enum": [
+            "APPLIED",
+            "NOT_APPLICABLE",
+            "OBSERVING",
+            "FAILED",
+            "UNCONFIRMED",
+            "RELEASED",
+            "RELEASE_FAILED",
+            "UNSUPPORTED"
+          ]
+        },
+        "observer_ready": {
+          "type": "boolean"
+        },
+        "scan_complete": {
+          "type": "boolean"
+        },
+        "remaining_claim_count": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 10000
+        },
+        "error_count": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 10000
+        },
+        "ledger_sha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "restore": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/RestoreEvidence"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
         "feature_id": {
           "type": "string",
           "enum": [
@@ -1620,19 +1733,6 @@
             "IG-06"
           ]
         },
-        "result": {
-          "type": "string",
-          "enum": [
-            "APPLIED",
-            "NOT_APPLICABLE",
-            "FAILED",
-            "UNCONFIRMED",
-            "UNSUPPORTED"
-          ]
-        },
-        "observer_ready": {
-          "type": "boolean"
-        },
         "eligible_target_count": {
           "type": "integer",
           "minimum": 0,
@@ -1643,10 +1743,32 @@
           "minimum": 0,
           "maximum": 10000
         },
-        "error_count": {
-          "type": "integer",
-          "minimum": 0,
-          "maximum": 10000
+        "presentation": {
+          "type": "string",
+          "enum": [
+            "DIRECT_VIEWER",
+            "ENTRY_SURFACE",
+            "DOM_REGION"
+          ]
+        },
+        "route_profile_sha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "scan_id": {
+          "type": "string",
+          "format": "uuid",
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+        },
+        "media": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/MediaObservation"
+            },
+            {
+              "type": "null"
+            }
+          ]
         },
         "media_stopped": {
           "anyOf": [
@@ -1657,21 +1779,106 @@
               "type": "null"
             }
           ]
-        },
-        "ledger_sha256": {
-          "type": "string",
-          "pattern": "^[a-f0-9]{64}$"
         }
       },
       "required": [
-        "feature_id",
+        "kind",
+        "owner_binding_id",
+        "evidence_scope_sha256",
+        "action",
         "result",
         "observer_ready",
+        "scan_complete",
+        "remaining_claim_count",
+        "error_count",
+        "ledger_sha256",
+        "restore",
+        "feature_id",
         "eligible_target_count",
         "restricted_target_count",
-        "error_count",
-        "media_stopped",
-        "ledger_sha256"
+        "presentation",
+        "route_profile_sha256",
+        "scan_id",
+        "media",
+        "media_stopped"
+      ],
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "action": {
+                "const": "RELEASE"
+              }
+            },
+            "required": [
+              "action"
+            ]
+          },
+          "then": {
+            "properties": {
+              "restore": {
+                "$ref": "#/$defs/RestoreEvidence"
+              }
+            }
+          },
+          "else": {
+            "properties": {
+              "restore": {
+                "type": "null"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "presentation": {
+                "const": "DIRECT_VIEWER"
+              },
+              "action": {
+                "const": "APPLY"
+              },
+              "result": {
+                "const": "APPLIED"
+              }
+            },
+            "required": [
+              "presentation",
+              "action",
+              "result"
+            ]
+          },
+          "then": {
+            "properties": {
+              "media_stopped": {
+                "const": true
+              },
+              "media": {
+                "allOf": [
+                  {
+                    "$ref": "#/$defs/MediaObservation"
+                  },
+                  {
+                    "properties": {
+                      "viewer_count": {
+                        "minimum": 1
+                      },
+                      "target_count": {
+                        "minimum": 1
+                      },
+                      "playing_count": {
+                        "const": 0
+                      },
+                      "stop_error_count": {
+                        "const": 0
+                      }
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        }
       ]
     },
     "ContentResult": {
@@ -1682,7 +1889,7 @@
           "const": "D06_ADDITIONAL_RESULT"
         },
         "schema_version": {
-          "const": "AMVP_CONTENT_1"
+          "const": "AMVP_CONTENT_2"
         },
         "request_id": {
           "type": "string",
@@ -1702,9 +1909,16 @@
           "$ref": "#/$defs/BindingScope"
         },
         "control_seq": {
-          "type": "integer",
-          "minimum": 1,
-          "maximum": 9007199254740991
+          "anyOf": [
+            {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 9007199254740991
+            },
+            {
+              "type": "null"
+            }
+          ]
         },
         "status": {
           "type": "string",
@@ -1724,16 +1938,25 @@
             "FAILED",
             "UNCONFIRMED",
             "RELEASE_FAILED",
-            "UNSUPPORTED"
+            "UNSUPPORTED",
+            "OBSERVING",
+            "PARTIAL"
           ]
         },
         "effects": {
           "type": "array",
           "items": {
-            "$ref": "#/$defs/EffectEvidence"
+            "oneOf": [
+              {
+                "$ref": "#/$defs/EffectEvidence"
+              },
+              {
+                "$ref": "#/$defs/ContentPolicyEvidence"
+              }
+            ]
           },
           "minItems": 0,
-          "maxItems": 16
+          "maxItems": 20
         },
         "remaining_claim_count": {
           "type": "integer",
@@ -1781,6 +2004,84 @@
         "observed_at",
         "error_code",
         "stream"
+      ],
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "control_seq": {
+                "type": "null"
+              }
+            },
+            "required": [
+              "control_seq"
+            ]
+          },
+          "then": {
+            "properties": {
+              "result_state": {
+                "type": "string",
+                "enum": [
+                  "RECEIVED",
+                  "APPLYING",
+                  "RELEASED",
+                  "FAILED",
+                  "UNCONFIRMED",
+                  "RELEASE_FAILED",
+                  "UNSUPPORTED"
+                ]
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "status": {
+                "const": "NACK"
+              }
+            },
+            "required": [
+              "status"
+            ]
+          },
+          "then": {
+            "properties": {
+              "error_code": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 80
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "status": {
+                "const": "ACK"
+              },
+              "result_state": {
+                "enum": [
+                  "APPLIED",
+                  "NOT_APPLICABLE",
+                  "RELEASED"
+                ]
+              }
+            },
+            "required": [
+              "status",
+              "result_state"
+            ]
+          },
+          "then": {
+            "properties": {
+              "error_code": {
+                "type": "null"
+              }
+            }
+          }
+        }
       ]
     },
     "PolicyAttribution": {
@@ -1972,7 +2273,7 @@
           "const": "RUNTIME_USAGE"
         },
         "schema_version": {
-          "const": "AMVP_BROWSER_USAGE_1"
+          "const": "AMVP_BROWSER_USAGE_2"
         },
         "batch_id": {
           "type": "string",
@@ -1987,7 +2288,7 @@
         "segments": {
           "type": "array",
           "items": {
-            "$ref": "#/$defs/UsageSegment"
+            "$ref": "#/$defs/ClockedUsageSegment"
           },
           "minItems": 1,
           "maxItems": 100
@@ -3328,7 +3629,32 @@
                 "TEMPORARILY_UNAVAILABLE",
                 "RESOURCE_NOT_FOUND",
                 "PRECONDITION_REQUIRED",
-                "TOO_LARGE"
+                "TOO_LARGE",
+                "CONTROL_SEQUENCE_LIMIT",
+                "CLEANUP_RESERVATION_EXHAUSTED",
+                "INVALID_CLEANUP_GRANT",
+                "RESERVATION_MISMATCH",
+                "CLOCK_EVIDENCE_UNVERIFIED",
+                "MONOTONIC_OVERLAP",
+                "ANCHOR_PROJECTION_MISMATCH",
+                "STALE_DNR_WRITER",
+                "LEGACY_WRITER_NOT_FENCED",
+                "RULE_ID_COLLISION",
+                "DNR_QUOTA_EXCEEDED",
+                "TARGET_EFFECT_UNCONFIRMED",
+                "MISSING_ISSUED_OPERATION",
+                "DUPLICATE_EFFECT_RESULT",
+                "MISSING_OR_UNREQUESTED_EFFECT_RESULT",
+                "FEATURE_MIRROR_CONFLICT",
+                "MEDIA_STOP_FAILED",
+                "MEDIA_TARGET_UNCONFIRMED",
+                "CONTENT_RESULT_BINDING_MISMATCH",
+                "EFFECT_OWNER_SCOPE_ACTION_MISMATCH",
+                "POLICY_HASH_MISMATCH",
+                "RESTORE_UNCONFIRMED",
+                "DNR_ID_RESERVATION_EXHAUSTED",
+                "DNR_REGEX_QUOTA_EXCEEDED",
+                "DNR_UNSAFE_QUOTA_EXCEEDED"
               ]
             },
             "retryable": {
@@ -3430,6 +3756,1525 @@
           "pattern": "^\\d{4}-\\d\\d-\\d\\dT\\d\\d:\\d\\d:\\d\\d\\.\\d{3}Z$"
         }
       }
+    },
+    "CleanupGrant": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "grant_id": {
+          "type": "string",
+          "format": "uuid",
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+        },
+        "owner_binding_id": {
+          "type": "string",
+          "format": "uuid",
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+        },
+        "binding_id": {
+          "type": "string",
+          "format": "uuid",
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+        },
+        "generation": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 9007199254740991
+        },
+        "footprint_sha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "reserved_operation_id": {
+          "type": "string",
+          "format": "uuid",
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+        },
+        "reserved_receipt_id": {
+          "type": "string",
+          "format": "uuid",
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+        },
+        "operation_slots": {
+          "const": 1
+        },
+        "receipt_slots": {
+          "const": 1
+        },
+        "expires_at": {
+          "type": "string",
+          "format": "date-time",
+          "pattern": "^\\d{4}-\\d\\d-\\d\\dT\\d\\d:\\d\\d:\\d\\d\\.\\d{3}Z$"
+        },
+        "scope": {
+          "$ref": "#/$defs/BindingScope"
+        }
+      },
+      "required": [
+        "grant_id",
+        "owner_binding_id",
+        "binding_id",
+        "generation",
+        "footprint_sha256",
+        "reserved_operation_id",
+        "reserved_receipt_id",
+        "operation_slots",
+        "receipt_slots",
+        "expires_at",
+        "scope"
+      ]
+    },
+    "ClockMetadata": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "clock_epoch": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 100
+        },
+        "boot_id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 100
+        },
+        "anchor_id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 100
+        },
+        "anchor_utc": {
+          "type": "string",
+          "format": "date-time",
+          "pattern": "^\\d{4}-\\d\\d-\\d\\dT\\d\\d:\\d\\d:\\d\\d\\.\\d{3}Z$"
+        },
+        "anchor_mono_ms": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "mono_start_ms": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "mono_end_ms": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "quality": {
+          "type": "string",
+          "enum": [
+            "TRUSTED",
+            "ROLLBACK",
+            "FORWARD_JUMP",
+            "RESTART_UNCONFIRMED"
+          ]
+        },
+        "observed_wall_start_at": {
+          "type": "string",
+          "format": "date-time",
+          "pattern": "^\\d{4}-\\d\\d-\\d\\dT\\d\\d:\\d\\d:\\d\\d\\.\\d{3}Z$"
+        },
+        "observed_wall_end_at": {
+          "type": "string",
+          "format": "date-time",
+          "pattern": "^\\d{4}-\\d\\d-\\d\\dT\\d\\d:\\d\\d:\\d\\d\\.\\d{3}Z$"
+        }
+      },
+      "required": [
+        "clock_epoch",
+        "boot_id",
+        "anchor_id",
+        "anchor_utc",
+        "anchor_mono_ms",
+        "mono_start_ms",
+        "mono_end_ms",
+        "quality",
+        "observed_wall_start_at",
+        "observed_wall_end_at"
+      ]
+    },
+    "ClockedUsageSegment": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "segment_id": {
+          "type": "string",
+          "format": "uuid",
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+        },
+        "owner_binding_id": {
+          "type": "string",
+          "format": "uuid",
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+        },
+        "executor_id": {
+          "type": "string",
+          "format": "uuid",
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+        },
+        "collector_epoch": {
+          "type": "string",
+          "format": "uuid",
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+        },
+        "local_usage_seq": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 9007199254740991
+        },
+        "previous_segment_sha256": {
+          "anyOf": [
+            {
+              "type": "string",
+              "pattern": "^[a-f0-9]{64}$"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "package_id": {
+          "type": "string",
+          "format": "uuid",
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+        },
+        "runtime_revision": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 9007199254740991
+        },
+        "actual_host": {
+          "type": "string",
+          "maxLength": 253,
+          "pattern": "^(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\\.)+[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$"
+        },
+        "start_at": {
+          "type": "string",
+          "format": "date-time",
+          "pattern": "^\\d{4}-\\d\\d-\\d\\dT\\d\\d:\\d\\d:\\d\\d\\.\\d{3}Z$"
+        },
+        "end_at": {
+          "type": "string",
+          "format": "date-time",
+          "pattern": "^\\d{4}-\\d\\d-\\d\\dT\\d\\d:\\d\\d:\\d\\d\\.\\d{3}Z$"
+        },
+        "confirmed_ms": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "uncertain_ms": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "day_start_at": {
+          "type": "string",
+          "format": "date-time",
+          "pattern": "^\\d{4}-\\d\\d-\\d\\dT\\d\\d:\\d\\d:\\d\\d\\.\\d{3}Z$"
+        },
+        "day_end_at": {
+          "type": "string",
+          "format": "date-time",
+          "pattern": "^\\d{4}-\\d\\d-\\d\\dT\\d\\d:\\d\\d:\\d\\d\\.\\d{3}Z$"
+        },
+        "timezone": {
+          "type": "string",
+          "format": "iana-zone",
+          "maxLength": 80
+        },
+        "timezone_version": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 9007199254740991
+        },
+        "enforcement_day_chain_id": {
+          "type": "string",
+          "format": "uuid",
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+        },
+        "policy_attributions": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/PolicyAttribution"
+          },
+          "minItems": 0,
+          "maxItems": 200
+        },
+        "focus_ref": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/FocusRef"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "quality": {
+          "type": "string",
+          "enum": [
+            "COMPLETE",
+            "PARTIAL"
+          ]
+        },
+        "payload_sha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "clock": {
+          "$ref": "#/$defs/ClockMetadata"
+        }
+      },
+      "required": [
+        "segment_id",
+        "owner_binding_id",
+        "executor_id",
+        "collector_epoch",
+        "local_usage_seq",
+        "previous_segment_sha256",
+        "package_id",
+        "runtime_revision",
+        "actual_host",
+        "start_at",
+        "end_at",
+        "confirmed_ms",
+        "uncertain_ms",
+        "day_start_at",
+        "day_end_at",
+        "timezone",
+        "timezone_version",
+        "enforcement_day_chain_id",
+        "policy_attributions",
+        "focus_ref",
+        "quality",
+        "payload_sha256",
+        "clock"
+      ],
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "clock": {
+                "properties": {
+                  "quality": {
+                    "const": "TRUSTED"
+                  }
+                },
+                "required": [
+                  "quality"
+                ]
+              }
+            },
+            "required": [
+              "clock"
+            ]
+          },
+          "then": {
+            "properties": {
+              "uncertain_ms": {
+                "const": 0
+              }
+            }
+          },
+          "else": {
+            "properties": {
+              "confirmed_ms": {
+                "const": 0
+              }
+            }
+          }
+        }
+      ]
+    },
+    "UsageItemAck": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "item_id": {
+          "type": "string",
+          "format": "uuid",
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+        },
+        "payload_sha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "ACCEPTED",
+            "DUPLICATE",
+            "PENDING_DEPENDENCY",
+            "REJECTED",
+            "NOT_RECEIVED"
+          ]
+        },
+        "error_code": {
+          "anyOf": [
+            {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 80
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "measurement_state": {
+          "type": "string",
+          "enum": [
+            "COUNTED",
+            "QUARANTINED",
+            "UNCONFIRMED",
+            "NOT_RECEIVED"
+          ]
+        }
+      },
+      "required": [
+        "item_id",
+        "payload_sha256",
+        "status",
+        "error_code",
+        "measurement_state"
+      ]
+    },
+    "UsageBatchAck": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "batch_id": {
+          "type": "string",
+          "format": "uuid",
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+        },
+        "items": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/UsageItemAck"
+          },
+          "minItems": 0,
+          "maxItems": 100
+        }
+      },
+      "required": [
+        "batch_id",
+        "items"
+      ]
+    },
+    "UsageStatusResponse": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "items": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/UsageItemAck"
+          },
+          "minItems": 0,
+          "maxItems": 100
+        }
+      },
+      "required": [
+        "items"
+      ]
+    },
+    "ClockResolution": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "resolution_id": {
+          "type": "string",
+          "format": "uuid",
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+        },
+        "segment_id": {
+          "type": "string",
+          "format": "uuid",
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+        },
+        "source_hash": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "anchor_id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 100
+        },
+        "evidence_sha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "confirmed_ms": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "day_start_at": {
+          "type": "string",
+          "format": "date-time",
+          "pattern": "^\\d{4}-\\d\\d-\\d\\dT\\d\\d:\\d\\d:\\d\\d\\.\\d{3}Z$"
+        },
+        "day_end_at": {
+          "type": "string",
+          "format": "date-time",
+          "pattern": "^\\d{4}-\\d\\d-\\d\\dT\\d\\d:\\d\\d:\\d\\d\\.\\d{3}Z$"
+        },
+        "state": {
+          "const": "VERIFIED"
+        },
+        "resolved_start_at": {
+          "type": "string",
+          "format": "date-time",
+          "pattern": "^\\d{4}-\\d\\d-\\d\\dT\\d\\d:\\d\\d:\\d\\d\\.\\d{3}Z$"
+        },
+        "resolved_end_at": {
+          "type": "string",
+          "format": "date-time",
+          "pattern": "^\\d{4}-\\d\\d-\\d\\dT\\d\\d:\\d\\d:\\d\\d\\.\\d{3}Z$"
+        },
+        "timezone": {
+          "type": "string",
+          "format": "iana-zone",
+          "maxLength": 80
+        },
+        "timezone_version": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 9007199254740991
+        },
+        "enforcement_day_chain_id": {
+          "type": "string",
+          "format": "uuid",
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+        }
+      },
+      "required": [
+        "resolution_id",
+        "segment_id",
+        "source_hash",
+        "anchor_id",
+        "evidence_sha256",
+        "confirmed_ms",
+        "day_start_at",
+        "day_end_at",
+        "state",
+        "resolved_start_at",
+        "resolved_end_at",
+        "timezone",
+        "timezone_version",
+        "enforcement_day_chain_id"
+      ]
+    },
+    "DnrRuleKey": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "rule_store": {
+          "type": "string",
+          "enum": [
+            "SESSION",
+            "DYNAMIC"
+          ]
+        },
+        "rule_id": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 2147483647
+        }
+      },
+      "required": [
+        "rule_store",
+        "rule_id"
+      ]
+    },
+    "DnrClaim": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "claim_id": {
+          "type": "string",
+          "format": "uuid",
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+        },
+        "owner_binding_id": {
+          "type": "string",
+          "format": "uuid",
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+        },
+        "generation": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 9007199254740991
+        },
+        "rule_key": {
+          "$ref": "#/$defs/DnrRuleKey"
+        },
+        "rule_sha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "writer_epoch": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 9007199254740991
+        },
+        "restore_state": {
+          "type": "string",
+          "enum": [
+            "RESERVED",
+            "APPLIED",
+            "RELEASE_PENDING",
+            "RELEASED",
+            "UNCONFIRMED"
+          ]
+        }
+      },
+      "required": [
+        "claim_id",
+        "owner_binding_id",
+        "generation",
+        "rule_key",
+        "rule_sha256",
+        "writer_epoch",
+        "restore_state"
+      ]
+    },
+    "DocumentContext": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "route_kind": {
+          "type": "string",
+          "enum": [
+            "DIRECT_VIEWER",
+            "ENTRY_SURFACE",
+            "NON_TARGET"
+          ]
+        },
+        "viewer_feature_id": {
+          "anyOf": [
+            {
+              "type": "string",
+              "enum": [
+                "YT-02",
+                "IG-02"
+              ]
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "route_profile_sha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "scan_id": {
+          "type": "string",
+          "format": "uuid",
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+        }
+      },
+      "required": [
+        "route_kind",
+        "viewer_feature_id",
+        "route_profile_sha256",
+        "scan_id"
+      ]
+    },
+    "MediaObservation": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "viewer_count": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 10000
+        },
+        "target_count": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 10000
+        },
+        "stopped_count": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 10000
+        },
+        "hidden_count": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 10000
+        },
+        "inert_count": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 10000
+        },
+        "playing_count": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 10000
+        },
+        "stop_error_count": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 10000
+        },
+        "media_generation_sha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "observation_sha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "audio_verification": {
+          "const": "NOT_VERIFIED"
+        }
+      },
+      "required": [
+        "viewer_count",
+        "target_count",
+        "stopped_count",
+        "hidden_count",
+        "inert_count",
+        "playing_count",
+        "stop_error_count",
+        "media_generation_sha256",
+        "observation_sha256",
+        "audio_verification"
+      ]
+    },
+    "RestoreEvidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "dom_restored": {
+          "type": "boolean"
+        },
+        "own_observer_claim_removed": {
+          "type": "boolean"
+        },
+        "policy_resources_released": {
+          "type": "boolean"
+        },
+        "other_owner_claims_preserved": {
+          "type": "boolean"
+        },
+        "restored_properties_sha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "media_restore_state": {
+          "type": "string",
+          "enum": [
+            "NOT_OWNED",
+            "USER_CONTROL_RESTORED",
+            "STILL_BLOCKED_OTHER_OWNER",
+            "UNCONFIRMED"
+          ]
+        },
+        "playback_restart": {
+          "const": "NOT_FORCED"
+        },
+        "audio_verification": {
+          "const": "NOT_VERIFIED"
+        }
+      },
+      "required": [
+        "dom_restored",
+        "own_observer_claim_removed",
+        "policy_resources_released",
+        "other_owner_claims_preserved",
+        "restored_properties_sha256",
+        "media_restore_state",
+        "playback_restart",
+        "audio_verification"
+      ]
+    },
+    "KeywordEvidenceDetails": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "match_profile": {
+          "const": "URL_BOUNDARY_1"
+        },
+        "checked_url_sha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "url_check_result": {
+          "type": "string",
+          "enum": [
+            "MATCH",
+            "NO_MATCH",
+            "UNVERIFIABLE",
+            "EXEMPT"
+          ]
+        },
+        "exception_scope_applied": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "match_profile",
+        "checked_url_sha256",
+        "url_check_result",
+        "exception_scope_applied"
+      ]
+    },
+    "BlurEvidenceDetails": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "profile_id": {
+          "type": "string",
+          "format": "uuid",
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+        },
+        "profile_sha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "image_generation_sha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "eligible_image_count": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 10000
+        },
+        "classified_image_count": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 10000
+        },
+        "masked_image_count": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 10000
+        },
+        "failed_image_count": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 10000
+        },
+        "fail_safe_masked_count": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 10000
+        },
+        "stale_results_applied_count": {
+          "const": 0
+        },
+        "click_toggle_ready": {
+          "type": "boolean"
+        },
+        "sensitive_image_count": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 10000
+        },
+        "revealed_image_count": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 10000
+        },
+        "reveal_intent_sha256": {
+          "anyOf": [
+            {
+              "type": "string",
+              "pattern": "^[a-f0-9]{64}$"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "profile_id",
+        "profile_sha256",
+        "image_generation_sha256",
+        "eligible_image_count",
+        "classified_image_count",
+        "masked_image_count",
+        "failed_image_count",
+        "fail_safe_masked_count",
+        "stale_results_applied_count",
+        "click_toggle_ready",
+        "sensitive_image_count",
+        "revealed_image_count",
+        "reveal_intent_sha256"
+      ]
+    },
+    "AdultEvidenceDetails": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "artifact_id": {
+          "type": "string",
+          "format": "uuid",
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+        },
+        "artifact_sha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "domain_check_result": {
+          "type": "string",
+          "enum": [
+            "MATCH",
+            "NO_MATCH",
+            "UNVERIFIABLE"
+          ]
+        },
+        "dnr_effect_claimed": {
+          "const": false
+        }
+      },
+      "required": [
+        "artifact_id",
+        "artifact_sha256",
+        "domain_check_result",
+        "dnr_effect_claimed"
+      ]
+    },
+    "PageGateEvidenceDetails": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "blocked_reasons": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "USER_SITE",
+              "ADULT_DOMAIN",
+              "KEYWORD",
+              "BLOCK_WINDOW",
+              "OUTSIDE_ALLOW_WINDOW",
+              "DAILY_LIMIT"
+            ]
+          },
+          "minItems": 0,
+          "maxItems": 6,
+          "uniqueItems": true
+        },
+        "gate_visible": {
+          "type": "boolean"
+        },
+        "body_hidden": {
+          "type": "boolean"
+        },
+        "body_inert": {
+          "type": "boolean"
+        },
+        "media_target_count": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 10000
+        },
+        "media_stopped_count": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 10000
+        },
+        "stop_error_count": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 10000
+        },
+        "audio_verification": {
+          "const": "NOT_VERIFIED"
+        }
+      },
+      "required": [
+        "blocked_reasons",
+        "gate_visible",
+        "body_hidden",
+        "body_inert",
+        "media_target_count",
+        "media_stopped_count",
+        "stop_error_count",
+        "audio_verification"
+      ]
+    },
+    "ContentPolicyEvidence": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "kind": {
+              "const": "CONTENT_POLICY"
+            },
+            "owner_binding_id": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+            },
+            "evidence_scope_sha256": {
+              "type": "string",
+              "pattern": "^[a-f0-9]{64}$"
+            },
+            "action": {
+              "type": "string",
+              "enum": [
+                "APPLY",
+                "RELEASE"
+              ]
+            },
+            "result": {
+              "type": "string",
+              "enum": [
+                "APPLIED",
+                "NOT_APPLICABLE",
+                "OBSERVING",
+                "FAILED",
+                "UNCONFIRMED",
+                "RELEASED",
+                "RELEASE_FAILED",
+                "UNSUPPORTED"
+              ]
+            },
+            "observer_ready": {
+              "type": "boolean"
+            },
+            "scan_complete": {
+              "type": "boolean"
+            },
+            "remaining_claim_count": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 10000
+            },
+            "error_count": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 10000
+            },
+            "ledger_sha256": {
+              "type": "string",
+              "pattern": "^[a-f0-9]{64}$"
+            },
+            "restore": {
+              "anyOf": [
+                {
+                  "$ref": "#/$defs/RestoreEvidence"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "policy_type": {
+              "const": "KEYWORD"
+            },
+            "policy_sha256": {
+              "type": "string",
+              "pattern": "^[a-f0-9]{64}$"
+            },
+            "details": {
+              "anyOf": [
+                {
+                  "$ref": "#/$defs/KeywordEvidenceDetails"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "scan_id": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+            }
+          },
+          "required": [
+            "kind",
+            "owner_binding_id",
+            "evidence_scope_sha256",
+            "action",
+            "result",
+            "observer_ready",
+            "scan_complete",
+            "remaining_claim_count",
+            "error_count",
+            "ledger_sha256",
+            "restore",
+            "policy_type",
+            "policy_sha256",
+            "details",
+            "scan_id"
+          ],
+          "allOf": [
+            {
+              "if": {
+                "properties": {
+                  "action": {
+                    "const": "RELEASE"
+                  }
+                },
+                "required": [
+                  "action"
+                ]
+              },
+              "then": {
+                "properties": {
+                  "details": {
+                    "type": "null"
+                  },
+                  "restore": {
+                    "$ref": "#/$defs/RestoreEvidence"
+                  }
+                }
+              },
+              "else": {
+                "properties": {
+                  "details": {
+                    "$ref": "#/$defs/KeywordEvidenceDetails"
+                  },
+                  "restore": {
+                    "type": "null"
+                  }
+                }
+              }
+            }
+          ]
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "kind": {
+              "const": "CONTENT_POLICY"
+            },
+            "owner_binding_id": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+            },
+            "evidence_scope_sha256": {
+              "type": "string",
+              "pattern": "^[a-f0-9]{64}$"
+            },
+            "action": {
+              "type": "string",
+              "enum": [
+                "APPLY",
+                "RELEASE"
+              ]
+            },
+            "result": {
+              "type": "string",
+              "enum": [
+                "APPLIED",
+                "NOT_APPLICABLE",
+                "OBSERVING",
+                "FAILED",
+                "UNCONFIRMED",
+                "RELEASED",
+                "RELEASE_FAILED",
+                "UNSUPPORTED"
+              ]
+            },
+            "observer_ready": {
+              "type": "boolean"
+            },
+            "scan_complete": {
+              "type": "boolean"
+            },
+            "remaining_claim_count": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 10000
+            },
+            "error_count": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 10000
+            },
+            "ledger_sha256": {
+              "type": "string",
+              "pattern": "^[a-f0-9]{64}$"
+            },
+            "restore": {
+              "anyOf": [
+                {
+                  "$ref": "#/$defs/RestoreEvidence"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "policy_type": {
+              "const": "BLUR"
+            },
+            "policy_sha256": {
+              "type": "string",
+              "pattern": "^[a-f0-9]{64}$"
+            },
+            "details": {
+              "anyOf": [
+                {
+                  "$ref": "#/$defs/BlurEvidenceDetails"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "scan_id": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+            }
+          },
+          "required": [
+            "kind",
+            "owner_binding_id",
+            "evidence_scope_sha256",
+            "action",
+            "result",
+            "observer_ready",
+            "scan_complete",
+            "remaining_claim_count",
+            "error_count",
+            "ledger_sha256",
+            "restore",
+            "policy_type",
+            "policy_sha256",
+            "details",
+            "scan_id"
+          ],
+          "allOf": [
+            {
+              "if": {
+                "properties": {
+                  "action": {
+                    "const": "RELEASE"
+                  }
+                },
+                "required": [
+                  "action"
+                ]
+              },
+              "then": {
+                "properties": {
+                  "details": {
+                    "type": "null"
+                  },
+                  "restore": {
+                    "$ref": "#/$defs/RestoreEvidence"
+                  }
+                }
+              },
+              "else": {
+                "properties": {
+                  "details": {
+                    "$ref": "#/$defs/BlurEvidenceDetails"
+                  },
+                  "restore": {
+                    "type": "null"
+                  }
+                }
+              }
+            }
+          ]
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "kind": {
+              "const": "CONTENT_POLICY"
+            },
+            "owner_binding_id": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+            },
+            "evidence_scope_sha256": {
+              "type": "string",
+              "pattern": "^[a-f0-9]{64}$"
+            },
+            "action": {
+              "type": "string",
+              "enum": [
+                "APPLY",
+                "RELEASE"
+              ]
+            },
+            "result": {
+              "type": "string",
+              "enum": [
+                "APPLIED",
+                "NOT_APPLICABLE",
+                "OBSERVING",
+                "FAILED",
+                "UNCONFIRMED",
+                "RELEASED",
+                "RELEASE_FAILED",
+                "UNSUPPORTED"
+              ]
+            },
+            "observer_ready": {
+              "type": "boolean"
+            },
+            "scan_complete": {
+              "type": "boolean"
+            },
+            "remaining_claim_count": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 10000
+            },
+            "error_count": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 10000
+            },
+            "ledger_sha256": {
+              "type": "string",
+              "pattern": "^[a-f0-9]{64}$"
+            },
+            "restore": {
+              "anyOf": [
+                {
+                  "$ref": "#/$defs/RestoreEvidence"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "policy_type": {
+              "const": "ADULT_DOMAIN"
+            },
+            "policy_sha256": {
+              "type": "string",
+              "pattern": "^[a-f0-9]{64}$"
+            },
+            "details": {
+              "anyOf": [
+                {
+                  "$ref": "#/$defs/AdultEvidenceDetails"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "scan_id": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+            }
+          },
+          "required": [
+            "kind",
+            "owner_binding_id",
+            "evidence_scope_sha256",
+            "action",
+            "result",
+            "observer_ready",
+            "scan_complete",
+            "remaining_claim_count",
+            "error_count",
+            "ledger_sha256",
+            "restore",
+            "policy_type",
+            "policy_sha256",
+            "details",
+            "scan_id"
+          ],
+          "allOf": [
+            {
+              "if": {
+                "properties": {
+                  "action": {
+                    "const": "RELEASE"
+                  }
+                },
+                "required": [
+                  "action"
+                ]
+              },
+              "then": {
+                "properties": {
+                  "details": {
+                    "type": "null"
+                  },
+                  "restore": {
+                    "$ref": "#/$defs/RestoreEvidence"
+                  }
+                }
+              },
+              "else": {
+                "properties": {
+                  "details": {
+                    "$ref": "#/$defs/AdultEvidenceDetails"
+                  },
+                  "restore": {
+                    "type": "null"
+                  }
+                }
+              }
+            }
+          ]
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "kind": {
+              "const": "CONTENT_POLICY"
+            },
+            "owner_binding_id": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+            },
+            "evidence_scope_sha256": {
+              "type": "string",
+              "pattern": "^[a-f0-9]{64}$"
+            },
+            "action": {
+              "type": "string",
+              "enum": [
+                "APPLY",
+                "RELEASE"
+              ]
+            },
+            "result": {
+              "type": "string",
+              "enum": [
+                "APPLIED",
+                "NOT_APPLICABLE",
+                "OBSERVING",
+                "FAILED",
+                "UNCONFIRMED",
+                "RELEASED",
+                "RELEASE_FAILED",
+                "UNSUPPORTED"
+              ]
+            },
+            "observer_ready": {
+              "type": "boolean"
+            },
+            "scan_complete": {
+              "type": "boolean"
+            },
+            "remaining_claim_count": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 10000
+            },
+            "error_count": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 10000
+            },
+            "ledger_sha256": {
+              "type": "string",
+              "pattern": "^[a-f0-9]{64}$"
+            },
+            "restore": {
+              "anyOf": [
+                {
+                  "$ref": "#/$defs/RestoreEvidence"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "policy_type": {
+              "const": "PAGE_GATE"
+            },
+            "policy_sha256": {
+              "type": "string",
+              "pattern": "^[a-f0-9]{64}$"
+            },
+            "details": {
+              "anyOf": [
+                {
+                  "$ref": "#/$defs/PageGateEvidenceDetails"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "scan_id": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+            }
+          },
+          "required": [
+            "kind",
+            "owner_binding_id",
+            "evidence_scope_sha256",
+            "action",
+            "result",
+            "observer_ready",
+            "scan_complete",
+            "remaining_claim_count",
+            "error_count",
+            "ledger_sha256",
+            "restore",
+            "policy_type",
+            "policy_sha256",
+            "details",
+            "scan_id"
+          ],
+          "allOf": [
+            {
+              "if": {
+                "properties": {
+                  "action": {
+                    "const": "RELEASE"
+                  }
+                },
+                "required": [
+                  "action"
+                ]
+              },
+              "then": {
+                "properties": {
+                  "details": {
+                    "type": "null"
+                  },
+                  "restore": {
+                    "$ref": "#/$defs/RestoreEvidence"
+                  }
+                }
+              },
+              "else": {
+                "properties": {
+                  "details": {
+                    "$ref": "#/$defs/PageGateEvidenceDetails"
+                  },
+                  "restore": {
+                    "type": "null"
+                  }
+                }
+              }
+            }
+          ]
+        }
+      ]
     }
   },
   "oneOf": [

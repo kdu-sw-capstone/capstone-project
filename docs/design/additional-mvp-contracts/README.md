@@ -1,6 +1,6 @@
-# 추가 MVP 공통 계약 RC1 — 공동 검토용
+# 추가 MVP 공통 계약 RC2 후보 — 공동 검토용
 
-Revision: `AMVP-CONTRACT-20261029-RC1`. 상태: **REVIEW_PENDING**. 기준: `9868a0f5914d7a173c102fc198a9a908b043381f`, base `integration/additional-mvp-20261029`. 필수 MVP 최종 릴리스 PASS 선언이 아니다.
+Revision: `AMVP-CONTRACT-20261029-RC2`. 상태: **REVIEW_PENDING**. 기준: `9868a0f5914d7a173c102fc198a9a908b043381f`, base `integration/additional-mvp-20261029`. 필수 MVP 최종 릴리스 PASS 선언이 아니다.
 
 사용자 확정 정책 DEC-01~07을 유지한다. 새 Schema/API/DDL/알고리즘은 **검토 가능한 제안**이며 배포·지원 완료·3인 승인으로 해석하지 않는다. 이 PR은 제품 코드를 바꾸지 않는다. 기존 PR #17·#21·#22 및 미커밋 추가 구현을 흡수하거나 승인하지 않는다.
 
@@ -13,3 +13,11 @@ Revision: `AMVP-CONTRACT-20261029-RC1`. 상태: **REVIEW_PENDING**. 기준: `986
 재현: Python 3.14 가상환경에서 `python -m pip install -r contracts/additional-mvp/rc1/requirements.lock`, `python -m unittest discover -s contracts/additional-mvp/rc1/tests -v`. 전체 제품 빌드·실제 Chrome 수용 시험을 대체하지 않는다. 오프라인 registry로 Schema를 해석하며 네트워크 참조를 허용하지 않는다.
 
 Git SHA는 자기 자신을 문서에 순환 기입하지 않는다. PR 본문 head SHA와 `revision-manifest.json`의 파일별 SHA256을 함께 검토한다. 공동 승인 후 파일 하나라도 바뀌면 승인 대상을 새 head로 갱신한다.
+
+## RC2 재검토 대상
+
+리뷰 기준 `bf62f1520ac06e5d507c54b8f06d93fdd4553ef3`에서 Core 4건 + Content 4건을 **7개 문제**로 통합했다. C-01과 T-04는 동일 Cleanup 규칙이다. 변경은 계약 패키지·검증·이 문서·기존 작업카드에 한정한다. 기존 폴더 `rc1/`은 링크 호환을 위해 유지하며 활성 Revision은 RC2 후보이다.
+
+77개 Schema, 25개 API 정의, 후보 19개 테이블. 신규 Content/usage stream은 각각 `AMVP_CONTENT_2` / `AMVP_BROWSER_USAGE_2`로 분리한다. RC1 후보 수신기에도 무조건 호환된다고 주장하지 않는다. 동일 Revision·artifact·capability를 협상하지 못하면 적용 전에 거절한다. legacy Event/D06/Journal/스냅샷 원문은 그대로다.
+
+Content 공식 리뷰는 [CHANGES_REQUESTED](https://github.com/kdu-sw-capstone/capstone-project/pull/24#pullrequestreview-5694156354), Core 4건은 사용자가 전달한 공식 검토 요청이다. 수정 시험 통과는 인간 승인과 다르다. 두 담당자 재검토와 김다훈 Web·Server·DB 검토는 **REVIEW_PENDING**이며 PR을 병합하거나 제품에 활성화하지 않는다. 재현·한계·Manifest는 [실행 결과](07_검증결과.md)를 따른다.

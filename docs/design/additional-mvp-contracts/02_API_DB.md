@@ -37,7 +37,7 @@ config/version, issued package, outbox, transfer, import identity, timezone desi
 
 ## 이중 서버 DDL 적용 조건
 
-backend 후보는 기존 executor CHAR36 ascii_bin, runtime 후보는 테스트 DB utf8mb4_0900_bin 기반 executor column에 맞춘 별도 `mysql-runtime-candidate.sql`이다. 두 후보는 신규 executor FK column의 charset/collation만 다르다. 실제 배포 DB의 information_schema.columns를 먼저 대조하고 다르면 적용을 거절한다. 기존 column ALTER로 강제 일치시키지 않는다. 이번 실제 신규 격리 DB에서 backend V1~10 + 후보17테이블, runtime V1~9 + 후보17테이블의 생성과 제약을 시험했다. application auth·동시 transaction은 이 SQL 시험의 검증 범위가 아니다.
+backend 후보는 기존 executor CHAR36 ascii_bin, runtime 후보는 테스트 DB utf8mb4_0900_bin 기반 executor column에 맞춘 별도 `mysql-runtime-candidate.sql`이다. 두 후보는 신규 executor FK column의 charset/collation만 다르다. 실제 배포 DB의 information_schema.columns를 먼저 대조하고 다르면 적용을 거절한다. 기존 column ALTER로 강제 일치시키지 않는다. 이번 실제 신규 격리 DB에서 backend V1~10 + 후보19테이블, runtime V1~9 + 후보19테이블의 생성과 제약을 시험했다. application auth·동시 transaction은 이 SQL 시험의 검증 범위가 아니다.
 
 config는 current row 외 amvp_config_versions에 immutable revision을 저장하여 frozen attachment 발급/재현을 지원한다. package current pointer와 capability receipt·focus attachment·artifact manifest도 별도 보존한다. SiteTimePolicy body.version은 create1/update If-Match와 동일 expected값만 받고 서버가 저장 version을1증가시켜 응답/runtime payload에 반영한다. body의 policy_id/schedule_id는 path config_id와 같아야 하며 kind 변경은 tombstone+새 ID로 수행한다.
 
@@ -50,3 +50,19 @@ AI feedback은 기존 async POST/GET analysis-jobs와 PUT analysis-consent를 �
 
 
 예약 adapter의 필드별 mapping/status는 api.json.legacy_adapters가 원본이다. FocusSchedule.when은 시작 trigger이며 site 시간창의 end_local/end_at을 재사용하지 않는다. occurrence fixedend는 실제 UTC 시작+duration으로 계산하여 DST때도 duration을 보존한다. 만료는 기존 status=SKIPPED/reason=EXPIRED, DST gap은SKIPPED/NONEXISTENT_TIME이며 EXPIRED를 새 status로 보내지 않는다. WEEKLY만 기존 ScheduleWrite에 매핑되고 ONCE focus는 승인 전미지원으로거절한다. 새 SiteTimePolicy의 ONCE/WEEKLY block/allow windows와 집중예약trigger는별개다.
+
+## RC2 이용시간 접수와 시간 신뢰 분리
+
+USG-01의 URL/Method·인증·설치 소유권은 그대로 두고 요청 `UsageBatch`를 version2로 협상한다. 각 segment는 `ClockedUsageSegment`의 clock metadata 필수, 응답은 `UsageBatchAck`/조회 `UsageStatusResponse`의 `UsageItemAck`를 사용한다. `status=ACCEPTED|DUPLICATE`는 불변 raw 접수이며 `measurement_state=COUNTED|QUARANTINED|UNCONFIRMED|NOT_RECEIVED`와 별개다. QUARANTINED를 정상 통계·확정 일일 사용량으로 합산하지 않는다. 로컬 보수적 집행 floor와 통계 확정량도 구분한다.
+
+| 후보 DB | RC2 변경/제약 |
+|---|---|
+| amvp_usage_segments | clock_epoch/clock_boot_id/mono_start_ms/mono_end_ms/measurement_state 추가. 같은 epoch·boot 내 물리 구간 중복은 transaction+참조 모델로 거절. UTC 겹침만으로 삭제하지 않음 |
+| amvp_clock_anchors | 인증된 설치/owner/clock·boot와 UTC/monotonic 기준·증거 hash 결속. client의 TRUSTED 문자열은 권한 증명 아님 |
+| amvp_clock_resolutions | raw segment FK+원본 hash+anchor FK+검증된 별도 투영. segment당 최종 resolution 하나, 같은 ID 다른 hash 거절 |
+
+원본 payload와 chain hash는 수정하지 않는다. measurement_state는 집계 투영 상태이며 resolution은 별도 불변 행이다. corrected UTC/day가 필요한 경우 원래 capture timezone/version/enforcement chain과 검증된 새 day allocation을 함께 보존한다. DB CHECK/FK/UNIQUE만으로 anchor의 진실성·monotonic overlap·서버 경쟁을 보장하지 않으며, 동일 collector cursor/집계 row 잠금과 멱등 transaction 구현은 김다훈 검토 대상이다. nullable clock 기존 행의 기본 `LEGACY_UNCONFIRMED`는 이전 후보 보존용이며 v2 endpoint가 clock 없는 요청을 허용한다는 뜻이 아니다.
+
+`ClockResolution`은 신뢰된 내부 검증 결과 형상이다. 미인증 클라이언트가 업로드하여 시간을 확정하는 API는 추가하지 않았다. proof 발급·재앵커링·권한 구현 전엔 격리를 유지한다. 예제 boolean/anchor registry는 합성 신뢰 입력이며 실제 Server 인증 성공이 아니다. 후보19테이블 SQL의 두 서버별 신규 격리 시험18건 PASS, 실제 HTTP·동시성·운영 migration은 NOT_RUN이다.
+
+ClockResolution.evidence_sha256는 검증된 physical capture proof의 canonical hash다. 참조 모델 resolve_wire는 Schema 검증→권한 있는 anchor 조회→proof hash/필드·duration·UTC 투영 대조→단일 raw resolution 순서로 연결한다. raw proof와 resolution envelope가 다른 날짜/길이/anchor를 주장하면 거절한다.

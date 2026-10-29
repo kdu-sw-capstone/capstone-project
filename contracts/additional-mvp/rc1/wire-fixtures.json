@@ -5,11 +5,11 @@
       "schema": "Control",
       "value": {
         "type": "D06_ADDITIONAL_CONTROL",
-        "schema_version": "AMVP_CONTENT_1",
+        "schema_version": "AMVP_CONTENT_2",
         "request_id": "00000000-0000-4000-8000-000000000001",
         "payload": {
           "operation_id": "00000000-0000-4000-8000-000000000001",
-          "semantic_sha256": "0df5d4cbc16ea3bad510829fc1c3a9436a523ca1ad6290ad791a421a0ef95e1b",
+          "semantic_sha256": "659f08e08f5446a5e7ae723e23ab589fafb6c26ec705331f2a5b80793858dac7",
           "scope": {
             "owner_binding_id": "00000000-0000-4000-8000-000000000001",
             "owner_epoch": 1,
@@ -48,7 +48,13 @@
             "access_block_reasons": [],
             "host": "video.example.test",
             "matched_policy_host": null,
-            "artifact_ids": []
+            "artifact_ids": [],
+            "document_context": {
+              "route_kind": "DIRECT_VIEWER",
+              "viewer_feature_id": "YT-02",
+              "route_profile_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+              "scan_id": "00000000-0000-4000-8000-000000000010"
+            }
           },
           "cleanup_grant_id": "00000000-0000-4000-8000-000000000001",
           "execute_before": "2026-10-29T00:00:05.000Z"
@@ -60,10 +66,10 @@
       "schema": "ContentResult",
       "value": {
         "type": "D06_ADDITIONAL_RESULT",
-        "schema_version": "AMVP_CONTENT_1",
+        "schema_version": "AMVP_CONTENT_2",
         "request_id": "00000000-0000-4000-8000-000000000001",
         "operation_id": "00000000-0000-4000-8000-000000000001",
-        "semantic_sha256": "0df5d4cbc16ea3bad510829fc1c3a9436a523ca1ad6290ad791a421a0ef95e1b",
+        "semantic_sha256": "659f08e08f5446a5e7ae723e23ab589fafb6c26ec705331f2a5b80793858dac7",
         "scope": {
           "owner_binding_id": "00000000-0000-4000-8000-000000000001",
           "owner_epoch": 1,
@@ -92,28 +98,51 @@
         "result_state": "APPLIED",
         "effects": [
           {
-            "feature_id": "YT-02",
+            "owner_binding_id": "00000000-0000-4000-8000-000000000001",
+            "evidence_scope_sha256": "2ce0deb5558bc2e645481cffac8c5bf916dab8779fbb544063800280eba4400a",
+            "action": "APPLY",
             "result": "APPLIED",
             "observer_ready": true,
+            "scan_complete": true,
+            "remaining_claim_count": 1,
+            "error_count": 0,
+            "ledger_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+            "restore": null,
+            "kind": "FEATURE",
+            "feature_id": "YT-02",
             "eligible_target_count": 1,
             "restricted_target_count": 1,
-            "error_count": 0,
-            "media_stopped": true,
-            "ledger_sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+            "presentation": "DIRECT_VIEWER",
+            "route_profile_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+            "scan_id": "00000000-0000-4000-8000-000000000010",
+            "media": {
+              "viewer_count": 1,
+              "target_count": 1,
+              "stopped_count": 1,
+              "hidden_count": 1,
+              "inert_count": 1,
+              "playing_count": 0,
+              "stop_error_count": 0,
+              "media_generation_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+              "observation_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+              "audio_verification": "NOT_VERIFIED"
+            },
+            "media_stopped": true
           }
         ],
-        "remaining_claim_count": 0,
+        "remaining_claim_count": 1,
         "footprint_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
         "observed_at": "2026-10-29T00:00:00.000Z",
         "error_code": null,
         "stream": "ADDITIONAL_CONTENT"
-      }
+      },
+      "issued_control_index": 0
     },
     {
       "schema": "Control",
       "value": {
         "type": "D06_ADDITIONAL_CONTROL",
-        "schema_version": "AMVP_CONTENT_1",
+        "schema_version": "AMVP_CONTENT_2",
         "request_id": "00000000-0000-4000-8000-000000000003",
         "payload": {
           "operation_id": "00000000-0000-4000-8000-000000000004",
@@ -155,7 +184,7 @@
       "schema": "ContentResult",
       "value": {
         "type": "D06_ADDITIONAL_RESULT",
-        "schema_version": "AMVP_CONTENT_1",
+        "schema_version": "AMVP_CONTENT_2",
         "request_id": "00000000-0000-4000-8000-000000000003",
         "operation_id": "00000000-0000-4000-8000-000000000004",
         "semantic_sha256": "9c93fb666f181a76e660b9020f761bfccaea39421376ccbf32d1951335bcd135",
@@ -185,22 +214,64 @@
         "control_seq": 2,
         "status": "ACK",
         "result_state": "RELEASED",
-        "effects": [],
+        "effects": [
+          {
+            "owner_binding_id": "00000000-0000-4000-8000-000000000001",
+            "evidence_scope_sha256": "2ce0deb5558bc2e645481cffac8c5bf916dab8779fbb544063800280eba4400a",
+            "action": "RELEASE",
+            "result": "RELEASED",
+            "observer_ready": true,
+            "scan_complete": true,
+            "remaining_claim_count": 0,
+            "error_count": 0,
+            "ledger_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+            "restore": {
+              "dom_restored": true,
+              "own_observer_claim_removed": true,
+              "policy_resources_released": true,
+              "other_owner_claims_preserved": true,
+              "restored_properties_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+              "media_restore_state": "USER_CONTROL_RESTORED",
+              "playback_restart": "NOT_FORCED",
+              "audio_verification": "NOT_VERIFIED"
+            },
+            "kind": "FEATURE",
+            "feature_id": "YT-02",
+            "eligible_target_count": 1,
+            "restricted_target_count": 1,
+            "presentation": "DIRECT_VIEWER",
+            "route_profile_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+            "scan_id": "00000000-0000-4000-8000-000000000010",
+            "media": null,
+            "media_stopped": null
+          }
+        ],
         "remaining_claim_count": 0,
         "footprint_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
         "observed_at": "2026-10-29T00:00:00.000Z",
         "error_code": null,
         "stream": "ADDITIONAL_CONTENT"
-      }
+      },
+      "issued_control_index": 2,
+      "prior_claims": {
+        "feature:YT-02": {
+          "owner_binding_id": "00000000-0000-4000-8000-000000000001",
+          "scope_sha256": "2ce0deb5558bc2e645481cffac8c5bf916dab8779fbb544063800280eba4400a",
+          "media_owned": true,
+          "route_profile_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+          "scan_id": "00000000-0000-4000-8000-000000000010"
+        }
+      },
+      "prior_footprint_sha256": "0000000000000000000000000000000000000000000000000000000000000000"
     },
     {
       "schema": "ContentResult",
       "value": {
         "type": "D06_ADDITIONAL_RESULT",
-        "schema_version": "AMVP_CONTENT_1",
+        "schema_version": "AMVP_CONTENT_2",
         "request_id": "00000000-0000-4000-8000-000000000001",
         "operation_id": "00000000-0000-4000-8000-000000000001",
-        "semantic_sha256": "0df5d4cbc16ea3bad510829fc1c3a9436a523ca1ad6290ad791a421a0ef95e1b",
+        "semantic_sha256": "659f08e08f5446a5e7ae723e23ab589fafb6c26ec705331f2a5b80793858dac7",
         "scope": {
           "owner_binding_id": "00000000-0000-4000-8000-000000000001",
           "owner_epoch": 1,
@@ -233,7 +304,134 @@
         "observed_at": "2026-10-29T00:00:00.000Z",
         "error_code": "UNSUPPORTED_CONTRACT",
         "stream": "ADDITIONAL_CONTENT"
+      },
+      "issued_control_index": 0
+    },
+    {
+      "schema": "Control",
+      "value": {
+        "type": "D06_ADDITIONAL_CONTROL",
+        "schema_version": "AMVP_CONTENT_2",
+        "request_id": "00000000-0000-4000-8000-000000000003",
+        "payload": {
+          "operation_id": "00000000-0000-4000-8000-000000000004",
+          "semantic_sha256": "8e3bd8343506b2f64f8f3850021a660d91a480a1448017f4cb7ac1a140567099",
+          "scope": {
+            "owner_binding_id": "00000000-0000-4000-8000-000000000001",
+            "owner_epoch": 1,
+            "executor_id": "00000000-0000-4000-8000-000000000001",
+            "runtime_execution_id": "00000000-0000-4000-8000-000000000001",
+            "package_id": "00000000-0000-4000-8000-000000000001",
+            "runtime_revision": 1,
+            "binding_id": "00000000-0000-4000-8000-000000000001",
+            "scope_epoch": "00000000-0000-4000-8000-000000000001",
+            "generation": 1,
+            "tab_id": 0,
+            "frame_id": 0,
+            "document_id": "x",
+            "document_instance_id": "00000000-0000-4000-8000-000000000001",
+            "url_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+            "focus_ref": {
+              "session_id": "00000000-0000-4000-8000-000000000001",
+              "snapshot_id": "00000000-0000-4000-8000-000000000001",
+              "snapshot_format": "1.1",
+              "snapshot_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+              "desired_revision": 1
+            }
+          },
+          "channel_credential": "0000000000000000000000000000000000000000000000000000000000000000",
+          "control_seq": null,
+          "operation": "RELEASE",
+          "cleanup_grant_id": "00000000-0000-4000-8000-000000000001",
+          "release_mode": "CLEANUP_ONLY",
+          "expected_footprint_sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+        },
+        "stream": "ADDITIONAL_CONTENT"
       }
+    },
+    {
+      "schema": "ContentResult",
+      "value": {
+        "type": "D06_ADDITIONAL_RESULT",
+        "schema_version": "AMVP_CONTENT_2",
+        "request_id": "00000000-0000-4000-8000-000000000003",
+        "operation_id": "00000000-0000-4000-8000-000000000004",
+        "semantic_sha256": "8e3bd8343506b2f64f8f3850021a660d91a480a1448017f4cb7ac1a140567099",
+        "scope": {
+          "owner_binding_id": "00000000-0000-4000-8000-000000000001",
+          "owner_epoch": 1,
+          "executor_id": "00000000-0000-4000-8000-000000000001",
+          "runtime_execution_id": "00000000-0000-4000-8000-000000000001",
+          "package_id": "00000000-0000-4000-8000-000000000001",
+          "runtime_revision": 1,
+          "binding_id": "00000000-0000-4000-8000-000000000001",
+          "scope_epoch": "00000000-0000-4000-8000-000000000001",
+          "generation": 1,
+          "tab_id": 0,
+          "frame_id": 0,
+          "document_id": "x",
+          "document_instance_id": "00000000-0000-4000-8000-000000000001",
+          "url_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+          "focus_ref": {
+            "session_id": "00000000-0000-4000-8000-000000000001",
+            "snapshot_id": "00000000-0000-4000-8000-000000000001",
+            "snapshot_format": "1.1",
+            "snapshot_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+            "desired_revision": 1
+          }
+        },
+        "control_seq": null,
+        "status": "ACK",
+        "result_state": "RELEASED",
+        "effects": [
+          {
+            "owner_binding_id": "00000000-0000-4000-8000-000000000001",
+            "evidence_scope_sha256": "2ce0deb5558bc2e645481cffac8c5bf916dab8779fbb544063800280eba4400a",
+            "action": "RELEASE",
+            "result": "RELEASED",
+            "observer_ready": true,
+            "scan_complete": true,
+            "remaining_claim_count": 0,
+            "error_count": 0,
+            "ledger_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+            "restore": {
+              "dom_restored": true,
+              "own_observer_claim_removed": true,
+              "policy_resources_released": true,
+              "other_owner_claims_preserved": true,
+              "restored_properties_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+              "media_restore_state": "USER_CONTROL_RESTORED",
+              "playback_restart": "NOT_FORCED",
+              "audio_verification": "NOT_VERIFIED"
+            },
+            "kind": "FEATURE",
+            "feature_id": "YT-02",
+            "eligible_target_count": 1,
+            "restricted_target_count": 1,
+            "presentation": "DIRECT_VIEWER",
+            "route_profile_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+            "scan_id": "00000000-0000-4000-8000-000000000010",
+            "media": null,
+            "media_stopped": null
+          }
+        ],
+        "remaining_claim_count": 0,
+        "footprint_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+        "observed_at": "2026-10-29T00:00:00.000Z",
+        "error_code": null,
+        "stream": "ADDITIONAL_CONTENT"
+      },
+      "issued_control_index": 5,
+      "prior_claims": {
+        "feature:YT-02": {
+          "owner_binding_id": "00000000-0000-4000-8000-000000000001",
+          "scope_sha256": "2ce0deb5558bc2e645481cffac8c5bf916dab8779fbb544063800280eba4400a",
+          "media_owned": true,
+          "route_profile_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+          "scan_id": "00000000-0000-4000-8000-000000000010"
+        }
+      },
+      "prior_footprint_sha256": "0000000000000000000000000000000000000000000000000000000000000000"
     }
   ],
   "canonical_vector": {
