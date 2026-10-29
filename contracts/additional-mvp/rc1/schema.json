@@ -489,17 +489,11 @@
                   "type": "string",
                   "format": "date-time",
                   "pattern": "^\\d{4}-\\d\\d-\\d\\dT\\d\\d:\\d\\d:\\d\\d\\.\\d{3}Z$"
-                },
-                "end_at": {
-                  "type": "string",
-                  "format": "date-time",
-                  "pattern": "^\\d{4}-\\d\\d-\\d\\dT\\d\\d:\\d\\d:\\d\\d\\.\\d{3}Z$"
                 }
               },
               "required": [
                 "recurrence",
-                "start_at",
-                "end_at"
+                "start_at"
               ]
             },
             {
@@ -524,15 +518,6 @@
                   "type": "string",
                   "pattern": "^(?:[01][0-9]|2[0-3]):[0-5][0-9]$"
                 },
-                "end_local": {
-                  "type": "string",
-                  "pattern": "^(?:[01][0-9]|2[0-3]):[0-5][0-9]$"
-                },
-                "end_day_offset": {
-                  "type": "integer",
-                  "minimum": 0,
-                  "maximum": 1
-                },
                 "timezone": {
                   "type": "string",
                   "format": "iana-zone",
@@ -549,8 +534,6 @@
                 "recurrence",
                 "weekdays",
                 "start_local",
-                "end_local",
-                "end_day_offset",
                 "timezone",
                 "dst_gap",
                 "dst_overlap"
@@ -568,6 +551,11 @@
         },
         "minimum_remaining_ms": {
           "const": 60000
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 80
         }
       },
       "required": [
@@ -577,7 +565,8 @@
         "when",
         "duration_minutes",
         "conflict",
-        "minimum_remaining_ms"
+        "minimum_remaining_ms",
+        "name"
       ]
     },
     "CadenceConfig": {

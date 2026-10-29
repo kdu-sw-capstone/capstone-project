@@ -72,7 +72,7 @@
       "when": {
         "recurrence": "ONCE",
         "start_at": "2026-10-29T00:00:00.000Z",
-        "end_at": "2026-10-29T00:00:00.000Z"
+        "end_at": "2026-10-29T01:00:00.000Z"
       }
     },
     "SiteTimePolicy": {
@@ -95,12 +95,12 @@
       "enabled": false,
       "when": {
         "recurrence": "ONCE",
-        "start_at": "2026-10-29T00:00:00.000Z",
-        "end_at": "2026-10-29T00:00:00.000Z"
+        "start_at": "2026-10-29T00:00:00.000Z"
       },
       "duration_minutes": 1,
       "conflict": "WAIT_FIXED_END",
-      "minimum_remaining_ms": 60000
+      "minimum_remaining_ms": 60000,
+      "name": "Synthetic focus schedule"
     },
     "CadenceConfig": {
       "kind": "CADENCE",
@@ -226,7 +226,7 @@
       "executor_id": "00000000-0000-4000-8000-000000000001",
       "runtime_revision": 1,
       "issued_at": "2026-10-29T00:00:00.000Z",
-      "payload_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+      "payload_sha256": "1943e9d9d91290817b1569ee3028533a0b4c01dd6e17a2e75afe0799a624b879",
       "timezone": "Asia/Seoul",
       "timezone_version": 1,
       "time_match_strategy": "ALL_MATCHING_CONSTRAINTS",
@@ -276,7 +276,7 @@
         }
       },
       "capability_receipt_id": "00000000-0000-4000-8000-000000000001",
-      "payload_sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+      "payload_sha256": "deb0e51b44ac56081160398b0ece61c508a07fb999ae0eabc6d0d8202c974bd5"
     },
     "Streams": {
       "RUNTIME_POLICY": [
@@ -470,18 +470,18 @@
       "runtime_revision": 1,
       "actual_host": "video.example.test",
       "start_at": "2026-10-29T00:00:00.000Z",
-      "end_at": "2026-10-29T00:00:00.000Z",
-      "confirmed_ms": 0,
+      "end_at": "2026-10-29T00:00:05.000Z",
+      "confirmed_ms": 5000,
       "uncertain_ms": 0,
       "day_start_at": "2026-10-29T00:00:00.000Z",
-      "day_end_at": "2026-10-29T00:00:00.000Z",
-      "timezone": "Asia/Seoul",
+      "day_end_at": "2026-10-30T00:00:00.000Z",
+      "timezone": "UTC",
       "timezone_version": 1,
       "enforcement_day_chain_id": "00000000-0000-4000-8000-000000000001",
       "policy_attributions": [],
       "focus_ref": null,
       "quality": "COMPLETE",
-      "payload_sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+      "payload_sha256": "22955e9c42d1988a0a262ad3b17f335a291344f068ee018cc09fd0e0c6a83235"
     },
     "UsageBatch": {
       "stream": "RUNTIME_USAGE",
@@ -500,18 +500,18 @@
           "runtime_revision": 1,
           "actual_host": "video.example.test",
           "start_at": "2026-10-29T00:00:00.000Z",
-          "end_at": "2026-10-29T00:00:00.000Z",
-          "confirmed_ms": 0,
+          "end_at": "2026-10-29T00:00:05.000Z",
+          "confirmed_ms": 5000,
           "uncertain_ms": 0,
           "day_start_at": "2026-10-29T00:00:00.000Z",
-          "day_end_at": "2026-10-29T00:00:00.000Z",
-          "timezone": "Asia/Seoul",
+          "day_end_at": "2026-10-30T00:00:00.000Z",
+          "timezone": "UTC",
           "timezone_version": 1,
           "enforcement_day_chain_id": "00000000-0000-4000-8000-000000000001",
           "policy_attributions": [],
           "focus_ref": null,
           "quality": "COMPLETE",
-          "payload_sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+          "payload_sha256": "22955e9c42d1988a0a262ad3b17f335a291344f068ee018cc09fd0e0c6a83235"
         }
       ]
     },
@@ -523,7 +523,14 @@
     },
     "BatchAck": {
       "batch_id": "00000000-0000-4000-8000-000000000001",
-      "items": []
+      "items": [
+        {
+          "item_id": "00000000-0000-4000-8000-000000000001",
+          "payload_sha256": "22955e9c42d1988a0a262ad3b17f335a291344f068ee018cc09fd0e0c6a83235",
+          "status": "ACCEPTED",
+          "error_code": null
+        }
+      ]
     },
     "StatusRequest": {
       "item_ids": [
@@ -531,7 +538,14 @@
       ]
     },
     "StatusResponse": {
-      "items": []
+      "items": [
+        {
+          "item_id": "00000000-0000-4000-8000-000000000001",
+          "payload_sha256": "22955e9c42d1988a0a262ad3b17f335a291344f068ee018cc09fd0e0c6a83235",
+          "status": "NOT_RECEIVED",
+          "error_code": null
+        }
+      ]
     },
     "RuntimeReport": {
       "report_id": "00000000-0000-4000-8000-000000000001",
@@ -547,7 +561,7 @@
       "reason": "CONFIG_CHANGE",
       "evidence_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
       "observed_at": "2026-10-29T00:00:00.000Z",
-      "payload_sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+      "payload_sha256": "b9c80c56cf59ad5415c1122c81407bbcf25752cb49d1c0ff9b7920d0da0395d2"
     },
     "ReportBatch": {
       "stream": "RUNTIME_REPORT",
@@ -569,7 +583,7 @@
           "reason": "CONFIG_CHANGE",
           "evidence_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
           "observed_at": "2026-10-29T00:00:00.000Z",
-          "payload_sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+          "payload_sha256": "b9c80c56cf59ad5415c1122c81407bbcf25752cb49d1c0ff9b7920d0da0395d2"
         }
       ]
     },
@@ -594,7 +608,7 @@
       "runtime_revision": 1,
       "focus_ref": null,
       "quality": "COMPLETE",
-      "payload_sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+      "payload_sha256": "1b4b88ab559ead0c06dd9f04f6c350e994711aa52437251d8648cc21eeb2bfd6"
     },
     "EventBatch": {
       "stream": "ADDITIONAL_EVENT",
@@ -623,7 +637,7 @@
           "runtime_revision": 1,
           "focus_ref": null,
           "quality": "COMPLETE",
-          "payload_sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+          "payload_sha256": "1b4b88ab559ead0c06dd9f04f6c350e994711aa52437251d8648cc21eeb2bfd6"
         }
       ]
     },
@@ -730,7 +744,7 @@
       "action": "START",
       "expected_version": 1,
       "attachment_id": null,
-      "duration_minutes": null
+      "duration_minutes": 25
     },
     "FocusState": {
       "operation_id": "00000000-0000-4000-8000-000000000001",
@@ -743,7 +757,7 @@
       },
       "state": "STARTING",
       "confirmed_ms": 0,
-      "remaining_ms": 0,
+      "remaining_ms": 1500000,
       "runtime_policy_unchanged": true,
       "last_error_code": null
     },
@@ -813,7 +827,7 @@
         "action": "START",
         "expected_version": 1,
         "attachment_id": null,
-        "duration_minutes": null
+        "duration_minutes": 25
       },
       "owner_binding_id": "00000000-0000-4000-8000-000000000001",
       "executor_id": "00000000-0000-4000-8000-000000000001",
@@ -1023,7 +1037,7 @@
         "executor_id": "00000000-0000-4000-8000-000000000001",
         "runtime_revision": 1,
         "issued_at": "2026-10-29T00:00:00.000Z",
-        "payload_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+        "payload_sha256": "1943e9d9d91290817b1569ee3028533a0b4c01dd6e17a2e75afe0799a624b879",
         "timezone": "Asia/Seoul",
         "timezone_version": 1,
         "time_match_strategy": "ALL_MATCHING_CONSTRAINTS",
@@ -1090,7 +1104,7 @@
           }
         },
         "capability_receipt_id": "00000000-0000-4000-8000-000000000001",
-        "payload_sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+        "payload_sha256": "deb0e51b44ac56081160398b0ece61c508a07fb999ae0eabc6d0d8202c974bd5"
       },
       "query": {}
     },
@@ -1113,24 +1127,31 @@
             "runtime_revision": 1,
             "actual_host": "video.example.test",
             "start_at": "2026-10-29T00:00:00.000Z",
-            "end_at": "2026-10-29T00:00:00.000Z",
-            "confirmed_ms": 0,
+            "end_at": "2026-10-29T00:00:05.000Z",
+            "confirmed_ms": 5000,
             "uncertain_ms": 0,
             "day_start_at": "2026-10-29T00:00:00.000Z",
-            "day_end_at": "2026-10-29T00:00:00.000Z",
-            "timezone": "Asia/Seoul",
+            "day_end_at": "2026-10-30T00:00:00.000Z",
+            "timezone": "UTC",
             "timezone_version": 1,
             "enforcement_day_chain_id": "00000000-0000-4000-8000-000000000001",
             "policy_attributions": [],
             "focus_ref": null,
             "quality": "COMPLETE",
-            "payload_sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+            "payload_sha256": "22955e9c42d1988a0a262ad3b17f335a291344f068ee018cc09fd0e0c6a83235"
           }
         ]
       },
       "response": {
         "batch_id": "00000000-0000-4000-8000-000000000001",
-        "items": []
+        "items": [
+          {
+            "item_id": "00000000-0000-4000-8000-000000000001",
+            "payload_sha256": "22955e9c42d1988a0a262ad3b17f335a291344f068ee018cc09fd0e0c6a83235",
+            "status": "ACCEPTED",
+            "error_code": null
+          }
+        ]
       },
       "query": {}
     },
@@ -1142,7 +1163,14 @@
         ]
       },
       "response": {
-        "items": []
+        "items": [
+          {
+            "item_id": "00000000-0000-4000-8000-000000000001",
+            "payload_sha256": "22955e9c42d1988a0a262ad3b17f335a291344f068ee018cc09fd0e0c6a83235",
+            "status": "NOT_RECEIVED",
+            "error_code": null
+          }
+        ]
       },
       "query": {}
     },
@@ -1168,13 +1196,20 @@
             "reason": "CONFIG_CHANGE",
             "evidence_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
             "observed_at": "2026-10-29T00:00:00.000Z",
-            "payload_sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+            "payload_sha256": "b9c80c56cf59ad5415c1122c81407bbcf25752cb49d1c0ff9b7920d0da0395d2"
           }
         ]
       },
       "response": {
         "batch_id": "00000000-0000-4000-8000-000000000001",
-        "items": []
+        "items": [
+          {
+            "item_id": "00000000-0000-4000-8000-000000000001",
+            "payload_sha256": "b9c80c56cf59ad5415c1122c81407bbcf25752cb49d1c0ff9b7920d0da0395d2",
+            "status": "ACCEPTED",
+            "error_code": null
+          }
+        ]
       },
       "query": {}
     },
@@ -1186,7 +1221,14 @@
         ]
       },
       "response": {
-        "items": []
+        "items": [
+          {
+            "item_id": "00000000-0000-4000-8000-000000000001",
+            "payload_sha256": "22955e9c42d1988a0a262ad3b17f335a291344f068ee018cc09fd0e0c6a83235",
+            "status": "NOT_RECEIVED",
+            "error_code": null
+          }
+        ]
       },
       "query": {}
     },
@@ -1219,13 +1261,20 @@
             "runtime_revision": 1,
             "focus_ref": null,
             "quality": "COMPLETE",
-            "payload_sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+            "payload_sha256": "1b4b88ab559ead0c06dd9f04f6c350e994711aa52437251d8648cc21eeb2bfd6"
           }
         ]
       },
       "response": {
         "batch_id": "00000000-0000-4000-8000-000000000001",
-        "items": []
+        "items": [
+          {
+            "item_id": "00000000-0000-4000-8000-000000000001",
+            "payload_sha256": "1b4b88ab559ead0c06dd9f04f6c350e994711aa52437251d8648cc21eeb2bfd6",
+            "status": "ACCEPTED",
+            "error_code": null
+          }
+        ]
       },
       "query": {}
     },
@@ -1237,7 +1286,14 @@
         ]
       },
       "response": {
-        "items": []
+        "items": [
+          {
+            "item_id": "00000000-0000-4000-8000-000000000001",
+            "payload_sha256": "22955e9c42d1988a0a262ad3b17f335a291344f068ee018cc09fd0e0c6a83235",
+            "status": "NOT_RECEIVED",
+            "error_code": null
+          }
+        ]
       },
       "query": {}
     },
@@ -1402,7 +1458,7 @@
           "action": "START",
           "expected_version": 1,
           "attachment_id": null,
-          "duration_minutes": null
+          "duration_minutes": 25
         },
         "owner_binding_id": "00000000-0000-4000-8000-000000000001",
         "executor_id": "00000000-0000-4000-8000-000000000001",
@@ -1421,7 +1477,7 @@
         },
         "state": "STARTING",
         "confirmed_ms": 0,
-        "remaining_ms": 0,
+        "remaining_ms": 1500000,
         "runtime_policy_unchanged": true,
         "last_error_code": null
       },
@@ -1441,7 +1497,7 @@
         },
         "state": "STARTING",
         "confirmed_ms": 0,
-        "remaining_ms": 0,
+        "remaining_ms": 1500000,
         "runtime_policy_unchanged": true,
         "last_error_code": null
       },

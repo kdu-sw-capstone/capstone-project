@@ -47,3 +47,6 @@ config는 current row 외 amvp_config_versions에 immutable revision을 저장�
 API-SCHEDULE-01~06 및 API-USAGE-01은 설계 원문에 존재한다. usage endpoint는 focus RUN interval/session에 결속되어 신규 상시 segment를 보내면 안 된다. schedules API와 occurrence claim의 URL/method/소유/멱등은 보존하며 새 canonical FocusSchedule은 어댑터를 거친 내부 표현 제안이다. 같은 예약을 legacy와 amvp config가 각각 실행하는 dual writer 금지: 하나의 config source ID/version→하나의 occurrence claim/session으로 연결한다. 기존 claim API가 구현되지 않은 baseline에서는 구현완료로 표시하지 않는다. 미배포 typed schedule 수정/삭제의 실제 대응표와 fixedend·overlap·timezone rules를3인 승인 후 한 모듈에만 구현한다.
 
 AI feedback은 기존 async POST/GET analysis-jobs와 PUT analysis-consent를 재사용한다. 새 동기 feedback API 후보는 이 revision에서 제외했다. consent_version/notice_version·INSUFFICIENT_DATA·PROVIDER_UNAVAILABLE·job상태와 제안전용 원칙을 보존한다. 비회원 원격 AI는 제공하지 않는다. 기존 content-policy defaults MEDIUM/usage_tracking=false 및 TITLE/BODY 허용과 최신 사용자 HIGH/상시측정/URL전용의 차이는 old raw rewrite가 아니라 승인된 신규 executor profile adapter로 분리한다.
+
+
+예약 adapter의 필드별 mapping/status는 api.json.legacy_adapters가 원본이다. FocusSchedule.when은 시작 trigger이며 site 시간창의 end_local/end_at을 재사용하지 않는다. occurrence fixedend는 실제 UTC 시작+duration으로 계산하여 DST때도 duration을 보존한다. 만료는 기존 status=SKIPPED/reason=EXPIRED, DST gap은SKIPPED/NONEXISTENT_TIME이며 EXPIRED를 새 status로 보내지 않는다. WEEKLY만 기존 ScheduleWrite에 매핑되고 ONCE focus는 승인 전미지원으로거절한다. 새 SiteTimePolicy의 ONCE/WEEKLY block/allow windows와 집중예약trigger는별개다.

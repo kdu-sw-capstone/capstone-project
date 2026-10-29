@@ -1553,5 +1553,70 @@
       "path": "/api/v1/guest-imports[/{batch_id}/items/{source_item_id}]",
       "status": "EXISTING_COMPLETED_IMPORT; preserve ownership/selection semantics; new usage import receipt must reuse source proof"
     }
-  ]
+  ],
+  "legacy_adapters": {
+    "focus_schedule": {
+      "source": "docs/design/02_시스템_테크설계/04_API_연동.md ScheduleWrite/Occurrence",
+      "public_create_route": "POST /api/v1/schedules",
+      "public_create_fields": [
+        "name",
+        "weekdays",
+        "start_local",
+        "duration_minutes",
+        "timezone",
+        "executor_id",
+        "enabled"
+      ],
+      "mapping": {
+        "Schedule.schedule_id": "FocusSchedule.schedule_id",
+        "Schedule.name": "FocusSchedule.name",
+        "Schedule.weekdays": "when.weekdays",
+        "Schedule.start_local": "when.start_local",
+        "Schedule.timezone": "when.timezone",
+        "Schedule.duration_minutes": "duration_minutes",
+        "Schedule.enabled": "enabled",
+        "Schedule.executor_id": "authenticated config executor",
+        "Schedule.version": "server config revision"
+      },
+      "legacy_recurrence": "WEEKLY",
+      "one_time_focus": "REVIEW_PENDING extension, reject unsupported legacy route; never silently convert to weekly",
+      "fixed_end": "scheduled_start_at UTC + duration_minutes; never infer from a recurring wall-clock end label",
+      "occurrence_identity": "UNIQUE(schedule_id,scheduled_start_at) preserved; schedule_version checked under owner lock",
+      "occurrence_statuses": [
+        "PENDING",
+        "WAITING_CONFLICT",
+        "STARTING",
+        "RUNNING",
+        "FINISHED",
+        "SKIPPED"
+      ],
+      "expired": {
+        "status": "SKIPPED",
+        "reason": "EXPIRED"
+      },
+      "dst_gap": {
+        "status": "SKIPPED",
+        "reason": "NONEXISTENT_TIME"
+      },
+      "delete": "204, cancel unstarted occurrence only; active session retained",
+      "single_writer": "Legacy schedule row owns definition; canonical projection cannot generate a second occurrence or separately execute CFG copy"
+    },
+    "legacy_usage": {
+      "endpoint": "POST /api/v1/usage-segments/batch",
+      "scope": "focus RUN session interval only; not new always-on stream",
+      "new_endpoint": "POST /api/v1/amvp/usage/batch",
+      "legacy_raw_mutation": false
+    },
+    "legacy_content": {
+      "keyword": "TITLE/BODY/substring profile is not URL_BOUNDARY_1; new adapter only after capability",
+      "blur": "MEDIUM legacy raw retained; new profile HIGH fixed",
+      "usage_tracking": "legacy disabled flag not a permission to disable DEC01 new independent runtime"
+    },
+    "analysis": {
+      "consent": "PUT /api/v1/analysis-consent accepted+notice_version",
+      "submit": "POST /api/v1/analysis-jobs from_date+to_date+consent_version",
+      "response": "202 existing AnalysisJob; poll GET /api/v1/analysis-jobs/{id}",
+      "auto_apply": false
+    }
+  }
 }

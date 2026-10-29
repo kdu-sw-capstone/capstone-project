@@ -91,6 +91,23 @@ class SchemaTests(unittest.TestCase):
         known=set(SCHEMA['$defs']['Error']['properties']['error']['properties']['code']['enum'])
         for op in API['operations']:
             for codes in op['errors'].values():self.assertLessEqual(set(codes),known)
+    def test_legacy_schedule_adapter_preserves_status_and_trigger(self):
+        a=API['legacy_adapters']['focus_schedule']
+        self.assertEqual(a['expired'],{'status':'SKIPPED','reason':'EXPIRED'})
+        self.assertNotIn('EXPIRED',a['occurrence_statuses'])
+        for variant in SCHEMA['$defs']['FocusSchedule']['properties']['when']['oneOf']:
+            self.assertNotIn('end_at',variant['properties']);self.assertNotIn('end_local',variant['properties'])
+        self.assertEqual(a['public_create_fields'],['name','weekdays','start_local','duration_minutes','timezone','executor_id','enabled'])
+    def test_http_positive_examples_cross_field_invariants(self):
+        validate_semantics('UsageSegment',EX['definitions']['UsageSegment'])
+        validate_semantics('FocusCommand',EX['definitions']['FocusCommand'])
+        self.assertEqual(window_duration(EX['definitions']['Window']['when']),60)
+        for row in EX['api']:
+            if row['id'] in ['USG-01','RPT-01','EVT-01']:
+                key={'USG-01':'segments','RPT-01':'reports','EVT-01':'events'}[row['id']]
+                item=row['request'][key][0]
+                self.assertEqual(item['payload_sha256'],digest(item,('payload_sha256',)))
+                self.assertEqual(row['response']['items'][0]['payload_sha256'],item['payload_sha256'])
     def test_revision_manifest(self):
         m=load('revision-manifest.json')
         for name,sha in m['sha256_lf_text'].items():
