@@ -57,3 +57,9 @@ RECEIVED/APPLYING는 접수/진행이다. 모든 예상 결과가 APPLIED 또는
 RELEASED는 prior own footprint·policy/profile/scan이 맞고 자기 remaining0, DOM/observer/resource 정리와 다른 owner 보존이 모두 확인된 경우뿐이다. media ownership이 있었다면 USER_CONTROL_RESTORED 또는 다른 owner가 유지하는 STILL_BLOCKED_OTHER_OWNER를 증명한다. 강제 autoplay/무조건 unmute로 복원하지 않는다. 관측된 DOM pause는 실제 오디오 출력 수용 증거가 아니므로 audio_verification은 NOT_VERIFIED만 허용한다. 실제 viewer·오디오/SPA·BFCache 수용은 채지민의 독립 Chrome 시험이 필요하다.
 
 REVIEW_PENDING: 실제 selector/profile·영상/오디오 복원·이미지 generation 검증·추가 보안 채널 구현·성능·16개 페이지 수용. T-01/02/03의 모델 PASS는 제품 Shorts P0 해결이나 Figma 구현 완료를 뜻하지 않는다.
+
+## 최종 교차 검증의 결과 상태 보완
+
+action=APPLY의 result는 APPLIED/NOT_APPLICABLE/OBSERVING/FAILED/UNCONFIRMED/UNSUPPORTED만 허용한다. action=RELEASE는 RELEASED/RELEASE_FAILED/UNCONFIRMED/UNSUPPORTED만 허용한다. RELEASED 증거를 APPLY 응답에 넣어 전체 APPLIED를 만드는 우회를 Schema와 참조 모델 양쪽에서 거절한다. FEATURE와 네 CONTENT_POLICY 분기가 동일 상태 규칙을 공유한다.
+
+DocumentContext가 DIRECT_VIEWER이면 viewer_feature_id는 YT-02 또는 IG-02가 필수이며 null 불가다. ENTRY_SURFACE/NON_TARGET은 null이다. route profile과 scan 결속은 그대로다. 새 rc2-cross-fixtures.json에는 잘못된 action/result·누락 viewer identity의 Schema 음성 예제와 blur 실패 mask·URL 미검증·media 관찰중의 양성 NACK/진행 예제를 별도로 보존한다. YT-02와 IG-02 모두 정상/실패/미확정 및 복원 증거를 합성 시험했다. 실제 영상·오디오·SPA·이미지 generation 검증은 여전히 제품 시험 전이다.

@@ -1625,5 +1625,6 @@
     "measurement_state": "COUNTED/QUARANTINED is independent of ACK",
     "sequence": "quarantined raw keeps seq/hash chain; later normal intervals can advance",
     "resolution": "ClockResolution is a privileged server-side verified projection, not a public self-attestation API"
-  }
+  },
+  "content_query_status": "REVIEW_PENDING: schema-reserved QUERY is explicitly rejected by reference issuer; target/hash/seq/response correlation requires three-person review. No product support claimed."
 }

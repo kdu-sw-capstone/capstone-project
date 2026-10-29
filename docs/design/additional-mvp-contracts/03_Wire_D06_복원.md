@@ -89,3 +89,13 @@ SPA/BFCache 후 generation이 다르면 정상 적용/ACK 거절. old-scope Clea
 - 브라우저 재시작은 SESSION 소멸과 DYNAMIC 유지가 서로 다르다. 확인된 재시작+실제 조회로 SESSION_STORE_RESET을 기록하되 DOM/Native 미해결 의무까지 지우지 않는다. Worker 재생성만으로 SESSION이 비었다고 가정하지 않는다. writer epoch 갱신 후 stale writer를 거절한다.
 
 두 store 안의 API 변경 원자성과 store 사이의 원자성은 다르다. 공식 수명·조건·조회/변경 API는 [Chrome DNR API](https://developer.chrome.com/docs/extensions/reference/api/declarativeNetRequest)에 따른다. fake banks 시험은 실제 Chrome 적용·quota·writer fencing 검증을 대신하지 않는다.
+
+## 최종 교차 검증 보완 (4309b26 이후)
+
+Cleanup의 reserved_receipt_id는 grant/operation과 일대일로 예약한다. 다른 grant가 같은 Receipt를 공유할 수 없으며 완료 Receipt를 지워 새 권한으로 재사용하지 않는다. 만료 후 revalidate는 Native와 exact old document 검증 및 기존 owner/Binding/full scope/Footprint/operation/receipt 일치가 모두 필요하다. 권한만 갱신하고 슬롯·INTENT·완료 Receipt를 초기화하지 않는다. 참조 모델의 valid/verified flag는 검증 어댑터를 흉내 낸 fixture 입력이며 실제 TTL·서명 검증이 아니다.
+
+DNR 채택도 새 claim을 쓰기 전에 cleanup 예약이 필요하다. 예약 소진은 관측된 기존 규칙과 legacy 복원 의무를 그대로 두고 채택을 거절한다. capacity는 미해결 의무 수이며 정상 해제 Receipt 확정 후에만 해당 예약 예산을 반환한다. IN_DOUBT에는 반환하지 않는다. 확정된 중복 제거 이력은 별도로 보존하므로 예산 반환이 Receipt eviction을 뜻하지 않는다. 저장소 이전도 source claim 정리 확인 후 source 예산만 반환한다.
+
+sender.id와 구성된 own extension ID가 둘 다 없으면 일치가 아니다. scope·private channel 증거가 비었으면 거절한다. scope/URL·tab·document·generation을 body가 꾸며도 현재 신뢰 문맥을 대체하지 못한다. 이 판정은 합성 어댑터 시험이며 실제 Native/Chrome sender PASS가 아니다.
+
+**QUERY_OPEN / REVIEW_PENDING**: Control에는 QUERY 형상이 있지만 기존 RC2 참조 모델은 projection을 읽다 KeyError가 났고 대상 operation hash·QUERY 자체 hash·응답 상관관계가 완성되지 않았다. 현재는 QUERY_CONTRACT_REVIEW_PENDING으로 명시 거절하며 처리 성공을 주장하지 않는다. 권장안은 상태 변경 명령과 분리한 읽기 전용 target 조회이고 대안은 이 Revision의 QUERY 제거+기존 status/동일 요청 재전송만 사용이다. 어느 안도 이 수정에서 확정하지 않는다. 윤종민·채지민·김다훈이 target/request ID, hash, seq/null Cleanup 조회, 반환 Schema를 같은 SHA에 합의해야 한다. QUERY 의존 신규 executor 활성화는 금지하며 Cleanup 동일 요청 재전송 경로는 별도 시험으로 보존한다.

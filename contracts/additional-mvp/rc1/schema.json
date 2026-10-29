@@ -1878,6 +1878,44 @@
               }
             }
           }
+        },
+        {
+          "if": {
+            "properties": {
+              "action": {
+                "const": "APPLY"
+              }
+            },
+            "required": [
+              "action"
+            ]
+          },
+          "then": {
+            "properties": {
+              "result": {
+                "enum": [
+                  "APPLIED",
+                  "NOT_APPLICABLE",
+                  "OBSERVING",
+                  "FAILED",
+                  "UNCONFIRMED",
+                  "UNSUPPORTED"
+                ]
+              }
+            }
+          },
+          "else": {
+            "properties": {
+              "result": {
+                "enum": [
+                  "RELEASED",
+                  "RELEASE_FAILED",
+                  "UNCONFIRMED",
+                  "UNSUPPORTED"
+                ]
+              }
+            }
+          }
         }
       ]
     },
@@ -4386,6 +4424,37 @@
         "viewer_feature_id",
         "route_profile_sha256",
         "scan_id"
+      ],
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "route_kind": {
+                "const": "DIRECT_VIEWER"
+              }
+            },
+            "required": [
+              "route_kind"
+            ]
+          },
+          "then": {
+            "properties": {
+              "viewer_feature_id": {
+                "enum": [
+                  "YT-02",
+                  "IG-02"
+                ]
+              }
+            }
+          },
+          "else": {
+            "properties": {
+              "viewer_feature_id": {
+                "type": "null"
+              }
+            }
+          }
+        }
       ]
     },
     "MediaObservation": {
@@ -4848,6 +4917,44 @@
                   }
                 }
               }
+            },
+            {
+              "if": {
+                "properties": {
+                  "action": {
+                    "const": "APPLY"
+                  }
+                },
+                "required": [
+                  "action"
+                ]
+              },
+              "then": {
+                "properties": {
+                  "result": {
+                    "enum": [
+                      "APPLIED",
+                      "NOT_APPLICABLE",
+                      "OBSERVING",
+                      "FAILED",
+                      "UNCONFIRMED",
+                      "UNSUPPORTED"
+                    ]
+                  }
+                }
+              },
+              "else": {
+                "properties": {
+                  "result": {
+                    "enum": [
+                      "RELEASED",
+                      "RELEASE_FAILED",
+                      "UNCONFIRMED",
+                      "UNSUPPORTED"
+                    ]
+                  }
+                }
+              }
             }
           ]
         },
@@ -4986,6 +5093,44 @@
                   },
                   "restore": {
                     "type": "null"
+                  }
+                }
+              }
+            },
+            {
+              "if": {
+                "properties": {
+                  "action": {
+                    "const": "APPLY"
+                  }
+                },
+                "required": [
+                  "action"
+                ]
+              },
+              "then": {
+                "properties": {
+                  "result": {
+                    "enum": [
+                      "APPLIED",
+                      "NOT_APPLICABLE",
+                      "OBSERVING",
+                      "FAILED",
+                      "UNCONFIRMED",
+                      "UNSUPPORTED"
+                    ]
+                  }
+                }
+              },
+              "else": {
+                "properties": {
+                  "result": {
+                    "enum": [
+                      "RELEASED",
+                      "RELEASE_FAILED",
+                      "UNCONFIRMED",
+                      "UNSUPPORTED"
+                    ]
                   }
                 }
               }
@@ -5130,6 +5275,44 @@
                   }
                 }
               }
+            },
+            {
+              "if": {
+                "properties": {
+                  "action": {
+                    "const": "APPLY"
+                  }
+                },
+                "required": [
+                  "action"
+                ]
+              },
+              "then": {
+                "properties": {
+                  "result": {
+                    "enum": [
+                      "APPLIED",
+                      "NOT_APPLICABLE",
+                      "OBSERVING",
+                      "FAILED",
+                      "UNCONFIRMED",
+                      "UNSUPPORTED"
+                    ]
+                  }
+                }
+              },
+              "else": {
+                "properties": {
+                  "result": {
+                    "enum": [
+                      "RELEASED",
+                      "RELEASE_FAILED",
+                      "UNCONFIRMED",
+                      "UNSUPPORTED"
+                    ]
+                  }
+                }
+              }
             }
           ]
         },
@@ -5268,6 +5451,44 @@
                   },
                   "restore": {
                     "type": "null"
+                  }
+                }
+              }
+            },
+            {
+              "if": {
+                "properties": {
+                  "action": {
+                    "const": "APPLY"
+                  }
+                },
+                "required": [
+                  "action"
+                ]
+              },
+              "then": {
+                "properties": {
+                  "result": {
+                    "enum": [
+                      "APPLIED",
+                      "NOT_APPLICABLE",
+                      "OBSERVING",
+                      "FAILED",
+                      "UNCONFIRMED",
+                      "UNSUPPORTED"
+                    ]
+                  }
+                }
+              },
+              "else": {
+                "properties": {
+                  "result": {
+                    "enum": [
+                      "RELEASED",
+                      "RELEASE_FAILED",
+                      "UNCONFIRMED",
+                      "UNSUPPORTED"
+                    ]
                   }
                 }
               }

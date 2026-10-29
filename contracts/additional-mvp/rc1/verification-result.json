@@ -1,9 +1,9 @@
 {
   "revision": "AMVP-CONTRACT-20261029-RC2",
-  "recorded_at": "2026-10-29T08:13:08.418871+00:00",
+  "recorded_at": "2026-10-29T08:40:33.490966+00:00",
   "python": "3.14.7",
   "python_tests": {
-    "run": 210,
+    "run": 227,
     "failures": 0,
     "errors": 0,
     "skipped": 0,
@@ -11,7 +11,8 @@
     "breakdown": {
       "original_reviewed_test_ids": 135,
       "new_schema_shapes": 17,
-      "core_content_review": 58
+      "core_content_review": 58,
+      "independent_cross_review": 17
     }
   },
   "node_tests": {
@@ -25,7 +26,7 @@
     "evidence": "mysql-result.json",
     "tables_per_candidate": 19,
     "mode": "REAL_ISOLATED_MYSQL_SQL_PROBE",
-    "port": 33328
+    "port": 33329
   },
   "product_chrome": "NOT_RUN",
   "human_approval": "REVIEW_PENDING",
@@ -50,5 +51,19 @@
     "mode": "same test IDs extracted from reviewed Git object; not additional tests in total"
   },
   "schema_definitions": 77,
-  "legacy_lock_files": 174
+  "legacy_lock_files": 174,
+  "rc2_4309_historical": {
+    "python": 210,
+    "node": 5,
+    "mysql": 18,
+    "reexecuted": "PASS",
+    "not_summed_with_current": true
+  },
+  "cross_review": {
+    "reviewed_sha": "4309b2674a26782f4fc318477b38ce10fa2c4bc7",
+    "evidence": "rc2-cross-verification.json",
+    "cases": 17,
+    "result": "PASS",
+    "query_correlation": "REVIEW_PENDING_EXPLICIT_REJECTION"
+  }
 }

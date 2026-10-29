@@ -21,3 +21,7 @@ Git SHA는 자기 자신을 문서에 순환 기입하지 않는다. PR 본문 h
 77개 Schema, 25개 API 정의, 후보 19개 테이블. 신규 Content/usage stream은 각각 `AMVP_CONTENT_2` / `AMVP_BROWSER_USAGE_2`로 분리한다. RC1 후보 수신기에도 무조건 호환된다고 주장하지 않는다. 동일 Revision·artifact·capability를 협상하지 못하면 적용 전에 거절한다. legacy Event/D06/Journal/스냅샷 원문은 그대로다.
 
 Content 공식 리뷰는 [CHANGES_REQUESTED](https://github.com/kdu-sw-capstone/capstone-project/pull/24#pullrequestreview-5694156354), Core 4건은 사용자가 전달한 공식 검토 요청이다. 수정 시험 통과는 인간 승인과 다르다. 두 담당자 재검토와 김다훈 Web·Server·DB 검토는 **REVIEW_PENDING**이며 PR을 병합하거나 제품에 활성화하지 않는다. 재현·한계·Manifest는 [실행 결과](07_검증결과.md)를 따른다.
+
+## RC2 게시 후 최종 교차 검증
+
+4309b2674a26782f4fc318477b38ce10fa2c4bc7의 기존210/Node5/MySQL18을 실제 재실행한 뒤, 독립 반례9개에서 Schema·참조 모델 누락을 찾아 최소 수정했다. 기존 PASS 기록을 삭제하거나 실측 성공으로 바꾸지 않는다. 추가17검사를 포함한 전체227건과 판정 범위는 [최종 교차 검증](07_검증결과.md)을 참조한다. RC2 후보 Revision은 유지하되 검토 SHA/Manifest는 새 PR head로 갱신한다. QUERY 상관관계/응답 경로는 아직 공동 결정이 필요하며 신규 공유 계약 활성화는 보류한다.

@@ -19,7 +19,7 @@ class CleanupLane:
         self.physical_remaining=True;self.obligation_pending=True
         self.scope_digest=scope_digest
     def reserve(self,grant,operation,receipt,capacity=1,receipt_capacity=1):
-        if grant in self.grants or operation in self.operations:raise ValueError('RESERVATION_CONFLICT')
+        if grant in self.grants or operation in self.operations or any(g['receipt']==receipt for g in self.grants.values()):raise ValueError('RESERVATION_CONFLICT')
         self.grants[grant]={'operation':operation,'receipt':receipt,'capacity':capacity,'receipt_capacity':receipt_capacity,'valid':True,'claimed':False}
         self.operations[operation]={'lane':'CLEANUP','hash':None}
     def normal(self,operation,semantic,seq):
@@ -31,6 +31,13 @@ class CleanupLane:
         if seq<=self.normal_seq:raise ValueError('STALE_SEQUENCE')
         if seq!=self.normal_seq+1:return 'PENDING_DEPENDENCY'
         self.operations[operation]={'lane':'NORMAL','hash':semantic};self.normal_seq=seq;return 'APPLIED'
+    def revalidate(self,grant,operation,receipt,owner,generation,binding,footprint,scope_digest='fixture-scope',native_verified=False,exact_old_document_verified=False):
+        # These booleans stand for privileged adapter evidence, never message fields.
+        if not native_verified or not exact_old_document_verified:raise ValueError('CLEANUP_REVALIDATION_UNCONFIRMED')
+        if (owner,generation,binding,footprint)!=self.scope or scope_digest!=self.scope_digest:raise ValueError('CLEANUP_OWNER_OR_SCOPE_MISMATCH')
+        g=self.grants.get(grant)
+        if not g or (g['operation'],g['receipt'])!=(operation,receipt):raise ValueError('RESERVATION_MISMATCH')
+        g['valid']=True # Renew authority only; never reset identity, slots, intent or receipt.
     def release(self,grant,operation,semantic,receipt,owner,generation,binding,footprint,seq,
                 sender_verified=True,persist=True,receipt_fail=False,scope_digest='fixture-scope'):
         if seq is not None:raise ValueError('CLEANUP_SEQUENCE_MUST_BE_NULL')
@@ -57,7 +64,7 @@ class ClockedReceiver:
     def __init__(self,owner,executor):
         self.owner=owner;self.executor=executor;self.raw={};self.positions={};self.pending={}
         self.last={};self.last_clock=None;self.last_verified_clock=None;self.physical=[];self.anchors={};self.day_buckets=set()
-        self.resolutions={};self.segment_resolution={};self.total=0;self.day_totals={}
+        self.resolutions={};self.resolution_envelopes={};self.segment_resolution={};self.total=0;self.day_totals={}
     def _count(self,amount,day):
         self.total+=amount;self.day_totals[day]=self.day_totals.get(day,0)+amount
     def trust_anchor(self,anchor_id,clock,predecessor_hash=None,restart_verified=False,tolerance_ms=0):
@@ -105,14 +112,15 @@ class ClockedReceiver:
         if segment in self.pending and self.pending[segment]['payload_sha256']!=h:raise ValueError('SOURCE_CONFLICT')
         interval=self._geometry(x)
         number,previous=self.last.get(epoch,(0,None))
-        self.positions[key]=segment
         if seq!=number+1:
             if seq<=number:raise ValueError('STALE_SEQUENCE')
+            self.positions[key]=segment
             self.pending[segment]=copy.deepcopy(x);return 'PENDING_DEPENDENCY'
         if x['previous_segment_sha256']!=previous:raise ValueError('CHAIN_CONFLICT')
         ce,boot,lo,hi=interval
-        if any(ce==a and boot==b and lo<d and hi>c for a,b,c,d in self.physical):raise ValueError('MONOTONIC_OVERLAP')
+        if any(boot==b and lo<d and hi>c for a,b,c,d in self.physical):raise ValueError('MONOTONIC_OVERLAP')
         trusted=self._trusted(x,previous)
+        self.positions[key]=segment
         self.physical.append(interval);self.pending.pop(segment,None)
         self.raw[segment]={'hash':h,'value':copy.deepcopy(x),'state':'COUNTED' if trusted else 'QUARANTINED'}
         self.last[epoch]=(seq,h);self.last_clock=(ce,boot)
@@ -123,6 +131,8 @@ class ClockedReceiver:
     def resolve_wire(self,resolution,evidence,verified=False):
         _wire_shape('ClockResolution',resolution)
         if not verified:raise ValueError('CLOCK_EVIDENCE_UNVERIFIED')
+        resolution_id=resolution['resolution_id'];envelope_hash=digest(resolution)
+        if resolution_id in self.resolution_envelopes and self.resolution_envelopes[resolution_id]!=envelope_hash:raise ValueError('RESOLUTION_ENVELOPE_CONFLICT')
         anchor=self.anchors.get(resolution['anchor_id'])
         if not anchor or any(anchor[k]!=evidence[k] for k in ('clock_epoch','boot_id')):raise ValueError('RESOLUTION_ANCHOR_UNVERIFIED')
         if resolution['evidence_sha256']!=digest(evidence):raise ValueError('RESOLUTION_EVIDENCE_HASH_MISMATCH')
@@ -131,7 +141,9 @@ class ClockedReceiver:
         if resolution['confirmed_ms']!=evidence['mono_end_ms']-evidence['mono_start_ms']:raise ValueError('RESOLUTION_DURATION_MISMATCH')
         for field,mono in [('resolved_start_at','mono_start_ms'),('resolved_end_at','mono_end_ms')]:
             if instant(resolution[field])!=instant(anchor['anchor_utc'])+timedelta(milliseconds=evidence[mono]-anchor['anchor_mono_ms']):raise ValueError('RESOLUTION_ANCHOR_PROJECTION_MISMATCH')
-        return self.resolve(resolution['segment_id'],resolution['resolution_id'],evidence,verified=True)
+        result=self.resolve(resolution['segment_id'],resolution_id,evidence,verified=True)
+        self.resolution_envelopes[resolution_id]=envelope_hash
+        return result
     def resolve(self,segment,resolution_id,evidence,verified=False):
         # Separate immutable resolution, never rewrite the original segment or chain hash.
         old=self.raw[segment];x=old['value'];c=x['clock']
@@ -156,10 +168,11 @@ class ClockedReceiver:
 
 def verify_direction(direction,body,e):
     """Evidence is trusted adapter state, never an RPC body or a sender-supplied flag."""
-    sender=e.get('sender',{});own=sender.get('id')==e.get('extension_id')
+    sender=e.get('sender',{});extension_id=e.get('extension_id')
+    own=isinstance(extension_id,str) and bool(extension_id) and sender.get('id')==extension_id
     s=e.get('scope');current=e.get('current_scope')
     if direction in ('WORKER_TO_CONTENT','CONTENT_TO_WORKER','CONTENT_RESPONSE_TO_WORKER'):
-        if not e.get('channel_bound') or body.get('scope')!=s:return False
+        if not e.get('channel_bound') or not isinstance(s,dict) or not s or body.get('scope')!=s:return False
         old_cleanup=body.get('operation')=='RELEASE' and body.get('release_mode')=='CLEANUP_ONLY'
         if s!=current and not(old_cleanup and e.get('cleanup_grant_verified') and e.get('exact_old_document_verified')):return False
         if direction=='WORKER_TO_CONTENT':return own and e.get('transport')=='PRIVATE_PORT'
@@ -197,10 +210,15 @@ class DnrCoordinator:
         if self.banks[store].get(rule_id)!=expected:raise ValueError('RULE_FOOTPRINT_MISMATCH')
         claim=(owner,generation)
         if key in self.claims and self.claims[key]['rule']!=expected:raise ValueError('RULE_ID_COLLISION')
+        self._reserve_cleanup(key,owner,generation)
         self.claims.setdefault(key,{'rule':copy.deepcopy(expected),'owners':set()})['owners'].add(claim)
         self.authorized_scopes.add(claim)
     def _fence(self,epoch):
         if epoch!=self.writer_epoch:raise ValueError('STALE_DNR_WRITER')
+    def _reserve_cleanup(self,key,owner,generation):
+        reservation=(key,owner,generation)
+        if reservation not in self.cleanup_reserved and len(self.cleanup_reserved)>=self.cleanup_capacity:raise ValueError('CLEANUP_RESERVATION_EXHAUSTED')
+        self.cleanup_reserved.add(reservation)
     def _replay(self,operation,semantic):
         if operation in self.plans and self.plans[operation]['semantic']!=semantic:raise ValueError('IDEMPOTENCY_CONFLICT')
         return self.receipts.get(operation)
@@ -219,10 +237,8 @@ class DnrCoordinator:
             safe_actions={'block','allow','allowAllRequests','upgradeScheme'}
             if rule['action']['type'] not in safe_actions and sum(r['action']['type'] not in safe_actions for r in actual)>=self.unsafe_limit:raise ValueError('DNR_UNSAFE_QUOTA_EXCEEDED')
         if not persist:raise ValueError('STORAGE_UNCONFIRMED')
-        reservation=(key,owner,generation)
-        if reservation not in self.cleanup_reserved and len(self.cleanup_reserved)>=self.cleanup_capacity:raise ValueError('CLEANUP_RESERVATION_EXHAUSTED')
+        self._reserve_cleanup(key,owner,generation)
         self.plans[operation]={'semantic':semantic,'state':'PREPARED'}
-        self.cleanup_reserved.add(reservation)
         self.claims.setdefault(key,{'rule':copy.deepcopy(rule),'owners':set()})['owners'].add((owner,generation))
         self.authorized_scopes.add((owner,generation))
         self.banks[store][rule['id']]=copy.deepcopy(rule)
@@ -245,6 +261,7 @@ class DnrCoordinator:
         for key,v in selected:
             v['owners'].remove((owner,generation))
             if not v['owners']:self.claims.pop(key)
+            self.cleanup_reserved.discard((key,owner,generation))
         self.plans[operation]['state']='CONFIRMED';self.receipts[operation]='RELEASED';return 'RELEASED'
     def transition(self,owner,generation,source,target,rule,operation,writer_epoch,stop_after_target=False,policy_kind='RUNTIME'):
         if policy_kind!='RUNTIME':raise ValueError('FOCUS_STORE_MIGRATION_UNSUPPORTED')
@@ -262,6 +279,7 @@ class DnrCoordinator:
         if original['owners']=={(owner,generation)}:self.banks[source[0]].pop(source[1],None)
         original['owners'].discard((owner,generation))
         if not original['owners']:self.claims.pop(source)
+        self.cleanup_reserved.discard((source,owner,generation))
         self.plans[operation]['state']='CONFIRMED';self.receipts[operation]='APPLIED';return 'APPLIED'
     def restart(self,verified_browser_restart=False):
         # The fake browser, not the coordinator, cleared SESSION before this observation.
@@ -288,6 +306,7 @@ class ContentOperationRegistry:
     def issue(self,control,prior_claims=None,prior_footprint_sha256=None):
         _wire_shape('Control',control);p=control['payload'];operation=p['operation_id']
         if digest(p,('semantic_sha256','channel_credential'))!=p['semantic_sha256']:raise ValueError('CONTROL_HASH_MISMATCH')
+        if p['operation']=='QUERY':raise ValueError('QUERY_CONTRACT_REVIEW_PENDING')
         previous=self.issued.get(operation)
         if previous:
             if previous['control']['payload']['semantic_sha256']!=p['semantic_sha256']:raise ValueError('IDEMPOTENCY_CONFLICT')
@@ -375,6 +394,8 @@ class ContentOperationRegistry:
         if set(keys)!=set(record['expected']):raise ValueError('MISSING_OR_UNREQUESTED_EFFECT_RESULT')
         for key,e in zip(keys,effects):
             if e['action']!=record['expected'][key] or e['owner_binding_id']!=p['scope']['owner_binding_id'] or e['evidence_scope_sha256']!=digest(p['scope']):raise ValueError('EFFECT_OWNER_SCOPE_ACTION_MISMATCH')
+            allowed={'APPLY':{'APPLIED','NOT_APPLICABLE','OBSERVING','FAILED','UNCONFIRMED','UNSUPPORTED'},'RELEASE':{'RELEASED','RELEASE_FAILED','UNCONFIRMED','UNSUPPORTED'}}
+            if e['result'] not in allowed[e['action']]:raise ValueError('EFFECT_ACTION_STATE_MISMATCH')
             if e['action']=='RELEASE':
                 if e['kind']=='CONTENT_POLICY' and e['policy_sha256']!=record['prior'][key]['policy_sha256']:raise ValueError('RELEASE_POLICY_HASH_MISMATCH')
                 if e['result']=='RELEASED':
