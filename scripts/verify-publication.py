@@ -9,6 +9,8 @@ import argparse, hashlib, io, json, pathlib, re, struct, subprocess, sys, zipfil
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 MANIFEST = ROOT / 'docs/implementation/baseline-20261029/frozen-source-manifest.json'
 EXTRA = [
+ 'runtime-server/src/test/java/kr/ac/kdu/focurve/DashboardEventOrderingTest.java',
+ 'docs/implementation/baseline-20261029/review-file-classification.json',
  '.gitattributes',
  'docs/implementation/ADDITIONAL_MVP_BASELINE_HANDOFF.md',
  'docs/implementation/TEAM-START-20261029.md',

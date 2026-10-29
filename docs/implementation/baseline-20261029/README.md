@@ -52,3 +52,47 @@
 STORE_UNCONFIRMED 최초 경로 미확정, 최신 Shorts 검색·직접·추천·SPA·새로고침·뒤/앞·BFCache·다중탭, 실제 회원/비회원 정상 END·DOM/Binding/DNR 복원·Native 재연결·재기동은 미완료다. 과거 FAIL/UNKNOWN/HOLD를 CLEAR/PASS로 바꾸지 않는다. 김다훈 별도 Shorts 트랙에서 다룬다.
 
 회원 D06 member-a1-1/비회원 guest-a1-candidate-2는 관측 버전이다. 상시 runtime owner/원장전환·새 Wire·측정 기준은 실제 3인 REVIEW_PENDING. 공통 기준 게시로 임의 승인하지 않는다. `TEAM_BASELINE_READY`는 **원격 source 게시+독립 checkout 재현**의 판정이며 최종 기능 수용이나 팀원 PC 첫 실행을 대신하지 않는다. `MVP_FINAL_COMPLETE=false` 유지.
+
+## PR23 위험 중심 코드 리뷰 — 2026-10-29 후속
+
+사용자 최신 범위는 자동 분류·결함 검수·검증된 최소 수정이다. **Approve/Merge를 수행하지 않는다.** 검토 기준은90ad32be→6c5000f9의536파일/583 diff hunk/6,117,771 diff bytes. [파일별 분류·위험 태그·심층 검토 범위](review-file-classification.json)에 모든 경로와 해당 기준의 파일 SHA를 기록했다. 후속 정렬 수정/회귀 시험·이 분류표는 그 원래536파일 집계와 별도다.
+
+| 배타적 주 분류 | 파일 |
+|---|---:|
+| 인증·권한 |32|
+| Core·Content |132|
+| Web·Server |60|
+| 배포·개발 실행 |31|
+| 제품 공통 설정 |2|
+| 테스트·시험 도구 |146|
+| 생성물·이미지 자산 |19|
+| 문서 |114|
+
+전체536개는 diff/내용 기반 자동 분류·위험 태그 대상이다. **제품 경계32파일의 선택 함수/구간을 심층 검토**했으며, 모든536파일/모든제품 함수의 의미를 전수 검증했다는 뜻이 아니다. 나머지 자동 검사 영역과 수동 심층 영역은 JSON의reviewScope로 구분한다. 대형 생성 bundle은 원본 모듈 및 기존 생성물 동일성 회귀를 기준으로 검토하며88,000여줄을 독립 구현처럼 중복 심층 검토했다고 세지 않는다.
+
+### 확인한 경계와 남은 검증 한계
+
+- Manifest는 DNR/탭/탐색/scripting/Native Messaging 및 전체http(s) host 권한을 요청한다. 사이트 정책 실행에 필요한 광범위 권한이며 그 자체를 무권한 접근 결함으로 판정하지 않는다. 외부 연결은loopback matches지만 **메시지별 sender id/frame/tab/origin + 저장된 HTTPS authority/owner 검증**이 실제 경계다. deployment-binding, member-web-bridge, auth-bridge 조합을 검토했다. 외부 CONNECT/WAKE는APPLY/END 권한이나 credential을 반환하지 않는다.
+- NativeLinkHost의4KiB frame·메시지 필드 whitelist, Chrome 조상 PID/생성시각/SID/executable/profile·extension origin, binding hash, runtime 파일 hash 및 명령별 사전 grant를 검토했다. Python 진입점의 설치 경로/payload/부모 검사와 비식별 진단, install_core의 서비스 환경 정리도 선택 구간 대조했다. 실제 설치·Native 등록·Chrome 실행으로 검증하지 않았다.
+- Core의 owner fence/CAS/current route·세대 검사, P1 sender tab/frame/document/lifecycle/credential/native proof, DOM ledger·실제 복원 증거와 terminal cleanup gate, DNR 해제 시 rule 내용/소유권 대조를 검토했다. Worker 복원과 stale ACK/END 우선은 기존747회귀의 동일 소스 근거를 함께 사용한다. 검증되지 않은 정상 END/Shorts 수용을 PASS로 바꾸지 않는다.
+- Web CSRF/session 직렬화와 서버의 cookie/Origin/CSRF·PKCE·access/refresh generation·설치 proof/owner 쿼리를 대조했다. Named read route가 catch-all 경로보다 우선하며 읽기에도 계정/설치 필터를 유지한다. parameter binding/트랜잭션 경계와Event1.1/1.2의 frozen snapshot 가장 구체적인 호스트 선택을 검토했다.
+- backend와 runtime-server는별도 애플리케이션/DB·migration 기준이며 하나의기존DB에무조건적용가능하다는보증이아니다. Snapshot/D06/Wire 원문과각모듈기존migration은이번수정으로바꾸지않았다. 신규상시runtime/소유권/원장계약은REVIEW_PENDING 유지.
+- PR17/21/22 head는직전게시기준과일치한다. 기존210원격파일대조/33의미해소·원격전용115경로 및수정기록을재사용한다. PR17/21을다시통째로Merge하면옛실행경로가재유입될수있다. PR22 설계7개·현재추가MVPdirty구현은분리보존한다.
+- 보안검사는게시대상·설계ZIP내부·PNG원본CRC/서명·정확내용hash결속synthetic예외를사용한다. credential/인증서/DB/개인프로필/실패진단원문을새로넣지않는다. README의최소환경/명령/팀브랜치절차는6c5000f 원격fresh clone 증거를재사용한다. 이번수정은의존성/실행설정을추가하지않는다.
+
+### 검증된 발견 — REV23-P2-01 (수정)
+
+- 위치: `runtime-server/src/main/java/kr/ac/kdu/focurve/MemberReadModel.java:15`, `dashboard`의recent_access 정렬. 수정 전occurred_at 문자열 비교 후역순5개를선택했다.
+- 재현: 같은초의`2026-10-29T10:00:00Z`와`2026-10-29T10:00:00.1Z`를함께저장하면문자열상`Z`가`.`뒤로가서더오래된정각기록이앞에표시된다. `.000Z`/`.000000000Z`처럼같은Instant도표기길이에따라정렬돼sequence/id tie-break를어긴다. 최근5개에잘못된기록이남고더최신기록이누락될수있다.
+- 영향·등급: 대시보드표시순서/최근5개선택오류 **P2**. 인증·정책차단·원장내용을변경하거나교차회원자료를노출하는결함은아니다.
+- 최소수정: 기존accessList에서쓰는`latestFirst`(Instant→access_seq→event_id 내림차순)를재사용한다. API/DB/이벤트필드·D06메시지변경없음.
+- 실행근거: 실제dashboard메서드를호출하는새합성회귀`DashboardEventOrderingTest` 2개를먼저추가해 **2 FAIL**을확인했다. 최소수정뒤runtime-server전체 **58 PASS/0 FAIL/0 ERROR/0 SKIP**, verify/JAR성공. HTTP/실DB/Chrome수용으로확대하지않는다.
+- 명령: `./backend/mvnw.cmd -f runtime-server/pom.xml -B -ntp -Dtest=DashboardEventOrderingTest test`(수정전FAIL), 동일모듈`verify`(수정후PASS). 초기실패/수정후로그는로컬에구분보존한다.
+
+이번선택검토에서새로재현된P0/P1은0, P2는위1개다. **기존Shorts STORE_UNCONFIRMED/실제END·복원·재기동P0와미검증은계속남아있다.** 새P0/P1미발견이무결함·제품수용완료를뜻하지않는다.
+
+### CI와 리뷰 집중점
+
+e713dc9의run40790820881은과거실패(WINDIR/잘못된ByRoleOptions.exact),6c5000f의run40791445065는수정후5/5SUCCESS이다. 이번정렬수정후에는새head의CI를별도로확인해PR본문/최종보고에기록한다. 과거5/5를새head의CI결과로사용하지않는다.
+
+담당리뷰집중: 윤종민은Core owner/CAS/DNR/복원과단일actor, 채지민은P1 sender/DOM ledger/SPA·실제복원증거, 김다훈은두서버의프로필/DB분리·권한/기록정렬·이관경계를확인한다. 실제3인D06/Wire/측정합의와필수리뷰승인은이자동리뷰로대체하지않는다. 승인/병합은이번작업에서하지않는다.
