@@ -25,3 +25,7 @@ Content 공식 리뷰는 [CHANGES_REQUESTED](https://github.com/kdu-sw-capstone/
 ## RC2 게시 후 최종 교차 검증
 
 4309b2674a26782f4fc318477b38ce10fa2c4bc7의 기존210/Node5/MySQL18을 실제 재실행한 뒤, 독립 반례9개에서 Schema·참조 모델 누락을 찾아 최소 수정했다. 기존 PASS 기록을 삭제하거나 실측 성공으로 바꾸지 않는다. 추가17검사를 포함한 전체227건과 판정 범위는 [최종 교차 검증](07_검증결과.md)을 참조한다. RC2 후보 Revision은 유지하되 검토 SHA/Manifest는 새 PR head로 갱신한다. QUERY 상관관계/응답 경로는 아직 공동 결정이 필요하며 신규 공유 계약 활성화는 보류한다.
+
+## 김다훈 담당 검토 추가
+
+기준8f48c3b에서 기존 API/독립 구현·인증·소유·DB·집계·동시성을 별도 검토했다. API25개·테이블19개·Wire77정의 범위를 유지하며 target query/멱등 순서·복합 FK와 제약만 보완했다. 최종 Python238/Node5 및 격리 MySQL46은 실제 실행 증거로 구분한다. 실제 HTTP·Server transaction 통합·운영 migration·인간 승인은 아니다. QUERY/C01~11·Content cardinality/import source adapter는 기존 검토 범위의 합의 대기로 남긴다.

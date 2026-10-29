@@ -47,13 +47,16 @@ def main():
   evidence.append({'module':module,'case':'distinct monotonic intervals may share UTC; quarantined raw is not confirmed aggregate','result':'PASS'})
   run(database,clock_row('00000000-0000-4000-8000-000000000012',12,5000,4999,'COUNTED',5000,0),False)
   evidence.append({'module':module,'case':'invalid monotonic interval CHECK rejection','result':'PASS'})
-  resolution="INSERT INTO amvp_clock_resolutions VALUES('00000000-0000-4000-8000-000000000013','00000000-0000-4000-8000-000000000010','fixture-anchor',REPEAT('0',64),REPEAT('0',64),5000,'2026-10-29 00:00:00','2026-10-29 00:00:05','2026-10-29 00:00:00','2026-10-30 00:00:00',JSON_OBJECT());"
+  resolution=f"INSERT INTO amvp_clock_resolutions(resolution_id,segment_id,anchor_id,source_hash,evidence_sha256,confirmed_ms,resolved_start_at,resolved_end_at,day_start_at,day_end_at,payload_json,owner_binding_id,executor_id) VALUES('00000000-0000-4000-8000-000000000013','00000000-0000-4000-8000-000000000010','fixture-anchor',REPEAT('0',64),REPEAT('0',64),5000,'2026-10-29 00:00:00','2026-10-29 00:00:05','2026-10-29 00:00:00','2026-10-30 00:00:00',JSON_OBJECT(),'{binding}','{executor}');"
   run(database,resolution);run(database,resolution,False)
   run(database,resolution.replace('000000000013','000000000014'),False)
   run(database,"UPDATE amvp_usage_segments SET measurement_state='COUNTED' WHERE segment_id='00000000-0000-4000-8000-000000000010';")
   assert run(database,"SELECT s.confirmed_ms,s.uncertain_ms FROM amvp_usage_segments s WHERE s.segment_id='00000000-0000-4000-8000-000000000010';")=='0\t5000'
   assert run(database,"SELECT SUM(COALESCE(r.confirmed_ms,s.confirmed_ms)) FROM amvp_usage_segments s LEFT JOIN amvp_clock_resolutions r ON r.segment_id=s.segment_id WHERE s.measurement_state='COUNTED';")=='10000'
   evidence.append({'module':module,'case':'separate resolution keeps raw unchanged; unique segment resolution prevents duplicate aggregation','result':'PASS'})
- Path(a.output).write_text(json.dumps({'kind':'REAL_ISOLATED_MYSQL_SQL_PROBE','cases':evidence,'not_tested':['application HTTP auth','concurrent Server transactions','actual Chrome','actual production migration','raw payload schema enforced by application']},ensure_ascii=False,indent=2)+'\n',encoding='utf8')
+  from server_probe import probe
+  evidence.extend(probe(a,database,module,executor,binding))
+ Path(a.output).write_text(json.dumps({'kind':'REAL_ISOLATED_MYSQL_SQL_PROBE','cases':evidence,'not_tested':['application HTTP auth','application Server transaction implementation','actual Chrome','actual production migration','raw payload schema enforced by application']},ensure_ascii=False,indent=2)+'\n',encoding='utf8')
+ if any(e['result']!='PASS' for e in evidence):raise SystemExit('Candidate SQL counterexamples reproduced; retained private result distinguishes FAIL from PASS')
  print('MySQL SQL probe:',len(evidence),'PASS; baseline schemas and new candidate tables only')
 if __name__=='__main__':main()

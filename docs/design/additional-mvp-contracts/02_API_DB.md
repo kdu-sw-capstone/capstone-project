@@ -6,7 +6,7 @@
 
 W는 기존 focurve_session HttpOnly session·exact Origin·mutation CSRF, E는 검증된 installation bearer와 실제 executor 결속이다. `user_id`는 인증에서 도출하며 request body로 받지 않는다. guest는 로컬 저장이 기본이며 회원 API 자동 업로드 금지. 설치 토큰의 기존 회전·폐기·소유권 gate를 그대로 적용한다. W_OR_E도 서로 다른 검증을 생략하지 않는다. E의 account total 조회 금지; 다른 owner/executor resource는 일반적인 404로 존재 유출 방지.
 
-모든 mutation은 auth→capability→owner row lock→precondition→idempotency→검증→단일 transaction 저장/outbox 순서다. capability negotiation 자체는 아직 capability가 없으므로 인증/검증된 artifact registry로 부트스트랩한다. GET은 consistent read만 수행한다. If-None-Match:* 생성, If-Match:"n" 수정/삭제, 없으면428, stale412, 같은 idempotency key+같은 canonical request면 기존 결과, 다른 본문409. 삭제는 tombstone+다음 runtime revision 발행, 실제 해제 전202 RELEASE_PENDING. 기존 focus frozen 설정은 다음 세션까지 남는다.
+조건부 mutation은 auth→capability→installation/owner lock→기존 idempotency 조회→새 요청 precondition→검증→단일 transaction 저장/outbox 순서다. 동일 요청의 기존 Receipt는 현재 version 검사보다 먼저 반환한다. capability negotiation 자체는 아직 capability가 없으므로 인증/검증된 artifact registry로 부트스트랩한다. GET은 consistent read만 수행한다. If-None-Match:* 생성, If-Match:"n" 수정/삭제, 없으면428, stale412, 같은 idempotency key+같은 canonical request면 기존 결과, 다른 본문409. 삭제는 tombstone+다음 runtime revision 발행, 실제 해제 전202 RELEASE_PENDING. 기존 focus frozen 설정은 다음 세션까지 남는다.
 
 UUID idempotency key는 owner+operation route에 scope한다. 기존 상세 설계의 transport response cache 7일과 영속 원장 중복 키를 구분한다. 7일 후 응답 본문 cache는 정리 가능하지만 원장/operation identity의 충돌 검사는 데이터 수명 동안 보존한다. 중복 원장 키를 TTL로 삭제해 재집계하지 않는다. 네트워크 재요청은 transport request ID만 바꾸고 immutable item/operation ID·hash는 동일하다. batch 최대100건/1MiB, 초과413, malformed400, 의미검증422. status조회에서 unknown ID는 NOT_RECEIVED이고 재전송 허용, ACCEPTED/DUPLICATE만 outbox 완료, PENDING_DEPENDENCY는 보존, REJECTED는 격리. HTTP200 자체는 적용/전체 접수 증거가 아니다.
 
@@ -66,3 +66,43 @@ USG-01의 URL/Method·인증·설치 소유권은 그대로 두고 요청 `Usage
 `ClockResolution`은 신뢰된 내부 검증 결과 형상이다. 미인증 클라이언트가 업로드하여 시간을 확정하는 API는 추가하지 않았다. proof 발급·재앵커링·권한 구현 전엔 격리를 유지한다. 예제 boolean/anchor registry는 합성 신뢰 입력이며 실제 Server 인증 성공이 아니다. 후보19테이블 SQL의 두 서버별 신규 격리 시험18건 PASS, 실제 HTTP·동시성·운영 migration은 NOT_RUN이다.
 
 ClockResolution.evidence_sha256는 검증된 physical capture proof의 canonical hash다. 참조 모델 resolve_wire는 Schema 검증→권한 있는 anchor 조회→proof hash/필드·duration·UTC 투영 대조→단일 raw resolution 순서로 연결한다. raw proof와 resolution envelope가 다른 날짜/길이/anchor를 주장하면 거절한다.
+
+## 김다훈 Web·Server·DB 독립 검토 (기준8f48c3b)
+
+### API·대상 설치·인증 경계
+
+25개 후보의 URL/Method는 기존 sites/session/event/guest-import API를 바꾸지 않는다. backend에는 명시적 amvp controller가 없고 runtime-server의 MemberApi는 `/api/v1/**` catch-all이다. 새 controller/adapter의 route 우선순위·배포 모듈을 정하기 전 신규 API 연결 완료로 표시하지 않는다. 기존 API와 경로가 다르다는 것만으로 auth/서비스 의미 호환을 입증하지 않는다.
+
+TZ-01 PUT/TZ-02 GET은 설치별 timezone row를 대상으로 하므로 기존 Executor query Schema의 executor_id를 필수로 한다. 같은 계정의 첫 설치를 임의 선택하거나 전체 설치에 전파하지 않는다. STA-01은 INSTALLATION이면 executor_id 필수, ACCOUNT_TOTAL은 W만 허용한다. 조건부 요청·멱등 hash에 canonical query를 포함한다. TimezoneRecord 본문과 DEC06의 날짜 종료/잔여 승계 정책은 바꾸지 않는다.
+
+W는 기존 cookie/session/auth_version을 검증하고 mutation에서 Origin/CSRF를 검증한다. E는 MemberLinks.access의 만료·폐기·current_user_id 결속을 재사용한다. 기존 Bearer에 owner_epoch claim이 있다고 가정하지 않는다. 서버가 현재 binding/capability/설치 행에서 얻은 epoch와 item을 비교한다. Principal의 user/executor/epoch는 body에서 채우지 않는다. I/guest 설치 증명만으로 member API 접근 불가, 다른 계정 resource는404, 같은 계정의 잘못된 설치/epoch는403/STALE_OWNER로 거절한다.
+
+회원 전환 후 과거 행은 binding.user_id에 귀속하며 현재 installation.current_user_id로 과거 통계의 소유자를 바꾸지 않는다. W의 본인 역사 조회는 기존 binding이 CLOSED여도 허용할 수 있지만 현재 설치 변경 권한을 주지 않는다. E 및 mutation은 현재 사용자/설치/활성 epoch가 모두 맞아야 한다. old ACK·미전송 원본은 보존하고 새 회원에게 재귀속·재해시·자동 업로드하지 않는다. old member 버퍼 업로드는 기존 same-owner recovery의 실제 증명/승인된 adapter가 필요하다.
+
+### 멱등·트랜잭션·잠금
+
+같은 키의 결과 재생 전에도 매번 인증·capability·권한을 재검증한다. identity=(owner_binding_id,method+구체 canonical path,Idempotency-Key), fingerprint=(method,path,정규 query,If-Match/If-None-Match,canonical body)이며 token/transport request_id는 제외한다. 성공한 version1→2 요청을 같은 키/본문/If-Match:1로 재전송하면 이후 version3이어도 원래 version2 응답을 반환한다. 다른 fingerprint는409, 새 키의 stale version은412, precondition 누락428이다. 기존 계약 원문의 '멱등 재생 우선'과 정렬했다.
+
+잠금은 관련 installation ID 정렬→binding ID 정렬→resource→operation/투영 행 순서로 고정한다. 회원 전환·수집·설정 변경 모두 같은 설치 guard를 공유한다. auth를 먼저 읽었더라도 lock 후 current owner/epoch를 재검증한다. idempotency unique 경합의 패자는 다시 현재 읽기로 row/hash/응답을 조회한다. `INSERT IGNORE`로 다른 hash를 DUPLICATE로 위장하지 않는다.
+
+config/current version/history/package pointer/operation Receipt/outbox는 하나의 transaction으로 commit한다. 효과 적용은 이 transaction의 성공으로 확정하지 않는다. 1213/1205는 rollback 후 동일 key/hash로 제한 재시도, 소진503, commit 응답 유실은 status/같은 요청 재전송이다. CREATE/UPDATE/DELETE의 tombstone·safe-version 상한은 유지한다. batch는 각 item ID/hash·epoch/seq가 영속 identity이며 새 request header를 강제하지 않는다. OWN은 transfer_id의 불변 payload와 상태를 비교하고, CAP은 인증된 artifact bootstrap, status/GET은 읽기 전용이다.
+
+### DB 보완과 집계
+
+기존 19개 후보 테이블 안에서만 UNIQUE/FK/CHECK를 보완했다. binding의 (binding_id,executor_id)를 usage/event/anchor가 복합 참조한다. current package의 owner/package, focus attachment의 owner/Receipt도 복합 FK다. resolution은 서버가 도출한 owner_binding_id/executor_id를 보관하고 segment ID+owner+executor+source_hash와 anchor ID+owner+executor를 참조한다. 이 두 새 SQL column은 HTTP body에 추가하지 않으며 검증된 source/인증 context에서 채운다. source hash·시간 길이와 일일 예산 version의 safe 범위도 제약한다.
+
+복합 FK가 실제 사용자 권한·Native proof·anchor 진실성·물리 overlap을 인증하지는 않는다. binding 생성은 잠근 legacy 설치의 실제 current_user_id를 대조해야 한다. owner transfer의 from_binding_id는 검증된 guest 로컬 binding일 수 있어 무조건 member FK를 강제하지 않고 source proof로 검증한다. to member binding/executor는 FK로 결속한다. SQL은 JSON shape·모델 결과·서명·payload hash 계산을 대신하지 않는다.
+
+usage는 COUNTED raw를 기준으로 source당 resolution 또는 원래 confirmed_ms 중 하나만 합산한다. QUARANTINED/LEGACY_UNCONFIRMED는 정상 합계에서 제외하고 PARTIAL/UNKNOWN 표시를 유지한다. 설치의 계정이 바뀌어도 binding.user_id로 과거 합계를 보존한다. account total은 설치별 물리 시간 합이며 policy attribution join으로 증폭하지 않는다. 정수 합계 overflow는 정확 정수로 검출하고 JSON 안전 범위 초과를 오류 처리한다. 기존 Event1.2의 session/target index−1 반복 계산과 새 day 그룹을 혼합하거나 소급 재작성하지 않는다. 자정/DST/DEC06·clock resolution 규칙은04_정책_시간 및 기존 참조 모델을 유지한다.
+
+### 기존 독립 구현과 미결정 adapter
+
+기존 ConfigurationDraftStore는 `additional_configuration_drafts`, user lock·expected version·tombstone을 사용하지만 controller가 없는 opt-in 초안이다. RC2의 binding별 amvp_*·capability/package/Receipt/outbox·HTTP 멱등 경로가 구현됐다고 볼 수 없다. Schedule→FOCUS_SCHEDULE WEEKLY는 기존 adapter/고정 종료 조건을 따라야 하고 ONCE는 승인 전 미지원이다. SiteLimit.limitMinutes는 기존 초안에서1..Long범위이나 RC2 daily_limit_ms는1..1440분 후보이므로 범위를 검증하고 의미 손실 없이 변환해야 한다. 자동 잘라내기 금지다.
+
+기존 Content 초안은 user GLOBAL/executor=null이며 RC2는 지정 executor/binding의 profile/artifact 포함 ContentConfig다. global 초안을 설치별로 자동 복제하지 않는다. lowercase(Locale.ROOT)와 URL_BOUNDARY_1 casefold의 차이, 수동 adultHosts와 검증 artifact의 차이도 기존 C08~10 gate에서 검토한다. CONTENT/CADENCE를 binding당 singleton으로 할지 여러 config를 명시 합성할지는 현 RC2에 고유성·우선순위가 부족하다. singleton 권장과 명시적 합성 대안을 C02/C06의 기존 검토 범위에서 선택하고, 확정 전 중복 활성화 금지다.
+
+IMP-01은 선택 metadata/manifest hash만으로 로컬 guest 원본을 새로 가져오는 완성 HTTP가 아니다. 기존 verified guest-import 경로와 (member,source installation,source record,source hash)의 검증된 source를 결속하는 adapter가 필요하다. 증명/데이터가 없으면 SOURCE_NOT_VERIFIED로 거절하며 로그인만으로 guest 데이터를 수집하지 않는다. focus 완료 시간만 있는 source를 browser 이용시간으로 바꾸지 않는다. 분석 projection과 현재 quota를 분리하고 원본/미전송 데이터를 보존한다.
+
+QUERY 권장안은 기존 OP-01 HTTP status와 Content 로컬 읽기 전용 target 조회를 분리하는 것이다. target_operation_id+target_semantic_hash와 독립 request_id,owner/scope/읽기 권한·응답 as_of/Receipt를 결속하고 조회가 NORMAL seq를 소비하지 않게 한다. 원래 효과의 과거 Receipt와 현재 재조회 결과를 구분한다. 기존 Control QUERY의 구체 Schema는3인 합의 전 변경하지 않으며 현재 명시 거절을 유지한다. 이 검토는 신규 endpoint·정책 영역을 추가하지 않는다.
+
+최신 실제 리뷰 기록: [채지민 RC2 review5695506637](https://github.com/kdu-sw-capstone/capstone-project/pull/24#pullrequestreview-5695506637)는8f48c3b 기준 기존 T01~04 설계 수정 수락, 전체 CHANGES_REQUESTED/QUERY 보류다. [의견4410668821](https://github.com/kdu-sw-capstone/capstone-project/pull/24#discussion_r4410668821)의 독립 query ID/hash·target 최초 hash·seq 비소비·null cleanup 조회·current/old-scope 권한·최초 Receipt/진행/IN_DOUBT/미발견/최신 footprint 구분 권장안과 이 Server 검토 방향이 일치한다. 실제 공동 결정·엄격 Schema·양성/부정 fixture는 미완성이고 이번 범위에서 임의 구현하지 않았다. 기존4건 수락을 전체3인 승인으로 승격하지 않는다.

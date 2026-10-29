@@ -49,6 +49,85 @@
       "result": "PASS"
     },
     {
+      "module": "backend",
+      "case": "usage rejects binding/executor mismatch",
+      "result": "PASS",
+      "observed": "EXPECTED_REJECTION"
+    },
+    {
+      "module": "backend",
+      "case": "current package rejects other owner",
+      "result": "PASS",
+      "observed": "EXPECTED_REJECTION"
+    },
+    {
+      "module": "backend",
+      "case": "focus attachment rejects other owner receipt",
+      "result": "PASS",
+      "observed": "EXPECTED_REJECTION"
+    },
+    {
+      "module": "backend",
+      "case": "clock anchor rejects binding/executor mismatch",
+      "result": "PASS",
+      "observed": "EXPECTED_REJECTION"
+    },
+    {
+      "module": "backend",
+      "case": "event rejects binding/executor mismatch",
+      "result": "PASS",
+      "observed": "EXPECTED_REJECTION"
+    },
+    {
+      "module": "backend",
+      "case": "budget rejects unsafe version",
+      "result": "PASS",
+      "observed": "EXPECTED_REJECTION"
+    },
+    {
+      "module": "backend",
+      "case": "resolution rejects cross-owner anchor",
+      "result": "PASS",
+      "observed": "EXPECTED_REJECTION"
+    },
+    {
+      "module": "backend",
+      "case": "resolution rejects wrong source hash",
+      "result": "PASS",
+      "observed": "EXPECTED_REJECTION"
+    },
+    {
+      "module": "backend",
+      "case": "resolution rejects wrong duration",
+      "result": "PASS",
+      "observed": "EXPECTED_REJECTION"
+    },
+    {
+      "module": "backend",
+      "case": "two real connections CAS yield one version/history/outbox winner",
+      "result": "PASS"
+    },
+    {
+      "module": "backend",
+      "case": "two real connections unique idempotency row; loser must re-read hash/receipt",
+      "result": "PASS"
+    },
+    {
+      "module": "backend",
+      "case": "rollback preserves config/history/outbox atomicity",
+      "result": "PASS"
+    },
+    {
+      "module": "backend",
+      "case": "installation row lock serializes physical overlap admission across real connections",
+      "result": "PASS"
+    },
+    {
+      "module": "backend",
+      "case": "historical binding aggregate survives account transfer; import never debits quota",
+      "result": "PASS"
+    },
+    {
       "module": "runtime-server",
       "case": "baseline migrations + additive candidate DDL",
       "result": "PASS",
@@ -94,11 +173,90 @@
       "module": "runtime-server",
       "case": "separate resolution keeps raw unchanged; unique segment resolution prevents duplicate aggregation",
       "result": "PASS"
+    },
+    {
+      "module": "runtime-server",
+      "case": "usage rejects binding/executor mismatch",
+      "result": "PASS",
+      "observed": "EXPECTED_REJECTION"
+    },
+    {
+      "module": "runtime-server",
+      "case": "current package rejects other owner",
+      "result": "PASS",
+      "observed": "EXPECTED_REJECTION"
+    },
+    {
+      "module": "runtime-server",
+      "case": "focus attachment rejects other owner receipt",
+      "result": "PASS",
+      "observed": "EXPECTED_REJECTION"
+    },
+    {
+      "module": "runtime-server",
+      "case": "clock anchor rejects binding/executor mismatch",
+      "result": "PASS",
+      "observed": "EXPECTED_REJECTION"
+    },
+    {
+      "module": "runtime-server",
+      "case": "event rejects binding/executor mismatch",
+      "result": "PASS",
+      "observed": "EXPECTED_REJECTION"
+    },
+    {
+      "module": "runtime-server",
+      "case": "budget rejects unsafe version",
+      "result": "PASS",
+      "observed": "EXPECTED_REJECTION"
+    },
+    {
+      "module": "runtime-server",
+      "case": "resolution rejects cross-owner anchor",
+      "result": "PASS",
+      "observed": "EXPECTED_REJECTION"
+    },
+    {
+      "module": "runtime-server",
+      "case": "resolution rejects wrong source hash",
+      "result": "PASS",
+      "observed": "EXPECTED_REJECTION"
+    },
+    {
+      "module": "runtime-server",
+      "case": "resolution rejects wrong duration",
+      "result": "PASS",
+      "observed": "EXPECTED_REJECTION"
+    },
+    {
+      "module": "runtime-server",
+      "case": "two real connections CAS yield one version/history/outbox winner",
+      "result": "PASS"
+    },
+    {
+      "module": "runtime-server",
+      "case": "two real connections unique idempotency row; loser must re-read hash/receipt",
+      "result": "PASS"
+    },
+    {
+      "module": "runtime-server",
+      "case": "rollback preserves config/history/outbox atomicity",
+      "result": "PASS"
+    },
+    {
+      "module": "runtime-server",
+      "case": "installation row lock serializes physical overlap admission across real connections",
+      "result": "PASS"
+    },
+    {
+      "module": "runtime-server",
+      "case": "historical binding aggregate survives account transfer; import never debits quota",
+      "result": "PASS"
     }
   ],
   "not_tested": [
     "application HTTP auth",
-    "concurrent Server transactions",
+    "application Server transaction implementation",
     "actual Chrome",
     "actual production migration",
     "raw payload schema enforced by application"

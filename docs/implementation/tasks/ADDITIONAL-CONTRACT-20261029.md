@@ -31,3 +31,12 @@
 - 수정: Schema action/result·viewer 조건, 모델 Receipt/순번/boot/resolution/DNR 예산/sender, 새 반례·유효/무효 fixture·재생 도구, 문서/API 메타데이터/Manifest.
 - 남음: QUERY_OPEN(target/hash/seq/응답 계약), C01~11·3인 재검토, 실제 Chrome/Native/HTTP/동시성/장시간. 기존 HUMAN APPROVAL 없음.
 - 상태: 교차 검증 후보 게시·동일 SHA 재검토 대기. 새 Git SHA·CI·전체파일은 PR24 본문이 원본. 자동Approve/Merge/제품활성화 금지.
+
+## 김다훈 Web·Server·DB 독립 검토
+
+- 기준 SHA8f48c3b8454c74bb1f998a8f4cdacfe65785d037, 같은 계약 브랜치/검토 Worktree. Core/Content 리뷰 대기와 독립 진행, 담당 재배정 없음.
+- 실제 source: backend API/auth/import/records, runtime MemberApi, 기존 추가 WT의 opt-in ConfigurationDrafts/Store/SQL·frontend API. 다른 WT는 읽기만 했고 제품 수정0.
+- K01~04 P1 및 K05 P2를 반례 후 후보에서 수정. API25개·DB19개·Schema77·기존 D01~10/D06/Event/Snapshot/Journal 보존.
+- 실행: Python Server11/전체238·Node5 PASS, 새 격리 MySQL46 PASS(port33334, 정상 종료). before API3 FAIL 및 SQL18 FAIL/26 PASS 보존. 수치는 부분집합 중복 합산 금지.
+- 미검증: 실제 HTTP/auth/Server transaction·운영 migration·Chrome/Native·장시간. QUERY/C01~11·Content cardinality·import source adapter 합의 대기.
+- 다음: 최소 변경 정상 Commit/Push 후 동일 SHA의 김다훈·윤종민·채지민 재검토. 실제 인간 승인 생성/자동Merge/활성화 금지. 최종 SHA·CI는 PR 본문 원본.

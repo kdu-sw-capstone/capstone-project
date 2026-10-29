@@ -1627,7 +1627,9 @@
         "status": "PENDING_CURRENT_DAY_END",
         "budget_reset": false
       },
-      "query": {}
+      "query": {
+        "executor_id": "00000000-0000-4000-8000-000000000001"
+      }
     },
     {
       "id": "TZ-02",
@@ -1665,7 +1667,8 @@
       "query": {
         "scope": "INSTALLATION",
         "from_date": "2026-10-29",
-        "to_date": "2026-10-29"
+        "to_date": "2026-10-29",
+        "executor_id": "00000000-0000-4000-8000-000000000001"
       }
     },
     {

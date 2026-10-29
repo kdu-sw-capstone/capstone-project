@@ -8,6 +8,7 @@ CREATE TABLE amvp_owner_bindings (
  state VARCHAR(24) NOT NULL,
  created_at DATETIME(3) NOT NULL,
  closed_at DATETIME(3) NULL,
+ UNIQUE KEY uq_amvp_binding_executor(binding_id,executor_id),
  UNIQUE KEY uq_amvp_owner_epoch(executor_id,owner_epoch),
  FOREIGN KEY(executor_id) REFERENCES extension_installations(id) ON DELETE RESTRICT,
  FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE RESTRICT,
@@ -33,6 +34,7 @@ CREATE TABLE amvp_packages (
  payload_json JSON NOT NULL,
  payload_sha256 CHAR(64) COLLATE ascii_bin NOT NULL,
  issued_at DATETIME(3) NOT NULL,
+ UNIQUE KEY uq_amvp_owner_package(owner_binding_id,package_id),
  UNIQUE KEY uq_amvp_package_revision(owner_binding_id,runtime_revision),
  FOREIGN KEY(owner_binding_id) REFERENCES amvp_owner_bindings(binding_id) ON DELETE RESTRICT,
  CHECK(runtime_revision BETWEEN 1 AND 9007199254740991)
@@ -66,9 +68,11 @@ CREATE TABLE amvp_usage_segments (
  mono_start_ms BIGINT NULL,
  mono_end_ms BIGINT NULL,
  measurement_state VARCHAR(24) NOT NULL DEFAULT 'LEGACY_UNCONFIRMED',
+ UNIQUE KEY uq_amvp_segment_scope_hash(segment_id,owner_binding_id,executor_id,payload_sha256),
  UNIQUE KEY uq_amvp_usage_seq(executor_id,collector_epoch,local_usage_seq),
  KEY ix_amvp_usage_owner_time(owner_binding_id,start_at,segment_id),
  FOREIGN KEY(owner_binding_id) REFERENCES amvp_owner_bindings(binding_id) ON DELETE RESTRICT,
+ FOREIGN KEY(owner_binding_id,executor_id) REFERENCES amvp_owner_bindings(binding_id,executor_id) ON DELETE RESTRICT,
  FOREIGN KEY(executor_id) REFERENCES extension_installations(id) ON DELETE RESTRICT,
  CHECK(start_at<end_at),
  CHECK(confirmed_ms>=0 AND uncertain_ms>=0),
@@ -89,7 +93,8 @@ CREATE TABLE amvp_day_budgets (
  PRIMARY KEY(executor_id,policy_id,day_start_at),
  FOREIGN KEY(executor_id) REFERENCES extension_installations(id) ON DELETE RESTRICT,
  CHECK(day_start_at<day_end_at),
- CHECK(confirmed_ms>=0 AND budget_carry_debit_ms>=0),
+ CHECK(version BETWEEN 1 AND 9007199254740991),
+ CHECK(confirmed_ms BETWEEN 0 AND 9007199254740991 AND budget_carry_debit_ms BETWEEN 0 AND 9007199254740991),
  CHECK(daily_limit_ms IS NULL OR daily_limit_ms BETWEEN 60000 AND 86400000)
 ) ENGINE=InnoDB;
 CREATE TABLE amvp_events (
@@ -108,7 +113,8 @@ CREATE TABLE amvp_events (
  UNIQUE KEY uq_amvp_event_seq(executor_id,event_epoch,local_event_seq),
  UNIQUE KEY uq_amvp_event_navigation(owner_binding_id,navigation_id),
  KEY ix_amvp_event_order(owner_binding_id,occurred_at,event_epoch,local_event_seq,event_id),
- FOREIGN KEY(owner_binding_id) REFERENCES amvp_owner_bindings(binding_id) ON DELETE RESTRICT
+ FOREIGN KEY(owner_binding_id) REFERENCES amvp_owner_bindings(binding_id) ON DELETE RESTRICT,
+ FOREIGN KEY(owner_binding_id,executor_id) REFERENCES amvp_owner_bindings(binding_id,executor_id) ON DELETE RESTRICT
 ) ENGINE=InnoDB;
 CREATE TABLE amvp_reports (
  report_id CHAR(36) COLLATE ascii_bin PRIMARY KEY,
@@ -139,7 +145,9 @@ CREATE TABLE amvp_owner_transfers (
  state VARCHAR(24) NOT NULL,
  payload_json JSON NOT NULL,
  updated_at DATETIME(3) NOT NULL,
- FOREIGN KEY(executor_id) REFERENCES extension_installations(id) ON DELETE RESTRICT
+ FOREIGN KEY(executor_id) REFERENCES extension_installations(id) ON DELETE RESTRICT,
+ FOREIGN KEY(to_binding_id,executor_id) REFERENCES amvp_owner_bindings(binding_id,executor_id) ON DELETE RESTRICT,
+ CHECK(expected_owner_epoch BETWEEN 1 AND 9007199254740991)
 ) ENGINE=InnoDB;
 CREATE TABLE amvp_operations (
  operation_id CHAR(36) COLLATE ascii_bin PRIMARY KEY,
@@ -182,13 +190,14 @@ CREATE TABLE amvp_capability_receipts (
  selected_json JSON NOT NULL,
  verification_ref VARCHAR(120) NOT NULL,
  expires_at DATETIME(3) NOT NULL,
+ UNIQUE KEY uq_amvp_owner_receipt(owner_binding_id,receipt_id),
  FOREIGN KEY(owner_binding_id) REFERENCES amvp_owner_bindings(binding_id) ON DELETE RESTRICT
 ) ENGINE=InnoDB;
 CREATE TABLE amvp_current_packages (
  owner_binding_id CHAR(36) COLLATE ascii_bin PRIMARY KEY,
  package_id CHAR(36) COLLATE ascii_bin NOT NULL,
  FOREIGN KEY(owner_binding_id) REFERENCES amvp_owner_bindings(binding_id) ON DELETE RESTRICT,
- FOREIGN KEY(package_id) REFERENCES amvp_packages(package_id) ON DELETE RESTRICT
+ FOREIGN KEY(owner_binding_id,package_id) REFERENCES amvp_packages(owner_binding_id,package_id) ON DELETE RESTRICT
 ) ENGINE=InnoDB;
 CREATE TABLE amvp_focus_attachments (
  attachment_id CHAR(36) COLLATE ascii_bin PRIMARY KEY,
@@ -199,7 +208,7 @@ CREATE TABLE amvp_focus_attachments (
  payload_json JSON NOT NULL,
  payload_sha256 CHAR(64) COLLATE ascii_bin NOT NULL,
  FOREIGN KEY(owner_binding_id) REFERENCES amvp_owner_bindings(binding_id) ON DELETE RESTRICT,
- FOREIGN KEY(receipt_id) REFERENCES amvp_capability_receipts(receipt_id) ON DELETE RESTRICT
+ FOREIGN KEY(owner_binding_id,receipt_id) REFERENCES amvp_capability_receipts(owner_binding_id,receipt_id) ON DELETE RESTRICT
 ) ENGINE=InnoDB;
 CREATE TABLE amvp_artifacts (
  artifact_id CHAR(36) COLLATE ascii_bin PRIMARY KEY,
@@ -221,7 +230,9 @@ CREATE TABLE amvp_clock_anchors (
  anchor_utc DATETIME(3) NOT NULL,
  verification_state VARCHAR(16) NOT NULL,
  proof_sha256 CHAR(64) COLLATE ascii_bin NOT NULL,
+ UNIQUE KEY uq_amvp_anchor_scope(anchor_id,owner_binding_id,executor_id),
  FOREIGN KEY(owner_binding_id) REFERENCES amvp_owner_bindings(binding_id) ON DELETE RESTRICT,
+ FOREIGN KEY(owner_binding_id,executor_id) REFERENCES amvp_owner_bindings(binding_id,executor_id) ON DELETE RESTRICT,
  FOREIGN KEY(executor_id) REFERENCES extension_installations(id) ON DELETE RESTRICT,
  CHECK(verification_state IN ('PENDING','VERIFIED')),
  CHECK(anchor_mono_ms BETWEEN 0 AND 9007199254740991)
@@ -230,6 +241,8 @@ CREATE TABLE amvp_clock_resolutions (
  resolution_id CHAR(36) COLLATE ascii_bin PRIMARY KEY,
  segment_id CHAR(36) COLLATE ascii_bin NOT NULL,
  anchor_id VARCHAR(100) COLLATE ascii_bin NOT NULL,
+ owner_binding_id CHAR(36) COLLATE ascii_bin NOT NULL,
+ executor_id CHAR(36) COLLATE ascii_bin NOT NULL,
  source_hash CHAR(64) COLLATE ascii_bin NOT NULL,
  evidence_sha256 CHAR(64) COLLATE ascii_bin NOT NULL,
  confirmed_ms BIGINT NOT NULL,
@@ -239,8 +252,8 @@ CREATE TABLE amvp_clock_resolutions (
  day_end_at DATETIME(3) NOT NULL,
  payload_json JSON NOT NULL,
  UNIQUE KEY uq_amvp_resolution_segment(segment_id),
- FOREIGN KEY(segment_id) REFERENCES amvp_usage_segments(segment_id) ON DELETE RESTRICT,
- FOREIGN KEY(anchor_id) REFERENCES amvp_clock_anchors(anchor_id) ON DELETE RESTRICT,
- CHECK(confirmed_ms>=0),
+ FOREIGN KEY(segment_id,owner_binding_id,executor_id,source_hash) REFERENCES amvp_usage_segments(segment_id,owner_binding_id,executor_id,payload_sha256) ON DELETE RESTRICT,
+ FOREIGN KEY(anchor_id,owner_binding_id,executor_id) REFERENCES amvp_clock_anchors(anchor_id,owner_binding_id,executor_id) ON DELETE RESTRICT,
+ CHECK(confirmed_ms BETWEEN 0 AND 9007199254740991 AND confirmed_ms=TIMESTAMPDIFF(MICROSECOND,resolved_start_at,resolved_end_at) DIV 1000),
  CHECK(day_start_at<=resolved_start_at AND resolved_start_at<resolved_end_at AND resolved_end_at<=day_end_at)
 ) ENGINE=InnoDB;

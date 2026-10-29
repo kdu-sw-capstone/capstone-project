@@ -117,6 +117,25 @@
         "scope",
         "from_date",
         "to_date"
+      ],
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "scope": {
+                "const": "INSTALLATION"
+              }
+            },
+            "required": [
+              "scope"
+            ]
+          },
+          "then": {
+            "required": [
+              "executor_id"
+            ]
+          }
+        }
       ]
     }
   },
@@ -899,7 +918,7 @@
       "body_schema": "TimezoneWrite",
       "response_schema": "TimezoneRecord",
       "success_status": 200,
-      "query_schema": "None",
+      "query_schema": "Executor",
       "precondition": "If-Match:\"<safe version>\"; Idempotency-Key:UUID",
       "implemented_at_baseline": false,
       "capability_required": true,
@@ -1626,5 +1645,37 @@
     "sequence": "quarantined raw keeps seq/hash chain; later normal intervals can advance",
     "resolution": "ClockResolution is a privileged server-side verified projection, not a public self-attestation API"
   },
-  "content_query_status": "REVIEW_PENDING: schema-reserved QUERY is explicitly rejected by reference issuer; target/hash/seq/response correlation requires three-person review. No product support claimed."
+  "content_query_status": "REVIEW_PENDING: schema-reserved QUERY is explicitly rejected by reference issuer; target/hash/seq/response correlation requires three-person review. No product support claimed.",
+  "transaction_contract": {
+    "steps": [
+      "AUTH",
+      "CAPABILITY",
+      "INSTALLATION_LOCK",
+      "OWNER_LOCK",
+      "EXISTING_IDEMPOTENCY",
+      "PRECONDITION",
+      "VALIDATE",
+      "ATOMIC_COMMIT"
+    ],
+    "identity": "owner_binding_id + method + canonical concrete path + Idempotency-Key",
+    "fingerprint": "method, concrete path, canonical query, If-Match/If-None-Match, canonical body; excludes credentials and transport request_id",
+    "cache_scope": "re-authenticate/re-authorize before replay; existing same fingerprint returns original response before stale precondition; conflict409",
+    "commit": "config/current version/history/package pointer/receipt/outbox in one transaction; no APPLIED inferred from commit",
+    "retry": "bounded full-transaction retry on 1213/1205 after rollback with same key/hash; exhaustion503; ambiguous commit->status/same-key retry",
+    "applies_to": [
+      "CFG-03",
+      "CFG-04",
+      "TZ-01",
+      "FOC-01",
+      "FOC-02",
+      "IMP-01",
+      "OWN-01"
+    ],
+    "identity_exceptions": {
+      "OWN-01": "transfer_id is immutable saga identity; compare stored canonical payload before reusing state",
+      "USG/RPT/EVT batch": "item ID/hash and epoch/seq are permanent dedup identity; no new mandatory request header",
+      "status/GET": "read-only; never consumes control_seq or writes package",
+      "CAP-01": "authenticated artifact-registry bootstrap; does not require pre-existing capability"
+    }
+  }
 }
