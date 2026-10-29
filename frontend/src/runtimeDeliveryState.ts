@@ -1,9 +1,9 @@
 import type {ConfigRecord} from "./additionalConfigApi";
 
 export type DeliveryState={state:"PENDING"|"APPLIED"|"UNKNOWN"|"UNSUPPORTED"|"NOT_APPLICABLE";label:string};
-/** A storage receipt is not execution proof. Only the exact saved revision may be shown applied. */
+/** Server validates the exact config version; a later package may carry that unchanged version. */
 export function configDelivery(row:ConfigRecord):DeliveryState {
- if(row.runtime_apply_state==="APPLIED")return row.applied_runtime_revision===row.saved_runtime_revision
+ if(row.runtime_apply_state==="APPLIED")return row.applied_runtime_revision!==null&&row.applied_runtime_revision>=row.saved_runtime_revision
   ?{state:"APPLIED",label:"적용 확인됨"}:{state:"UNKNOWN",label:"현재 저장된 설정의 적용 여부를 확인하지 못했습니다"};
  if(row.runtime_apply_state==="UNKNOWN")return {state:"UNKNOWN",label:"적용 결과 미확인"};
  if(row.runtime_apply_state==="UNSUPPORTED")return {state:"UNSUPPORTED",label:"현재 브라우저에서 지원되지 않습니다"};
