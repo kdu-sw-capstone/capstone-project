@@ -28,6 +28,11 @@ class AdditionalConfigMysqlTest {
   var ds=new DriverManagerDataSource(System.getenv("FOCURVE_AMVP_TEST_URL"),System.getenv("FOCURVE_AMVP_TEST_USER"),System.getenv("FOCURVE_AMVP_TEST_PASSWORD"));db=new JdbcTemplate(ds);manager=new DataSourceTransactionManager(ds);
   // Empty disposable database only. Refuse an existing schema rather than cleaning it.
   assertThat(db.queryForObject("SELECT COUNT(*) FROM information_schema.tables WHERE table_schema=DATABASE()",Integer.class)).isZero();
+  String database=db.queryForObject("SELECT DATABASE()",String.class);
+  assertThat(database).matches("amvp_test_[a-f0-9]+");
+  // Docker's MYSQL_DATABASE defaults to ai_ci; match the runtime candidate only
+  // while this explicitly disposable database is still verified empty.
+  db.execute("ALTER DATABASE `"+database+"` CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_bin");
   Flyway.configure().dataSource(ds).locations("classpath:db/migration").load().migrate();
   new ResourceDatabasePopulator(new FileSystemResource("../contracts/additional-mvp/rc1/mysql-runtime-candidate.sql")).execute(ds);
   auth=new MemberAuth(db,json,"https://localhost:33339",Base64.getEncoder().encodeToString(new byte[32]),"chrome-extension://aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa/popup/popup.html");

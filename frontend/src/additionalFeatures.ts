@@ -17,4 +17,3 @@ export const internalFeatures=[
   ["IG-05","제안된 항목 숨기기","추천 게시물과 추천 계정을 숨깁니다. 팔로잉 피드는 유지합니다."],
   ["IG-06","흑백 모드","Instagram 콘텐츠를 흑백으로 표시합니다."],
 ] as const;
-
