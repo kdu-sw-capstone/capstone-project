@@ -127,11 +127,11 @@ class CrossCoverage(unittest.TestCase):
         self.assertEqual(len(load('api.json')['operations']),25)
         for rule_id in (-1,0,True,2147483648):
             with self.subTest(rule_id=rule_id),self.assertRaises(ValueError):DnrCoordinator().install('DYNAMIC',dict(rule(),id=rule_id),'runtime',1,'invalid',1)
-    def test_query_is_explicitly_unsupported_until_correlation_review(self):
+    def test_obsolete_write_control_query_is_rejected(self):
         f=case('media');p=f['control']['payload']
         p['operation']='QUERY'
         for field in ('projection','cleanup_grant_id','execute_before'):p.pop(field)
-        reseal(f);self.assertTrue(valid('Control',f['control']))
-        with self.assertRaisesRegex(ValueError,'QUERY_CONTRACT_REVIEW_PENDING'):ContentOperationRegistry().issue(f['control'])
+        reseal(f);self.assertFalse(valid('Control',f['control']))
+        with self.assertRaisesRegex(ValueError,'WIRE_SCHEMA_REJECTED'):ContentOperationRegistry().issue(f['control'])
 
 if __name__=='__main__':unittest.main()

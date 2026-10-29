@@ -1,5 +1,11 @@
 # Content·Event·UI 계약
 
+최신 선택: 사용자 전달 채지민의 QUERY/sender/Port/16옵션/DOM/SPA/복원/블러/URL 방향 동의와 추가 Content 수정 요청 없음을 반영한다. 최종 SHA GitHub 승인·실제 Chrome PASS는 별도다. T01~04 수락을 유지하고 다시 전면 검토하지 않는다.
+
+IG03은 탐색만(검색 전체 제외), IG06은 feed/post/reels 흑백·DM/로그인/FOCURVE UI 제외다. 기존16개 ID·exact 결과 집합·미디어/정책 증거·복원을 보존한다. START 당시 frozen Snapshot과 Attachment를 RESUME에도 그대로 사용하며 중간 저장한 옵션은 섞지 않는다. QUERY는 별도 읽기·seq 비소비이며 요청/target/hash/scope 응답 결속은03/Schema를 따른다. registry/proof/Port 재연결은03, 미확정 예산/idle는04가 원본이다.
+
+불확실을 APPLIED/0초 정상으로 표시하지 않는다. remaining 미관측은 null/quality/as_of, 실제 제한 실패는 UNKNOWN이다. profile/license·URL 동등성·실제 영상/오디오/SPA/BFCache는 제품 활성화 검증 대기다. Event1.2 원문은 변경하지 않는다.
+
 ## 16개 옵션
 
 `feature-registry.json`의 ID·적용 페이지·route hint·ON/OFF·오류·SPA·증거·수용 기준이 개별 원본이다. route hint는 실제 selector 검증 성공 선언이 아니다. 16개 요구사항은 사용자 확정이다. 기존 feature enum과 일치하는6개도 baseline executor 실제 지원을 별도 확인해야 한다. selector/domain/route profile은 version+hash로 묶고 프로필 불일치 시 UNCONFIRMED/FAILED로 반환한다.

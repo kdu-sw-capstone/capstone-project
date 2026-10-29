@@ -1,0 +1,43 @@
+{
+  "revision": "AMVP-CONTRACT-20261029-RC2",
+  "baseline_sha": "06cebf484ffc2a94aa1c0049f4ae25d50f197b50",
+  "state": "PASS_CONTRACT_ONLY",
+  "actual_product_HTTP_Chrome_Native_long_duration": "NOT_RUN",
+  "human_final_sha_approval": "REVIEW_PENDING",
+  "python": {
+    "version": "3.14.7",
+    "total": 265,
+    "new_decision_tests": 25,
+    "new_schema_tests": 2,
+    "prior_tests_included": 238,
+    "result": "PASS"
+  },
+  "node": {
+    "version": "24.19.0",
+    "total": 6,
+    "result": "PASS"
+  },
+  "mysql": {
+    "version": "8.4.8",
+    "port": 33337,
+    "cases": 54,
+    "result": "PASS",
+    "scope": "new local disposable schemas; both module DDL compatibility, selected deployment runtime-server only",
+    "actual_application_HTTP": "NOT_RUN",
+    "initial_environment_attempts": [
+      "Windows PowerShell5 UTF8 BOM => SQL bootstrap1064, tests NOT_RUN",
+      "residual owned test process => bind/ownership failure, tests NOT_RUN"
+    ],
+    "final_shell": "PowerShell7.6.5",
+    "owned_listener_after_test": "ABSENT"
+  },
+  "legacy_lock_files": 174,
+  "manifest_files": 52,
+  "ci": "CHECK_REMOTE_HEAD_AFTER_PUSH",
+  "mysql_source_sha256": {
+    "mysql-candidate.sql": "69598d7209f6358b2f1800fd9f686c49c2f0a11e7663d208bcbf723f9fb38426",
+    "mysql-runtime-candidate.sql": "94a866116f3db0a44122fedaec39fbf447ef39195d94fbd49ca18e8cb03a36df",
+    "tools/mysql_probe.py": "8f7adb06fcd4237a1bfa05e1ef4da6c0b7c0ded7caa5ce11f4869403217d1a40",
+    "tools/server_probe.py": "fb327ef16ebf069293689da3d15891a70c8c7c33e261066bd55d0b3ff1a44097"
+  }
+}

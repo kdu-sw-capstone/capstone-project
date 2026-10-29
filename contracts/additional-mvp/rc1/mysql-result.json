@@ -104,6 +104,26 @@
     },
     {
       "module": "backend",
+      "case": "second current CONTENT rejected by singleton unique key",
+      "result": "PASS"
+    },
+    {
+      "module": "backend",
+      "case": "second current CADENCE rejected; CONTENT and CADENCE coexist",
+      "result": "PASS"
+    },
+    {
+      "module": "backend",
+      "case": "multiple SITE_TIME configs remain allowed",
+      "result": "PASS"
+    },
+    {
+      "module": "backend",
+      "case": "tombstone permits replacement without deleting frozen history",
+      "result": "PASS"
+    },
+    {
+      "module": "backend",
       "case": "two real connections CAS yield one version/history/outbox winner",
       "result": "PASS"
     },
@@ -227,6 +247,26 @@
       "case": "resolution rejects wrong duration",
       "result": "PASS",
       "observed": "EXPECTED_REJECTION"
+    },
+    {
+      "module": "runtime-server",
+      "case": "second current CONTENT rejected by singleton unique key",
+      "result": "PASS"
+    },
+    {
+      "module": "runtime-server",
+      "case": "second current CADENCE rejected; CONTENT and CADENCE coexist",
+      "result": "PASS"
+    },
+    {
+      "module": "runtime-server",
+      "case": "multiple SITE_TIME configs remain allowed",
+      "result": "PASS"
+    },
+    {
+      "module": "runtime-server",
+      "case": "tombstone permits replacement without deleting frozen history",
+      "result": "PASS"
     },
     {
       "module": "runtime-server",

@@ -174,7 +174,10 @@ def verify_direction(direction,body,e):
     if direction in ('WORKER_TO_CONTENT','CONTENT_TO_WORKER','CONTENT_RESPONSE_TO_WORKER'):
         if not e.get('channel_bound') or not isinstance(s,dict) or not s or body.get('scope')!=s:return False
         old_cleanup=body.get('operation')=='RELEASE' and body.get('release_mode')=='CLEANUP_ONLY'
-        if s!=current and not(old_cleanup and e.get('cleanup_grant_verified') and e.get('exact_old_document_verified')):return False
+        old_query=(body.get('type')=='D06_ADDITIONAL_QUERY' and body.get('cleanup_grant_id') is not None
+          and body.get('cleanup_grant_id')==e.get('cleanup_grant_id')
+          and all(body.get(k) is not None and body.get(k)==e.get(k) for k in ('target_operation_id','target_semantic_sha256')))
+        if s!=current and not((old_cleanup or old_query) and e.get('cleanup_grant_verified') and e.get('exact_old_document_verified')):return False
         if direction=='WORKER_TO_CONTENT':return own and e.get('transport')=='PRIVATE_PORT'
         if direction=='CONTENT_TO_WORKER':
             return own and sender.get('tab',{}).get('id')==s['tab_id'] and sender.get('frameId')==s['frame_id'] and sender.get('documentId')==s['document_id'] and e.get('native_navigation_verified') is True

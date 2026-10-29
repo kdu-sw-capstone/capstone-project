@@ -140,13 +140,16 @@ def window_duration(when):
     return minutes
 
 class Focus:
-    def __init__(self,snapshot,remaining):self.state='STARTING';self.snapshot=snapshot;self.remaining=remaining;self.runtime_active=True
+    def __init__(self,snapshot,remaining,attachment=None):
+        self.state='STARTING';self.snapshot=copy.deepcopy(snapshot);self.remaining=remaining;self.runtime_active=True
+        self.attachment=copy.deepcopy(attachment)
     def applied(self,verified):self.state='RUNNING' if verified else 'UNKNOWN'
     def pause(self,released):
         if self.state!='RUNNING':raise ValueError('INVALID_TRANSITION')
         self.state='PAUSED' if released else 'UNKNOWN'
-    def resume(self,snapshot,verified):
+    def resume(self,snapshot,verified,attachment=None):
         if self.state!='PAUSED' or snapshot!=self.snapshot:raise ValueError('FROZEN_SNAPSHOT_MISMATCH')
+        if attachment!=self.attachment:raise ValueError('FROZEN_ATTACHMENT_MISMATCH')
         self.state='RUNNING' if verified else 'UNKNOWN'
     def end(self,released):self.state='ENDED' if released else 'UNKNOWN'
 

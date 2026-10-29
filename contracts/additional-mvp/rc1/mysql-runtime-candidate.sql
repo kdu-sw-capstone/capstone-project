@@ -23,6 +23,8 @@ CREATE TABLE amvp_configs (
  saved_runtime_revision BIGINT NOT NULL,
  updated_at DATETIME(3) NOT NULL,
  deleted_at DATETIME(3) NULL,
+ active_singleton_kind VARCHAR(24) GENERATED ALWAYS AS (CASE WHEN deleted_at IS NULL AND kind IN ('CONTENT','CADENCE') THEN kind ELSE NULL END) STORED,
+ UNIQUE KEY uq_amvp_active_singleton(owner_binding_id,active_singleton_kind),
  FOREIGN KEY(owner_binding_id) REFERENCES amvp_owner_bindings(binding_id) ON DELETE RESTRICT,
  CHECK(version BETWEEN 1 AND 9007199254740991),
  CHECK(kind IN ('CONTENT','SITE_TIME','FOCUS_SCHEDULE','CADENCE'))

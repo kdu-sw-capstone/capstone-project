@@ -1,3 +1,4 @@
+#requires -Version 7.0
 param([Parameter(Mandatory=$true)][string]$BinaryDirectory,[int]$Port=33327)
 $ErrorActionPreference='Stop'
 $taskRoot=(Get-Location).Path
@@ -62,12 +63,20 @@ try{
  Copy-Item -LiteralPath (Join-Path $taskSandbox 'result.json') -Destination 'contracts/additional-mvp/rc1/mysql-result.json'
  @{mysql_version='8.4.8';binary_sha256=(Get-FileHash -LiteralPath $serverExe -Algorithm SHA256).Hash;private_profile='NEW_WORKTREE_LOCAL_ONLY';credentials_published=$false;port=$Port} | ConvertTo-Json | Set-Content -LiteralPath (Join-Path $taskSandbox 'environment.json') -Encoding utf8
 }finally{
+ # Track the process we spawned even if readiness/credential bootstrap failed.
+ if(-not $ownedPid -and $server){$ownedPid=$server.Id}
  if($ownedPid){
   $current=Get-CimInstance Win32_Process -Filter "ProcessId=$ownedPid"
   if($current -and $current.ExecutablePath -eq $serverExe -and $current.CommandLine.Contains($data)){
    & (Join-Path $binaryRoot 'bin/mysqladmin.exe') "--defaults-extra-file=$control" --protocol=tcp shutdown *> $null
    $owned=Get-Process -Id $ownedPid -ErrorAction SilentlyContinue
-   if($owned -and -not $owned.WaitForExit(15000)){throw 'Owned MySQL did not shut down; report retained process instead of deleting data'}
+   if($owned -and -not $owned.WaitForExit(15000)){
+    # Only disposable data created by this invocation may be stopped on failed bootstrap.
+    $still=Get-CimInstance Win32_Process -Filter "ProcessId=$ownedPid"
+    if($still.ExecutablePath -ne $serverExe -or -not $still.CommandLine.Contains($data)){throw 'Shutdown ownership mismatch'}
+    Stop-Process -Id $ownedPid
+    Wait-Process -Id $ownedPid -Timeout 15 -ErrorAction SilentlyContinue
+   }
   }
   if(Get-Process -Id $ownedPid -ErrorAction SilentlyContinue){throw 'Owned server still running'}
  }

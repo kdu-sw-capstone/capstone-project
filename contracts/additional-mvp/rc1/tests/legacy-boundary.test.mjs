@@ -32,3 +32,14 @@ test('RC2 cleanup semantic digest agrees across Python and existing JS canonical
   const {semantic_sha256,channel_credential,...semantic}=fixtures.messages[5].value.payload;
   assert.equal(createHash('sha256').update(guestCanonical(semantic),'utf8').digest('hex'),semantic_sha256);
 });
+
+
+test('legacy actors reject read-only QUERY and its independent result',()=>{
+  const f=JSON.parse(readFileSync(new URL('../decision-fixtures.json',import.meta.url),'utf8'));
+  for(const m of [f.query,f.response]){
+    assert.equal(guestValid(m,'control_request'),false);
+    assert.equal(memberValid(m,'control_request'),false);
+  }
+  const clean={...f.query};delete clean.query_sha256;delete clean.channel_credential;
+  assert.equal(createHash('sha256').update(guestCanonical(clean)).digest('hex'),f.query.query_sha256);
+});

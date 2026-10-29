@@ -1,5 +1,16 @@
 # ADDITIONAL-CONTRACT-20261029
 
+## 현재 작업 — 3인 방향 동의 최종 후보 반영
+
+- AMVP-CON-01, 동일 브랜치/Worktree, 시작06cebf484ffc2a94aa1c0049f4ae25d50f197b50. 담당 변경 없음, 신규 전면 검토 없음.
+- 사용자 전달3인 A~D 방향 동의와 김다훈 C05/C11 명시 회신을 decision-consent.json에 출처 구분해 기록. GitHub Approve 대행 아님.
+- 변경: 독립 읽기 QUERY·방향별 proof/Port·동일 frozen Attachment·provisional 예산/idle60·singleton DDL·verified source/Server mapping. 제품 소스/legacy 원문 변경0.
+- 실제 package source는 runtime-server, migration V1~9 확인→V10 후보. 최신 제품 PR에서 번호 충돌 재확인 후 예약, 이번에는 numbered migration/운영 적용 없음.
+- 상태: 필요한 변경 계약 시험 후 동일 SHA의 변경 부분 재확인 대기. Revision RC2 유지·REVIEW_PENDING. Merge/공유 계약 활성화 금지.
+- 실행 결과: docs/design/additional-mvp-contracts/07_검증결과.md 및 decision-verification.json. 새로운 SQL54 PASS(port33337), 초기 환경 실패도 .local 보존. Chrome/Native/HTTP/장시간은NOT_RUN.
+- 다음 최소 행동: 게시된 같은 SHA에서 윤종민·채지민이 QUERY/Port/frozen/C05/C11 변경 영향만 확인, 김다훈은 Server/DB/source/집계 연결 확인. 기존 수락 영역은 재사용하고 실제3인 승인 이후 계약 단계 종료 판단.
+- 기존 로컬 결정 초안은 미추적 상태 그대로 보존하며 Commit 대상에서 제외. 다른 Worktree/index/Shorts/PR17·21·22 변경 없음.
+
 - 기능: 추가 MVP 공통 계약 F01~F18, YT-01~10/IG-01~06. 기존 개인별 담당 유지.
 - 계약 작성·통합 조정: 김다훈 작업 요청에 따른 Codex 기술 검토. 인간 공동 승인 대행 아님.
 - 브랜치: codex/additional-mvp-contracts-20261029

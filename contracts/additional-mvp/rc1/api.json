@@ -1677,5 +1677,13 @@
       "status/GET": "read-only; never consumes control_seq or writes package",
       "CAP-01": "authenticated artifact-registry bootstrap; does not require pre-existing capability"
     }
+  },
+  "decision_binding": {
+    "status": "DIRECTION_CONSENT_USER_RELAYED_FINAL_GITHUB_APPROVAL_PENDING",
+    "content_cadence": "one current non-deleted config per owner_binding and kind; immutable versions preserved",
+    "deployment_module": "runtime-server",
+    "module_evidence": "scripts/package-integrated-candidate.py:23,42,64-68",
+    "migration_candidate": "V10; repository scan V1..V9, reserve again at integration tip; no numbered migration applied",
+    "import_source": "reuse authenticated completed guest import source; selected metadata alone cannot create records"
   }
 }

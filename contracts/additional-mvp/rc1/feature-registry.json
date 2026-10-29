@@ -827,7 +827,7 @@
       ],
       "route_examples_are_exhaustive": false,
       "legacy_feature_code": null,
-      "target": "탐색 목록; 검색/검색 결과까지 확대하지 않음(경계 공동 검토)",
+      "target": "EXPLORE only; excludes search/search-result scope",
       "on": "권한 검증된 frozen focus attachment에서만 활성; scope별 소유 ledger에 먼저 예약/기록 후 변경",
       "off": "해당 claim만 제거, 마지막 claim이 사라진 속성만 원래 값으로 복원; 타 owner/page 변경 보존",
       "failure": "FAILED/UNCONFIRMED/UNSUPPORTED를 APPLIED로 바꾸지 않음. REQUIRED 옵션 실패 시 부분 RUNNING 금지",
@@ -855,7 +855,7 @@
             "EXPLORE"
           ],
           "when": "ON + valid sender/scope + verified frozen profile",
-          "expect": "탐색 목록; 검색/검색 결과까지 확대하지 않음(경계 공동 검토)",
+          "expect": "EXPLORE only; excludes search/search-result scope",
           "evidence": "observer_ready + eligible/restricted counts + current document effect proof",
           "status": "NOT_RUN"
         },
@@ -871,7 +871,8 @@
           "expect": "rebind valid current doc only; no duplicate observer; stale ignored; errors never APPLIED",
           "status": "NOT_RUN"
         }
-      ]
+      ],
+      "scope_direction": "CONSENT_REPORTED_BY_USER_FINAL_SHA_REVIEW_PENDING"
     },
     {
       "id": "IG-04",
@@ -1033,7 +1034,7 @@
       ],
       "route_examples_are_exhaustive": false,
       "legacy_feature_code": null,
-      "target": "소유한 filter 합성; DM·로그인·FOCURVE UI 제외 권장안, 영역 공동 검토",
+      "target": "Grayscale feed/post/reels; excludes DM/login/FOCURVE UI",
       "on": "권한 검증된 frozen focus attachment에서만 활성; scope별 소유 ledger에 먼저 예약/기록 후 변경",
       "off": "해당 claim만 제거, 마지막 claim이 사라진 속성만 원래 값으로 복원; 타 owner/page 변경 보존",
       "failure": "FAILED/UNCONFIRMED/UNSUPPORTED를 APPLIED로 바꾸지 않음. REQUIRED 옵션 실패 시 부분 RUNNING 금지",
@@ -1063,7 +1064,7 @@
             "REELS"
           ],
           "when": "ON + valid sender/scope + verified frozen profile",
-          "expect": "소유한 filter 합성; DM·로그인·FOCURVE UI 제외 권장안, 영역 공동 검토",
+          "expect": "Grayscale feed/post/reels; excludes DM/login/FOCURVE UI",
           "evidence": "observer_ready + eligible/restricted counts + current document effect proof",
           "status": "NOT_RUN"
         },
@@ -1079,7 +1080,8 @@
           "expect": "rebind valid current doc only; no duplicate observer; stale ignored; errors never APPLIED",
           "status": "NOT_RUN"
         }
-      ]
+      ],
+      "scope_direction": "CONSENT_REPORTED_BY_USER_FINAL_SHA_REVIEW_PENDING"
     }
   ]
 }

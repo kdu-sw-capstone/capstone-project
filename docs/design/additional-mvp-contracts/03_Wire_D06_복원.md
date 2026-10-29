@@ -98,4 +98,41 @@ DNR 채택도 새 claim을 쓰기 전에 cleanup 예약이 필요하다. 예약 
 
 sender.id와 구성된 own extension ID가 둘 다 없으면 일치가 아니다. scope·private channel 증거가 비었으면 거절한다. scope/URL·tab·document·generation을 body가 꾸며도 현재 신뢰 문맥을 대체하지 못한다. 이 판정은 합성 어댑터 시험이며 실제 Native/Chrome sender PASS가 아니다.
 
-**QUERY_OPEN / REVIEW_PENDING**: Control에는 QUERY 형상이 있지만 기존 RC2 참조 모델은 projection을 읽다 KeyError가 났고 대상 operation hash·QUERY 자체 hash·응답 상관관계가 완성되지 않았다. 현재는 QUERY_CONTRACT_REVIEW_PENDING으로 명시 거절하며 처리 성공을 주장하지 않는다. 권장안은 상태 변경 명령과 분리한 읽기 전용 target 조회이고 대안은 이 Revision의 QUERY 제거+기존 status/동일 요청 재전송만 사용이다. 어느 안도 이 수정에서 확정하지 않는다. 윤종민·채지민·김다훈이 target/request ID, hash, seq/null Cleanup 조회, 반환 Schema를 같은 SHA에 합의해야 한다. QUERY 의존 신규 executor 활성화는 금지하며 Cleanup 동일 요청 재전송 경로는 별도 시험으로 보존한다.
+**이전 QUERY_OPEN 이력**: 06cebf4까지 Control QUERY는 QUERY_CONTRACT_REVIEW_PENDING으로 거절했다. 사용자 전달 3인 방향 동의에 따라 아래 독립 조회 후보로 대체한다. 이전 형상의 Control QUERY는 이제 Schema에서 거절한다. 최종 SHA의 GitHub 승인·제품 활성화는 여전히 별도다.
+
+## 결정 반영 후보: 독립 읽기 QUERY
+
+schema.json의 ContentQuery/ContentQueryResult가 strict 원문, examples.json 및 decision-fixtures.json이 합성 예시다. ADDITIONAL_CONTENT/AMVP_CONTENT_2 안의 별도 type이며 일곱 번째 stream이나 새 HTTP API를 만들지 않는다. 아직 배포하지 않은 후보이므로 버전은 유지하되 capability의 검증 artifact+Revision+Manifest가 이 후보와 일치해야 한다. 이전 AMVP_CONTENT_2 번호만 같다는 이유로 조회를 보내지 않는다.
+
+| 요청 필드 | 의미 |
+|---|---|
+| request_id / query_sha256 | 조회 자체 UUID와 canonical hash. 자기 query_sha256·회전 가능한 channel_credential만 hash 제외; target·scope·request_id·grant 포함 |
+| target_operation_id / target_semantic_sha256 | 발급 registry에 보존한 대상 ID와 최초 의미 hash. 조회 hash와 혼합 금지 |
+| scope / channel_credential | Worker registry와 현재 검증된 document/owner/epoch/channel proof에 결속. body 자체는 증거 아님 |
+| cleanup_grant_id | current 조회는 null. old-scope는 사전 발급·재검증된 exact target/owner/document/footprint grant만 허용 |
+
+QUERY에는 control_seq 자체가 없다. 일반 seq MAX_SAFE_INTEGER·gap·대기 상태에서도 조회하며 대상 RELEASE의 seq=null도 그대로 조회한다. 조회는 normal cursor·claim·DOM·DNR·cleanup 예약·복원 의무를 변경하지 않는다. old-scope 조회가 새 APPLY 권한을 주지 않는다. auth는 lookup·캐시 재생 전에 매번 검사한다.
+
+응답은 request_id/query_sha256/target ID·hash/전체 scope를 echo하여 요청과 결속한다. historical_receipt는 불변 최초 ContentResult(또는 null), progress_state는 PENDING/IN_DOUBT/TERMINAL/UNKNOWN, current_effect는 독립 재관측한 state/footprint/observed_at(또는 null)이다. 과거 APPLIED Receipt만으로 현재 효과를 APPLIED라고 생성하지 않는다. 현재 효과는 exact 문서 재조회 증거가 있어야 하며 없으면 null/미관측이다.
+
+lookup_state=FOUND/NOT_FOUND/EVICTED는 조회 성공 ACK, UNKNOWN은 저장/조회 미확인 NACK+error_code다. FOUND 외 historical_receipt/current_effect는 null·progress UNKNOWN이다. NOT_FOUND는 신뢰 가능한 조회에서 기록이 없다는 뜻, EVICTED는 알려진 기록 소실, UNKNOWN은 조회를 확정할 수 없다는 뜻이다. 어느 것도 해제 성공·새 APPLY 허가·의무 소멸을 뜻하지 않는다. 기존 HTTP NOT_RECEIVED 의미를 바꾸지 않는다.
+
+응답 유실 시 같은 request ID/hash는 보관 중 조회 스냅샷을 재생한다. 같은 ID 다른 hash는 QUERY_ID_CONFLICT, 같은 target ID 다른 target hash는 QUERY_TARGET_MISMATCH다. 최신 관측은 새 request ID로 조회한다. 캐시 유실 후 새 읽기는 새 observed_at을 명시하고 과거 응답 재생으로 위장하지 않는다. transient UNKNOWN은 성공 receipt로 고정하지 않는다. 무제한 query 영속 원장을 추가하지 않는다. 서버 OP-01 status와 로컬 document QUERY의 관측 범위는 다르다.
+
+## 결정 반영 후보: sender URL·registry/proof·private Port
+
+재사용 근거는 extension/member-a1/p1.mjs의 fields/validP1, P1Native.routeEligible/frame/attest/receive/admission/guard 및 extension/a1/p1.mjs의 대응 검증이다. member p1의 frame(57행), attest(58~70행), receive(73~109행), admission(132~142행), guard(155~171행), respondProbe(235행 이후)를 기준으로 연결한다. legacy NATIVE_BINDING_PROOF의 sender_url_sha256/native_url_sha256·scope_sha256·registration_epoch·credential_sha256·receiver_sha256·creation_boot·fence_epoch를 수정하지 않는다. 이 파일의 이름/버전/host 제약을 신규 Wire로 복사하지 않고 검증 패턴을 typed adapter로 연결한다. p1의 YouTube 전용 frame/정책 조건은 Instagram 지원 근거가 아니다.
+
+| 관측 | 책임·보관 | 적용 비교 |
+|---|---|---|
+| 등록 sender URL | Worker가 Chrome MessageSender/onConnect sender에서 관측, 등록 registry/proof의 sender_url_sha256로 고정 | body URL로 덮어쓰지 않음; tab/frame/document/origin/receiver/owner/epoch와 함께 검사 |
+| 현재 navigation URL | Worker/Core browser-native frame adapter가 getAllFrames 등으로 실제 document/lifecycle을 재조회, native_url_sha256·현재 proof/version/generation 결속 | OS Native Messaging이 Chrome sender를 대신 보증한다고 간주하지 않음 |
+| live Port | Worker 전용 handle→binding/document/proof/credential/boot map | Port 이름·확장 ID만으로 모듈 역할을 보증하지 않음; handle은 영속 복원하지 않음 |
+
+정상 APPLY는 현재 proof/문서/owner·활성 lifecycle·채널이 모두 일치해야 한다. SPA URL 변경은 적용을 닫고 독립 frame 관측→기존 route handoff/CAS 검증→현재 generation proof·credential 등록 후 재개한다. 원래 sender URL은 유지하며 기존 proof가 승인한 비교 집합만 허용한다. 같은 origin 또는 body handoff=true만으로 새 URL을 허용하지 않는다. BFCache 복귀·Worker boot 변경은 새 live 채널과 실제 문서 재검증 전 적용/ACK 금지다.
+
+old-scope Cleanup/QUERY는 기존 grant·owner·binding·Footprint·exact old document·target·expiry·proof만 제한적으로 확인한다. 문서를 검증할 수 없으면 RELEASE_PENDING/UNKNOWN을 보존한다. 새 scope에 APPLY 권한을 만들지 않는다. 회전한 옛 credential/Port는 정상 명령에 사용할 수 없고, 복원이 필요하면 기존 grant 재검증으로 제한 채널을 다시 결속해야 한다.
+
+최초 등록은 기존 provisional 등록→대상 document challenge/ATTEST→browser sender·receiver/proof 검증→Worker registry 확정 순서를 재사용한다. provisional credential이 필요한 adapter도 APPLY는 닫는다. 정식 credential은 검증한 document/channel에만 전달하고 page world/window.postMessage·서버 로그에 노출하지 않는다. 재연결 시 endpoint·owner/epoch·문서/현재 URL을 다시 확인하고 credential을 회전하며 미해결 Receipt/Journal은 보존한다. Content 응답 Promise에는 독립 sender가 없으므로 pending tab/document/request/op/hash와 호출 전후 frame 증거로 검증한다. 위 6방향 표의 다른 hop 검증은 그대로다.
+
+decision_reference.ProofPorts/ContentQueries의 관측·proof·authorize callback은 합성 privileged fixture 입력이다. 이것이 실제 Chrome/Port 보안 구현이나 실제 실행 PASS라는 뜻은 아니다.

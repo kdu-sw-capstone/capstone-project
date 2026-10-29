@@ -1,5 +1,18 @@
 # API·DB 상세 계약
 
+## 방향 동의 후 최종 후보 선택
+
+사용자 전달 A~D 동의와 C05/C11 추가 회신을 반영했다. 아래 과거 '미결정' 절은 조사 이력이며 현재 선택은 이 절이 우선한다. GitHub 최종 승인/제품 배포와 구분한다.
+
+- CONTENT/CADENCE: owner_binding+kind당 현재 non-deleted 설정 하나. amvp_configs의 generated active_singleton_kind+복합 UNIQUE로 보장한다. tombstone은 슬롯을 비우되 immutable config_versions/frozen Attachment를 삭제하지 않는다. SITE_TIME/FOCUS_SCHEDULE 다중 설정은 유지한다. 중복 CREATE409·같은 key/hash Receipt 재생·version412/428 규칙은 보존하며 조용히 하나를 골라 적용하지 않는다.
+- import: 기존 인증된 guest 완료기록 import/조회 source와 member/source installation/record/hash를 대조한 뒤 Receipt·분석 projection을 연결한다. IMP metadata만으로 원본을 생성하지 않는다. source 미검증은 거절, 원본·현재 quota 보존, source adapter 실제 연결은 NOT_RUN이다.
+- Server: **runtime-server** 선택. scripts/package-integrated-candidate.py:23,42,64~68이 해당 jar를 패키지에 복사하고 primaryServer로 기록한다. backend의 독립 draft/validator는 필요한 부분만 adapter로 재사용한다. Server 교체나 동일 DB 이중 migration은 하지 않는다.
+- migration: 검토 기준 runtime-server/src/main/resources/db/migration에 V1~V9가 존재하여 다음은 **V10 후보**다. 제품 PR의 최신 통합 SHA에서 선점 여부를 확인·예약하고 선택 모듈에만 additive19테이블을 적용한다. backend V11은 선택하지 않는다. 이번 PR에서 numbered Flyway 파일/운영 배포는 하지 않는다. 현재 설치 실행은 spring.flyway.enabled=false이므로 자동 적용됐다고 주장하지 않는다. backend SQL 후보는 기존 호환성 근거로 보존한다.
+- 기존 auth/MemberLinks·완료기록 source·lock/history/idempotency/outbox를 재사용한다. GLOBAL Content draft를 설치별 자동 복제하지 않는다. 원장·계정 소유권·집계·기존25개 API 경로와 D06/Event/Snapshot/Journal 원문은 보존한다.
+- C05 예약은 Core 로컬 sidecar 단일 writer로 durable 저장한다. 서버 확정 통계와 미보고 로컬 집행을 구분하고 최신 remaining을 모르면 DailyUsage nullable/quality/as_of로 미확인 표시한다. 새 시간 보정 업로드 API나 예산 변경 endpoint는 만들지 않는다.
+
+QUERY/Port는03, frozen/time/idle는04, 방향 동의 출처·최종 재확인 범위는06, 실행 결과는07을 따른다.
+
 ## HTTP 공통
 
 `api.json`의 25개 operation이 경로·method·auth·요청/응답 Schema·query·HTTP status·precondition의 원본이다. 기존 `/api/v1/sites`, sessions, events 원문은 변경하지 않는다. 신규 `/api/v1/amvp/*`는 **현재 미구현**이다. 모든 필드는 명시적이며 JSON unknown field 거절. Schema default로 저장/권한을 임의 채우지 않는다. 생성 버전 1, 증가 최대 9007199254740991; overflow 422 VERSION_LIMIT. 정수에 문자열/float/boolean coercion 금지. UTC는 millisecond Z, IANA zone은 검증된 tzdb revision과 함께 저장한다.

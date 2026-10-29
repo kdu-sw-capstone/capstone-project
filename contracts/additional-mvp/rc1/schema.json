@@ -1564,44 +1564,6 @@
                   "pattern": "^[a-f0-9]{64}$"
                 },
                 "control_seq": {
-                  "type": "integer",
-                  "minimum": 1,
-                  "maximum": 9007199254740991
-                },
-                "operation": {
-                  "const": "QUERY"
-                }
-              },
-              "required": [
-                "operation_id",
-                "semantic_sha256",
-                "scope",
-                "channel_credential",
-                "control_seq",
-                "operation"
-              ]
-            },
-            {
-              "type": "object",
-              "additionalProperties": false,
-              "properties": {
-                "operation_id": {
-                  "type": "string",
-                  "format": "uuid",
-                  "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
-                },
-                "semantic_sha256": {
-                  "type": "string",
-                  "pattern": "^[a-f0-9]{64}$"
-                },
-                "scope": {
-                  "$ref": "#/$defs/BindingScope"
-                },
-                "channel_credential": {
-                  "type": "string",
-                  "pattern": "^[a-f0-9]{64}$"
-                },
-                "control_seq": {
                   "const": null
                 },
                 "operation": {
@@ -5496,6 +5458,277 @@
           ]
         }
       ]
+    },
+    "ContentQuery": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "type": {
+          "const": "D06_ADDITIONAL_QUERY"
+        },
+        "schema_version": {
+          "const": "AMVP_CONTENT_2"
+        },
+        "stream": {
+          "const": "ADDITIONAL_CONTENT"
+        },
+        "request_id": {
+          "$ref": "#/$defs/Uuid"
+        },
+        "query_sha256": {
+          "$ref": "#/$defs/Hash"
+        },
+        "target_operation_id": {
+          "$ref": "#/$defs/Uuid"
+        },
+        "target_semantic_sha256": {
+          "$ref": "#/$defs/Hash"
+        },
+        "scope": {
+          "$ref": "#/$defs/BindingScope"
+        },
+        "channel_credential": {
+          "$ref": "#/$defs/Hash"
+        },
+        "cleanup_grant_id": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Uuid"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "type",
+        "schema_version",
+        "stream",
+        "request_id",
+        "query_sha256",
+        "target_operation_id",
+        "target_semantic_sha256",
+        "scope",
+        "channel_credential",
+        "cleanup_grant_id"
+      ]
+    },
+    "ContentQueryResult": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "type": {
+          "const": "D06_ADDITIONAL_QUERY_RESULT"
+        },
+        "schema_version": {
+          "const": "AMVP_CONTENT_2"
+        },
+        "stream": {
+          "const": "ADDITIONAL_CONTENT"
+        },
+        "request_id": {
+          "$ref": "#/$defs/Uuid"
+        },
+        "query_sha256": {
+          "$ref": "#/$defs/Hash"
+        },
+        "target_operation_id": {
+          "$ref": "#/$defs/Uuid"
+        },
+        "target_semantic_sha256": {
+          "$ref": "#/$defs/Hash"
+        },
+        "scope": {
+          "$ref": "#/$defs/BindingScope"
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "ACK",
+            "NACK"
+          ]
+        },
+        "lookup_state": {
+          "type": "string",
+          "enum": [
+            "FOUND",
+            "NOT_FOUND",
+            "EVICTED",
+            "UNKNOWN"
+          ]
+        },
+        "historical_receipt": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ContentResult"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "progress_state": {
+          "type": "string",
+          "enum": [
+            "PENDING",
+            "IN_DOUBT",
+            "TERMINAL",
+            "UNKNOWN"
+          ]
+        },
+        "current_effect": {
+          "anyOf": [
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "state": {
+                  "type": "string",
+                  "enum": [
+                    "APPLIED",
+                    "RELEASED",
+                    "UNCONFIRMED"
+                  ]
+                },
+                "footprint_sha256": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/$defs/Hash"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "observed_at": {
+                  "$ref": "#/$defs/Utc"
+                }
+              },
+              "required": [
+                "state",
+                "footprint_sha256",
+                "observed_at"
+              ],
+              "allOf": [
+                {
+                  "if": {
+                    "properties": {
+                      "state": {
+                        "enum": [
+                          "APPLIED",
+                          "RELEASED"
+                        ]
+                      }
+                    }
+                  },
+                  "then": {
+                    "properties": {
+                      "footprint_sha256": {
+                        "$ref": "#/$defs/Hash"
+                      }
+                    }
+                  }
+                }
+              ]
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "observed_at": {
+          "$ref": "#/$defs/Utc"
+        },
+        "error_code": {
+          "anyOf": [
+            {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 80
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "type",
+        "schema_version",
+        "stream",
+        "request_id",
+        "query_sha256",
+        "target_operation_id",
+        "target_semantic_sha256",
+        "scope",
+        "status",
+        "lookup_state",
+        "historical_receipt",
+        "progress_state",
+        "current_effect",
+        "observed_at",
+        "error_code"
+      ],
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "lookup_state": {
+                "const": "UNKNOWN"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "status": {
+                "const": "NACK"
+              },
+              "error_code": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 80
+              }
+            }
+          },
+          "else": {
+            "properties": {
+              "status": {
+                "const": "ACK"
+              },
+              "error_code": {
+                "type": "null"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "lookup_state": {
+                "enum": [
+                  "NOT_FOUND",
+                  "EVICTED",
+                  "UNKNOWN"
+                ]
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "historical_receipt": {
+                "type": "null"
+              },
+              "current_effect": {
+                "type": "null"
+              },
+              "progress_state": {
+                "const": "UNKNOWN"
+              }
+            }
+          }
+        }
+      ]
     }
   },
   "oneOf": [
@@ -5516,6 +5749,12 @@
     },
     {
       "$ref": "#/$defs/FocusControl"
+    },
+    {
+      "$ref": "#/$defs/ContentQuery"
+    },
+    {
+      "$ref": "#/$defs/ContentQueryResult"
     }
   ]
 }

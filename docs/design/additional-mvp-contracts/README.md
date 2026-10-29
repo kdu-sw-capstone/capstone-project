@@ -18,7 +18,11 @@ Git SHA는 자기 자신을 문서에 순환 기입하지 않는다. PR 본문 h
 
 리뷰 기준 `bf62f1520ac06e5d507c54b8f06d93fdd4553ef3`에서 Core 4건 + Content 4건을 **7개 문제**로 통합했다. C-01과 T-04는 동일 Cleanup 규칙이다. 변경은 계약 패키지·검증·이 문서·기존 작업카드에 한정한다. 기존 폴더 `rc1/`은 링크 호환을 위해 유지하며 활성 Revision은 RC2 후보이다.
 
-77개 Schema, 25개 API 정의, 후보 19개 테이블. 신규 Content/usage stream은 각각 `AMVP_CONTENT_2` / `AMVP_BROWSER_USAGE_2`로 분리한다. RC1 후보 수신기에도 무조건 호환된다고 주장하지 않는다. 동일 Revision·artifact·capability를 협상하지 못하면 적용 전에 거절한다. legacy Event/D06/Journal/스냅샷 원문은 그대로다.
+79개 Schema, 25개 API 정의, 후보 19개 테이블. 신규 Content/usage stream은 각각 `AMVP_CONTENT_2` / `AMVP_BROWSER_USAGE_2`로 분리한다. RC1/이전 RC2 후보 수신기에 무조건 호환된다고 주장하지 않는다. 동일 Revision·artifact·Manifest·capability를 협상하지 못하면 적용 전에 거절한다. legacy Event/D06/Journal/스냅샷 원문은 그대로다.
+
+## 최종 방향 동의 반영 후보
+
+기준06cebf4에서 사용자 전달3인 방향 동의와 김다훈 C05/C11 추가 회신을 일괄 반영했다. 독립 읽기 QUERY·sender/Port proof·frozen Snapshot+Attachment·보수적 미확정 예산·idle60초·singleton·verified import·runtime-server 선택이다. 현재 상태는 **방향 선택 반영 / 최종 SHA 담당 확인 대기 / 실제 제품 검증 별도**다. 기록은 decision-consent.json, strict 명세는 Schema/03/04/02, 변경 확인표는06, 시험 결과는07이다. 과거 미결정/검토 수치는 이력이며 해당 최신 절과 구분한다. 로컬 결정 초안 파일은 Manifest/게시 대상이 아니고 후속 문서를 반복 생성하지 않는다.
 
 Content 공식 리뷰는 [CHANGES_REQUESTED](https://github.com/kdu-sw-capstone/capstone-project/pull/24#pullrequestreview-5694156354), Core 4건은 사용자가 전달한 공식 검토 요청이다. 수정 시험 통과는 인간 승인과 다르다. 두 담당자 재검토와 김다훈 Web·Server·DB 검토는 **REVIEW_PENDING**이며 PR을 병합하거나 제품에 활성화하지 않는다. 재현·한계·Manifest는 [실행 결과](07_검증결과.md)를 따른다.
 

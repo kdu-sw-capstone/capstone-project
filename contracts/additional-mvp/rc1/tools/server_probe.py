@@ -37,7 +37,21 @@ def probe(args,database,module,executor,binding):
         expected='3819' if label in ('budget rejects unsafe version','resolution rejects wrong duration') else '1452'
         evidence.append({'module':module,'case':label,'result':'PASS' if r.returncode and ('ERROR '+expected) in r.stderr else 'FAIL','observed':'ACCEPTED' if not r.returncode else ('EXPECTED_REJECTION' if ('ERROR '+expected) in r.stderr else 'UNEXPECTED_SQL_ERROR')})
     config=uid(130)
-    run(f"INSERT INTO amvp_configs VALUES('{config}','{binding}','CONTENT',1,JSON_OBJECT(),1,UTC_TIMESTAMP(3),NULL); INSERT INTO amvp_config_versions VALUES('{config}',1,JSON_OBJECT(),REPEAT('0',64),UTC_TIMESTAMP(3));")
+    columns='config_id,owner_binding_id,kind,version,value_json,saved_runtime_revision,updated_at,deleted_at'
+    def config_insert(identity,kind):return f"INSERT INTO amvp_configs({columns}) VALUES('{identity}','{binding}','{kind}',1,JSON_OBJECT(),1,UTC_TIMESTAMP(3),NULL);"
+    run(config_insert(config,'CONTENT')+f" INSERT INTO amvp_config_versions VALUES('{config}',1,JSON_OBJECT(),REPEAT('0',64),UTC_TIMESTAMP(3));")
+    duplicate=raw(config_insert(uid(200),'CONTENT'))
+    assert duplicate.returncode and 'ERROR 1062' in duplicate.stderr
+    evidence.append({'module':module,'case':'second current CONTENT rejected by singleton unique key','result':'PASS'})
+    run(config_insert(uid(201),'CADENCE'))
+    duplicate=raw(config_insert(uid(202),'CADENCE'))
+    assert duplicate.returncode and 'ERROR 1062' in duplicate.stderr
+    evidence.append({'module':module,'case':'second current CADENCE rejected; CONTENT and CADENCE coexist','result':'PASS'})
+    run(config_insert(uid(203),'SITE_TIME')+config_insert(uid(204),'SITE_TIME'))
+    evidence.append({'module':module,'case':'multiple SITE_TIME configs remain allowed','result':'PASS'})
+    run(f"START TRANSACTION;UPDATE amvp_configs SET deleted_at=UTC_TIMESTAMP(3) WHERE config_id='{config}';"+config_insert(uid(205),'CONTENT')+'ROLLBACK;')
+    assert run(f"SELECT COUNT(*) FROM amvp_config_versions WHERE config_id='{config}';")=='1'
+    evidence.append({'module':module,'case':'tombstone permits replacement without deleting frozen history','result':'PASS'})
     def parallel(scripts):
         barrier=Barrier(2)
         def work(sql):barrier.wait(timeout=10);return raw(sql)
