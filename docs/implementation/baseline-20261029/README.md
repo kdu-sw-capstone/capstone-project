@@ -37,6 +37,8 @@
 
 원격 게시 뒤 새 디렉터리에서 원격 clone→전체 SHA 검증→`verify-team.ps1 -Area All -Install -FreshCaches`로 npm/Maven cache까지 분리해 재현한다. 원격 재현의 실행 완료 여부·실제 counts·CI는 신규 Draft PR/최종 보고에 남기며 게시 전에 미리 PASS라 쓰지 않는다. 팀원 PC·개인 GitHub Push 권한은 직접 증거 전 NOT_VERIFIED. 현재 CLI 연결의 repo push=true를 확인했고 연결 도구가 보여 주는 다른 권한을 팀원 권한으로 추정하지 않는다. 권한/보호 규칙 변경 없음.
 
+최초 게시 시도 Git `e713dc9c5b8149c27521ff09cc7aa9ce7bf0601f` / PR23 CI run40790820881에서 Linux의 Web 타입 검사와 Native fixture 시험이 실패했다. Windows Web226/빌드·Native67 PASS를 Linux PASS로 확대하지 않는다. Web은 `ByRoleOptions`에 존재하지 않는 `exact` 옵션3개만 제거하고 `name` 문자열의 기본 정확 일치 조건과 assertion을 유지한다. Native의 실제 C# 컴파일/부모 거절 음성 시험은 Windows 전용이므로 같은 파일의 기존 Windows 시험처럼 OS 조건을 명시했다. Windows에서는 계속 실행하며, Linux에서는 해당 컴파일2건이 skip이다(67개 전체에서65실행/2skip). 제품 구현이나 CI 설정/권한을 바꾸거나 실패 assertion을 삭제하지 않는다. 최종 후속 Commit·동일 SHA 여섯 브랜치·원격 재현·CI 결과는 PR23 최종 본문을 사용한다. 최초 Commit과 실패 로그는 보존한다.
+
 ## 기존 추가 MVP 이관 준비
 
 [파일별 비교 목록](additional-migration-inventory.json)은 기존 a29d02c 작업본을 **읽기만** 한 결과다. 50개 실제 변경 파일: 새 파일21, PR22 선행 설계7, 새 필수 후보와 양쪽 변경을 대조해야 할22개(제품9 + 카드/현황13). 디렉터리 rollup의 status 행 수와 실제 파일 수를 혼동하지 않는다. 이 분류는 내용 hash 비교이며 22개 모두 Git 텍스트 충돌이 난다는 뜻은 아니다. 이관/PR 생성은 아직 미실행이다.

@@ -6,7 +6,7 @@
 
 저장소: https://github.com/kdu-sw-capstone/capstone-project.git
 
-기준은 `integration/mandatory-mvp-baseline-20261029`에 최초 게시한 Commit이다. 이 파일이 자신을 포함하는 Commit SHA를 하드코딩할 수는 없으므로 **게시 Draft PR 본문/최종 인계의 전체 40자리 SHA**를 기대값으로 사용한다. ZIP SHA나 출발 develop `90ad32b`를 대신 입력하지 않는다. 브랜치 조회값만 서로 비교하면 원격 브랜치 이동을 탐지하지 못한다.
+기준은 `integration/mandatory-mvp-baseline-20261029`의 **최종 게시·재현 검증 인계 Commit**이다. 최초 게시 시도의 CI 오류가 수정된 경우 인계 전 최종 SHA를 사용한다. 이 파일이 자신을 포함하는 Commit SHA를 하드코딩할 수는 없으므로 **게시 Draft PR 본문/최종 인계의 전체 40자리 SHA**를 기대값으로 사용한다. ZIP SHA나 출발 develop `90ad32b`를 대신 입력하지 않는다. 브랜치 조회값만 서로 비교하면 원격 브랜치 이동을 탐지하지 못한다.
 
 새 폴더에서 Windows PowerShell로 실행한다. 기존 수정 폴더는 reset/clean/stash/rebase로 비우지 않는다.
 

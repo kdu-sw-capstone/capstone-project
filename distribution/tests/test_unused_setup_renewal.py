@@ -111,6 +111,7 @@ class UnusedSetupRenewalTests(unittest.TestCase):
   with patch.object(native,'_renew_stopped',return_value={'servicesStarted':False}) as renew,patch.object(native,'_connect_fresh') as fresh:
    native.connect(self.c,self.p,60,True,user_session=True)
   renew.assert_called_once();fresh.assert_not_called();self.c.spawn_owned.assert_not_called()
+ @unittest.skipUnless(m.os.name=='nt','Windows native compiler integration; no Native registration or real installation')
  def test_compiled_unused_prepare_and_apply_preserve_all_non_scope_data(self):
   for target,rel in m.SOURCES.items():
    dest=self.p/target;dest.parent.mkdir(parents=True,exist_ok=True);shutil.copyfile(folder.parents[1]/rel,dest)

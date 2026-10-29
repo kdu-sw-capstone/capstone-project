@@ -109,7 +109,7 @@
     {
       "path": "distribution/tests/test_unused_setup_renewal.py",
       "frozenSHA256": "68ae487f667510ff6f9d8abc86dafc032a2da7d2f8f3b273dbe388758f26110c",
-      "publicationWorkingSHA256": "ae338612aee28a8033dddfca093aa621e556535e2ac946837a1e2c5a0e6d21f3"
+      "publicationWorkingSHA256": "37928ed462167f0483f963d6818c568cce8d976c6dabafba7e4d3a7fa063aaa0"
     },
     {
       "path": "docs/design/02_시스템_테크설계/04_API_연동.md",
@@ -342,6 +342,11 @@
       "publicationWorkingSHA256": "e6bfd78795711af3f74a207222aeadc196c95d6a5093918782ca0d24e4a81673"
     },
     {
+      "path": "frontend/src/MetricPercentage.test.tsx",
+      "frozenSHA256": "b220c39c877ff3f407196b8aa342a65d3cff8d38bd80f0eed2956954a4754ff1",
+      "publicationWorkingSHA256": "d3473db85fbb9e0971e460298ff7a3561eb0b55e48f09d28b022f28cfb0d0c63"
+    },
+    {
       "path": "runtime-server/src/main/java/kr/ac/kdu/focurve/IsolatedFixture.java",
       "frozenSHA256": "86d0750da402231db0c58c86d7ff36ed14ad5c36a1d5d7845e29f254eaf218d1",
       "publicationWorkingSHA256": "24af5cc461e70281979603c0e103c88c29eb16fb723581923886b7892c540034"
@@ -363,5 +368,9 @@
     }
   ],
   "notes": "Only whitespace normalization and derived bundles, original PR image byte restoration, documentation privacy/guide changes, and repository-local historical test fixture repair. Actual source tree is identified by published Git SHA; original frozen manifest remains an immutable input record.",
-  "workingHashNote": "Raw bytes at publication preparation. Git text filters canonicalize line endings; published Git blobs are authoritative."
+  "workingHashNote": "Raw bytes at publication preparation. Git text filters canonicalize line endings; published Git blobs are authoritative.",
+  "ciPortabilityFixes": [
+    "frontend/src/MetricPercentage.test.tsx: remove unsupported ByRoleOptions.exact, preserve exact string name matching/assertions",
+    "distribution/tests/test_unused_setup_renewal.py: Windows compiler scope matches existing native test; Windows still executes full case, Linux skips two Windows-only compiler tests"
+  ]
 }
