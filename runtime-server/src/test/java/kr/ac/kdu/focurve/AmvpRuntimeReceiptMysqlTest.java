@@ -88,6 +88,7 @@ class AmvpRuntimeReceiptMysqlTest {
  }
  @Test void authorityScopeAndOwnerClosureCannotBeBypassed()throws Exception{
   var h=helper.fixture();var r=report(h,1,"APPLIED");var unrelated=new AmvpReportReceiver(helper.base.auth,helper.base.manager,helper.source(h.selection()),(principal,binding,item,pack,previous)->new AmvpReportReceiver.VerifiedReport(Set.of(id())));assertThat(unrelated.batch(()->helper.bearer(h),body(h,r)).path("items").get(0).path("error_code").asText()).isEqualTo("INVALID_EFFECT_EVIDENCE");
+  var other=helper.fixture();var owned=report(other,1,"APPLIED");send(other,owned);var foreign=r.deepCopy().put("report_id",owned.path("report_id").asText());seal(foreign);assertThat(send(h,foreign).path("items").get(0).path("error_code").asText()).isEqualTo("RESOURCE_NOT_FOUND");
   helper.base.db.update("UPDATE amvp_owner_bindings SET state='CLOSED',closed_at=UTC_TIMESTAMP(3) WHERE binding_id=?",h.fixture().binding());assertThat(send(h,r).path("items").get(0).path("error_code").asText()).isEqualTo("STALE_OWNER");assertThat(helper.base.db.queryForObject("SELECT COUNT(*) FROM amvp_reports WHERE owner_binding_id=?",Integer.class,h.fixture().binding())).isZero();
  }
 }

@@ -34,9 +34,9 @@ final class AmvpReportReceiver {
   check(report.path("owner_binding_id").asText().equals(binding.id())&&report.path("executor_id").asText().equals(executor),403,"FORBIDDEN_EXECUTOR");
   var a=s.auth;String id=report.path("report_id").asText(),hash=report.path("payload_sha256").asText(),epoch=report.path("report_epoch").asText();long seq=report.path("report_seq").asLong();String route="RPT01:"+binding.id()+":"+epoch+":"+seq;
   var receipt=a.one("SELECT * FROM amvp_operations WHERE operation_id=?",id);
-  if(receipt!=null)check(receipt.get("owner_binding_id").equals(binding.id())&&receipt.get("route").equals(route)&&receipt.get("request_sha256").equals(hash),409,"SOURCE_CONFLICT");
+  if(receipt!=null){check(receipt.get("owner_binding_id").equals(binding.id()),404,"RESOURCE_NOT_FOUND");check(receipt.get("route").equals(route)&&receipt.get("request_sha256").equals(hash),409,"SOURCE_CONFLICT");}
   var old=a.one("SELECT * FROM amvp_reports WHERE report_id=?",id);
-  if(old!=null){check(old.get("owner_binding_id").equals(binding.id())&&old.get("payload_sha256").equals(hash)&&receipt!=null&&receipt.get("state").equals("CONFIRMED"),409,"SOURCE_CONFLICT");return ack(report,"DUPLICATE",null);}
+  if(old!=null){check(old.get("owner_binding_id").equals(binding.id()),404,"RESOURCE_NOT_FOUND");check(old.get("payload_sha256").equals(hash)&&receipt!=null&&receipt.get("state").equals("CONFIRMED"),409,"SOURCE_CONFLICT");return ack(report,"DUPLICATE",null);}
   var position=a.one("SELECT report_id FROM amvp_reports WHERE owner_binding_id=? AND report_epoch=? AND report_seq=?",binding.id(),epoch,seq);check(position==null,409,"SEQUENCE_REUSE");
   var reserved=a.one("SELECT operation_id FROM amvp_operations WHERE owner_binding_id=? AND route=?",binding.id(),route);check(reserved==null||reserved.get("operation_id").equals(id),409,"SEQUENCE_REUSE");
   var previous=a.one("SELECT payload_json,report_seq FROM amvp_reports WHERE owner_binding_id=? AND report_epoch=? ORDER BY report_seq DESC LIMIT 1",binding.id(),epoch);long last=previous==null?0:((Number)previous.get("report_seq")).longValue();check(seq>last,409,"STALE_SEQUENCE");
