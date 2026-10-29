@@ -17,7 +17,7 @@ export async function refreshCsrf(): Promise<string> {
 export function socialAuthorizationPath(provider: string, mode: "login" | "link") {
   return serializeSession(() => socialAuthorizationPathDirect(provider, mode));
 }
-export function request<T>(path: string, method = "GET", body?: unknown, options: {key?: string; version?: number; challenge?: boolean; signal?: AbortSignal} = {}): Promise<T> {
+export function request<T>(path: string, method = "GET", body?: unknown, options: {key?: string; version?: number; create?: boolean; challenge?: boolean; signal?: AbortSignal} = {}): Promise<T> {
   const work = () => requestDirect<T>(path, method, body, options);
   return method !== "GET" && path.startsWith("/auth/") ? serializeSession(work) : work();
 }
@@ -87,6 +87,7 @@ async function requestDirect<T>(
   options: {
     key?: string;
     version?: number;
+    create?: boolean;
     challenge?: boolean;
     signal?: AbortSignal;
   } = {},
@@ -99,6 +100,7 @@ async function requestDirect<T>(
     headers["X-CSRF-Token"] = await refreshCsrfDirect();
   }
   if (options.key) headers["Idempotency-Key"] = options.key;
+  if (options.create) headers["If-None-Match"] = "*";
   if (options.version !== undefined)
     headers["If-Match"] = `"${options.version}"`;
   const payload = body === undefined ? undefined : JSON.stringify(body);
