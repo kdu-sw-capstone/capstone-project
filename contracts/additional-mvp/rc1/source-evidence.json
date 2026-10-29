@@ -1,0 +1,75 @@
+{
+  "baseline": "9868a0f5914d7a173c102fc198a9a908b043381f",
+  "old_design_sources": [
+    {
+      "source": "additional design worktree",
+      "path": "docs/design/additional-mvp/README.md",
+      "sha256": "7013fc57a0598827c7e936ce3f264264f729c5a62eb1777f7f4032040f42b6b1",
+      "use": "selected contract sections and UI_BINDINGS; historical evidence is not new execution"
+    },
+    {
+      "source": "additional design worktree",
+      "path": "docs/design/additional-mvp/01_기능설계.md",
+      "sha256": "4589bbc3594afc512d2e0cbae595089403ae76eda730e6f443c0b3ede85d4f23",
+      "use": "selected contract sections and UI_BINDINGS; historical evidence is not new execution"
+    },
+    {
+      "source": "additional design worktree",
+      "path": "docs/design/additional-mvp/02_공통계약_차이표.md",
+      "sha256": "60f2faa4bded93bc3325aec7aece8887883bbb10d83317cf39624430c5211aa4",
+      "use": "selected contract sections and UI_BINDINGS; historical evidence is not new execution"
+    },
+    {
+      "source": "additional design worktree",
+      "path": "docs/design/additional-mvp/03_UI_검수.md",
+      "sha256": "c9873c1d526f5db28d71d54a98ed1220f3e4d1e50f527af6893e5b0e66dc017d",
+      "use": "selected contract sections and UI_BINDINGS; historical evidence is not new execution"
+    },
+    {
+      "source": "additional design worktree",
+      "path": "docs/design/additional-mvp/04_Git_협업.md",
+      "sha256": "1f3cf861ed2ec1b6c38a463611596b85aab51f728d0c731f1c0471bdb1028009",
+      "use": "selected contract sections and UI_BINDINGS; historical evidence is not new execution"
+    },
+    {
+      "source": "additional design worktree",
+      "path": "docs/design/additional-mvp/05_미확정_검증계획.md",
+      "sha256": "897deeba75a96b270a9d61f06643ecb3423aad5eac90ca9203e13b4e5e8ec44c",
+      "use": "selected contract sections and UI_BINDINGS; historical evidence is not new execution"
+    },
+    {
+      "source": "uncommitted implementation; not copied",
+      "path": "backend/src/main/java/kr/ac/kdu/focurve/additional/ConfigurationDrafts.java",
+      "sha256": "dfb3ec7c49faf283b971827caa5166473ea9b43e45e4f004e9c99582b65a2ee9",
+      "use": "independent draft model semantics; not approved public API"
+    },
+    {
+      "source": "uncommitted implementation; not copied",
+      "path": "backend/src/main/java/kr/ac/kdu/focurve/additional/ConfigurationDraftStore.java",
+      "sha256": "f47c45472251de7ee17cd67f747018b5002cf0d2aa15aecc85f0ca9102f3f667",
+      "use": "independent draft model semantics; not approved public API"
+    }
+  ],
+  "figma": {
+    "file": "BeixHumD7TSoo9xMVzJkhO",
+    "node": "3053:8252",
+    "prior_mapping": "UI-SYNC-20261029-R1 / 13 screens",
+    "fresh_read": "NOT_VERIFIED: official get_metadata returned Transport closed",
+    "visual_acceptance": "NOT_RUN"
+  },
+  "poc_history": {
+    "quota_delay_seconds": 1.454,
+    "max_unsaved_seconds": 6.012,
+    "checkpoint_5_seconds": "FAIL",
+    "mixed_usage_difference_seconds": -0.328,
+    "uncertainty_seconds": 0.235,
+    "foreground_30min": "NOT_RUN",
+    "foreground_2h": "NOT_RUN",
+    "new_chrome_in_this_pr": "NOT_RUN"
+  },
+  "baseline_ci": {
+    "run_id": 40799147648,
+    "commit": "9868a0f5914d7a173c102fc198a9a908b043381f",
+    "checks": "5/5 SUCCESS; existing baseline result reused, not new product execution"
+  }
+}

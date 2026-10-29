@@ -1,0 +1,736 @@
+{
+  "revision": "AMVP-CONTRACT-20261029-RC2",
+  "reviewed_sha": "4309b2674a26782f4fc318477b38ce10fa2c4bc7",
+  "review_sources": {
+    "content_review": 5694156354,
+    "inline_comments": [
+      4409668236,
+      4409668247,
+      4409668253,
+      4409668258
+    ],
+    "core": "User-forwarded four requests; no separate submitted GitHub review body returned in fresh query. Not fabricated."
+  },
+  "baseline_execution": {
+    "python": 210,
+    "original_test_ids": 135,
+    "node": 5,
+    "isolated_mysql": 18,
+    "all": "PASS",
+    "original_135_is_subset": true
+  },
+  "cross_before": {
+    "baseline": "4309b2674a26782f4fc318477b38ce10fa2c4bc7",
+    "tests": 9,
+    "failure_entries": 9,
+    "error_entries": 2,
+    "failing_methods": [
+      "test_rc2_cross.CrossCounterexamples.test_adoption_reserves_cleanup_before_taking_claim",
+      "test_rc2_cross.CrossCounterexamples.test_apply_cannot_succeed_with_released_effect",
+      "test_rc2_cross.CrossCounterexamples.test_cleanup_receipt_cannot_be_reserved_twice",
+      "test_rc2_cross.CrossCounterexamples.test_confirmed_dnr_release_returns_unresolved_budget",
+      "test_rc2_cross.CrossCounterexamples.test_direct_context_requires_viewer_identity",
+      "test_rc2_cross.CrossCounterexamples.test_missing_browser_identity_fails_closed",
+      "test_rc2_cross.CrossCounterexamples.test_rejected_chain_does_not_poison_valid_sequence",
+      "test_rc2_cross.CrossCounterexamples.test_resolution_id_binds_full_envelope",
+      "test_rc2_cross.CrossCounterexamples.test_same_boot_epoch_rename_does_not_hide_physical_overlap"
+    ],
+    "subtest_entries_are_not_extra_tests": true
+  },
+  "cross_after": {
+    "tests": 17,
+    "failures": 0,
+    "errors": 0,
+    "result": "PASS"
+  },
+  "final_python": {
+    "tests": 227,
+    "result": "PASS",
+    "previous_210_subset": true
+  },
+  "findings": [
+    {
+      "id": "X01",
+      "finding": "APPLY/RELEASED success bypass",
+      "file": "contracts/additional-mvp/rc1/tests/review_reference.py",
+      "baseline_line": 376,
+      "after_line": 398,
+      "state": "FIXED_REFERENCE_CONTRACT_NOT_PRODUCT_PROOF"
+    },
+    {
+      "id": "X02",
+      "finding": "Receipt reservation collision",
+      "file": "contracts/additional-mvp/rc1/tests/review_reference.py",
+      "baseline_line": 22,
+      "after_line": 22,
+      "state": "FIXED_REFERENCE_CONTRACT_NOT_PRODUCT_PROOF"
+    },
+    {
+      "id": "X03",
+      "finding": "Rejected chain poisons seq",
+      "file": "contracts/additional-mvp/rc1/tests/review_reference.py",
+      "baseline_line": 108,
+      "after_line": 117,
+      "state": "FIXED_REFERENCE_CONTRACT_NOT_PRODUCT_PROOF"
+    },
+    {
+      "id": "X04",
+      "finding": "Epoch rename hides same boot overlap",
+      "file": "contracts/additional-mvp/rc1/tests/review_reference.py",
+      "baseline_line": 114,
+      "after_line": 121,
+      "state": "FIXED_REFERENCE_CONTRACT_NOT_PRODUCT_PROOF"
+    },
+    {
+      "id": "X05",
+      "finding": "Resolution envelope ID collision",
+      "file": "contracts/additional-mvp/rc1/tests/review_reference.py",
+      "baseline_line": 123,
+      "after_line": 135,
+      "state": "FIXED_REFERENCE_CONTRACT_NOT_PRODUCT_PROOF"
+    },
+    {
+      "id": "X06",
+      "finding": "Adopt without cleanup budget",
+      "file": "contracts/additional-mvp/rc1/tests/review_reference.py",
+      "baseline_line": 193,
+      "after_line": 213,
+      "state": "FIXED_REFERENCE_CONTRACT_NOT_PRODUCT_PROOF"
+    },
+    {
+      "id": "X07",
+      "finding": "Resolved DNR budget never returned",
+      "file": "contracts/additional-mvp/rc1/tests/review_reference.py",
+      "baseline_line": 231,
+      "after_line": 264,
+      "state": "FIXED_REFERENCE_CONTRACT_NOT_PRODUCT_PROOF"
+    },
+    {
+      "id": "X08",
+      "finding": "Direct viewer identity nullable",
+      "file": "contracts/additional-mvp/rc1/schema.json",
+      "baseline_line": 4348,
+      "after_line": 4386,
+      "state": "FIXED_REFERENCE_CONTRACT_NOT_PRODUCT_PROOF"
+    },
+    {
+      "id": "X09",
+      "finding": "Missing own identity equals missing sender",
+      "file": "contracts/additional-mvp/rc1/tests/review_reference.py",
+      "baseline_line": 159,
+      "after_line": 172,
+      "state": "FIXED_REFERENCE_CONTRACT_NOT_PRODUCT_PROOF"
+    }
+  ],
+  "remaining_query": "REVIEW_PENDING, explicit safe rejection, target/hash/seq/response semantics not invented",
+  "actual_chrome_native_http_long_duration": "NOT_RUN",
+  "human_approval": "REVIEW_PENDING",
+  "mysql_reexecuted_port": 33329,
+  "mysql_result": "mysql-result.json",
+  "policy_decisions": "C01-C11 as detailed in 07_검증결과.md",
+  "requirements": {
+    "Core Cleanup": [
+      {
+        "requirement": "MAX-1/MAX/MAX+1",
+        "test": "test_core_review.CleanupBoundaryTests.test_safe_integer_and_gap_normal_lane",
+        "contract_model": "PASS",
+        "actual_product": "NOT_RUN_NOT_CLAIMED"
+      },
+      {
+        "requirement": "seq gap",
+        "test": "test_core_review.CleanupBoundaryTests.test_safe_integer_and_gap_normal_lane",
+        "contract_model": "PASS",
+        "actual_product": "NOT_RUN_NOT_CLAIMED"
+      },
+      {
+        "requirement": "seq=null cleanup",
+        "test": "test_core_review.CleanupBoundaryTests.test_safe_integer_and_gap_normal_lane",
+        "contract_model": "PASS",
+        "actual_product": "NOT_RUN_NOT_CLAIMED"
+      },
+      {
+        "requirement": "Binding",
+        "test": "test_core_review.CleanupBoundaryTests.test_owner_binding_footprint_generation_grant_receipt_checks",
+        "contract_model": "PASS",
+        "actual_product": "NOT_RUN_NOT_CLAIMED"
+      },
+      {
+        "requirement": "Footprint",
+        "test": "test_core_review.CleanupBoundaryTests.test_owner_binding_footprint_generation_grant_receipt_checks",
+        "contract_model": "PASS",
+        "actual_product": "NOT_RUN_NOT_CLAIMED"
+      },
+      {
+        "requirement": "owner",
+        "test": "test_core_review.CleanupBoundaryTests.test_owner_binding_footprint_generation_grant_receipt_checks",
+        "contract_model": "PASS",
+        "actual_product": "NOT_RUN_NOT_CLAIMED"
+      },
+      {
+        "requirement": "grant",
+        "test": "test_core_review.CleanupBoundaryTests.test_owner_binding_footprint_generation_grant_receipt_checks",
+        "contract_model": "PASS",
+        "actual_product": "NOT_RUN_NOT_CLAIMED"
+      },
+      {
+        "requirement": "operation_id",
+        "test": "test_core_review.CleanupBoundaryTests.test_owner_binding_footprint_generation_grant_receipt_checks",
+        "contract_model": "PASS",
+        "actual_product": "NOT_RUN_NOT_CLAIMED"
+      },
+      {
+        "requirement": "Receipt",
+        "test": "test_core_review.CleanupBoundaryTests.test_owner_binding_footprint_generation_grant_receipt_checks",
+        "contract_model": "PASS",
+        "actual_product": "NOT_RUN_NOT_CLAIMED"
+      },
+      {
+        "requirement": "full scope",
+        "test": "test_core_review.CleanupBoundaryTests.test_owner_binding_footprint_generation_grant_receipt_checks",
+        "contract_model": "PASS",
+        "actual_product": "NOT_RUN_NOT_CLAIMED"
+      },
+      {
+        "requirement": "sender verification",
+        "test": "test_core_review.CleanupBoundaryTests.test_owner_binding_footprint_generation_grant_receipt_checks",
+        "contract_model": "PASS",
+        "actual_product": "NOT_RUN_NOT_CLAIMED"
+      },
+      {
+        "requirement": "lost response retransmission",
+        "test": "test_core_review.CleanupBoundaryTests.test_lost_ack_and_duplicate_are_idempotent",
+        "contract_model": "PASS",
+        "actual_product": "NOT_RUN_NOT_CLAIMED"
+      },
+      {
+        "requirement": "same ID different hash",
+        "test": "test_core_review.CleanupBoundaryTests.test_lost_ack_and_duplicate_are_idempotent",
+        "contract_model": "PASS",
+        "actual_product": "NOT_RUN_NOT_CLAIMED"
+      },
+      {
+        "requirement": "reservation exhaustion",
+        "test": "test_core_review.CleanupBoundaryTests.test_reservation_and_receipt_exhaustion_preserve_obligation",
+        "contract_model": "PASS",
+        "actual_product": "NOT_RUN_NOT_CLAIMED"
+      },
+      {
+        "requirement": "restore obligation retention",
+        "test": "test_core_review.CleanupBoundaryTests.test_reservation_and_receipt_exhaustion_preserve_obligation",
+        "contract_model": "PASS",
+        "actual_product": "NOT_RUN_NOT_CLAIMED"
+      },
+      {
+        "requirement": "expiry",
+        "test": "test_rc2_cross.CrossCoverage.test_expired_grant_renewal_preserves_operation_slots_and_receipt",
+        "contract_model": "PASS",
+        "actual_product": "NOT_VERIFIED"
+      },
+      {
+        "requirement": "revalidation",
+        "test": "test_rc2_cross.CrossCoverage.test_expired_grant_renewal_preserves_operation_slots_and_receipt",
+        "contract_model": "PASS",
+        "actual_product": "NOT_VERIFIED"
+      },
+      {
+        "requirement": "no slot/Receipt reset",
+        "test": "test_rc2_cross.CrossCoverage.test_expired_grant_renewal_preserves_operation_slots_and_receipt",
+        "contract_model": "PASS",
+        "actual_product": "NOT_VERIFIED"
+      }
+    ],
+    "Core time": [
+      {
+        "requirement": "monotonic UTC anchor",
+        "test": "test_core_review.ClockBoundaryTests.test_unknown_anchor_or_wall_drift_cannot_self_attest",
+        "contract_model": "PASS",
+        "actual_product": "NOT_RUN_NOT_CLAIMED"
+      },
+      {
+        "requirement": "wall drift",
+        "test": "test_core_review.ClockBoundaryTests.test_unknown_anchor_or_wall_drift_cannot_self_attest",
+        "contract_model": "PASS",
+        "actual_product": "NOT_RUN_NOT_CLAIMED"
+      },
+      {
+        "requirement": "no client self-attestation",
+        "test": "test_core_review.ClockBoundaryTests.test_unknown_anchor_or_wall_drift_cannot_self_attest",
+        "contract_model": "PASS",
+        "actual_product": "NOT_RUN_NOT_CLAIMED"
+      },
+      {
+        "requirement": "rollback",
+        "test": "test_core_review.ClockBoundaryTests.test_rollback_quarantine_then_normal_sequence_advances",
+        "contract_model": "PASS",
+        "actual_product": "NOT_RUN_NOT_CLAIMED"
+      },
+      {
+        "requirement": "quarantine",
+        "test": "test_core_review.ClockBoundaryTests.test_rollback_quarantine_then_normal_sequence_advances",
+        "contract_model": "PASS",
+        "actual_product": "NOT_RUN_NOT_CLAIMED"
+      },
+      {
+        "requirement": "normal seq continuity",
+        "test": "test_core_review.ClockBoundaryTests.test_rollback_quarantine_then_normal_sequence_advances",
+        "contract_model": "PASS",
+        "actual_product": "NOT_RUN_NOT_CLAIMED"
+      },
+      {
+        "requirement": "clock forward",
+        "test": "test_core_review.ClockBoundaryTests.test_forward_clock_jump_is_not_confirmed",
+        "contract_model": "PASS",
+        "actual_product": "NOT_RUN_NOT_CLAIMED"
+      },
+      {
+        "requirement": "duplicate UTC distinct physical intervals",
+        "test": "test_core_review.CoreCounterexamples.test_clock_rollback_does_not_drop_distinct_real_interval",
+        "contract_model": "PASS",
+        "actual_product": "NOT_RUN_NOT_CLAIMED"
+      },
+      {
+        "requirement": "physical overlap rejection",
+        "test": "test_core_review.ClockBoundaryTests.test_physical_overlap_still_rejected_despite_different_utc",
+        "contract_model": "PASS",
+        "actual_product": "NOT_RUN_NOT_CLAIMED"
+      },
+      {
+        "requirement": "midnight",
+        "test": "test_core_review.ClockBoundaryTests.test_midnight_split_and_dst_bucket",
+        "contract_model": "PASS",
+        "actual_product": "NOT_RUN_NOT_CLAIMED"
+      },
+      {
+        "requirement": "DST23/25",
+        "test": "test_core_review.ClockBoundaryTests.test_midnight_split_and_dst_bucket",
+        "contract_model": "PASS",
+        "actual_product": "NOT_RUN_NOT_CLAIMED"
+      },
+      {
+        "requirement": "Worker restore",
+        "test": "test_core_review.ClockBoundaryTests.test_worker_restart_requires_reanchor_proof_and_keeps_seq",
+        "contract_model": "PASS",
+        "actual_product": "NOT_RUN_NOT_CLAIMED"
+      },
+      {
+        "requirement": "verified reanchor",
+        "test": "test_core_review.ClockBoundaryTests.test_worker_restart_requires_reanchor_proof_and_keeps_seq",
+        "contract_model": "PASS",
+        "actual_product": "NOT_RUN_NOT_CLAIMED"
+      },
+      {
+        "requirement": "dedup counting",
+        "test": "test_core_review.ClockBoundaryTests.test_resolution_is_separate_idempotent_and_verified",
+        "contract_model": "PASS",
+        "actual_product": "NOT_RUN_NOT_CLAIMED"
+      },
+      {
+        "requirement": "unconfirmed reprocessing",
+        "test": "test_core_review.ClockBoundaryTests.test_resolution_is_separate_idempotent_and_verified",
+        "contract_model": "PASS",
+        "actual_product": "NOT_RUN_NOT_CLAIMED"
+      },
+      {
+        "requirement": "raw immutable",
+        "test": "test_core_review.ClockBoundaryTests.test_resolution_is_separate_idempotent_and_verified",
+        "contract_model": "PASS",
+        "actual_product": "NOT_RUN_NOT_CLAIMED"
+      },
+      {
+        "requirement": "no permanent valid sequence loss",
+        "test": "test_rc2_cross.CrossCounterexamples.test_rejected_chain_does_not_poison_valid_sequence",
+        "contract_model": "PASS",
+        "actual_product": "NOT_RUN_NOT_CLAIMED"
+      }
+    ],
+    "Core sender": [
+      {
+        "requirement": "Worker to Content",
+        "test": "test_core_review.CoreCounterexamples.test_worker_to_content_does_not_require_nonexistent_sender_tab",
+        "contract_model": "PASS",
+        "actual_product": "NOT_VERIFIED"
+      },
+      {
+        "requirement": "Content to Worker",
+        "test": "test_core_review.DirectionBoundaryTests.test_content_sender_uses_real_browser_tuple",
+        "contract_model": "PASS",
+        "actual_product": "NOT_VERIFIED"
+      },
+      {
+        "requirement": "browser-provided sender tuple (synthetic here)",
+        "test": "test_core_review.DirectionBoundaryTests.test_content_sender_uses_real_browser_tuple",
+        "contract_model": "PASS",
+        "actual_product": "NOT_VERIFIED"
+      },
+      {
+        "requirement": "response to Worker",
+        "test": "test_core_review.DirectionBoundaryTests.test_private_channel_and_pending_response_binding",
+        "contract_model": "PASS",
+        "actual_product": "NOT_VERIFIED"
+      },
+      {
+        "requirement": "private channel",
+        "test": "test_core_review.DirectionBoundaryTests.test_private_channel_and_pending_response_binding",
+        "contract_model": "PASS",
+        "actual_product": "NOT_VERIFIED"
+      },
+      {
+        "requirement": "request/op/hash binding",
+        "test": "test_core_review.DirectionBoundaryTests.test_private_channel_and_pending_response_binding",
+        "contract_model": "PASS",
+        "actual_product": "NOT_VERIFIED"
+      },
+      {
+        "requirement": "Worker to Core",
+        "test": "test_core_review.DirectionBoundaryTests.test_internal_native_and_server_boundaries_are_distinct",
+        "contract_model": "PASS",
+        "actual_product": "NOT_VERIFIED"
+      },
+      {
+        "requirement": "Core to Native",
+        "test": "test_core_review.DirectionBoundaryTests.test_internal_native_and_server_boundaries_are_distinct",
+        "contract_model": "PASS",
+        "actual_product": "NOT_VERIFIED"
+      },
+      {
+        "requirement": "Native to Server",
+        "test": "test_core_review.DirectionBoundaryTests.test_internal_native_and_server_boundaries_are_distinct",
+        "contract_model": "PASS",
+        "actual_product": "NOT_VERIFIED"
+      },
+      {
+        "requirement": "BFCache",
+        "test": "test_core_review.DirectionBoundaryTests.test_spa_bfcache_and_old_scope_cleanup",
+        "contract_model": "PASS",
+        "actual_product": "NOT_VERIFIED"
+      },
+      {
+        "requirement": "old-scope Cleanup",
+        "test": "test_core_review.DirectionBoundaryTests.test_spa_bfcache_and_old_scope_cleanup",
+        "contract_model": "PASS",
+        "actual_product": "NOT_VERIFIED"
+      },
+      {
+        "requirement": "SPA URL change",
+        "test": "test_rc2_cross.CrossCoverage.test_sender_body_url_spa_bfcache_and_private_channel",
+        "contract_model": "PASS",
+        "actual_product": "NOT_VERIFIED"
+      },
+      {
+        "requirement": "forged body URL/tab",
+        "test": "test_rc2_cross.CrossCoverage.test_sender_body_url_spa_bfcache_and_private_channel",
+        "contract_model": "PASS",
+        "actual_product": "NOT_VERIFIED"
+      }
+    ],
+    "Core DNR": [
+      {
+        "requirement": "rule_store/rule_id",
+        "test": "test_core_review.CoreCounterexamples.test_focus_session_end_preserves_same_id_dynamic_runtime",
+        "contract_model": "PASS",
+        "actual_product": "NOT_VERIFIED"
+      },
+      {
+        "requirement": "Session Dynamic coexist",
+        "test": "test_core_review.CoreCounterexamples.test_focus_session_end_preserves_same_id_dynamic_runtime",
+        "contract_model": "PASS",
+        "actual_product": "NOT_VERIFIED"
+      },
+      {
+        "requirement": "Focus END preserves runtime",
+        "test": "test_core_review.CoreCounterexamples.test_focus_session_end_preserves_same_id_dynamic_runtime",
+        "contract_model": "PASS",
+        "actual_product": "NOT_VERIFIED"
+      },
+      {
+        "requirement": "adoption",
+        "test": "test_core_review.DnrBoundaryTests.test_adoption_requires_fence_exact_rule_and_owner_proof",
+        "contract_model": "PASS",
+        "actual_product": "NOT_VERIFIED"
+      },
+      {
+        "requirement": "claim owner proof",
+        "test": "test_core_review.DnrBoundaryTests.test_adoption_requires_fence_exact_rule_and_owner_proof",
+        "contract_model": "PASS",
+        "actual_product": "NOT_VERIFIED"
+      },
+      {
+        "requirement": "fencing",
+        "test": "test_core_review.DnrBoundaryTests.test_adoption_requires_fence_exact_rule_and_owner_proof",
+        "contract_model": "PASS",
+        "actual_product": "NOT_VERIFIED"
+      },
+      {
+        "requirement": "browser restart",
+        "test": "test_core_review.DnrBoundaryTests.test_old_writer_restart_and_session_lifetime",
+        "contract_model": "PASS",
+        "actual_product": "NOT_VERIFIED"
+      },
+      {
+        "requirement": "old writer replay",
+        "test": "test_core_review.DnrBoundaryTests.test_old_writer_restart_and_session_lifetime",
+        "contract_model": "PASS",
+        "actual_product": "NOT_VERIFIED"
+      },
+      {
+        "requirement": "storage failure",
+        "test": "test_core_review.DnrBoundaryTests.test_storage_failure_and_lost_release_receipt",
+        "contract_model": "PASS",
+        "actual_product": "NOT_VERIFIED"
+      },
+      {
+        "requirement": "release receipt loss",
+        "test": "test_core_review.DnrBoundaryTests.test_storage_failure_and_lost_release_receipt",
+        "contract_model": "PASS",
+        "actual_product": "NOT_VERIFIED"
+      },
+      {
+        "requirement": "quota",
+        "test": "test_core_review.DnrBoundaryTests.test_store_id_allocator_and_regex_unsafe_budgets",
+        "contract_model": "PASS",
+        "actual_product": "NOT_VERIFIED"
+      },
+      {
+        "requirement": "ID range",
+        "test": "test_core_review.DnrBoundaryTests.test_store_id_allocator_and_regex_unsafe_budgets",
+        "contract_model": "PASS",
+        "actual_product": "NOT_VERIFIED"
+      },
+      {
+        "requirement": "regex/unsafe budgets",
+        "test": "test_core_review.DnrBoundaryTests.test_store_id_allocator_and_regex_unsafe_budgets",
+        "contract_model": "PASS",
+        "actual_product": "NOT_VERIFIED"
+      },
+      {
+        "requirement": "other owner preserved",
+        "test": "test_core_review.DnrBoundaryTests.test_other_owner_and_shared_claims_survive",
+        "contract_model": "PASS",
+        "actual_product": "NOT_VERIFIED"
+      },
+      {
+        "requirement": "last claim physical deletion",
+        "test": "test_core_review.DnrBoundaryTests.test_other_owner_and_shared_claims_survive",
+        "contract_model": "PASS",
+        "actual_product": "NOT_VERIFIED"
+      }
+    ],
+    "Content media": [
+      {
+        "requirement": "viewer/media presence",
+        "test": "test_content_review.ContentBoundaryTests.test_viewer_media_count_stop_and_audio_boundaries",
+        "contract_model": "PASS",
+        "actual_product": "NOT_VERIFIED"
+      },
+      {
+        "requirement": "stop failure APPLIED reject",
+        "test": "test_content_review.ContentBoundaryTests.test_viewer_media_count_stop_and_audio_boundaries",
+        "contract_model": "PASS",
+        "actual_product": "NOT_VERIFIED"
+      },
+      {
+        "requirement": "hidden/inert/stop",
+        "test": "test_content_review.ContentBoundaryTests.test_viewer_media_count_stop_and_audio_boundaries",
+        "contract_model": "PASS",
+        "actual_product": "NOT_VERIFIED"
+      },
+      {
+        "requirement": "audio NOT_VERIFIED",
+        "test": "test_content_review.ContentBoundaryTests.test_viewer_media_count_stop_and_audio_boundaries",
+        "contract_model": "PASS",
+        "actual_product": "NOT_VERIFIED"
+      },
+      {
+        "requirement": "target zero",
+        "test": "test_content_review.ContentBoundaryTests.test_zero_direct_viewer_is_observing_not_applied",
+        "contract_model": "PASS",
+        "actual_product": "NOT_VERIFIED"
+      },
+      {
+        "requirement": "OBSERVING not APPLIED/N_A",
+        "test": "test_content_review.ContentBoundaryTests.test_zero_direct_viewer_is_observing_not_applied",
+        "contract_model": "PASS",
+        "actual_product": "NOT_VERIFIED"
+      },
+      {
+        "requirement": "ordinary page NOT_APPLICABLE",
+        "test": "test_content_review.ContentBoundaryTests.test_nonviewer_zero_targets_requires_scan_and_observer",
+        "contract_model": "PASS",
+        "actual_product": "NOT_VERIFIED"
+      },
+      {
+        "requirement": "YT02/IG02",
+        "test": "test_rc2_cross.CrossCoverage.test_shorts_and_reels_apply_fail_and_unconfirmed",
+        "contract_model": "PASS",
+        "actual_product": "NOT_VERIFIED"
+      },
+      {
+        "requirement": "UNCONFIRMED",
+        "test": "test_rc2_cross.CrossCoverage.test_shorts_and_reels_apply_fail_and_unconfirmed",
+        "contract_model": "PASS",
+        "actual_product": "NOT_VERIFIED"
+      },
+      {
+        "requirement": "video/audio user control restore (synthetic)",
+        "test": "test_rc2_cross.CrossCoverage.test_media_release_proof_for_both_platforms",
+        "contract_model": "PASS",
+        "actual_product": "NOT_VERIFIED"
+      },
+      {
+        "requirement": "scan/generation rejects stale SPA/DOM evidence",
+        "test": "test_content_review.ContentBoundaryTests.test_results_bind_request_operation_scope_owner_scan_and_hash",
+        "contract_model": "PASS",
+        "actual_product": "NOT_VERIFIED"
+      }
+    ],
+    "Content options": [
+      {
+        "requirement": "all required enabled options",
+        "test": "test_content_review.ContentCounterexamples.test_required_option_missing_is_rejected",
+        "contract_model": "PASS",
+        "actual_product": "NOT_RUN_NOT_CLAIMED"
+      },
+      {
+        "requirement": "missing result reject",
+        "test": "test_content_review.ContentCounterexamples.test_required_option_missing_is_rejected",
+        "contract_model": "PASS",
+        "actual_product": "NOT_RUN_NOT_CLAIMED"
+      },
+      {
+        "requirement": "duplicate reject",
+        "test": "test_content_review.ContentCounterexamples.test_duplicate_feature_result_is_rejected",
+        "contract_model": "PASS",
+        "actual_product": "NOT_RUN_NOT_CLAIMED"
+      },
+      {
+        "requirement": "unrequested reject",
+        "test": "test_content_review.ContentCounterexamples.test_unrequested_feature_result_is_rejected",
+        "contract_model": "PASS",
+        "actual_product": "NOT_RUN_NOT_CLAIMED"
+      },
+      {
+        "requirement": "different scope",
+        "test": "test_rc2_cross.CrossCoverage.test_content_scope_update_and_operation_conflict",
+        "contract_model": "PASS",
+        "actual_product": "NOT_RUN_NOT_CLAIMED"
+      },
+      {
+        "requirement": "semantic hash",
+        "test": "test_content_review.ContentBoundaryTests.test_results_bind_request_operation_scope_owner_scan_and_hash",
+        "contract_model": "PASS",
+        "actual_product": "NOT_RUN_NOT_CLAIMED"
+      },
+      {
+        "requirement": "owner/scan",
+        "test": "test_content_review.ContentBoundaryTests.test_results_bind_request_operation_scope_owner_scan_and_hash",
+        "contract_model": "PASS",
+        "actual_product": "NOT_RUN_NOT_CLAIMED"
+      },
+      {
+        "requirement": "issued operation registry",
+        "test": "test_content_review.ContentBoundaryTests.test_issuer_lookup_is_mandatory_and_retry_is_semantic",
+        "contract_model": "PASS",
+        "actual_product": "NOT_RUN_NOT_CLAIMED"
+      },
+      {
+        "requirement": "request retry correlation",
+        "test": "test_content_review.ContentBoundaryTests.test_issuer_lookup_is_mandatory_and_retry_is_semantic",
+        "contract_model": "PASS",
+        "actual_product": "NOT_RUN_NOT_CLAIMED"
+      },
+      {
+        "requirement": "PARTIAL NACK",
+        "test": "test_content_review.ContentBoundaryTests.test_mixed_partial_is_not_whole_applied",
+        "contract_model": "PASS",
+        "actual_product": "NOT_RUN_NOT_CLAIMED"
+      },
+      {
+        "requirement": "NOT_APPLICABLE evidence",
+        "test": "test_content_review.ContentBoundaryTests.test_nonviewer_zero_targets_requires_scan_and_observer",
+        "contract_model": "PASS",
+        "actual_product": "NOT_RUN_NOT_CLAIMED"
+      }
+    ],
+    "Content policy": [
+      {
+        "requirement": "BLUR",
+        "test": "test_content_review.ContentBoundaryTests.test_all_standalone_mixed_and_cleanup_fixtures",
+        "contract_model": "PASS",
+        "actual_product": "NOT_RUN_NOT_CLAIMED"
+      },
+      {
+        "requirement": "KEYWORD",
+        "test": "test_content_review.ContentBoundaryTests.test_all_standalone_mixed_and_cleanup_fixtures",
+        "contract_model": "PASS",
+        "actual_product": "NOT_RUN_NOT_CLAIMED"
+      },
+      {
+        "requirement": "ADULT_DOMAIN",
+        "test": "test_content_review.ContentBoundaryTests.test_all_standalone_mixed_and_cleanup_fixtures",
+        "contract_model": "PASS",
+        "actual_product": "NOT_RUN_NOT_CLAIMED"
+      },
+      {
+        "requirement": "PAGE_GATE",
+        "test": "test_content_review.ContentBoundaryTests.test_all_standalone_mixed_and_cleanup_fixtures",
+        "contract_model": "PASS",
+        "actual_product": "NOT_RUN_NOT_CLAIMED"
+      },
+      {
+        "requirement": "independent typed results",
+        "test": "test_content_review.ContentBoundaryTests.test_all_standalone_mixed_and_cleanup_fixtures",
+        "contract_model": "PASS",
+        "actual_product": "NOT_RUN_NOT_CLAIMED"
+      },
+      {
+        "requirement": "standalone",
+        "test": "test_content_review.ContentBoundaryTests.test_all_standalone_mixed_and_cleanup_fixtures",
+        "contract_model": "PASS",
+        "actual_product": "NOT_RUN_NOT_CLAIMED"
+      },
+      {
+        "requirement": "mixed",
+        "test": "test_content_review.ContentBoundaryTests.test_all_standalone_mixed_and_cleanup_fixtures",
+        "contract_model": "PASS",
+        "actual_product": "NOT_RUN_NOT_CLAIMED"
+      },
+      {
+        "requirement": "release/restore",
+        "test": "test_content_review.ContentBoundaryTests.test_all_standalone_mixed_and_cleanup_fixtures",
+        "contract_model": "PASS",
+        "actual_product": "NOT_RUN_NOT_CLAIMED"
+      },
+      {
+        "requirement": "failure/UNCONFIRMED fixtures",
+        "test": "test_rc2_cross.CrossCoverage.test_schema_negative_and_failure_fixtures",
+        "contract_model": "PASS",
+        "actual_product": "NOT_RUN_NOT_CLAIMED"
+      },
+      {
+        "requirement": "action/result consistency",
+        "test": "test_rc2_cross.CrossCoverage.test_schema_negative_and_failure_fixtures",
+        "contract_model": "PASS",
+        "actual_product": "NOT_RUN_NOT_CLAIMED"
+      },
+      {
+        "requirement": "ACK/effect evidence",
+        "test": "test_rc2_cross.CrossCoverage.test_schema_negative_and_failure_fixtures",
+        "contract_model": "PASS",
+        "actual_product": "NOT_RUN_NOT_CLAIMED"
+      },
+      {
+        "requirement": "policy owner/scope/footprint",
+        "test": "test_content_review.ContentBoundaryTests.test_policy_release_requires_full_owned_restore_and_single_cleanup_lane",
+        "contract_model": "PASS",
+        "actual_product": "NOT_RUN_NOT_CLAIMED"
+      },
+      {
+        "requirement": "DNR vs DOM evidence",
+        "test": "test_content_review.ContentBoundaryTests.test_content_result_does_not_claim_core_dnr",
+        "contract_model": "PASS",
+        "actual_product": "NOT_RUN_NOT_CLAIMED"
+      }
+    ]
+  },
+  "requirements_count": 98
+}

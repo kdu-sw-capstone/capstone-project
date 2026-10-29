@@ -1,0 +1,62 @@
+{
+  "revision": "AMVP-CONTRACT-20261029-RC2",
+  "baseline_sha": "06cebf484ffc2a94aa1c0049f4ae25d50f197b50",
+  "status": "DIRECTION_CONSENT_REPORTED_BY_USER_FINAL_SHA_REVIEW_PENDING",
+  "source": "Current user instruction relaying three named participants; not fabricated GitHub reviews",
+  "direction_consent": {
+    "Kim Dahun": "A-D recommended directions adopted",
+    "Yoon Jongmin": "QUERY/sender/Port, legacy D06/Snapshot, owner restoration, installation carry, all matching constraints, schedule/DST direction",
+    "Chae Jimin": "QUERY/sender/Port/16 options/DOM/SPA/restoration/blur/URL direction; no additional Content requests"
+  },
+  "additional_choices": {
+    "C05": {
+      "decision": "uncertain duration reserved separately; unknown length/day blocks only quota sites until verified resolution; preserve debit",
+      "source": "Kim Dahun explicit answer during this task: recommended option accepted"
+    },
+    "C11": {
+      "decision": "first 60 seconds count; no retroactive subtraction; permission/API unavailable => UNKNOWN and restrict quota sites",
+      "source": "Kim Dahun explicit answer during this task: recommended option accepted"
+    }
+  },
+  "github_final_approvals": {
+    "Kim Dahun": "NOT_RECORDED_BY_CODEX",
+    "jongjong123alt": "REVIEW_PENDING",
+    "lucas102469": "REVIEW_PENDING"
+  },
+  "deployment": {
+    "selected_module": "runtime-server",
+    "evidence_file": "scripts/package-integrated-candidate.py",
+    "evidence_lines": [
+      23,
+      42,
+      64,
+      68
+    ],
+    "observed_migrations": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9
+    ],
+    "next_number_at_baseline": "V10",
+    "number_reservation": "RECHECK_AT_IMPLEMENTATION_TIP",
+    "numbered_migration_applied": false,
+    "existing_install_flyway": "disabled"
+  },
+  "activation_pending": [
+    "privileged anchor calibration adapter",
+    "actual browser sender/Port/SPA/BFCache",
+    "actual Core DNR writer/restoration",
+    "HTTP/auth/source/Server transaction adapter",
+    "model/license/artifact and browser URL parity",
+    "30min/2h timing acceptance"
+  ],
+  "legacy_contracts_changed": false,
+  "product_activated": false,
+  "merge_authorized": false
+}

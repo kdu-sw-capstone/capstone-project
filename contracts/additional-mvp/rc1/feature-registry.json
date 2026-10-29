@@ -1,0 +1,1087 @@
+{
+  "revision": "AMVP-CONTRACT-20261029-RC2",
+  "feature_registry_version": "AMVP_FEATURES_1",
+  "status": "REVIEW_PENDING",
+  "features": [
+    {
+      "id": "YT-01",
+      "label": "홈페이지 숨기기",
+      "requirement": "USER_CONFIRMED",
+      "detail": "REVIEW_PENDING",
+      "site": "YOUTUBE",
+      "hosts": [
+        "youtube.com",
+        "www.youtube.com"
+      ],
+      "protocol": "https:",
+      "pages": [
+        "HOME"
+      ],
+      "route_examples": [
+        "/"
+      ],
+      "route_examples_are_exhaustive": false,
+      "legacy_feature_code": null,
+      "target": "홈 피드와 홈 진입 링크; 검색·직접 watch 보존",
+      "on": "권한 검증된 frozen focus attachment에서만 활성; scope별 소유 ledger에 먼저 예약/기록 후 변경",
+      "off": "해당 claim만 제거, 마지막 claim이 사라진 속성만 원래 값으로 복원; 타 owner/page 변경 보존",
+      "failure": "FAILED/UNCONFIRMED/UNSUPPORTED를 APPLIED로 바꾸지 않음. REQUIRED 옵션 실패 시 부분 RUNNING 금지",
+      "spa": "초기 문서/history push/replace/pop·DOM 재생성·BFCache 복귀마다 native document/route 재검증; stale 결과 폐기",
+      "evidence": [
+        "native_binding_verified",
+        "observer_ready",
+        "eligible_target_count",
+        "restricted_target_count",
+        "error_count",
+        "ledger_digest",
+        "media_stopped_if_route_block"
+      ],
+      "acceptance_ids": [
+        "AC-YT-01-01",
+        "AC-YT-01-02",
+        "AC-YT-01-03"
+      ],
+      "content_status": "NEW_ADAPTER_REQUIRED",
+      "product_acceptance": "NOT_RUN",
+      "acceptance_cases": [
+        {
+          "id": "AC-YT-01-01",
+          "given": [
+            "HOME"
+          ],
+          "when": "ON + valid sender/scope + verified frozen profile",
+          "expect": "홈 피드와 홈 진입 링크; 검색·직접 watch 보존",
+          "evidence": "observer_ready + eligible/restricted counts + current document effect proof",
+          "status": "NOT_RUN"
+        },
+        {
+          "id": "AC-YT-01-02",
+          "when": "OFF/END + same element claimed by another owner",
+          "expect": "own claim removed; other claim/page state retained; final own footprint verified",
+          "status": "NOT_RUN"
+        },
+        {
+          "id": "AC-YT-01-03",
+          "when": "SPA/BFCache/dynamic reinsertion/stale result/adapter failure",
+          "expect": "rebind valid current doc only; no duplicate observer; stale ignored; errors never APPLIED",
+          "status": "NOT_RUN"
+        }
+      ]
+    },
+    {
+      "id": "YT-02",
+      "label": "Shorts 숨기기",
+      "requirement": "USER_CONFIRMED",
+      "detail": "REVIEW_PENDING",
+      "site": "YOUTUBE",
+      "hosts": [
+        "youtube.com",
+        "www.youtube.com"
+      ],
+      "protocol": "https:",
+      "pages": [
+        "SHORTS",
+        "SEARCH",
+        "WATCH",
+        "HOME"
+      ],
+      "route_examples": [
+        "/shorts/",
+        "/results",
+        "/watch",
+        "/"
+      ],
+      "route_examples_are_exhaustive": false,
+      "legacy_feature_code": "YOUTUBE_SHORTS",
+      "target": "직접 viewer·검색/추천/선반 진입·미디어 재생 제한; 일반 watch 수동 재생 보존",
+      "on": "권한 검증된 frozen focus attachment에서만 활성; scope별 소유 ledger에 먼저 예약/기록 후 변경",
+      "off": "해당 claim만 제거, 마지막 claim이 사라진 속성만 원래 값으로 복원; 타 owner/page 변경 보존",
+      "failure": "FAILED/UNCONFIRMED/UNSUPPORTED를 APPLIED로 바꾸지 않음. REQUIRED 옵션 실패 시 부분 RUNNING 금지",
+      "spa": "초기 문서/history push/replace/pop·DOM 재생성·BFCache 복귀마다 native document/route 재검증; stale 결과 폐기",
+      "evidence": [
+        "native_binding_verified",
+        "observer_ready",
+        "eligible_target_count",
+        "restricted_target_count",
+        "error_count",
+        "ledger_digest",
+        "media_stopped_if_route_block"
+      ],
+      "acceptance_ids": [
+        "AC-YT-02-01",
+        "AC-YT-02-02",
+        "AC-YT-02-03"
+      ],
+      "content_status": "BASELINE_PARTIAL",
+      "product_acceptance": "NOT_RUN",
+      "acceptance_cases": [
+        {
+          "id": "AC-YT-02-01",
+          "given": [
+            "SHORTS",
+            "SEARCH",
+            "WATCH",
+            "HOME"
+          ],
+          "when": "ON + valid sender/scope + verified frozen profile",
+          "expect": "직접 viewer·검색/추천/선반 진입·미디어 재생 제한; 일반 watch 수동 재생 보존",
+          "evidence": "observer_ready + eligible/restricted counts + current document effect proof",
+          "status": "NOT_RUN"
+        },
+        {
+          "id": "AC-YT-02-02",
+          "when": "OFF/END + same element claimed by another owner",
+          "expect": "own claim removed; other claim/page state retained; final own footprint verified",
+          "status": "NOT_RUN"
+        },
+        {
+          "id": "AC-YT-02-03",
+          "when": "SPA/BFCache/dynamic reinsertion/stale result/adapter failure",
+          "expect": "rebind valid current doc only; no duplicate observer; stale ignored; errors never APPLIED",
+          "status": "NOT_RUN"
+        }
+      ]
+    },
+    {
+      "id": "YT-03",
+      "label": "댓글 숨기기",
+      "requirement": "USER_CONFIRMED",
+      "detail": "REVIEW_PENDING",
+      "site": "YOUTUBE",
+      "hosts": [
+        "youtube.com",
+        "www.youtube.com"
+      ],
+      "protocol": "https:",
+      "pages": [
+        "WATCH",
+        "SHORTS"
+      ],
+      "route_examples": [
+        "/watch",
+        "/shorts/"
+      ],
+      "route_examples_are_exhaustive": false,
+      "legacy_feature_code": "YOUTUBE_COMMENTS",
+      "target": "댓글·버튼·동적 패널; 영상·설명 보존",
+      "on": "권한 검증된 frozen focus attachment에서만 활성; scope별 소유 ledger에 먼저 예약/기록 후 변경",
+      "off": "해당 claim만 제거, 마지막 claim이 사라진 속성만 원래 값으로 복원; 타 owner/page 변경 보존",
+      "failure": "FAILED/UNCONFIRMED/UNSUPPORTED를 APPLIED로 바꾸지 않음. REQUIRED 옵션 실패 시 부분 RUNNING 금지",
+      "spa": "초기 문서/history push/replace/pop·DOM 재생성·BFCache 복귀마다 native document/route 재검증; stale 결과 폐기",
+      "evidence": [
+        "native_binding_verified",
+        "observer_ready",
+        "eligible_target_count",
+        "restricted_target_count",
+        "error_count",
+        "ledger_digest",
+        "media_stopped_if_route_block"
+      ],
+      "acceptance_ids": [
+        "AC-YT-03-01",
+        "AC-YT-03-02",
+        "AC-YT-03-03"
+      ],
+      "content_status": "BASELINE_PARTIAL",
+      "product_acceptance": "NOT_RUN",
+      "acceptance_cases": [
+        {
+          "id": "AC-YT-03-01",
+          "given": [
+            "WATCH",
+            "SHORTS"
+          ],
+          "when": "ON + valid sender/scope + verified frozen profile",
+          "expect": "댓글·버튼·동적 패널; 영상·설명 보존",
+          "evidence": "observer_ready + eligible/restricted counts + current document effect proof",
+          "status": "NOT_RUN"
+        },
+        {
+          "id": "AC-YT-03-02",
+          "when": "OFF/END + same element claimed by another owner",
+          "expect": "own claim removed; other claim/page state retained; final own footprint verified",
+          "status": "NOT_RUN"
+        },
+        {
+          "id": "AC-YT-03-03",
+          "when": "SPA/BFCache/dynamic reinsertion/stale result/adapter failure",
+          "expect": "rebind valid current doc only; no duplicate observer; stale ignored; errors never APPLIED",
+          "status": "NOT_RUN"
+        }
+      ]
+    },
+    {
+      "id": "YT-04",
+      "label": "추천 동영상 숨기기",
+      "requirement": "USER_CONFIRMED",
+      "detail": "REVIEW_PENDING",
+      "site": "YOUTUBE",
+      "hosts": [
+        "youtube.com",
+        "www.youtube.com"
+      ],
+      "protocol": "https:",
+      "pages": [
+        "WATCH"
+      ],
+      "route_examples": [
+        "/watch"
+      ],
+      "route_examples_are_exhaustive": false,
+      "legacy_feature_code": "YOUTUBE_RECOMMENDATIONS",
+      "target": "watch 옆/아래 추천; 홈·종료카드는 별도 옵션",
+      "on": "권한 검증된 frozen focus attachment에서만 활성; scope별 소유 ledger에 먼저 예약/기록 후 변경",
+      "off": "해당 claim만 제거, 마지막 claim이 사라진 속성만 원래 값으로 복원; 타 owner/page 변경 보존",
+      "failure": "FAILED/UNCONFIRMED/UNSUPPORTED를 APPLIED로 바꾸지 않음. REQUIRED 옵션 실패 시 부분 RUNNING 금지",
+      "spa": "초기 문서/history push/replace/pop·DOM 재생성·BFCache 복귀마다 native document/route 재검증; stale 결과 폐기",
+      "evidence": [
+        "native_binding_verified",
+        "observer_ready",
+        "eligible_target_count",
+        "restricted_target_count",
+        "error_count",
+        "ledger_digest",
+        "media_stopped_if_route_block"
+      ],
+      "acceptance_ids": [
+        "AC-YT-04-01",
+        "AC-YT-04-02",
+        "AC-YT-04-03"
+      ],
+      "content_status": "BASELINE_PARTIAL",
+      "product_acceptance": "NOT_RUN",
+      "acceptance_cases": [
+        {
+          "id": "AC-YT-04-01",
+          "given": [
+            "WATCH"
+          ],
+          "when": "ON + valid sender/scope + verified frozen profile",
+          "expect": "watch 옆/아래 추천; 홈·종료카드는 별도 옵션",
+          "evidence": "observer_ready + eligible/restricted counts + current document effect proof",
+          "status": "NOT_RUN"
+        },
+        {
+          "id": "AC-YT-04-02",
+          "when": "OFF/END + same element claimed by another owner",
+          "expect": "own claim removed; other claim/page state retained; final own footprint verified",
+          "status": "NOT_RUN"
+        },
+        {
+          "id": "AC-YT-04-03",
+          "when": "SPA/BFCache/dynamic reinsertion/stale result/adapter failure",
+          "expect": "rebind valid current doc only; no duplicate observer; stale ignored; errors never APPLIED",
+          "status": "NOT_RUN"
+        }
+      ]
+    },
+    {
+      "id": "YT-05",
+      "label": "구독 숨기기",
+      "requirement": "USER_CONFIRMED",
+      "detail": "REVIEW_PENDING",
+      "site": "YOUTUBE",
+      "hosts": [
+        "youtube.com",
+        "www.youtube.com"
+      ],
+      "protocol": "https:",
+      "pages": [
+        "SUBSCRIPTIONS",
+        "NAVIGATION"
+      ],
+      "route_examples": [
+        "/feed/subscriptions"
+      ],
+      "route_examples_are_exhaustive": false,
+      "legacy_feature_code": null,
+      "target": "구독 진입과 목록; 구독 취소·계정 변경 금지",
+      "on": "권한 검증된 frozen focus attachment에서만 활성; scope별 소유 ledger에 먼저 예약/기록 후 변경",
+      "off": "해당 claim만 제거, 마지막 claim이 사라진 속성만 원래 값으로 복원; 타 owner/page 변경 보존",
+      "failure": "FAILED/UNCONFIRMED/UNSUPPORTED를 APPLIED로 바꾸지 않음. REQUIRED 옵션 실패 시 부분 RUNNING 금지",
+      "spa": "초기 문서/history push/replace/pop·DOM 재생성·BFCache 복귀마다 native document/route 재검증; stale 결과 폐기",
+      "evidence": [
+        "native_binding_verified",
+        "observer_ready",
+        "eligible_target_count",
+        "restricted_target_count",
+        "error_count",
+        "ledger_digest",
+        "media_stopped_if_route_block"
+      ],
+      "acceptance_ids": [
+        "AC-YT-05-01",
+        "AC-YT-05-02",
+        "AC-YT-05-03"
+      ],
+      "content_status": "NEW_ADAPTER_REQUIRED",
+      "product_acceptance": "NOT_RUN",
+      "acceptance_cases": [
+        {
+          "id": "AC-YT-05-01",
+          "given": [
+            "SUBSCRIPTIONS",
+            "NAVIGATION"
+          ],
+          "when": "ON + valid sender/scope + verified frozen profile",
+          "expect": "구독 진입과 목록; 구독 취소·계정 변경 금지",
+          "evidence": "observer_ready + eligible/restricted counts + current document effect proof",
+          "status": "NOT_RUN"
+        },
+        {
+          "id": "AC-YT-05-02",
+          "when": "OFF/END + same element claimed by another owner",
+          "expect": "own claim removed; other claim/page state retained; final own footprint verified",
+          "status": "NOT_RUN"
+        },
+        {
+          "id": "AC-YT-05-03",
+          "when": "SPA/BFCache/dynamic reinsertion/stale result/adapter failure",
+          "expect": "rebind valid current doc only; no duplicate observer; stale ignored; errors never APPLIED",
+          "status": "NOT_RUN"
+        }
+      ]
+    },
+    {
+      "id": "YT-06",
+      "label": "탐색 숨기기",
+      "requirement": "USER_CONFIRMED",
+      "detail": "REVIEW_PENDING",
+      "site": "YOUTUBE",
+      "hosts": [
+        "youtube.com",
+        "www.youtube.com"
+      ],
+      "protocol": "https:",
+      "pages": [
+        "EXPLORE",
+        "NAVIGATION"
+      ],
+      "route_examples": [
+        "/feed/explore",
+        "/feed/trending"
+      ],
+      "route_examples_are_exhaustive": false,
+      "legacy_feature_code": null,
+      "target": "탐색/인기 메뉴와 목록; 검색 보존, 실제 route profile 검증 필요",
+      "on": "권한 검증된 frozen focus attachment에서만 활성; scope별 소유 ledger에 먼저 예약/기록 후 변경",
+      "off": "해당 claim만 제거, 마지막 claim이 사라진 속성만 원래 값으로 복원; 타 owner/page 변경 보존",
+      "failure": "FAILED/UNCONFIRMED/UNSUPPORTED를 APPLIED로 바꾸지 않음. REQUIRED 옵션 실패 시 부분 RUNNING 금지",
+      "spa": "초기 문서/history push/replace/pop·DOM 재생성·BFCache 복귀마다 native document/route 재검증; stale 결과 폐기",
+      "evidence": [
+        "native_binding_verified",
+        "observer_ready",
+        "eligible_target_count",
+        "restricted_target_count",
+        "error_count",
+        "ledger_digest",
+        "media_stopped_if_route_block"
+      ],
+      "acceptance_ids": [
+        "AC-YT-06-01",
+        "AC-YT-06-02",
+        "AC-YT-06-03"
+      ],
+      "content_status": "NEW_ADAPTER_REQUIRED",
+      "product_acceptance": "NOT_RUN",
+      "acceptance_cases": [
+        {
+          "id": "AC-YT-06-01",
+          "given": [
+            "EXPLORE",
+            "NAVIGATION"
+          ],
+          "when": "ON + valid sender/scope + verified frozen profile",
+          "expect": "탐색/인기 메뉴와 목록; 검색 보존, 실제 route profile 검증 필요",
+          "evidence": "observer_ready + eligible/restricted counts + current document effect proof",
+          "status": "NOT_RUN"
+        },
+        {
+          "id": "AC-YT-06-02",
+          "when": "OFF/END + same element claimed by another owner",
+          "expect": "own claim removed; other claim/page state retained; final own footprint verified",
+          "status": "NOT_RUN"
+        },
+        {
+          "id": "AC-YT-06-03",
+          "when": "SPA/BFCache/dynamic reinsertion/stale result/adapter failure",
+          "expect": "rebind valid current doc only; no duplicate observer; stale ignored; errors never APPLIED",
+          "status": "NOT_RUN"
+        }
+      ]
+    },
+    {
+      "id": "YT-07",
+      "label": "상단 바 숨기기",
+      "requirement": "USER_CONFIRMED",
+      "detail": "REVIEW_PENDING",
+      "site": "YOUTUBE",
+      "hosts": [
+        "youtube.com",
+        "www.youtube.com"
+      ],
+      "protocol": "https:",
+      "pages": [
+        "SUPPORTED_PAGES"
+      ],
+      "route_examples": [
+        "/"
+      ],
+      "route_examples_are_exhaustive": false,
+      "legacy_feature_code": null,
+      "target": "사이트 masthead 및 내부 검색 포함; 브라우저 주소창·FOCURVE 종료/오류 UI 제외",
+      "on": "권한 검증된 frozen focus attachment에서만 활성; scope별 소유 ledger에 먼저 예약/기록 후 변경",
+      "off": "해당 claim만 제거, 마지막 claim이 사라진 속성만 원래 값으로 복원; 타 owner/page 변경 보존",
+      "failure": "FAILED/UNCONFIRMED/UNSUPPORTED를 APPLIED로 바꾸지 않음. REQUIRED 옵션 실패 시 부분 RUNNING 금지",
+      "spa": "초기 문서/history push/replace/pop·DOM 재생성·BFCache 복귀마다 native document/route 재검증; stale 결과 폐기",
+      "evidence": [
+        "native_binding_verified",
+        "observer_ready",
+        "eligible_target_count",
+        "restricted_target_count",
+        "error_count",
+        "ledger_digest",
+        "media_stopped_if_route_block"
+      ],
+      "acceptance_ids": [
+        "AC-YT-07-01",
+        "AC-YT-07-02",
+        "AC-YT-07-03"
+      ],
+      "content_status": "NEW_ADAPTER_REQUIRED",
+      "product_acceptance": "NOT_RUN",
+      "acceptance_cases": [
+        {
+          "id": "AC-YT-07-01",
+          "given": [
+            "SUPPORTED_PAGES"
+          ],
+          "when": "ON + valid sender/scope + verified frozen profile",
+          "expect": "사이트 masthead 및 내부 검색 포함; 브라우저 주소창·FOCURVE 종료/오류 UI 제외",
+          "evidence": "observer_ready + eligible/restricted counts + current document effect proof",
+          "status": "NOT_RUN"
+        },
+        {
+          "id": "AC-YT-07-02",
+          "when": "OFF/END + same element claimed by another owner",
+          "expect": "own claim removed; other claim/page state retained; final own footprint verified",
+          "status": "NOT_RUN"
+        },
+        {
+          "id": "AC-YT-07-03",
+          "when": "SPA/BFCache/dynamic reinsertion/stale result/adapter failure",
+          "expect": "rebind valid current doc only; no duplicate observer; stale ignored; errors never APPLIED",
+          "status": "NOT_RUN"
+        }
+      ]
+    },
+    {
+      "id": "YT-08",
+      "label": "종료 카드 비활성화",
+      "requirement": "USER_CONFIRMED",
+      "detail": "REVIEW_PENDING",
+      "site": "YOUTUBE",
+      "hosts": [
+        "youtube.com",
+        "www.youtube.com"
+      ],
+      "protocol": "https:",
+      "pages": [
+        "WATCH"
+      ],
+      "route_examples": [
+        "/watch"
+      ],
+      "route_examples_are_exhaustive": false,
+      "legacy_feature_code": null,
+      "target": "종료 추천 카드; 자막·조작·본문 보존",
+      "on": "권한 검증된 frozen focus attachment에서만 활성; scope별 소유 ledger에 먼저 예약/기록 후 변경",
+      "off": "해당 claim만 제거, 마지막 claim이 사라진 속성만 원래 값으로 복원; 타 owner/page 변경 보존",
+      "failure": "FAILED/UNCONFIRMED/UNSUPPORTED를 APPLIED로 바꾸지 않음. REQUIRED 옵션 실패 시 부분 RUNNING 금지",
+      "spa": "초기 문서/history push/replace/pop·DOM 재생성·BFCache 복귀마다 native document/route 재검증; stale 결과 폐기",
+      "evidence": [
+        "native_binding_verified",
+        "observer_ready",
+        "eligible_target_count",
+        "restricted_target_count",
+        "error_count",
+        "ledger_digest",
+        "media_stopped_if_route_block"
+      ],
+      "acceptance_ids": [
+        "AC-YT-08-01",
+        "AC-YT-08-02",
+        "AC-YT-08-03"
+      ],
+      "content_status": "NEW_ADAPTER_REQUIRED",
+      "product_acceptance": "NOT_RUN",
+      "acceptance_cases": [
+        {
+          "id": "AC-YT-08-01",
+          "given": [
+            "WATCH"
+          ],
+          "when": "ON + valid sender/scope + verified frozen profile",
+          "expect": "종료 추천 카드; 자막·조작·본문 보존",
+          "evidence": "observer_ready + eligible/restricted counts + current document effect proof",
+          "status": "NOT_RUN"
+        },
+        {
+          "id": "AC-YT-08-02",
+          "when": "OFF/END + same element claimed by another owner",
+          "expect": "own claim removed; other claim/page state retained; final own footprint verified",
+          "status": "NOT_RUN"
+        },
+        {
+          "id": "AC-YT-08-03",
+          "when": "SPA/BFCache/dynamic reinsertion/stale result/adapter failure",
+          "expect": "rebind valid current doc only; no duplicate observer; stale ignored; errors never APPLIED",
+          "status": "NOT_RUN"
+        }
+      ]
+    },
+    {
+      "id": "YT-09",
+      "label": "흑백 모드",
+      "requirement": "USER_CONFIRMED",
+      "detail": "REVIEW_PENDING",
+      "site": "YOUTUBE",
+      "hosts": [
+        "youtube.com",
+        "www.youtube.com"
+      ],
+      "protocol": "https:",
+      "pages": [
+        "SUPPORTED_PAGES"
+      ],
+      "route_examples": [
+        "/"
+      ],
+      "route_examples_are_exhaustive": false,
+      "legacy_feature_code": null,
+      "target": "소유한 filter 합성; FOCURVE 안내 제외, 원래 filter와 다른 owner claim 보존",
+      "on": "권한 검증된 frozen focus attachment에서만 활성; scope별 소유 ledger에 먼저 예약/기록 후 변경",
+      "off": "해당 claim만 제거, 마지막 claim이 사라진 속성만 원래 값으로 복원; 타 owner/page 변경 보존",
+      "failure": "FAILED/UNCONFIRMED/UNSUPPORTED를 APPLIED로 바꾸지 않음. REQUIRED 옵션 실패 시 부분 RUNNING 금지",
+      "spa": "초기 문서/history push/replace/pop·DOM 재생성·BFCache 복귀마다 native document/route 재검증; stale 결과 폐기",
+      "evidence": [
+        "native_binding_verified",
+        "observer_ready",
+        "eligible_target_count",
+        "restricted_target_count",
+        "error_count",
+        "ledger_digest",
+        "media_stopped_if_route_block"
+      ],
+      "acceptance_ids": [
+        "AC-YT-09-01",
+        "AC-YT-09-02",
+        "AC-YT-09-03"
+      ],
+      "content_status": "NEW_ADAPTER_REQUIRED",
+      "product_acceptance": "NOT_RUN",
+      "acceptance_cases": [
+        {
+          "id": "AC-YT-09-01",
+          "given": [
+            "SUPPORTED_PAGES"
+          ],
+          "when": "ON + valid sender/scope + verified frozen profile",
+          "expect": "소유한 filter 합성; FOCURVE 안내 제외, 원래 filter와 다른 owner claim 보존",
+          "evidence": "observer_ready + eligible/restricted counts + current document effect proof",
+          "status": "NOT_RUN"
+        },
+        {
+          "id": "AC-YT-09-02",
+          "when": "OFF/END + same element claimed by another owner",
+          "expect": "own claim removed; other claim/page state retained; final own footprint verified",
+          "status": "NOT_RUN"
+        },
+        {
+          "id": "AC-YT-09-03",
+          "when": "SPA/BFCache/dynamic reinsertion/stale result/adapter failure",
+          "expect": "rebind valid current doc only; no duplicate observer; stale ignored; errors never APPLIED",
+          "status": "NOT_RUN"
+        }
+      ]
+    },
+    {
+      "id": "YT-10",
+      "label": "자동 재생 비활성화",
+      "requirement": "USER_CONFIRMED",
+      "detail": "REVIEW_PENDING",
+      "site": "YOUTUBE",
+      "hosts": [
+        "youtube.com",
+        "www.youtube.com"
+      ],
+      "protocol": "https:",
+      "pages": [
+        "WATCH"
+      ],
+      "route_examples": [
+        "/watch"
+      ],
+      "route_examples_are_exhaustive": false,
+      "legacy_feature_code": "YOUTUBE_AUTOPLAY",
+      "target": "실제 다음 영상 자동 전환 OFF 확인; 수동 play/다음 클릭 보존",
+      "on": "권한 검증된 frozen focus attachment에서만 활성; scope별 소유 ledger에 먼저 예약/기록 후 변경",
+      "off": "해당 claim만 제거, 마지막 claim이 사라진 속성만 원래 값으로 복원; 타 owner/page 변경 보존",
+      "failure": "FAILED/UNCONFIRMED/UNSUPPORTED를 APPLIED로 바꾸지 않음. REQUIRED 옵션 실패 시 부분 RUNNING 금지",
+      "spa": "초기 문서/history push/replace/pop·DOM 재생성·BFCache 복귀마다 native document/route 재검증; stale 결과 폐기",
+      "evidence": [
+        "native_binding_verified",
+        "observer_ready",
+        "eligible_target_count",
+        "restricted_target_count",
+        "error_count",
+        "ledger_digest",
+        "media_stopped_if_route_block"
+      ],
+      "acceptance_ids": [
+        "AC-YT-10-01",
+        "AC-YT-10-02",
+        "AC-YT-10-03"
+      ],
+      "content_status": "BASELINE_PARTIAL",
+      "product_acceptance": "NOT_RUN",
+      "acceptance_cases": [
+        {
+          "id": "AC-YT-10-01",
+          "given": [
+            "WATCH"
+          ],
+          "when": "ON + valid sender/scope + verified frozen profile",
+          "expect": "실제 다음 영상 자동 전환 OFF 확인; 수동 play/다음 클릭 보존",
+          "evidence": "observer_ready + eligible/restricted counts + current document effect proof",
+          "status": "NOT_RUN"
+        },
+        {
+          "id": "AC-YT-10-02",
+          "when": "OFF/END + same element claimed by another owner",
+          "expect": "own claim removed; other claim/page state retained; final own footprint verified",
+          "status": "NOT_RUN"
+        },
+        {
+          "id": "AC-YT-10-03",
+          "when": "SPA/BFCache/dynamic reinsertion/stale result/adapter failure",
+          "expect": "rebind valid current doc only; no duplicate observer; stale ignored; errors never APPLIED",
+          "status": "NOT_RUN"
+        }
+      ]
+    },
+    {
+      "id": "IG-01",
+      "label": "스토리 숨기기",
+      "requirement": "USER_CONFIRMED",
+      "detail": "REVIEW_PENDING",
+      "site": "INSTAGRAM",
+      "hosts": [
+        "instagram.com",
+        "www.instagram.com"
+      ],
+      "protocol": "https:",
+      "pages": [
+        "HOME",
+        "STORIES"
+      ],
+      "route_examples": [
+        "/",
+        "/stories/"
+      ],
+      "route_examples_are_exhaustive": false,
+      "legacy_feature_code": null,
+      "target": "스토리 트레이·직접 viewer 미디어 제한; DM·일반 게시물 보존",
+      "on": "권한 검증된 frozen focus attachment에서만 활성; scope별 소유 ledger에 먼저 예약/기록 후 변경",
+      "off": "해당 claim만 제거, 마지막 claim이 사라진 속성만 원래 값으로 복원; 타 owner/page 변경 보존",
+      "failure": "FAILED/UNCONFIRMED/UNSUPPORTED를 APPLIED로 바꾸지 않음. REQUIRED 옵션 실패 시 부분 RUNNING 금지",
+      "spa": "초기 문서/history push/replace/pop·DOM 재생성·BFCache 복귀마다 native document/route 재검증; stale 결과 폐기",
+      "evidence": [
+        "native_binding_verified",
+        "observer_ready",
+        "eligible_target_count",
+        "restricted_target_count",
+        "error_count",
+        "ledger_digest",
+        "media_stopped_if_route_block"
+      ],
+      "acceptance_ids": [
+        "AC-IG-01-01",
+        "AC-IG-01-02",
+        "AC-IG-01-03"
+      ],
+      "content_status": "NEW_ADAPTER_REQUIRED",
+      "product_acceptance": "NOT_RUN",
+      "acceptance_cases": [
+        {
+          "id": "AC-IG-01-01",
+          "given": [
+            "HOME",
+            "STORIES"
+          ],
+          "when": "ON + valid sender/scope + verified frozen profile",
+          "expect": "스토리 트레이·직접 viewer 미디어 제한; DM·일반 게시물 보존",
+          "evidence": "observer_ready + eligible/restricted counts + current document effect proof",
+          "status": "NOT_RUN"
+        },
+        {
+          "id": "AC-IG-01-02",
+          "when": "OFF/END + same element claimed by another owner",
+          "expect": "own claim removed; other claim/page state retained; final own footprint verified",
+          "status": "NOT_RUN"
+        },
+        {
+          "id": "AC-IG-01-03",
+          "when": "SPA/BFCache/dynamic reinsertion/stale result/adapter failure",
+          "expect": "rebind valid current doc only; no duplicate observer; stale ignored; errors never APPLIED",
+          "status": "NOT_RUN"
+        }
+      ]
+    },
+    {
+      "id": "IG-02",
+      "label": "Reels 숨기기",
+      "requirement": "USER_CONFIRMED",
+      "detail": "REVIEW_PENDING",
+      "site": "INSTAGRAM",
+      "hosts": [
+        "instagram.com",
+        "www.instagram.com"
+      ],
+      "protocol": "https:",
+      "pages": [
+        "REELS",
+        "HOME",
+        "EXPLORE"
+      ],
+      "route_examples": [
+        "/reel/",
+        "/reels/"
+      ],
+      "route_examples_are_exhaustive": false,
+      "legacy_feature_code": "INSTAGRAM_REELS",
+      "target": "직접/검색/추천·SPA viewer·미디어 제한; 일반 게시물 수동 영상 보존",
+      "on": "권한 검증된 frozen focus attachment에서만 활성; scope별 소유 ledger에 먼저 예약/기록 후 변경",
+      "off": "해당 claim만 제거, 마지막 claim이 사라진 속성만 원래 값으로 복원; 타 owner/page 변경 보존",
+      "failure": "FAILED/UNCONFIRMED/UNSUPPORTED를 APPLIED로 바꾸지 않음. REQUIRED 옵션 실패 시 부분 RUNNING 금지",
+      "spa": "초기 문서/history push/replace/pop·DOM 재생성·BFCache 복귀마다 native document/route 재검증; stale 결과 폐기",
+      "evidence": [
+        "native_binding_verified",
+        "observer_ready",
+        "eligible_target_count",
+        "restricted_target_count",
+        "error_count",
+        "ledger_digest",
+        "media_stopped_if_route_block"
+      ],
+      "acceptance_ids": [
+        "AC-IG-02-01",
+        "AC-IG-02-02",
+        "AC-IG-02-03"
+      ],
+      "content_status": "BASELINE_PARTIAL",
+      "product_acceptance": "NOT_RUN",
+      "acceptance_cases": [
+        {
+          "id": "AC-IG-02-01",
+          "given": [
+            "REELS",
+            "HOME",
+            "EXPLORE"
+          ],
+          "when": "ON + valid sender/scope + verified frozen profile",
+          "expect": "직접/검색/추천·SPA viewer·미디어 제한; 일반 게시물 수동 영상 보존",
+          "evidence": "observer_ready + eligible/restricted counts + current document effect proof",
+          "status": "NOT_RUN"
+        },
+        {
+          "id": "AC-IG-02-02",
+          "when": "OFF/END + same element claimed by another owner",
+          "expect": "own claim removed; other claim/page state retained; final own footprint verified",
+          "status": "NOT_RUN"
+        },
+        {
+          "id": "AC-IG-02-03",
+          "when": "SPA/BFCache/dynamic reinsertion/stale result/adapter failure",
+          "expect": "rebind valid current doc only; no duplicate observer; stale ignored; errors never APPLIED",
+          "status": "NOT_RUN"
+        }
+      ]
+    },
+    {
+      "id": "IG-03",
+      "label": "탐색 숨기기",
+      "requirement": "USER_CONFIRMED",
+      "detail": "REVIEW_PENDING",
+      "site": "INSTAGRAM",
+      "hosts": [
+        "instagram.com",
+        "www.instagram.com"
+      ],
+      "protocol": "https:",
+      "pages": [
+        "EXPLORE"
+      ],
+      "route_examples": [
+        "/explore/"
+      ],
+      "route_examples_are_exhaustive": false,
+      "legacy_feature_code": null,
+      "target": "EXPLORE only; excludes search/search-result scope",
+      "on": "권한 검증된 frozen focus attachment에서만 활성; scope별 소유 ledger에 먼저 예약/기록 후 변경",
+      "off": "해당 claim만 제거, 마지막 claim이 사라진 속성만 원래 값으로 복원; 타 owner/page 변경 보존",
+      "failure": "FAILED/UNCONFIRMED/UNSUPPORTED를 APPLIED로 바꾸지 않음. REQUIRED 옵션 실패 시 부분 RUNNING 금지",
+      "spa": "초기 문서/history push/replace/pop·DOM 재생성·BFCache 복귀마다 native document/route 재검증; stale 결과 폐기",
+      "evidence": [
+        "native_binding_verified",
+        "observer_ready",
+        "eligible_target_count",
+        "restricted_target_count",
+        "error_count",
+        "ledger_digest",
+        "media_stopped_if_route_block"
+      ],
+      "acceptance_ids": [
+        "AC-IG-03-01",
+        "AC-IG-03-02",
+        "AC-IG-03-03"
+      ],
+      "content_status": "NEW_ADAPTER_REQUIRED",
+      "product_acceptance": "NOT_RUN",
+      "acceptance_cases": [
+        {
+          "id": "AC-IG-03-01",
+          "given": [
+            "EXPLORE"
+          ],
+          "when": "ON + valid sender/scope + verified frozen profile",
+          "expect": "EXPLORE only; excludes search/search-result scope",
+          "evidence": "observer_ready + eligible/restricted counts + current document effect proof",
+          "status": "NOT_RUN"
+        },
+        {
+          "id": "AC-IG-03-02",
+          "when": "OFF/END + same element claimed by another owner",
+          "expect": "own claim removed; other claim/page state retained; final own footprint verified",
+          "status": "NOT_RUN"
+        },
+        {
+          "id": "AC-IG-03-03",
+          "when": "SPA/BFCache/dynamic reinsertion/stale result/adapter failure",
+          "expect": "rebind valid current doc only; no duplicate observer; stale ignored; errors never APPLIED",
+          "status": "NOT_RUN"
+        }
+      ],
+      "scope_direction": "CONSENT_REPORTED_BY_USER_FINAL_SHA_REVIEW_PENDING"
+    },
+    {
+      "id": "IG-04",
+      "label": "댓글 숨기기",
+      "requirement": "USER_CONFIRMED",
+      "detail": "REVIEW_PENDING",
+      "site": "INSTAGRAM",
+      "hosts": [
+        "instagram.com",
+        "www.instagram.com"
+      ],
+      "protocol": "https:",
+      "pages": [
+        "POST",
+        "REELS"
+      ],
+      "route_examples": [
+        "/p/",
+        "/reel/",
+        "/reels/"
+      ],
+      "route_examples_are_exhaustive": false,
+      "legacy_feature_code": null,
+      "target": "댓글·modal; 캡션·게시물·좋아요 보존",
+      "on": "권한 검증된 frozen focus attachment에서만 활성; scope별 소유 ledger에 먼저 예약/기록 후 변경",
+      "off": "해당 claim만 제거, 마지막 claim이 사라진 속성만 원래 값으로 복원; 타 owner/page 변경 보존",
+      "failure": "FAILED/UNCONFIRMED/UNSUPPORTED를 APPLIED로 바꾸지 않음. REQUIRED 옵션 실패 시 부분 RUNNING 금지",
+      "spa": "초기 문서/history push/replace/pop·DOM 재생성·BFCache 복귀마다 native document/route 재검증; stale 결과 폐기",
+      "evidence": [
+        "native_binding_verified",
+        "observer_ready",
+        "eligible_target_count",
+        "restricted_target_count",
+        "error_count",
+        "ledger_digest",
+        "media_stopped_if_route_block"
+      ],
+      "acceptance_ids": [
+        "AC-IG-04-01",
+        "AC-IG-04-02",
+        "AC-IG-04-03"
+      ],
+      "content_status": "NEW_ADAPTER_REQUIRED",
+      "product_acceptance": "NOT_RUN",
+      "acceptance_cases": [
+        {
+          "id": "AC-IG-04-01",
+          "given": [
+            "POST",
+            "REELS"
+          ],
+          "when": "ON + valid sender/scope + verified frozen profile",
+          "expect": "댓글·modal; 캡션·게시물·좋아요 보존",
+          "evidence": "observer_ready + eligible/restricted counts + current document effect proof",
+          "status": "NOT_RUN"
+        },
+        {
+          "id": "AC-IG-04-02",
+          "when": "OFF/END + same element claimed by another owner",
+          "expect": "own claim removed; other claim/page state retained; final own footprint verified",
+          "status": "NOT_RUN"
+        },
+        {
+          "id": "AC-IG-04-03",
+          "when": "SPA/BFCache/dynamic reinsertion/stale result/adapter failure",
+          "expect": "rebind valid current doc only; no duplicate observer; stale ignored; errors never APPLIED",
+          "status": "NOT_RUN"
+        }
+      ]
+    },
+    {
+      "id": "IG-05",
+      "label": "제안된 항목 숨기기",
+      "requirement": "USER_CONFIRMED",
+      "detail": "REVIEW_PENDING",
+      "site": "INSTAGRAM",
+      "hosts": [
+        "instagram.com",
+        "www.instagram.com"
+      ],
+      "protocol": "https:",
+      "pages": [
+        "HOME",
+        "SUGGESTED"
+      ],
+      "route_examples": [
+        "/"
+      ],
+      "route_examples_are_exhaustive": false,
+      "legacy_feature_code": "INSTAGRAM_RECOMMENDATIONS",
+      "target": "추천 게시물·계정; 팔로잉 피드 보존, 광고 자동 포함 금지",
+      "on": "권한 검증된 frozen focus attachment에서만 활성; scope별 소유 ledger에 먼저 예약/기록 후 변경",
+      "off": "해당 claim만 제거, 마지막 claim이 사라진 속성만 원래 값으로 복원; 타 owner/page 변경 보존",
+      "failure": "FAILED/UNCONFIRMED/UNSUPPORTED를 APPLIED로 바꾸지 않음. REQUIRED 옵션 실패 시 부분 RUNNING 금지",
+      "spa": "초기 문서/history push/replace/pop·DOM 재생성·BFCache 복귀마다 native document/route 재검증; stale 결과 폐기",
+      "evidence": [
+        "native_binding_verified",
+        "observer_ready",
+        "eligible_target_count",
+        "restricted_target_count",
+        "error_count",
+        "ledger_digest",
+        "media_stopped_if_route_block"
+      ],
+      "acceptance_ids": [
+        "AC-IG-05-01",
+        "AC-IG-05-02",
+        "AC-IG-05-03"
+      ],
+      "content_status": "BASELINE_PARTIAL",
+      "product_acceptance": "NOT_RUN",
+      "acceptance_cases": [
+        {
+          "id": "AC-IG-05-01",
+          "given": [
+            "HOME",
+            "SUGGESTED"
+          ],
+          "when": "ON + valid sender/scope + verified frozen profile",
+          "expect": "추천 게시물·계정; 팔로잉 피드 보존, 광고 자동 포함 금지",
+          "evidence": "observer_ready + eligible/restricted counts + current document effect proof",
+          "status": "NOT_RUN"
+        },
+        {
+          "id": "AC-IG-05-02",
+          "when": "OFF/END + same element claimed by another owner",
+          "expect": "own claim removed; other claim/page state retained; final own footprint verified",
+          "status": "NOT_RUN"
+        },
+        {
+          "id": "AC-IG-05-03",
+          "when": "SPA/BFCache/dynamic reinsertion/stale result/adapter failure",
+          "expect": "rebind valid current doc only; no duplicate observer; stale ignored; errors never APPLIED",
+          "status": "NOT_RUN"
+        }
+      ]
+    },
+    {
+      "id": "IG-06",
+      "label": "흑백 모드",
+      "requirement": "USER_CONFIRMED",
+      "detail": "REVIEW_PENDING",
+      "site": "INSTAGRAM",
+      "hosts": [
+        "instagram.com",
+        "www.instagram.com"
+      ],
+      "protocol": "https:",
+      "pages": [
+        "FEED",
+        "POST",
+        "REELS"
+      ],
+      "route_examples": [
+        "/",
+        "/p/",
+        "/reel/",
+        "/reels/"
+      ],
+      "route_examples_are_exhaustive": false,
+      "legacy_feature_code": null,
+      "target": "Grayscale feed/post/reels; excludes DM/login/FOCURVE UI",
+      "on": "권한 검증된 frozen focus attachment에서만 활성; scope별 소유 ledger에 먼저 예약/기록 후 변경",
+      "off": "해당 claim만 제거, 마지막 claim이 사라진 속성만 원래 값으로 복원; 타 owner/page 변경 보존",
+      "failure": "FAILED/UNCONFIRMED/UNSUPPORTED를 APPLIED로 바꾸지 않음. REQUIRED 옵션 실패 시 부분 RUNNING 금지",
+      "spa": "초기 문서/history push/replace/pop·DOM 재생성·BFCache 복귀마다 native document/route 재검증; stale 결과 폐기",
+      "evidence": [
+        "native_binding_verified",
+        "observer_ready",
+        "eligible_target_count",
+        "restricted_target_count",
+        "error_count",
+        "ledger_digest",
+        "media_stopped_if_route_block"
+      ],
+      "acceptance_ids": [
+        "AC-IG-06-01",
+        "AC-IG-06-02",
+        "AC-IG-06-03"
+      ],
+      "content_status": "NEW_ADAPTER_REQUIRED",
+      "product_acceptance": "NOT_RUN",
+      "acceptance_cases": [
+        {
+          "id": "AC-IG-06-01",
+          "given": [
+            "FEED",
+            "POST",
+            "REELS"
+          ],
+          "when": "ON + valid sender/scope + verified frozen profile",
+          "expect": "Grayscale feed/post/reels; excludes DM/login/FOCURVE UI",
+          "evidence": "observer_ready + eligible/restricted counts + current document effect proof",
+          "status": "NOT_RUN"
+        },
+        {
+          "id": "AC-IG-06-02",
+          "when": "OFF/END + same element claimed by another owner",
+          "expect": "own claim removed; other claim/page state retained; final own footprint verified",
+          "status": "NOT_RUN"
+        },
+        {
+          "id": "AC-IG-06-03",
+          "when": "SPA/BFCache/dynamic reinsertion/stale result/adapter failure",
+          "expect": "rebind valid current doc only; no duplicate observer; stale ignored; errors never APPLIED",
+          "status": "NOT_RUN"
+        }
+      ],
+      "scope_direction": "CONSENT_REPORTED_BY_USER_FINAL_SHA_REVIEW_PENDING"
+    }
+  ]
+}

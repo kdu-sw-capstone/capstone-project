@@ -1,0 +1,5760 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:focurve:additional:rc2:schema",
+  "title": "AMVP-CONTRACT-20261029-RC2",
+  "$defs": {
+    "Empty": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {},
+      "required": []
+    },
+    "Uuid": {
+      "type": "string",
+      "format": "uuid",
+      "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+    },
+    "Hash": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "Utc": {
+      "type": "string",
+      "format": "date-time",
+      "pattern": "^\\d{4}-\\d\\d-\\d\\dT\\d\\d:\\d\\d:\\d\\d\\.\\d{3}Z$"
+    },
+    "Version": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 9007199254740991
+    },
+    "Host": {
+      "type": "string",
+      "maxLength": 253,
+      "pattern": "^(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\\.)+[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$"
+    },
+    "Quality": {
+      "type": "string",
+      "enum": [
+        "COMPLETE",
+        "PARTIAL",
+        "UNKNOWN",
+        "NOT_COLLECTED",
+        "NO_DATA"
+      ]
+    },
+    "HostScope": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "host": {
+          "type": "string",
+          "maxLength": 253,
+          "pattern": "^(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\\.)+[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$"
+        },
+        "include_subdomains": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "host",
+        "include_subdomains"
+      ]
+    },
+    "FeatureSetting": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "feature_id": {
+          "type": "string",
+          "enum": [
+            "YT-01",
+            "YT-02",
+            "YT-03",
+            "YT-04",
+            "YT-05",
+            "YT-06",
+            "YT-07",
+            "YT-08",
+            "YT-09",
+            "YT-10",
+            "IG-01",
+            "IG-02",
+            "IG-03",
+            "IG-04",
+            "IG-05",
+            "IG-06"
+          ]
+        },
+        "enabled": {
+          "type": "boolean"
+        },
+        "required": {
+          "const": true
+        }
+      },
+      "required": [
+        "feature_id",
+        "enabled",
+        "required"
+      ]
+    },
+    "KeywordConfig": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        },
+        "match_profile": {
+          "const": "URL_BOUNDARY_1"
+        },
+        "terms": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 80
+          },
+          "minItems": 0,
+          "maxItems": 200,
+          "uniqueItems": true
+        },
+        "exceptions": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/HostScope"
+          },
+          "minItems": 0,
+          "maxItems": 500,
+          "uniqueItems": true
+        },
+        "scope": {
+          "const": "FOCUS_FROZEN"
+        }
+      },
+      "required": [
+        "enabled",
+        "match_profile",
+        "terms",
+        "exceptions",
+        "scope"
+      ]
+    },
+    "AdultConfig": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        },
+        "artifact_id": {
+          "anyOf": [
+            {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "artifact_sha256": {
+          "anyOf": [
+            {
+              "type": "string",
+              "pattern": "^[a-f0-9]{64}$"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "custom_hosts": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/HostScope"
+          },
+          "minItems": 0,
+          "maxItems": 500,
+          "uniqueItems": true
+        },
+        "exceptions": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/HostScope"
+          },
+          "minItems": 0,
+          "maxItems": 500,
+          "uniqueItems": true
+        },
+        "scope": {
+          "const": "FOCUS_FROZEN"
+        }
+      },
+      "required": [
+        "enabled",
+        "artifact_id",
+        "artifact_sha256",
+        "custom_hosts",
+        "exceptions",
+        "scope"
+      ]
+    },
+    "BlurConfig": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        },
+        "sensitivity": {
+          "const": "HIGH"
+        },
+        "model_profile_id": {
+          "anyOf": [
+            {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "profile_sha256": {
+          "anyOf": [
+            {
+              "type": "string",
+              "pattern": "^[a-f0-9]{64}$"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "scope": {
+          "const": "FOCUS_FROZEN"
+        }
+      },
+      "required": [
+        "enabled",
+        "sensitivity",
+        "model_profile_id",
+        "profile_sha256",
+        "scope"
+      ]
+    },
+    "ContentConfig": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "CONTENT"
+        },
+        "features": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/FeatureSetting"
+          },
+          "minItems": 0,
+          "maxItems": 16,
+          "uniqueItems": true
+        },
+        "keyword": {
+          "$ref": "#/$defs/KeywordConfig"
+        },
+        "adult": {
+          "$ref": "#/$defs/AdultConfig"
+        },
+        "blur": {
+          "$ref": "#/$defs/BlurConfig"
+        }
+      },
+      "required": [
+        "kind",
+        "features",
+        "keyword",
+        "adult",
+        "blur"
+      ]
+    },
+    "Window": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "window_id": {
+          "type": "string",
+          "format": "uuid",
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+        },
+        "kind": {
+          "type": "string",
+          "enum": [
+            "BLOCK_WINDOW",
+            "ALLOW_WINDOW"
+          ]
+        },
+        "enabled": {
+          "type": "boolean"
+        },
+        "when": {
+          "oneOf": [
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "recurrence": {
+                  "const": "ONCE"
+                },
+                "start_at": {
+                  "type": "string",
+                  "format": "date-time",
+                  "pattern": "^\\d{4}-\\d\\d-\\d\\dT\\d\\d:\\d\\d:\\d\\d\\.\\d{3}Z$"
+                },
+                "end_at": {
+                  "type": "string",
+                  "format": "date-time",
+                  "pattern": "^\\d{4}-\\d\\d-\\d\\dT\\d\\d:\\d\\d:\\d\\d\\.\\d{3}Z$"
+                }
+              },
+              "required": [
+                "recurrence",
+                "start_at",
+                "end_at"
+              ]
+            },
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "recurrence": {
+                  "const": "WEEKLY"
+                },
+                "weekdays": {
+                  "type": "array",
+                  "items": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 7
+                  },
+                  "minItems": 1,
+                  "maxItems": 7,
+                  "uniqueItems": true
+                },
+                "start_local": {
+                  "type": "string",
+                  "pattern": "^(?:[01][0-9]|2[0-3]):[0-5][0-9]$"
+                },
+                "end_local": {
+                  "type": "string",
+                  "pattern": "^(?:[01][0-9]|2[0-3]):[0-5][0-9]$"
+                },
+                "end_day_offset": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 1
+                },
+                "timezone": {
+                  "type": "string",
+                  "format": "iana-zone",
+                  "maxLength": 80
+                },
+                "dst_gap": {
+                  "const": "SKIP"
+                },
+                "dst_overlap": {
+                  "const": "EARLIER_ONCE"
+                }
+              },
+              "required": [
+                "recurrence",
+                "weekdays",
+                "start_local",
+                "end_local",
+                "end_day_offset",
+                "timezone",
+                "dst_gap",
+                "dst_overlap"
+              ]
+            }
+          ]
+        }
+      },
+      "required": [
+        "window_id",
+        "kind",
+        "enabled",
+        "when"
+      ]
+    },
+    "SiteTimePolicy": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "SITE_TIME"
+        },
+        "policy_id": {
+          "type": "string",
+          "format": "uuid",
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+        },
+        "version": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 9007199254740991
+        },
+        "site_id": {
+          "anyOf": [
+            {
+              "type": "string",
+              "pattern": "^[1-9][0-9]{0,19}$"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "scope": {
+          "$ref": "#/$defs/HostScope"
+        },
+        "enabled": {
+          "type": "boolean"
+        },
+        "tracking_scope": {
+          "const": "BROWSER_ALWAYS"
+        },
+        "daily_limit_ms": {
+          "anyOf": [
+            {
+              "type": "integer",
+              "minimum": 60000,
+              "maximum": 86400000
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "windows": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Window"
+          },
+          "minItems": 0,
+          "maxItems": 100,
+          "uniqueItems": true
+        }
+      },
+      "required": [
+        "kind",
+        "policy_id",
+        "version",
+        "site_id",
+        "scope",
+        "enabled",
+        "tracking_scope",
+        "daily_limit_ms",
+        "windows"
+      ]
+    },
+    "FocusSchedule": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "FOCUS_SCHEDULE"
+        },
+        "schedule_id": {
+          "type": "string",
+          "format": "uuid",
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+        },
+        "enabled": {
+          "type": "boolean"
+        },
+        "when": {
+          "oneOf": [
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "recurrence": {
+                  "const": "ONCE"
+                },
+                "start_at": {
+                  "type": "string",
+                  "format": "date-time",
+                  "pattern": "^\\d{4}-\\d\\d-\\d\\dT\\d\\d:\\d\\d:\\d\\d\\.\\d{3}Z$"
+                }
+              },
+              "required": [
+                "recurrence",
+                "start_at"
+              ]
+            },
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "recurrence": {
+                  "const": "WEEKLY"
+                },
+                "weekdays": {
+                  "type": "array",
+                  "items": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 7
+                  },
+                  "minItems": 1,
+                  "maxItems": 7,
+                  "uniqueItems": true
+                },
+                "start_local": {
+                  "type": "string",
+                  "pattern": "^(?:[01][0-9]|2[0-3]):[0-5][0-9]$"
+                },
+                "timezone": {
+                  "type": "string",
+                  "format": "iana-zone",
+                  "maxLength": 80
+                },
+                "dst_gap": {
+                  "const": "SKIP"
+                },
+                "dst_overlap": {
+                  "const": "EARLIER_ONCE"
+                }
+              },
+              "required": [
+                "recurrence",
+                "weekdays",
+                "start_local",
+                "timezone",
+                "dst_gap",
+                "dst_overlap"
+              ]
+            }
+          ]
+        },
+        "duration_minutes": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 180
+        },
+        "conflict": {
+          "const": "WAIT_FIXED_END"
+        },
+        "minimum_remaining_ms": {
+          "const": 60000
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 80
+        }
+      },
+      "required": [
+        "kind",
+        "schedule_id",
+        "enabled",
+        "when",
+        "duration_minutes",
+        "conflict",
+        "minimum_remaining_ms",
+        "name"
+      ]
+    },
+    "CadenceConfig": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "CADENCE"
+        },
+        "enabled": {
+          "type": "boolean"
+        },
+        "focus_minutes": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 180
+        },
+        "rest_minutes": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 180
+        },
+        "cycles": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 12
+        },
+        "auto_start_next": {
+          "type": "boolean"
+        },
+        "rest_clock": {
+          "const": "ELAPSED_WALL_CLOCK"
+        },
+        "missed_focus": {
+          "const": "WAIT_USER"
+        },
+        "deadline_at": {
+          "anyOf": [
+            {
+              "type": "string",
+              "format": "date-time",
+              "pattern": "^\\d{4}-\\d\\d-\\d\\dT\\d\\d:\\d\\d:\\d\\d\\.\\d{3}Z$"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "kind",
+        "enabled",
+        "focus_minutes",
+        "rest_minutes",
+        "cycles",
+        "auto_start_next",
+        "rest_clock",
+        "missed_focus",
+        "deadline_at"
+      ]
+    },
+    "ConfigValue": {
+      "oneOf": [
+        {
+          "$ref": "#/$defs/ContentConfig"
+        },
+        {
+          "$ref": "#/$defs/SiteTimePolicy"
+        },
+        {
+          "$ref": "#/$defs/FocusSchedule"
+        },
+        {
+          "$ref": "#/$defs/CadenceConfig"
+        }
+      ]
+    },
+    "ConfigWrite": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "executor_id": {
+          "type": "string",
+          "format": "uuid",
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+        },
+        "value": {
+          "$ref": "#/$defs/ConfigValue"
+        }
+      },
+      "required": [
+        "executor_id",
+        "value"
+      ]
+    },
+    "ConfigRecord": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "config_id": {
+          "type": "string",
+          "format": "uuid",
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+        },
+        "executor_id": {
+          "type": "string",
+          "format": "uuid",
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+        },
+        "version": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 9007199254740991
+        },
+        "value": {
+          "$ref": "#/$defs/ConfigValue"
+        },
+        "deleted_at": {
+          "anyOf": [
+            {
+              "type": "string",
+              "format": "date-time",
+              "pattern": "^\\d{4}-\\d\\d-\\d\\dT\\d\\d:\\d\\d:\\d\\d\\.\\d{3}Z$"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "saved_state": {
+          "const": "SAVED"
+        },
+        "runtime_apply_state": {
+          "type": "string",
+          "enum": [
+            "PENDING",
+            "APPLIED",
+            "UNKNOWN",
+            "UNSUPPORTED",
+            "NOT_APPLICABLE"
+          ]
+        },
+        "saved_runtime_revision": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 9007199254740991
+        },
+        "applied_runtime_revision": {
+          "anyOf": [
+            {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 9007199254740991
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "next_focus_revision": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 9007199254740991
+        },
+        "updated_at": {
+          "type": "string",
+          "format": "date-time",
+          "pattern": "^\\d{4}-\\d\\d-\\d\\dT\\d\\d:\\d\\d:\\d\\d\\.\\d{3}Z$"
+        }
+      },
+      "required": [
+        "config_id",
+        "executor_id",
+        "version",
+        "value",
+        "deleted_at",
+        "saved_state",
+        "runtime_apply_state",
+        "saved_runtime_revision",
+        "applied_runtime_revision",
+        "next_focus_revision",
+        "updated_at"
+      ]
+    },
+    "ConfigList": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "items": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/ConfigRecord"
+          },
+          "minItems": 0,
+          "maxItems": 100
+        },
+        "next_cursor": {
+          "anyOf": [
+            {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 2048
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "has_more": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "items",
+        "next_cursor",
+        "has_more"
+      ]
+    },
+    "FocusRef": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "session_id": {
+          "type": "string",
+          "format": "uuid",
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+        },
+        "snapshot_id": {
+          "type": "string",
+          "format": "uuid",
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+        },
+        "snapshot_format": {
+          "type": "string",
+          "enum": [
+            "1.1",
+            "1.2"
+          ]
+        },
+        "snapshot_sha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "desired_revision": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 9007199254740991
+        }
+      },
+      "required": [
+        "session_id",
+        "snapshot_id",
+        "snapshot_format",
+        "snapshot_sha256",
+        "desired_revision"
+      ]
+    },
+    "RuntimePackage": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "contract_revision": {
+          "const": "AMVP-CONTRACT-20261029-RC2"
+        },
+        "format_version": {
+          "const": "AMVP_RUNTIME_PACKAGE_1"
+        },
+        "package_id": {
+          "type": "string",
+          "format": "uuid",
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+        },
+        "owner_binding_id": {
+          "type": "string",
+          "format": "uuid",
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+        },
+        "executor_id": {
+          "type": "string",
+          "format": "uuid",
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+        },
+        "runtime_revision": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 9007199254740991
+        },
+        "issued_at": {
+          "type": "string",
+          "format": "date-time",
+          "pattern": "^\\d{4}-\\d\\d-\\d\\dT\\d\\d:\\d\\d:\\d\\d\\.\\d{3}Z$"
+        },
+        "payload_sha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "timezone": {
+          "type": "string",
+          "format": "iana-zone",
+          "maxLength": 80
+        },
+        "timezone_version": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 9007199254740991
+        },
+        "time_match_strategy": {
+          "const": "ALL_MATCHING_CONSTRAINTS"
+        },
+        "runtime_policies": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/SiteTimePolicy"
+          },
+          "minItems": 0,
+          "maxItems": 200
+        },
+        "next_focus_revision": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 9007199254740991
+        },
+        "focus_defaults": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ContentConfig"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "capability_receipt_id": {
+          "type": "string",
+          "format": "uuid",
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+        },
+        "stream": {
+          "const": "RUNTIME_POLICY"
+        }
+      },
+      "required": [
+        "contract_revision",
+        "format_version",
+        "package_id",
+        "owner_binding_id",
+        "executor_id",
+        "runtime_revision",
+        "issued_at",
+        "payload_sha256",
+        "timezone",
+        "timezone_version",
+        "time_match_strategy",
+        "runtime_policies",
+        "next_focus_revision",
+        "focus_defaults",
+        "capability_receipt_id",
+        "stream"
+      ]
+    },
+    "FocusAttachment": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "format_version": {
+          "const": "AMVP_FOCUS_ATTACHMENT_1"
+        },
+        "attachment_id": {
+          "type": "string",
+          "format": "uuid",
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+        },
+        "owner_binding_id": {
+          "type": "string",
+          "format": "uuid",
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+        },
+        "executor_id": {
+          "type": "string",
+          "format": "uuid",
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+        },
+        "focus_ref": {
+          "$ref": "#/$defs/FocusRef"
+        },
+        "config_revision": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 9007199254740991
+        },
+        "content": {
+          "$ref": "#/$defs/ContentConfig"
+        },
+        "capability_receipt_id": {
+          "type": "string",
+          "format": "uuid",
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+        },
+        "payload_sha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        }
+      },
+      "required": [
+        "format_version",
+        "attachment_id",
+        "owner_binding_id",
+        "executor_id",
+        "focus_ref",
+        "config_revision",
+        "content",
+        "capability_receipt_id",
+        "payload_sha256"
+      ]
+    },
+    "Streams": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "RUNTIME_POLICY": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 60
+          },
+          "minItems": 1,
+          "maxItems": 5,
+          "uniqueItems": true
+        },
+        "RUNTIME_USAGE": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 60
+          },
+          "minItems": 1,
+          "maxItems": 5,
+          "uniqueItems": true
+        },
+        "RUNTIME_REPORT": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 60
+          },
+          "minItems": 1,
+          "maxItems": 5,
+          "uniqueItems": true
+        },
+        "ADDITIONAL_CONTENT": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 60
+          },
+          "minItems": 1,
+          "maxItems": 5,
+          "uniqueItems": true
+        },
+        "ADDITIONAL_EVENT": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 60
+          },
+          "minItems": 1,
+          "maxItems": 5,
+          "uniqueItems": true
+        },
+        "FOCUS_CONTROL": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 60
+          },
+          "minItems": 1,
+          "maxItems": 5,
+          "uniqueItems": true
+        }
+      },
+      "required": [],
+      "minProperties": 1
+    },
+    "CapabilityOffer": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "negotiation_id": {
+          "type": "string",
+          "format": "uuid",
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+        },
+        "executor_id": {
+          "type": "string",
+          "format": "uuid",
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+        },
+        "artifact_sha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "contract_revision": {
+          "const": "AMVP-CONTRACT-20261029-RC2"
+        },
+        "supported": {
+          "$ref": "#/$defs/Streams"
+        },
+        "feature_registry_version": {
+          "const": "AMVP_FEATURES_1"
+        },
+        "supported_feature_ids": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "YT-01",
+              "YT-02",
+              "YT-03",
+              "YT-04",
+              "YT-05",
+              "YT-06",
+              "YT-07",
+              "YT-08",
+              "YT-09",
+              "YT-10",
+              "IG-01",
+              "IG-02",
+              "IG-03",
+              "IG-04",
+              "IG-05",
+              "IG-06"
+            ]
+          },
+          "maxItems": 16,
+          "uniqueItems": true
+        }
+      },
+      "required": [
+        "negotiation_id",
+        "executor_id",
+        "artifact_sha256",
+        "contract_revision",
+        "supported",
+        "feature_registry_version",
+        "supported_feature_ids"
+      ]
+    },
+    "CapabilitySelection": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "negotiation_id": {
+          "type": "string",
+          "format": "uuid",
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+        },
+        "executor_id": {
+          "type": "string",
+          "format": "uuid",
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+        },
+        "result": {
+          "const": "SELECTED_VERIFIED"
+        },
+        "capability_receipt_id": {
+          "type": "string",
+          "format": "uuid",
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+        },
+        "verified_artifact_sha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "verification_ref": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 120
+        },
+        "selected": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "RUNTIME_POLICY": {
+              "const": "AMVP_RUNTIME_PACKAGE_1"
+            },
+            "RUNTIME_USAGE": {
+              "const": "AMVP_BROWSER_USAGE_2"
+            },
+            "RUNTIME_REPORT": {
+              "const": "AMVP_RUNTIME_REPORT_1"
+            },
+            "ADDITIONAL_CONTENT": {
+              "const": "AMVP_CONTENT_2"
+            },
+            "ADDITIONAL_EVENT": {
+              "const": "AMVP_ACCESS_EVENT_1"
+            },
+            "FOCUS_CONTROL": {
+              "const": "AMVP_FOCUS_CONTROL_1"
+            }
+          },
+          "required": [],
+          "minProperties": 1
+        },
+        "expires_at": {
+          "type": "string",
+          "format": "date-time",
+          "pattern": "^\\d{4}-\\d\\d-\\d\\dT\\d\\d:\\d\\d:\\d\\d\\.\\d{3}Z$"
+        },
+        "selected_feature_ids": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "YT-01",
+              "YT-02",
+              "YT-03",
+              "YT-04",
+              "YT-05",
+              "YT-06",
+              "YT-07",
+              "YT-08",
+              "YT-09",
+              "YT-10",
+              "IG-01",
+              "IG-02",
+              "IG-03",
+              "IG-04",
+              "IG-05",
+              "IG-06"
+            ]
+          },
+          "maxItems": 16,
+          "uniqueItems": true
+        },
+        "owner_binding_id": {
+          "type": "string",
+          "format": "uuid",
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+        },
+        "owner_epoch": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 9007199254740991
+        }
+      },
+      "required": [
+        "negotiation_id",
+        "executor_id",
+        "result",
+        "capability_receipt_id",
+        "verified_artifact_sha256",
+        "verification_ref",
+        "selected",
+        "expires_at",
+        "selected_feature_ids",
+        "owner_binding_id",
+        "owner_epoch"
+      ]
+    },
+    "BindingScope": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "owner_binding_id": {
+          "type": "string",
+          "format": "uuid",
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+        },
+        "owner_epoch": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 9007199254740991
+        },
+        "executor_id": {
+          "type": "string",
+          "format": "uuid",
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+        },
+        "runtime_execution_id": {
+          "type": "string",
+          "format": "uuid",
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+        },
+        "package_id": {
+          "type": "string",
+          "format": "uuid",
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+        },
+        "runtime_revision": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 9007199254740991
+        },
+        "binding_id": {
+          "type": "string",
+          "format": "uuid",
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+        },
+        "scope_epoch": {
+          "type": "string",
+          "format": "uuid",
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+        },
+        "generation": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 9007199254740991
+        },
+        "tab_id": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 2147483647
+        },
+        "frame_id": {
+          "const": 0
+        },
+        "document_id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 100
+        },
+        "document_instance_id": {
+          "type": "string",
+          "format": "uuid",
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+        },
+        "url_sha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "focus_ref": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/FocusRef"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "owner_binding_id",
+        "owner_epoch",
+        "executor_id",
+        "runtime_execution_id",
+        "package_id",
+        "runtime_revision",
+        "binding_id",
+        "scope_epoch",
+        "generation",
+        "tab_id",
+        "frame_id",
+        "document_id",
+        "document_instance_id",
+        "url_sha256",
+        "focus_ref"
+      ]
+    },
+    "Projection": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "features": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/FeatureSetting"
+          },
+          "minItems": 0,
+          "maxItems": 16,
+          "uniqueItems": true
+        },
+        "content": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ContentConfig"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "access_block_reasons": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "USER_SITE",
+              "ADULT_DOMAIN",
+              "KEYWORD",
+              "BLOCK_WINDOW",
+              "OUTSIDE_ALLOW_WINDOW",
+              "DAILY_LIMIT"
+            ]
+          },
+          "minItems": 0,
+          "maxItems": 6,
+          "uniqueItems": true
+        },
+        "host": {
+          "type": "string",
+          "maxLength": 253,
+          "pattern": "^(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\\.)+[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$"
+        },
+        "matched_policy_host": {
+          "anyOf": [
+            {
+              "type": "string",
+              "maxLength": 253,
+              "pattern": "^(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\\.)+[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "artifact_ids": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+          },
+          "minItems": 0,
+          "maxItems": 10,
+          "uniqueItems": true
+        },
+        "document_context": {
+          "$ref": "#/$defs/DocumentContext"
+        }
+      },
+      "required": [
+        "features",
+        "content",
+        "access_block_reasons",
+        "host",
+        "matched_policy_host",
+        "artifact_ids",
+        "document_context"
+      ]
+    },
+    "Control": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "type": {
+          "const": "D06_ADDITIONAL_CONTROL"
+        },
+        "schema_version": {
+          "const": "AMVP_CONTENT_2"
+        },
+        "request_id": {
+          "type": "string",
+          "format": "uuid",
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+        },
+        "payload": {
+          "oneOf": [
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "operation_id": {
+                  "type": "string",
+                  "format": "uuid",
+                  "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+                },
+                "semantic_sha256": {
+                  "type": "string",
+                  "pattern": "^[a-f0-9]{64}$"
+                },
+                "scope": {
+                  "$ref": "#/$defs/BindingScope"
+                },
+                "channel_credential": {
+                  "type": "string",
+                  "pattern": "^[a-f0-9]{64}$"
+                },
+                "control_seq": {
+                  "type": "integer",
+                  "minimum": 1,
+                  "maximum": 9007199254740991
+                },
+                "operation": {
+                  "type": "string",
+                  "enum": [
+                    "APPLY",
+                    "UPDATE"
+                  ]
+                },
+                "projection": {
+                  "$ref": "#/$defs/Projection"
+                },
+                "cleanup_grant_id": {
+                  "type": "string",
+                  "format": "uuid",
+                  "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+                },
+                "execute_before": {
+                  "type": "string",
+                  "format": "date-time",
+                  "pattern": "^\\d{4}-\\d\\d-\\d\\dT\\d\\d:\\d\\d:\\d\\d\\.\\d{3}Z$"
+                }
+              },
+              "required": [
+                "operation_id",
+                "semantic_sha256",
+                "scope",
+                "channel_credential",
+                "control_seq",
+                "operation",
+                "projection",
+                "cleanup_grant_id",
+                "execute_before"
+              ]
+            },
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "operation_id": {
+                  "type": "string",
+                  "format": "uuid",
+                  "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+                },
+                "semantic_sha256": {
+                  "type": "string",
+                  "pattern": "^[a-f0-9]{64}$"
+                },
+                "scope": {
+                  "$ref": "#/$defs/BindingScope"
+                },
+                "channel_credential": {
+                  "type": "string",
+                  "pattern": "^[a-f0-9]{64}$"
+                },
+                "control_seq": {
+                  "type": "integer",
+                  "minimum": 1,
+                  "maximum": 9007199254740991
+                },
+                "operation": {
+                  "const": "RELEASE"
+                },
+                "cleanup_grant_id": {
+                  "type": "string",
+                  "format": "uuid",
+                  "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+                },
+                "release_mode": {
+                  "const": "NORMAL"
+                },
+                "expected_footprint_sha256": {
+                  "type": "string",
+                  "pattern": "^[a-f0-9]{64}$"
+                }
+              },
+              "required": [
+                "operation_id",
+                "semantic_sha256",
+                "scope",
+                "channel_credential",
+                "control_seq",
+                "operation",
+                "cleanup_grant_id",
+                "release_mode",
+                "expected_footprint_sha256"
+              ]
+            },
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "operation_id": {
+                  "type": "string",
+                  "format": "uuid",
+                  "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+                },
+                "semantic_sha256": {
+                  "type": "string",
+                  "pattern": "^[a-f0-9]{64}$"
+                },
+                "scope": {
+                  "$ref": "#/$defs/BindingScope"
+                },
+                "channel_credential": {
+                  "type": "string",
+                  "pattern": "^[a-f0-9]{64}$"
+                },
+                "control_seq": {
+                  "const": null
+                },
+                "operation": {
+                  "const": "RELEASE"
+                },
+                "cleanup_grant_id": {
+                  "type": "string",
+                  "format": "uuid",
+                  "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+                },
+                "release_mode": {
+                  "const": "CLEANUP_ONLY"
+                },
+                "expected_footprint_sha256": {
+                  "type": "string",
+                  "pattern": "^[a-f0-9]{64}$"
+                }
+              },
+              "required": [
+                "operation_id",
+                "semantic_sha256",
+                "scope",
+                "channel_credential",
+                "control_seq",
+                "operation",
+                "cleanup_grant_id",
+                "release_mode",
+                "expected_footprint_sha256"
+              ]
+            }
+          ]
+        },
+        "stream": {
+          "const": "ADDITIONAL_CONTENT"
+        }
+      },
+      "required": [
+        "type",
+        "schema_version",
+        "request_id",
+        "payload",
+        "stream"
+      ]
+    },
+    "EffectEvidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "FEATURE"
+        },
+        "owner_binding_id": {
+          "type": "string",
+          "format": "uuid",
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+        },
+        "evidence_scope_sha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "action": {
+          "type": "string",
+          "enum": [
+            "APPLY",
+            "RELEASE"
+          ]
+        },
+        "result": {
+          "type": "string",
+          "enum": [
+            "APPLIED",
+            "NOT_APPLICABLE",
+            "OBSERVING",
+            "FAILED",
+            "UNCONFIRMED",
+            "RELEASED",
+            "RELEASE_FAILED",
+            "UNSUPPORTED"
+          ]
+        },
+        "observer_ready": {
+          "type": "boolean"
+        },
+        "scan_complete": {
+          "type": "boolean"
+        },
+        "remaining_claim_count": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 10000
+        },
+        "error_count": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 10000
+        },
+        "ledger_sha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "restore": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/RestoreEvidence"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "feature_id": {
+          "type": "string",
+          "enum": [
+            "YT-01",
+            "YT-02",
+            "YT-03",
+            "YT-04",
+            "YT-05",
+            "YT-06",
+            "YT-07",
+            "YT-08",
+            "YT-09",
+            "YT-10",
+            "IG-01",
+            "IG-02",
+            "IG-03",
+            "IG-04",
+            "IG-05",
+            "IG-06"
+          ]
+        },
+        "eligible_target_count": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 10000
+        },
+        "restricted_target_count": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 10000
+        },
+        "presentation": {
+          "type": "string",
+          "enum": [
+            "DIRECT_VIEWER",
+            "ENTRY_SURFACE",
+            "DOM_REGION"
+          ]
+        },
+        "route_profile_sha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "scan_id": {
+          "type": "string",
+          "format": "uuid",
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+        },
+        "media": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/MediaObservation"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "media_stopped": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "kind",
+        "owner_binding_id",
+        "evidence_scope_sha256",
+        "action",
+        "result",
+        "observer_ready",
+        "scan_complete",
+        "remaining_claim_count",
+        "error_count",
+        "ledger_sha256",
+        "restore",
+        "feature_id",
+        "eligible_target_count",
+        "restricted_target_count",
+        "presentation",
+        "route_profile_sha256",
+        "scan_id",
+        "media",
+        "media_stopped"
+      ],
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "action": {
+                "const": "RELEASE"
+              }
+            },
+            "required": [
+              "action"
+            ]
+          },
+          "then": {
+            "properties": {
+              "restore": {
+                "$ref": "#/$defs/RestoreEvidence"
+              }
+            }
+          },
+          "else": {
+            "properties": {
+              "restore": {
+                "type": "null"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "presentation": {
+                "const": "DIRECT_VIEWER"
+              },
+              "action": {
+                "const": "APPLY"
+              },
+              "result": {
+                "const": "APPLIED"
+              }
+            },
+            "required": [
+              "presentation",
+              "action",
+              "result"
+            ]
+          },
+          "then": {
+            "properties": {
+              "media_stopped": {
+                "const": true
+              },
+              "media": {
+                "allOf": [
+                  {
+                    "$ref": "#/$defs/MediaObservation"
+                  },
+                  {
+                    "properties": {
+                      "viewer_count": {
+                        "minimum": 1
+                      },
+                      "target_count": {
+                        "minimum": 1
+                      },
+                      "playing_count": {
+                        "const": 0
+                      },
+                      "stop_error_count": {
+                        "const": 0
+                      }
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "action": {
+                "const": "APPLY"
+              }
+            },
+            "required": [
+              "action"
+            ]
+          },
+          "then": {
+            "properties": {
+              "result": {
+                "enum": [
+                  "APPLIED",
+                  "NOT_APPLICABLE",
+                  "OBSERVING",
+                  "FAILED",
+                  "UNCONFIRMED",
+                  "UNSUPPORTED"
+                ]
+              }
+            }
+          },
+          "else": {
+            "properties": {
+              "result": {
+                "enum": [
+                  "RELEASED",
+                  "RELEASE_FAILED",
+                  "UNCONFIRMED",
+                  "UNSUPPORTED"
+                ]
+              }
+            }
+          }
+        }
+      ]
+    },
+    "ContentResult": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "type": {
+          "const": "D06_ADDITIONAL_RESULT"
+        },
+        "schema_version": {
+          "const": "AMVP_CONTENT_2"
+        },
+        "request_id": {
+          "type": "string",
+          "format": "uuid",
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+        },
+        "operation_id": {
+          "type": "string",
+          "format": "uuid",
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+        },
+        "semantic_sha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "scope": {
+          "$ref": "#/$defs/BindingScope"
+        },
+        "control_seq": {
+          "anyOf": [
+            {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 9007199254740991
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "ACK",
+            "NACK"
+          ]
+        },
+        "result_state": {
+          "type": "string",
+          "enum": [
+            "RECEIVED",
+            "APPLYING",
+            "APPLIED",
+            "NOT_APPLICABLE",
+            "RELEASED",
+            "FAILED",
+            "UNCONFIRMED",
+            "RELEASE_FAILED",
+            "UNSUPPORTED",
+            "OBSERVING",
+            "PARTIAL"
+          ]
+        },
+        "effects": {
+          "type": "array",
+          "items": {
+            "oneOf": [
+              {
+                "$ref": "#/$defs/EffectEvidence"
+              },
+              {
+                "$ref": "#/$defs/ContentPolicyEvidence"
+              }
+            ]
+          },
+          "minItems": 0,
+          "maxItems": 20
+        },
+        "remaining_claim_count": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 1024
+        },
+        "footprint_sha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "observed_at": {
+          "type": "string",
+          "format": "date-time",
+          "pattern": "^\\d{4}-\\d\\d-\\d\\dT\\d\\d:\\d\\d:\\d\\d\\.\\d{3}Z$"
+        },
+        "error_code": {
+          "anyOf": [
+            {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 80
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "stream": {
+          "const": "ADDITIONAL_CONTENT"
+        }
+      },
+      "required": [
+        "type",
+        "schema_version",
+        "request_id",
+        "operation_id",
+        "semantic_sha256",
+        "scope",
+        "control_seq",
+        "status",
+        "result_state",
+        "effects",
+        "remaining_claim_count",
+        "footprint_sha256",
+        "observed_at",
+        "error_code",
+        "stream"
+      ],
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "control_seq": {
+                "type": "null"
+              }
+            },
+            "required": [
+              "control_seq"
+            ]
+          },
+          "then": {
+            "properties": {
+              "result_state": {
+                "type": "string",
+                "enum": [
+                  "RECEIVED",
+                  "APPLYING",
+                  "RELEASED",
+                  "FAILED",
+                  "UNCONFIRMED",
+                  "RELEASE_FAILED",
+                  "UNSUPPORTED"
+                ]
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "status": {
+                "const": "NACK"
+              }
+            },
+            "required": [
+              "status"
+            ]
+          },
+          "then": {
+            "properties": {
+              "error_code": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 80
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "status": {
+                "const": "ACK"
+              },
+              "result_state": {
+                "enum": [
+                  "APPLIED",
+                  "NOT_APPLICABLE",
+                  "RELEASED"
+                ]
+              }
+            },
+            "required": [
+              "status",
+              "result_state"
+            ]
+          },
+          "then": {
+            "properties": {
+              "error_code": {
+                "type": "null"
+              }
+            }
+          }
+        }
+      ]
+    },
+    "PolicyAttribution": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "policy_id": {
+          "type": "string",
+          "format": "uuid",
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+        },
+        "policy_version": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 9007199254740991
+        },
+        "matched_policy_host": {
+          "type": "string",
+          "maxLength": 253,
+          "pattern": "^(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\\.)+[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$"
+        }
+      },
+      "required": [
+        "policy_id",
+        "policy_version",
+        "matched_policy_host"
+      ]
+    },
+    "UsageSegment": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "segment_id": {
+          "type": "string",
+          "format": "uuid",
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+        },
+        "owner_binding_id": {
+          "type": "string",
+          "format": "uuid",
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+        },
+        "executor_id": {
+          "type": "string",
+          "format": "uuid",
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+        },
+        "collector_epoch": {
+          "type": "string",
+          "format": "uuid",
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+        },
+        "local_usage_seq": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 9007199254740991
+        },
+        "previous_segment_sha256": {
+          "anyOf": [
+            {
+              "type": "string",
+              "pattern": "^[a-f0-9]{64}$"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "package_id": {
+          "type": "string",
+          "format": "uuid",
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+        },
+        "runtime_revision": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 9007199254740991
+        },
+        "actual_host": {
+          "type": "string",
+          "maxLength": 253,
+          "pattern": "^(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\\.)+[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$"
+        },
+        "start_at": {
+          "type": "string",
+          "format": "date-time",
+          "pattern": "^\\d{4}-\\d\\d-\\d\\dT\\d\\d:\\d\\d:\\d\\d\\.\\d{3}Z$"
+        },
+        "end_at": {
+          "type": "string",
+          "format": "date-time",
+          "pattern": "^\\d{4}-\\d\\d-\\d\\dT\\d\\d:\\d\\d:\\d\\d\\.\\d{3}Z$"
+        },
+        "confirmed_ms": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "uncertain_ms": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "day_start_at": {
+          "type": "string",
+          "format": "date-time",
+          "pattern": "^\\d{4}-\\d\\d-\\d\\dT\\d\\d:\\d\\d:\\d\\d\\.\\d{3}Z$"
+        },
+        "day_end_at": {
+          "type": "string",
+          "format": "date-time",
+          "pattern": "^\\d{4}-\\d\\d-\\d\\dT\\d\\d:\\d\\d:\\d\\d\\.\\d{3}Z$"
+        },
+        "timezone": {
+          "type": "string",
+          "format": "iana-zone",
+          "maxLength": 80
+        },
+        "timezone_version": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 9007199254740991
+        },
+        "enforcement_day_chain_id": {
+          "type": "string",
+          "format": "uuid",
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+        },
+        "policy_attributions": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/PolicyAttribution"
+          },
+          "minItems": 0,
+          "maxItems": 200
+        },
+        "focus_ref": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/FocusRef"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "quality": {
+          "type": "string",
+          "enum": [
+            "COMPLETE",
+            "PARTIAL"
+          ]
+        },
+        "payload_sha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        }
+      },
+      "required": [
+        "segment_id",
+        "owner_binding_id",
+        "executor_id",
+        "collector_epoch",
+        "local_usage_seq",
+        "previous_segment_sha256",
+        "package_id",
+        "runtime_revision",
+        "actual_host",
+        "start_at",
+        "end_at",
+        "confirmed_ms",
+        "uncertain_ms",
+        "day_start_at",
+        "day_end_at",
+        "timezone",
+        "timezone_version",
+        "enforcement_day_chain_id",
+        "policy_attributions",
+        "focus_ref",
+        "quality",
+        "payload_sha256"
+      ]
+    },
+    "UsageBatch": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "stream": {
+          "const": "RUNTIME_USAGE"
+        },
+        "schema_version": {
+          "const": "AMVP_BROWSER_USAGE_2"
+        },
+        "batch_id": {
+          "type": "string",
+          "format": "uuid",
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+        },
+        "executor_id": {
+          "type": "string",
+          "format": "uuid",
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+        },
+        "segments": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/ClockedUsageSegment"
+          },
+          "minItems": 1,
+          "maxItems": 100
+        }
+      },
+      "required": [
+        "stream",
+        "schema_version",
+        "batch_id",
+        "executor_id",
+        "segments"
+      ]
+    },
+    "ItemAck": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "item_id": {
+          "type": "string",
+          "format": "uuid",
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+        },
+        "payload_sha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "ACCEPTED",
+            "DUPLICATE",
+            "PENDING_DEPENDENCY",
+            "REJECTED",
+            "NOT_RECEIVED"
+          ]
+        },
+        "error_code": {
+          "anyOf": [
+            {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 80
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "item_id",
+        "payload_sha256",
+        "status",
+        "error_code"
+      ]
+    },
+    "BatchAck": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "batch_id": {
+          "type": "string",
+          "format": "uuid",
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+        },
+        "items": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/ItemAck"
+          },
+          "minItems": 0,
+          "maxItems": 100
+        }
+      },
+      "required": [
+        "batch_id",
+        "items"
+      ]
+    },
+    "StatusRequest": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "item_ids": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+          },
+          "minItems": 1,
+          "maxItems": 100,
+          "uniqueItems": true
+        }
+      },
+      "required": [
+        "item_ids"
+      ]
+    },
+    "StatusResponse": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "items": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/ItemAck"
+          },
+          "minItems": 0,
+          "maxItems": 100
+        }
+      },
+      "required": [
+        "items"
+      ]
+    },
+    "RuntimeReport": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "report_id": {
+          "type": "string",
+          "format": "uuid",
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+        },
+        "owner_binding_id": {
+          "type": "string",
+          "format": "uuid",
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+        },
+        "executor_id": {
+          "type": "string",
+          "format": "uuid",
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+        },
+        "runtime_execution_id": {
+          "type": "string",
+          "format": "uuid",
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+        },
+        "report_epoch": {
+          "type": "string",
+          "format": "uuid",
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+        },
+        "report_seq": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 9007199254740991
+        },
+        "operation_id": {
+          "type": "string",
+          "format": "uuid",
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+        },
+        "package_id": {
+          "type": "string",
+          "format": "uuid",
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+        },
+        "runtime_revision": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 9007199254740991
+        },
+        "state": {
+          "type": "string",
+          "enum": [
+            "PENDING",
+            "APPLYING",
+            "APPLIED",
+            "UNKNOWN",
+            "RELEASING",
+            "RELEASED",
+            "FAILED"
+          ]
+        },
+        "reason": {
+          "type": "string",
+          "enum": [
+            "CONFIG_CHANGE",
+            "BLOCK_WINDOW",
+            "OUTSIDE_ALLOW_WINDOW",
+            "DAILY_LIMIT",
+            "OWNER_TRANSFER",
+            "RESTART",
+            "ERROR"
+          ]
+        },
+        "evidence_sha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "observed_at": {
+          "type": "string",
+          "format": "date-time",
+          "pattern": "^\\d{4}-\\d\\d-\\d\\dT\\d\\d:\\d\\d:\\d\\d\\.\\d{3}Z$"
+        },
+        "payload_sha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        }
+      },
+      "required": [
+        "report_id",
+        "owner_binding_id",
+        "executor_id",
+        "runtime_execution_id",
+        "report_epoch",
+        "report_seq",
+        "operation_id",
+        "package_id",
+        "runtime_revision",
+        "state",
+        "reason",
+        "evidence_sha256",
+        "observed_at",
+        "payload_sha256"
+      ]
+    },
+    "ReportBatch": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "stream": {
+          "const": "RUNTIME_REPORT"
+        },
+        "schema_version": {
+          "const": "AMVP_RUNTIME_REPORT_1"
+        },
+        "batch_id": {
+          "type": "string",
+          "format": "uuid",
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+        },
+        "executor_id": {
+          "type": "string",
+          "format": "uuid",
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+        },
+        "reports": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/RuntimeReport"
+          },
+          "minItems": 1,
+          "maxItems": 100
+        }
+      },
+      "required": [
+        "stream",
+        "schema_version",
+        "batch_id",
+        "executor_id",
+        "reports"
+      ]
+    },
+    "AccessEvent": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "event_id": {
+          "type": "string",
+          "format": "uuid",
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+        },
+        "schema_version": {
+          "const": "AMVP_ACCESS_EVENT_1"
+        },
+        "owner_binding_id": {
+          "type": "string",
+          "format": "uuid",
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+        },
+        "executor_id": {
+          "type": "string",
+          "format": "uuid",
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+        },
+        "event_epoch": {
+          "type": "string",
+          "format": "uuid",
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+        },
+        "local_event_seq": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 9007199254740991
+        },
+        "navigation_id": {
+          "type": "string",
+          "format": "uuid",
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+        },
+        "analysis_group_id": {
+          "type": "string",
+          "format": "uuid",
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+        },
+        "occurred_at": {
+          "type": "string",
+          "format": "date-time",
+          "pattern": "^\\d{4}-\\d\\d-\\d\\dT\\d\\d:\\d\\d:\\d\\d\\.\\d{3}Z$"
+        },
+        "target_kind": {
+          "type": "string",
+          "enum": [
+            "SITE",
+            "FEATURE"
+          ]
+        },
+        "target_host": {
+          "type": "string",
+          "maxLength": 253,
+          "pattern": "^(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\\.)+[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$"
+        },
+        "target_key": {
+          "type": "string",
+          "maxLength": 253,
+          "pattern": "^(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\\.)+[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$"
+        },
+        "matched_policy_host": {
+          "anyOf": [
+            {
+              "type": "string",
+              "maxLength": 253,
+              "pattern": "^(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\\.)+[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "feature_id": {
+          "anyOf": [
+            {
+              "type": "string",
+              "enum": [
+                "YT-02",
+                "IG-02"
+              ]
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "event_type": {
+          "type": "string",
+          "enum": [
+            "RECORDED_ACCESS",
+            "BLOCKED_SITE_ACCESS",
+            "BLOCKED_FEATURE_ACCESS"
+          ]
+        },
+        "blocked_reasons": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "USER_SITE",
+              "ADULT_DOMAIN",
+              "KEYWORD",
+              "BLOCK_WINDOW",
+              "OUTSIDE_ALLOW_WINDOW",
+              "DAILY_LIMIT",
+              "FEATURE"
+            ]
+          },
+          "minItems": 0,
+          "maxItems": 7,
+          "uniqueItems": true
+        },
+        "package_id": {
+          "type": "string",
+          "format": "uuid",
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+        },
+        "runtime_revision": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 9007199254740991
+        },
+        "focus_ref": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/FocusRef"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "quality": {
+          "$ref": "#/$defs/Quality"
+        },
+        "payload_sha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        }
+      },
+      "required": [
+        "event_id",
+        "schema_version",
+        "owner_binding_id",
+        "executor_id",
+        "event_epoch",
+        "local_event_seq",
+        "navigation_id",
+        "analysis_group_id",
+        "occurred_at",
+        "target_kind",
+        "target_host",
+        "target_key",
+        "matched_policy_host",
+        "feature_id",
+        "event_type",
+        "blocked_reasons",
+        "package_id",
+        "runtime_revision",
+        "focus_ref",
+        "quality",
+        "payload_sha256"
+      ]
+    },
+    "EventBatch": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "stream": {
+          "const": "ADDITIONAL_EVENT"
+        },
+        "schema_version": {
+          "const": "AMVP_ACCESS_EVENT_1"
+        },
+        "batch_id": {
+          "type": "string",
+          "format": "uuid",
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+        },
+        "executor_id": {
+          "type": "string",
+          "format": "uuid",
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+        },
+        "events": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/AccessEvent"
+          },
+          "minItems": 1,
+          "maxItems": 100
+        }
+      },
+      "required": [
+        "stream",
+        "schema_version",
+        "batch_id",
+        "executor_id",
+        "events"
+      ]
+    },
+    "TimezoneWrite": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "timezone": {
+          "type": "string",
+          "format": "iana-zone",
+          "maxLength": 80
+        }
+      },
+      "required": [
+        "timezone"
+      ]
+    },
+    "TimezoneRecord": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "timezone_change_id": {
+          "type": "string",
+          "format": "uuid",
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+        },
+        "desired_timezone": {
+          "type": "string",
+          "format": "iana-zone",
+          "maxLength": 80
+        },
+        "desired_version": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 9007199254740991
+        },
+        "applied_timezone": {
+          "type": "string",
+          "format": "iana-zone",
+          "maxLength": 80
+        },
+        "applied_version": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 9007199254740991
+        },
+        "effective_at": {
+          "type": "string",
+          "format": "date-time",
+          "pattern": "^\\d{4}-\\d\\d-\\d\\dT\\d\\d:\\d\\d:\\d\\d\\.\\d{3}Z$"
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "PENDING_CURRENT_DAY_END",
+            "APPLIED"
+          ]
+        },
+        "budget_reset": {
+          "const": false
+        }
+      },
+      "required": [
+        "timezone_change_id",
+        "desired_timezone",
+        "desired_version",
+        "applied_timezone",
+        "applied_version",
+        "effective_at",
+        "status",
+        "budget_reset"
+      ]
+    },
+    "DailyUsage": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "policy_id": {
+          "type": "string",
+          "format": "uuid",
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+        },
+        "executor_id": {
+          "type": "string",
+          "format": "uuid",
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+        },
+        "day_start_at": {
+          "type": "string",
+          "format": "date-time",
+          "pattern": "^\\d{4}-\\d\\d-\\d\\dT\\d\\d:\\d\\d:\\d\\d\\.\\d{3}Z$"
+        },
+        "day_end_at": {
+          "type": "string",
+          "format": "date-time",
+          "pattern": "^\\d{4}-\\d\\d-\\d\\dT\\d\\d:\\d\\d:\\d\\d\\.\\d{3}Z$"
+        },
+        "timezone": {
+          "type": "string",
+          "format": "iana-zone",
+          "maxLength": 80
+        },
+        "timezone_version": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 9007199254740991
+        },
+        "day_kind": {
+          "type": "string",
+          "enum": [
+            "NORMAL",
+            "TRANSITION"
+          ]
+        },
+        "confirmed_ms": {
+          "anyOf": [
+            {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9007199254740991
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "budget_carry_debit_ms": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "remaining_ms": {
+          "anyOf": [
+            {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9007199254740991
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "daily_limit_ms": {
+          "anyOf": [
+            {
+              "type": "integer",
+              "minimum": 60000,
+              "maximum": 86400000
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "active_reasons": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 40
+          },
+          "minItems": 0,
+          "maxItems": 10,
+          "uniqueItems": true
+        },
+        "enforcement_state": {
+          "type": "string",
+          "enum": [
+            "PENDING",
+            "APPLIED",
+            "UNKNOWN",
+            "UNLIMITED"
+          ]
+        },
+        "next_usable_at": {
+          "anyOf": [
+            {
+              "type": "string",
+              "format": "date-time",
+              "pattern": "^\\d{4}-\\d\\d-\\d\\dT\\d\\d:\\d\\d:\\d\\d\\.\\d{3}Z$"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "next_usable_status": {
+          "type": "string",
+          "enum": [
+            "KNOWN",
+            "UNKNOWN",
+            "SETTINGS_REQUIRED"
+          ]
+        },
+        "quality": {
+          "$ref": "#/$defs/Quality"
+        },
+        "as_of": {
+          "type": "string",
+          "format": "date-time",
+          "pattern": "^\\d{4}-\\d\\d-\\d\\dT\\d\\d:\\d\\d:\\d\\d\\.\\d{3}Z$"
+        }
+      },
+      "required": [
+        "policy_id",
+        "executor_id",
+        "day_start_at",
+        "day_end_at",
+        "timezone",
+        "timezone_version",
+        "day_kind",
+        "confirmed_ms",
+        "budget_carry_debit_ms",
+        "remaining_ms",
+        "daily_limit_ms",
+        "active_reasons",
+        "enforcement_state",
+        "next_usable_at",
+        "next_usable_status",
+        "quality",
+        "as_of"
+      ]
+    },
+    "Statistics": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "scope": {
+          "type": "string",
+          "enum": [
+            "INSTALLATION",
+            "ACCOUNT_TOTAL"
+          ]
+        },
+        "quota_debit": {
+          "const": false
+        },
+        "aggregation": {
+          "const": "SUM_OF_DEVICE_USAGE"
+        },
+        "from_date": {
+          "type": "string",
+          "format": "date"
+        },
+        "to_date": {
+          "type": "string",
+          "format": "date"
+        },
+        "browser_ms": {
+          "anyOf": [
+            {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9007199254740991
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "focus_ms": {
+          "anyOf": [
+            {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9007199254740991
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "repeat_count": {
+          "anyOf": [
+            {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9007199254740991
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "repeat_ratio": {
+          "anyOf": [
+            {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "quality": {
+          "$ref": "#/$defs/Quality"
+        },
+        "as_of": {
+          "type": "string",
+          "format": "date-time",
+          "pattern": "^\\d{4}-\\d\\d-\\d\\dT\\d\\d:\\d\\d:\\d\\d\\.\\d{3}Z$"
+        }
+      },
+      "required": [
+        "scope",
+        "quota_debit",
+        "aggregation",
+        "from_date",
+        "to_date",
+        "browser_ms",
+        "focus_ms",
+        "repeat_count",
+        "repeat_ratio",
+        "quality",
+        "as_of"
+      ]
+    },
+    "CompletedImportItem": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "source_installation_id": {
+          "type": "string",
+          "format": "uuid",
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+        },
+        "source_record_id": {
+          "type": "string",
+          "format": "uuid",
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+        },
+        "source_hash": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "record_state": {
+          "const": "COMPLETED"
+        },
+        "completed_at": {
+          "type": "string",
+          "format": "date-time",
+          "pattern": "^\\d{4}-\\d\\d-\\d\\dT\\d\\d:\\d\\d:\\d\\d\\.\\d{3}Z$"
+        },
+        "segment_manifest_sha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        }
+      },
+      "required": [
+        "source_installation_id",
+        "source_record_id",
+        "source_hash",
+        "record_state",
+        "completed_at",
+        "segment_manifest_sha256"
+      ]
+    },
+    "ImportSelection": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "request_id": {
+          "type": "string",
+          "format": "uuid",
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+        },
+        "executor_id": {
+          "type": "string",
+          "format": "uuid",
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+        },
+        "explicit_selection": {
+          "const": true
+        },
+        "items": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/CompletedImportItem"
+          },
+          "minItems": 1,
+          "maxItems": 100
+        }
+      },
+      "required": [
+        "request_id",
+        "executor_id",
+        "explicit_selection",
+        "items"
+      ]
+    },
+    "ImportResult": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "request_id": {
+          "type": "string",
+          "format": "uuid",
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+        },
+        "items": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/ItemAck"
+          },
+          "minItems": 0,
+          "maxItems": 100
+        },
+        "quota_debit": {
+          "const": false
+        },
+        "source_deleted": {
+          "const": false
+        }
+      },
+      "required": [
+        "request_id",
+        "items",
+        "quota_debit",
+        "source_deleted"
+      ]
+    },
+    "OwnerTransfer": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "transfer_id": {
+          "type": "string",
+          "format": "uuid",
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+        },
+        "from_owner_binding_id": {
+          "type": "string",
+          "format": "uuid",
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+        },
+        "to_owner_binding_id": {
+          "type": "string",
+          "format": "uuid",
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+        },
+        "executor_id": {
+          "type": "string",
+          "format": "uuid",
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+        },
+        "expected_owner_epoch": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 9007199254740991
+        },
+        "enforcement_day_chain_id": {
+          "type": "string",
+          "format": "uuid",
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+        }
+      },
+      "required": [
+        "transfer_id",
+        "from_owner_binding_id",
+        "to_owner_binding_id",
+        "executor_id",
+        "expected_owner_epoch",
+        "enforcement_day_chain_id"
+      ]
+    },
+    "TransferState": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "transfer_id": {
+          "type": "string",
+          "format": "uuid",
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+        },
+        "state": {
+          "type": "string",
+          "enum": [
+            "FENCED",
+            "CLOSING_OLD",
+            "RELEASING_OLD",
+            "VERIFYING_NEW",
+            "COMMITTED",
+            "UNKNOWN"
+          ]
+        },
+        "old_capture_closed": {
+          "type": "boolean"
+        },
+        "old_rules_released": {
+          "type": "boolean"
+        },
+        "new_capture_open": {
+          "type": "boolean"
+        },
+        "source_deleted": {
+          "const": false
+        },
+        "new_owner_epoch": {
+          "anyOf": [
+            {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 9007199254740991
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "transfer_id",
+        "state",
+        "old_capture_closed",
+        "old_rules_released",
+        "new_capture_open",
+        "source_deleted",
+        "new_owner_epoch"
+      ]
+    },
+    "FocusCommand": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "operation_id": {
+          "type": "string",
+          "format": "uuid",
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+        },
+        "focus_ref": {
+          "$ref": "#/$defs/FocusRef"
+        },
+        "action": {
+          "type": "string",
+          "enum": [
+            "START",
+            "PAUSE",
+            "RESUME",
+            "END"
+          ]
+        },
+        "expected_version": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 9007199254740991
+        },
+        "attachment_id": {
+          "anyOf": [
+            {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "duration_minutes": {
+          "anyOf": [
+            {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 180
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "operation_id",
+        "focus_ref",
+        "action",
+        "expected_version",
+        "attachment_id",
+        "duration_minutes"
+      ]
+    },
+    "FocusState": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "operation_id": {
+          "type": "string",
+          "format": "uuid",
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+        },
+        "focus_ref": {
+          "$ref": "#/$defs/FocusRef"
+        },
+        "state": {
+          "type": "string",
+          "enum": [
+            "STARTING",
+            "RUNNING",
+            "PAUSING",
+            "PAUSED",
+            "RESUMING",
+            "ENDING",
+            "ENDED",
+            "START_FAILED",
+            "UNKNOWN"
+          ]
+        },
+        "confirmed_ms": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "remaining_ms": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "runtime_policy_unchanged": {
+          "const": true
+        },
+        "last_error_code": {
+          "anyOf": [
+            {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 80
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "operation_id",
+        "focus_ref",
+        "state",
+        "confirmed_ms",
+        "remaining_ms",
+        "runtime_policy_unchanged",
+        "last_error_code"
+      ]
+    },
+    "OperationState": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "operation_id": {
+          "type": "string",
+          "format": "uuid",
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+        },
+        "state": {
+          "type": "string",
+          "enum": [
+            "PENDING",
+            "IN_FLIGHT",
+            "IN_DOUBT",
+            "CONFIRMED",
+            "FAILED",
+            "RELEASE_PENDING"
+          ]
+        },
+        "actual_effect_confirmed": {
+          "type": "boolean"
+        },
+        "error_code": {
+          "anyOf": [
+            {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 80
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "operation_id",
+        "state",
+        "actual_effect_confirmed",
+        "error_code"
+      ]
+    },
+    "UIState": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "config_version": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 9007199254740991
+        },
+        "saved_state": {
+          "type": "string",
+          "enum": [
+            "SAVING",
+            "SAVED",
+            "ERROR"
+          ]
+        },
+        "applied_revision": {
+          "anyOf": [
+            {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 9007199254740991
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "runtime_state": {
+          "type": "string",
+          "enum": [
+            "PENDING",
+            "APPLYING",
+            "APPLIED",
+            "UNKNOWN",
+            "UNSUPPORTED",
+            "RELEASE_PENDING"
+          ]
+        },
+        "focus_state": {
+          "type": "string",
+          "enum": [
+            "IDLE",
+            "STARTING",
+            "RUNNING",
+            "PAUSING",
+            "PAUSED",
+            "RESUMING",
+            "ENDING",
+            "ENDED",
+            "UNKNOWN"
+          ]
+        },
+        "quality": {
+          "$ref": "#/$defs/Quality"
+        },
+        "as_of": {
+          "type": "string",
+          "format": "date-time",
+          "pattern": "^\\d{4}-\\d\\d-\\d\\dT\\d\\d:\\d\\d:\\d\\d\\.\\d{3}Z$"
+        }
+      },
+      "required": [
+        "config_version",
+        "saved_state",
+        "applied_revision",
+        "runtime_state",
+        "focus_state",
+        "quality",
+        "as_of"
+      ]
+    },
+    "ArtifactDescriptor": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "artifact_id": {
+          "type": "string",
+          "format": "uuid",
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+        },
+        "kind": {
+          "type": "string",
+          "enum": [
+            "ADULT_DOMAINS",
+            "MODEL_PROFILE"
+          ]
+        },
+        "version": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 9007199254740991
+        },
+        "sha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "size_bytes": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 536870912
+        },
+        "source_commit": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 64
+        },
+        "source_urls": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "format": "uri"
+          },
+          "minItems": 1,
+          "maxItems": 20
+        },
+        "license_refs": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200
+          },
+          "minItems": 1,
+          "maxItems": 20
+        },
+        "license_review": {
+          "type": "string",
+          "enum": [
+            "PENDING",
+            "APPROVED"
+          ]
+        },
+        "built_at": {
+          "type": "string",
+          "format": "date-time",
+          "pattern": "^\\d{4}-\\d\\d-\\d\\dT\\d\\d:\\d\\d:\\d\\d\\.\\d{3}Z$"
+        },
+        "remote_executable_code": {
+          "const": false
+        }
+      },
+      "required": [
+        "artifact_id",
+        "kind",
+        "version",
+        "sha256",
+        "size_bytes",
+        "source_commit",
+        "source_urls",
+        "license_refs",
+        "license_review",
+        "built_at",
+        "remote_executable_code"
+      ]
+    },
+    "Error": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "error": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "code": {
+              "type": "string",
+              "enum": [
+                "VALIDATION_FAILED",
+                "UNAUTHENTICATED",
+                "FORBIDDEN_EXECUTOR",
+                "VERSION_CONFLICT",
+                "VERSION_LIMIT",
+                "IDEMPOTENCY_CONFLICT",
+                "UNSUPPORTED_CONTRACT",
+                "CAPABILITY_NOT_VERIFIED",
+                "UNSUPPORTED_ACTIVE_POLICY",
+                "STALE_OWNER",
+                "STALE_SCOPE",
+                "STALE_GENERATION",
+                "INVALID_EVIDENCE",
+                "RELEASE_UNCONFIRMED",
+                "SOURCE_CONFLICT",
+                "PENDING_DEPENDENCY",
+                "STORAGE_UNCONFIRMED",
+                "ARTIFACT_UNVERIFIED",
+                "INVALID_TIMEZONE",
+                "OVERLAPPING_USAGE",
+                "TRANSACTION_REJECTED",
+                "RATE_LIMITED",
+                "TEMPORARILY_UNAVAILABLE",
+                "RESOURCE_NOT_FOUND",
+                "PRECONDITION_REQUIRED",
+                "TOO_LARGE",
+                "CONTROL_SEQUENCE_LIMIT",
+                "CLEANUP_RESERVATION_EXHAUSTED",
+                "INVALID_CLEANUP_GRANT",
+                "RESERVATION_MISMATCH",
+                "CLOCK_EVIDENCE_UNVERIFIED",
+                "MONOTONIC_OVERLAP",
+                "ANCHOR_PROJECTION_MISMATCH",
+                "STALE_DNR_WRITER",
+                "LEGACY_WRITER_NOT_FENCED",
+                "RULE_ID_COLLISION",
+                "DNR_QUOTA_EXCEEDED",
+                "TARGET_EFFECT_UNCONFIRMED",
+                "MISSING_ISSUED_OPERATION",
+                "DUPLICATE_EFFECT_RESULT",
+                "MISSING_OR_UNREQUESTED_EFFECT_RESULT",
+                "FEATURE_MIRROR_CONFLICT",
+                "MEDIA_STOP_FAILED",
+                "MEDIA_TARGET_UNCONFIRMED",
+                "CONTENT_RESULT_BINDING_MISMATCH",
+                "EFFECT_OWNER_SCOPE_ACTION_MISMATCH",
+                "POLICY_HASH_MISMATCH",
+                "RESTORE_UNCONFIRMED",
+                "DNR_ID_RESERVATION_EXHAUSTED",
+                "DNR_REGEX_QUOTA_EXCEEDED",
+                "DNR_UNSAFE_QUOTA_EXCEEDED"
+              ]
+            },
+            "retryable": {
+              "type": "boolean"
+            }
+          },
+          "required": [
+            "code",
+            "retryable"
+          ]
+        },
+        "request_id": {
+          "type": "string",
+          "format": "uuid",
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+        }
+      },
+      "required": [
+        "error",
+        "request_id"
+      ]
+    },
+    "FocusAttachmentRequest": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "executor_id",
+        "focus_ref",
+        "config_revision"
+      ],
+      "properties": {
+        "executor_id": {
+          "type": "string",
+          "format": "uuid",
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+        },
+        "focus_ref": {
+          "$ref": "#/$defs/FocusRef"
+        },
+        "config_revision": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 9007199254740991
+        }
+      }
+    },
+    "FocusControl": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "stream",
+        "schema_version",
+        "request_id",
+        "command",
+        "owner_binding_id",
+        "executor_id",
+        "owner_epoch",
+        "capability_receipt_id",
+        "execute_before"
+      ],
+      "properties": {
+        "stream": {
+          "const": "FOCUS_CONTROL"
+        },
+        "schema_version": {
+          "const": "AMVP_FOCUS_CONTROL_1"
+        },
+        "request_id": {
+          "type": "string",
+          "format": "uuid",
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+        },
+        "command": {
+          "$ref": "#/$defs/FocusCommand"
+        },
+        "owner_binding_id": {
+          "type": "string",
+          "format": "uuid",
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+        },
+        "executor_id": {
+          "type": "string",
+          "format": "uuid",
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+        },
+        "owner_epoch": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 9007199254740991
+        },
+        "capability_receipt_id": {
+          "type": "string",
+          "format": "uuid",
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+        },
+        "execute_before": {
+          "type": "string",
+          "format": "date-time",
+          "pattern": "^\\d{4}-\\d\\d-\\d\\dT\\d\\d:\\d\\d:\\d\\d\\.\\d{3}Z$"
+        }
+      }
+    },
+    "CleanupGrant": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "grant_id": {
+          "type": "string",
+          "format": "uuid",
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+        },
+        "owner_binding_id": {
+          "type": "string",
+          "format": "uuid",
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+        },
+        "binding_id": {
+          "type": "string",
+          "format": "uuid",
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+        },
+        "generation": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 9007199254740991
+        },
+        "footprint_sha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "reserved_operation_id": {
+          "type": "string",
+          "format": "uuid",
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+        },
+        "reserved_receipt_id": {
+          "type": "string",
+          "format": "uuid",
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+        },
+        "operation_slots": {
+          "const": 1
+        },
+        "receipt_slots": {
+          "const": 1
+        },
+        "expires_at": {
+          "type": "string",
+          "format": "date-time",
+          "pattern": "^\\d{4}-\\d\\d-\\d\\dT\\d\\d:\\d\\d:\\d\\d\\.\\d{3}Z$"
+        },
+        "scope": {
+          "$ref": "#/$defs/BindingScope"
+        }
+      },
+      "required": [
+        "grant_id",
+        "owner_binding_id",
+        "binding_id",
+        "generation",
+        "footprint_sha256",
+        "reserved_operation_id",
+        "reserved_receipt_id",
+        "operation_slots",
+        "receipt_slots",
+        "expires_at",
+        "scope"
+      ]
+    },
+    "ClockMetadata": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "clock_epoch": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 100
+        },
+        "boot_id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 100
+        },
+        "anchor_id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 100
+        },
+        "anchor_utc": {
+          "type": "string",
+          "format": "date-time",
+          "pattern": "^\\d{4}-\\d\\d-\\d\\dT\\d\\d:\\d\\d:\\d\\d\\.\\d{3}Z$"
+        },
+        "anchor_mono_ms": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "mono_start_ms": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "mono_end_ms": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "quality": {
+          "type": "string",
+          "enum": [
+            "TRUSTED",
+            "ROLLBACK",
+            "FORWARD_JUMP",
+            "RESTART_UNCONFIRMED"
+          ]
+        },
+        "observed_wall_start_at": {
+          "type": "string",
+          "format": "date-time",
+          "pattern": "^\\d{4}-\\d\\d-\\d\\dT\\d\\d:\\d\\d:\\d\\d\\.\\d{3}Z$"
+        },
+        "observed_wall_end_at": {
+          "type": "string",
+          "format": "date-time",
+          "pattern": "^\\d{4}-\\d\\d-\\d\\dT\\d\\d:\\d\\d:\\d\\d\\.\\d{3}Z$"
+        }
+      },
+      "required": [
+        "clock_epoch",
+        "boot_id",
+        "anchor_id",
+        "anchor_utc",
+        "anchor_mono_ms",
+        "mono_start_ms",
+        "mono_end_ms",
+        "quality",
+        "observed_wall_start_at",
+        "observed_wall_end_at"
+      ]
+    },
+    "ClockedUsageSegment": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "segment_id": {
+          "type": "string",
+          "format": "uuid",
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+        },
+        "owner_binding_id": {
+          "type": "string",
+          "format": "uuid",
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+        },
+        "executor_id": {
+          "type": "string",
+          "format": "uuid",
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+        },
+        "collector_epoch": {
+          "type": "string",
+          "format": "uuid",
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+        },
+        "local_usage_seq": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 9007199254740991
+        },
+        "previous_segment_sha256": {
+          "anyOf": [
+            {
+              "type": "string",
+              "pattern": "^[a-f0-9]{64}$"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "package_id": {
+          "type": "string",
+          "format": "uuid",
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+        },
+        "runtime_revision": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 9007199254740991
+        },
+        "actual_host": {
+          "type": "string",
+          "maxLength": 253,
+          "pattern": "^(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\\.)+[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$"
+        },
+        "start_at": {
+          "type": "string",
+          "format": "date-time",
+          "pattern": "^\\d{4}-\\d\\d-\\d\\dT\\d\\d:\\d\\d:\\d\\d\\.\\d{3}Z$"
+        },
+        "end_at": {
+          "type": "string",
+          "format": "date-time",
+          "pattern": "^\\d{4}-\\d\\d-\\d\\dT\\d\\d:\\d\\d:\\d\\d\\.\\d{3}Z$"
+        },
+        "confirmed_ms": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "uncertain_ms": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "day_start_at": {
+          "type": "string",
+          "format": "date-time",
+          "pattern": "^\\d{4}-\\d\\d-\\d\\dT\\d\\d:\\d\\d:\\d\\d\\.\\d{3}Z$"
+        },
+        "day_end_at": {
+          "type": "string",
+          "format": "date-time",
+          "pattern": "^\\d{4}-\\d\\d-\\d\\dT\\d\\d:\\d\\d:\\d\\d\\.\\d{3}Z$"
+        },
+        "timezone": {
+          "type": "string",
+          "format": "iana-zone",
+          "maxLength": 80
+        },
+        "timezone_version": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 9007199254740991
+        },
+        "enforcement_day_chain_id": {
+          "type": "string",
+          "format": "uuid",
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+        },
+        "policy_attributions": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/PolicyAttribution"
+          },
+          "minItems": 0,
+          "maxItems": 200
+        },
+        "focus_ref": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/FocusRef"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "quality": {
+          "type": "string",
+          "enum": [
+            "COMPLETE",
+            "PARTIAL"
+          ]
+        },
+        "payload_sha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "clock": {
+          "$ref": "#/$defs/ClockMetadata"
+        }
+      },
+      "required": [
+        "segment_id",
+        "owner_binding_id",
+        "executor_id",
+        "collector_epoch",
+        "local_usage_seq",
+        "previous_segment_sha256",
+        "package_id",
+        "runtime_revision",
+        "actual_host",
+        "start_at",
+        "end_at",
+        "confirmed_ms",
+        "uncertain_ms",
+        "day_start_at",
+        "day_end_at",
+        "timezone",
+        "timezone_version",
+        "enforcement_day_chain_id",
+        "policy_attributions",
+        "focus_ref",
+        "quality",
+        "payload_sha256",
+        "clock"
+      ],
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "clock": {
+                "properties": {
+                  "quality": {
+                    "const": "TRUSTED"
+                  }
+                },
+                "required": [
+                  "quality"
+                ]
+              }
+            },
+            "required": [
+              "clock"
+            ]
+          },
+          "then": {
+            "properties": {
+              "uncertain_ms": {
+                "const": 0
+              }
+            }
+          },
+          "else": {
+            "properties": {
+              "confirmed_ms": {
+                "const": 0
+              }
+            }
+          }
+        }
+      ]
+    },
+    "UsageItemAck": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "item_id": {
+          "type": "string",
+          "format": "uuid",
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+        },
+        "payload_sha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "ACCEPTED",
+            "DUPLICATE",
+            "PENDING_DEPENDENCY",
+            "REJECTED",
+            "NOT_RECEIVED"
+          ]
+        },
+        "error_code": {
+          "anyOf": [
+            {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 80
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "measurement_state": {
+          "type": "string",
+          "enum": [
+            "COUNTED",
+            "QUARANTINED",
+            "UNCONFIRMED",
+            "NOT_RECEIVED"
+          ]
+        }
+      },
+      "required": [
+        "item_id",
+        "payload_sha256",
+        "status",
+        "error_code",
+        "measurement_state"
+      ]
+    },
+    "UsageBatchAck": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "batch_id": {
+          "type": "string",
+          "format": "uuid",
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+        },
+        "items": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/UsageItemAck"
+          },
+          "minItems": 0,
+          "maxItems": 100
+        }
+      },
+      "required": [
+        "batch_id",
+        "items"
+      ]
+    },
+    "UsageStatusResponse": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "items": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/UsageItemAck"
+          },
+          "minItems": 0,
+          "maxItems": 100
+        }
+      },
+      "required": [
+        "items"
+      ]
+    },
+    "ClockResolution": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "resolution_id": {
+          "type": "string",
+          "format": "uuid",
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+        },
+        "segment_id": {
+          "type": "string",
+          "format": "uuid",
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+        },
+        "source_hash": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "anchor_id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 100
+        },
+        "evidence_sha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "confirmed_ms": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "day_start_at": {
+          "type": "string",
+          "format": "date-time",
+          "pattern": "^\\d{4}-\\d\\d-\\d\\dT\\d\\d:\\d\\d:\\d\\d\\.\\d{3}Z$"
+        },
+        "day_end_at": {
+          "type": "string",
+          "format": "date-time",
+          "pattern": "^\\d{4}-\\d\\d-\\d\\dT\\d\\d:\\d\\d:\\d\\d\\.\\d{3}Z$"
+        },
+        "state": {
+          "const": "VERIFIED"
+        },
+        "resolved_start_at": {
+          "type": "string",
+          "format": "date-time",
+          "pattern": "^\\d{4}-\\d\\d-\\d\\dT\\d\\d:\\d\\d:\\d\\d\\.\\d{3}Z$"
+        },
+        "resolved_end_at": {
+          "type": "string",
+          "format": "date-time",
+          "pattern": "^\\d{4}-\\d\\d-\\d\\dT\\d\\d:\\d\\d:\\d\\d\\.\\d{3}Z$"
+        },
+        "timezone": {
+          "type": "string",
+          "format": "iana-zone",
+          "maxLength": 80
+        },
+        "timezone_version": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 9007199254740991
+        },
+        "enforcement_day_chain_id": {
+          "type": "string",
+          "format": "uuid",
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+        }
+      },
+      "required": [
+        "resolution_id",
+        "segment_id",
+        "source_hash",
+        "anchor_id",
+        "evidence_sha256",
+        "confirmed_ms",
+        "day_start_at",
+        "day_end_at",
+        "state",
+        "resolved_start_at",
+        "resolved_end_at",
+        "timezone",
+        "timezone_version",
+        "enforcement_day_chain_id"
+      ]
+    },
+    "DnrRuleKey": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "rule_store": {
+          "type": "string",
+          "enum": [
+            "SESSION",
+            "DYNAMIC"
+          ]
+        },
+        "rule_id": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 2147483647
+        }
+      },
+      "required": [
+        "rule_store",
+        "rule_id"
+      ]
+    },
+    "DnrClaim": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "claim_id": {
+          "type": "string",
+          "format": "uuid",
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+        },
+        "owner_binding_id": {
+          "type": "string",
+          "format": "uuid",
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+        },
+        "generation": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 9007199254740991
+        },
+        "rule_key": {
+          "$ref": "#/$defs/DnrRuleKey"
+        },
+        "rule_sha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "writer_epoch": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 9007199254740991
+        },
+        "restore_state": {
+          "type": "string",
+          "enum": [
+            "RESERVED",
+            "APPLIED",
+            "RELEASE_PENDING",
+            "RELEASED",
+            "UNCONFIRMED"
+          ]
+        }
+      },
+      "required": [
+        "claim_id",
+        "owner_binding_id",
+        "generation",
+        "rule_key",
+        "rule_sha256",
+        "writer_epoch",
+        "restore_state"
+      ]
+    },
+    "DocumentContext": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "route_kind": {
+          "type": "string",
+          "enum": [
+            "DIRECT_VIEWER",
+            "ENTRY_SURFACE",
+            "NON_TARGET"
+          ]
+        },
+        "viewer_feature_id": {
+          "anyOf": [
+            {
+              "type": "string",
+              "enum": [
+                "YT-02",
+                "IG-02"
+              ]
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "route_profile_sha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "scan_id": {
+          "type": "string",
+          "format": "uuid",
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+        }
+      },
+      "required": [
+        "route_kind",
+        "viewer_feature_id",
+        "route_profile_sha256",
+        "scan_id"
+      ],
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "route_kind": {
+                "const": "DIRECT_VIEWER"
+              }
+            },
+            "required": [
+              "route_kind"
+            ]
+          },
+          "then": {
+            "properties": {
+              "viewer_feature_id": {
+                "enum": [
+                  "YT-02",
+                  "IG-02"
+                ]
+              }
+            }
+          },
+          "else": {
+            "properties": {
+              "viewer_feature_id": {
+                "type": "null"
+              }
+            }
+          }
+        }
+      ]
+    },
+    "MediaObservation": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "viewer_count": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 10000
+        },
+        "target_count": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 10000
+        },
+        "stopped_count": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 10000
+        },
+        "hidden_count": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 10000
+        },
+        "inert_count": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 10000
+        },
+        "playing_count": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 10000
+        },
+        "stop_error_count": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 10000
+        },
+        "media_generation_sha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "observation_sha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "audio_verification": {
+          "const": "NOT_VERIFIED"
+        }
+      },
+      "required": [
+        "viewer_count",
+        "target_count",
+        "stopped_count",
+        "hidden_count",
+        "inert_count",
+        "playing_count",
+        "stop_error_count",
+        "media_generation_sha256",
+        "observation_sha256",
+        "audio_verification"
+      ]
+    },
+    "RestoreEvidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "dom_restored": {
+          "type": "boolean"
+        },
+        "own_observer_claim_removed": {
+          "type": "boolean"
+        },
+        "policy_resources_released": {
+          "type": "boolean"
+        },
+        "other_owner_claims_preserved": {
+          "type": "boolean"
+        },
+        "restored_properties_sha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "media_restore_state": {
+          "type": "string",
+          "enum": [
+            "NOT_OWNED",
+            "USER_CONTROL_RESTORED",
+            "STILL_BLOCKED_OTHER_OWNER",
+            "UNCONFIRMED"
+          ]
+        },
+        "playback_restart": {
+          "const": "NOT_FORCED"
+        },
+        "audio_verification": {
+          "const": "NOT_VERIFIED"
+        }
+      },
+      "required": [
+        "dom_restored",
+        "own_observer_claim_removed",
+        "policy_resources_released",
+        "other_owner_claims_preserved",
+        "restored_properties_sha256",
+        "media_restore_state",
+        "playback_restart",
+        "audio_verification"
+      ]
+    },
+    "KeywordEvidenceDetails": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "match_profile": {
+          "const": "URL_BOUNDARY_1"
+        },
+        "checked_url_sha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "url_check_result": {
+          "type": "string",
+          "enum": [
+            "MATCH",
+            "NO_MATCH",
+            "UNVERIFIABLE",
+            "EXEMPT"
+          ]
+        },
+        "exception_scope_applied": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "match_profile",
+        "checked_url_sha256",
+        "url_check_result",
+        "exception_scope_applied"
+      ]
+    },
+    "BlurEvidenceDetails": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "profile_id": {
+          "type": "string",
+          "format": "uuid",
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+        },
+        "profile_sha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "image_generation_sha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "eligible_image_count": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 10000
+        },
+        "classified_image_count": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 10000
+        },
+        "masked_image_count": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 10000
+        },
+        "failed_image_count": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 10000
+        },
+        "fail_safe_masked_count": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 10000
+        },
+        "stale_results_applied_count": {
+          "const": 0
+        },
+        "click_toggle_ready": {
+          "type": "boolean"
+        },
+        "sensitive_image_count": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 10000
+        },
+        "revealed_image_count": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 10000
+        },
+        "reveal_intent_sha256": {
+          "anyOf": [
+            {
+              "type": "string",
+              "pattern": "^[a-f0-9]{64}$"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "profile_id",
+        "profile_sha256",
+        "image_generation_sha256",
+        "eligible_image_count",
+        "classified_image_count",
+        "masked_image_count",
+        "failed_image_count",
+        "fail_safe_masked_count",
+        "stale_results_applied_count",
+        "click_toggle_ready",
+        "sensitive_image_count",
+        "revealed_image_count",
+        "reveal_intent_sha256"
+      ]
+    },
+    "AdultEvidenceDetails": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "artifact_id": {
+          "type": "string",
+          "format": "uuid",
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+        },
+        "artifact_sha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "domain_check_result": {
+          "type": "string",
+          "enum": [
+            "MATCH",
+            "NO_MATCH",
+            "UNVERIFIABLE"
+          ]
+        },
+        "dnr_effect_claimed": {
+          "const": false
+        }
+      },
+      "required": [
+        "artifact_id",
+        "artifact_sha256",
+        "domain_check_result",
+        "dnr_effect_claimed"
+      ]
+    },
+    "PageGateEvidenceDetails": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "blocked_reasons": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "USER_SITE",
+              "ADULT_DOMAIN",
+              "KEYWORD",
+              "BLOCK_WINDOW",
+              "OUTSIDE_ALLOW_WINDOW",
+              "DAILY_LIMIT"
+            ]
+          },
+          "minItems": 0,
+          "maxItems": 6,
+          "uniqueItems": true
+        },
+        "gate_visible": {
+          "type": "boolean"
+        },
+        "body_hidden": {
+          "type": "boolean"
+        },
+        "body_inert": {
+          "type": "boolean"
+        },
+        "media_target_count": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 10000
+        },
+        "media_stopped_count": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 10000
+        },
+        "stop_error_count": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 10000
+        },
+        "audio_verification": {
+          "const": "NOT_VERIFIED"
+        }
+      },
+      "required": [
+        "blocked_reasons",
+        "gate_visible",
+        "body_hidden",
+        "body_inert",
+        "media_target_count",
+        "media_stopped_count",
+        "stop_error_count",
+        "audio_verification"
+      ]
+    },
+    "ContentPolicyEvidence": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "kind": {
+              "const": "CONTENT_POLICY"
+            },
+            "owner_binding_id": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+            },
+            "evidence_scope_sha256": {
+              "type": "string",
+              "pattern": "^[a-f0-9]{64}$"
+            },
+            "action": {
+              "type": "string",
+              "enum": [
+                "APPLY",
+                "RELEASE"
+              ]
+            },
+            "result": {
+              "type": "string",
+              "enum": [
+                "APPLIED",
+                "NOT_APPLICABLE",
+                "OBSERVING",
+                "FAILED",
+                "UNCONFIRMED",
+                "RELEASED",
+                "RELEASE_FAILED",
+                "UNSUPPORTED"
+              ]
+            },
+            "observer_ready": {
+              "type": "boolean"
+            },
+            "scan_complete": {
+              "type": "boolean"
+            },
+            "remaining_claim_count": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 10000
+            },
+            "error_count": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 10000
+            },
+            "ledger_sha256": {
+              "type": "string",
+              "pattern": "^[a-f0-9]{64}$"
+            },
+            "restore": {
+              "anyOf": [
+                {
+                  "$ref": "#/$defs/RestoreEvidence"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "policy_type": {
+              "const": "KEYWORD"
+            },
+            "policy_sha256": {
+              "type": "string",
+              "pattern": "^[a-f0-9]{64}$"
+            },
+            "details": {
+              "anyOf": [
+                {
+                  "$ref": "#/$defs/KeywordEvidenceDetails"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "scan_id": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+            }
+          },
+          "required": [
+            "kind",
+            "owner_binding_id",
+            "evidence_scope_sha256",
+            "action",
+            "result",
+            "observer_ready",
+            "scan_complete",
+            "remaining_claim_count",
+            "error_count",
+            "ledger_sha256",
+            "restore",
+            "policy_type",
+            "policy_sha256",
+            "details",
+            "scan_id"
+          ],
+          "allOf": [
+            {
+              "if": {
+                "properties": {
+                  "action": {
+                    "const": "RELEASE"
+                  }
+                },
+                "required": [
+                  "action"
+                ]
+              },
+              "then": {
+                "properties": {
+                  "details": {
+                    "type": "null"
+                  },
+                  "restore": {
+                    "$ref": "#/$defs/RestoreEvidence"
+                  }
+                }
+              },
+              "else": {
+                "properties": {
+                  "details": {
+                    "$ref": "#/$defs/KeywordEvidenceDetails"
+                  },
+                  "restore": {
+                    "type": "null"
+                  }
+                }
+              }
+            },
+            {
+              "if": {
+                "properties": {
+                  "action": {
+                    "const": "APPLY"
+                  }
+                },
+                "required": [
+                  "action"
+                ]
+              },
+              "then": {
+                "properties": {
+                  "result": {
+                    "enum": [
+                      "APPLIED",
+                      "NOT_APPLICABLE",
+                      "OBSERVING",
+                      "FAILED",
+                      "UNCONFIRMED",
+                      "UNSUPPORTED"
+                    ]
+                  }
+                }
+              },
+              "else": {
+                "properties": {
+                  "result": {
+                    "enum": [
+                      "RELEASED",
+                      "RELEASE_FAILED",
+                      "UNCONFIRMED",
+                      "UNSUPPORTED"
+                    ]
+                  }
+                }
+              }
+            }
+          ]
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "kind": {
+              "const": "CONTENT_POLICY"
+            },
+            "owner_binding_id": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+            },
+            "evidence_scope_sha256": {
+              "type": "string",
+              "pattern": "^[a-f0-9]{64}$"
+            },
+            "action": {
+              "type": "string",
+              "enum": [
+                "APPLY",
+                "RELEASE"
+              ]
+            },
+            "result": {
+              "type": "string",
+              "enum": [
+                "APPLIED",
+                "NOT_APPLICABLE",
+                "OBSERVING",
+                "FAILED",
+                "UNCONFIRMED",
+                "RELEASED",
+                "RELEASE_FAILED",
+                "UNSUPPORTED"
+              ]
+            },
+            "observer_ready": {
+              "type": "boolean"
+            },
+            "scan_complete": {
+              "type": "boolean"
+            },
+            "remaining_claim_count": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 10000
+            },
+            "error_count": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 10000
+            },
+            "ledger_sha256": {
+              "type": "string",
+              "pattern": "^[a-f0-9]{64}$"
+            },
+            "restore": {
+              "anyOf": [
+                {
+                  "$ref": "#/$defs/RestoreEvidence"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "policy_type": {
+              "const": "BLUR"
+            },
+            "policy_sha256": {
+              "type": "string",
+              "pattern": "^[a-f0-9]{64}$"
+            },
+            "details": {
+              "anyOf": [
+                {
+                  "$ref": "#/$defs/BlurEvidenceDetails"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "scan_id": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+            }
+          },
+          "required": [
+            "kind",
+            "owner_binding_id",
+            "evidence_scope_sha256",
+            "action",
+            "result",
+            "observer_ready",
+            "scan_complete",
+            "remaining_claim_count",
+            "error_count",
+            "ledger_sha256",
+            "restore",
+            "policy_type",
+            "policy_sha256",
+            "details",
+            "scan_id"
+          ],
+          "allOf": [
+            {
+              "if": {
+                "properties": {
+                  "action": {
+                    "const": "RELEASE"
+                  }
+                },
+                "required": [
+                  "action"
+                ]
+              },
+              "then": {
+                "properties": {
+                  "details": {
+                    "type": "null"
+                  },
+                  "restore": {
+                    "$ref": "#/$defs/RestoreEvidence"
+                  }
+                }
+              },
+              "else": {
+                "properties": {
+                  "details": {
+                    "$ref": "#/$defs/BlurEvidenceDetails"
+                  },
+                  "restore": {
+                    "type": "null"
+                  }
+                }
+              }
+            },
+            {
+              "if": {
+                "properties": {
+                  "action": {
+                    "const": "APPLY"
+                  }
+                },
+                "required": [
+                  "action"
+                ]
+              },
+              "then": {
+                "properties": {
+                  "result": {
+                    "enum": [
+                      "APPLIED",
+                      "NOT_APPLICABLE",
+                      "OBSERVING",
+                      "FAILED",
+                      "UNCONFIRMED",
+                      "UNSUPPORTED"
+                    ]
+                  }
+                }
+              },
+              "else": {
+                "properties": {
+                  "result": {
+                    "enum": [
+                      "RELEASED",
+                      "RELEASE_FAILED",
+                      "UNCONFIRMED",
+                      "UNSUPPORTED"
+                    ]
+                  }
+                }
+              }
+            }
+          ]
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "kind": {
+              "const": "CONTENT_POLICY"
+            },
+            "owner_binding_id": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+            },
+            "evidence_scope_sha256": {
+              "type": "string",
+              "pattern": "^[a-f0-9]{64}$"
+            },
+            "action": {
+              "type": "string",
+              "enum": [
+                "APPLY",
+                "RELEASE"
+              ]
+            },
+            "result": {
+              "type": "string",
+              "enum": [
+                "APPLIED",
+                "NOT_APPLICABLE",
+                "OBSERVING",
+                "FAILED",
+                "UNCONFIRMED",
+                "RELEASED",
+                "RELEASE_FAILED",
+                "UNSUPPORTED"
+              ]
+            },
+            "observer_ready": {
+              "type": "boolean"
+            },
+            "scan_complete": {
+              "type": "boolean"
+            },
+            "remaining_claim_count": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 10000
+            },
+            "error_count": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 10000
+            },
+            "ledger_sha256": {
+              "type": "string",
+              "pattern": "^[a-f0-9]{64}$"
+            },
+            "restore": {
+              "anyOf": [
+                {
+                  "$ref": "#/$defs/RestoreEvidence"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "policy_type": {
+              "const": "ADULT_DOMAIN"
+            },
+            "policy_sha256": {
+              "type": "string",
+              "pattern": "^[a-f0-9]{64}$"
+            },
+            "details": {
+              "anyOf": [
+                {
+                  "$ref": "#/$defs/AdultEvidenceDetails"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "scan_id": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+            }
+          },
+          "required": [
+            "kind",
+            "owner_binding_id",
+            "evidence_scope_sha256",
+            "action",
+            "result",
+            "observer_ready",
+            "scan_complete",
+            "remaining_claim_count",
+            "error_count",
+            "ledger_sha256",
+            "restore",
+            "policy_type",
+            "policy_sha256",
+            "details",
+            "scan_id"
+          ],
+          "allOf": [
+            {
+              "if": {
+                "properties": {
+                  "action": {
+                    "const": "RELEASE"
+                  }
+                },
+                "required": [
+                  "action"
+                ]
+              },
+              "then": {
+                "properties": {
+                  "details": {
+                    "type": "null"
+                  },
+                  "restore": {
+                    "$ref": "#/$defs/RestoreEvidence"
+                  }
+                }
+              },
+              "else": {
+                "properties": {
+                  "details": {
+                    "$ref": "#/$defs/AdultEvidenceDetails"
+                  },
+                  "restore": {
+                    "type": "null"
+                  }
+                }
+              }
+            },
+            {
+              "if": {
+                "properties": {
+                  "action": {
+                    "const": "APPLY"
+                  }
+                },
+                "required": [
+                  "action"
+                ]
+              },
+              "then": {
+                "properties": {
+                  "result": {
+                    "enum": [
+                      "APPLIED",
+                      "NOT_APPLICABLE",
+                      "OBSERVING",
+                      "FAILED",
+                      "UNCONFIRMED",
+                      "UNSUPPORTED"
+                    ]
+                  }
+                }
+              },
+              "else": {
+                "properties": {
+                  "result": {
+                    "enum": [
+                      "RELEASED",
+                      "RELEASE_FAILED",
+                      "UNCONFIRMED",
+                      "UNSUPPORTED"
+                    ]
+                  }
+                }
+              }
+            }
+          ]
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "kind": {
+              "const": "CONTENT_POLICY"
+            },
+            "owner_binding_id": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+            },
+            "evidence_scope_sha256": {
+              "type": "string",
+              "pattern": "^[a-f0-9]{64}$"
+            },
+            "action": {
+              "type": "string",
+              "enum": [
+                "APPLY",
+                "RELEASE"
+              ]
+            },
+            "result": {
+              "type": "string",
+              "enum": [
+                "APPLIED",
+                "NOT_APPLICABLE",
+                "OBSERVING",
+                "FAILED",
+                "UNCONFIRMED",
+                "RELEASED",
+                "RELEASE_FAILED",
+                "UNSUPPORTED"
+              ]
+            },
+            "observer_ready": {
+              "type": "boolean"
+            },
+            "scan_complete": {
+              "type": "boolean"
+            },
+            "remaining_claim_count": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 10000
+            },
+            "error_count": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 10000
+            },
+            "ledger_sha256": {
+              "type": "string",
+              "pattern": "^[a-f0-9]{64}$"
+            },
+            "restore": {
+              "anyOf": [
+                {
+                  "$ref": "#/$defs/RestoreEvidence"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "policy_type": {
+              "const": "PAGE_GATE"
+            },
+            "policy_sha256": {
+              "type": "string",
+              "pattern": "^[a-f0-9]{64}$"
+            },
+            "details": {
+              "anyOf": [
+                {
+                  "$ref": "#/$defs/PageGateEvidenceDetails"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "scan_id": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+            }
+          },
+          "required": [
+            "kind",
+            "owner_binding_id",
+            "evidence_scope_sha256",
+            "action",
+            "result",
+            "observer_ready",
+            "scan_complete",
+            "remaining_claim_count",
+            "error_count",
+            "ledger_sha256",
+            "restore",
+            "policy_type",
+            "policy_sha256",
+            "details",
+            "scan_id"
+          ],
+          "allOf": [
+            {
+              "if": {
+                "properties": {
+                  "action": {
+                    "const": "RELEASE"
+                  }
+                },
+                "required": [
+                  "action"
+                ]
+              },
+              "then": {
+                "properties": {
+                  "details": {
+                    "type": "null"
+                  },
+                  "restore": {
+                    "$ref": "#/$defs/RestoreEvidence"
+                  }
+                }
+              },
+              "else": {
+                "properties": {
+                  "details": {
+                    "$ref": "#/$defs/PageGateEvidenceDetails"
+                  },
+                  "restore": {
+                    "type": "null"
+                  }
+                }
+              }
+            },
+            {
+              "if": {
+                "properties": {
+                  "action": {
+                    "const": "APPLY"
+                  }
+                },
+                "required": [
+                  "action"
+                ]
+              },
+              "then": {
+                "properties": {
+                  "result": {
+                    "enum": [
+                      "APPLIED",
+                      "NOT_APPLICABLE",
+                      "OBSERVING",
+                      "FAILED",
+                      "UNCONFIRMED",
+                      "UNSUPPORTED"
+                    ]
+                  }
+                }
+              },
+              "else": {
+                "properties": {
+                  "result": {
+                    "enum": [
+                      "RELEASED",
+                      "RELEASE_FAILED",
+                      "UNCONFIRMED",
+                      "UNSUPPORTED"
+                    ]
+                  }
+                }
+              }
+            }
+          ]
+        }
+      ]
+    },
+    "ContentQuery": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "type": {
+          "const": "D06_ADDITIONAL_QUERY"
+        },
+        "schema_version": {
+          "const": "AMVP_CONTENT_2"
+        },
+        "stream": {
+          "const": "ADDITIONAL_CONTENT"
+        },
+        "request_id": {
+          "$ref": "#/$defs/Uuid"
+        },
+        "query_sha256": {
+          "$ref": "#/$defs/Hash"
+        },
+        "target_operation_id": {
+          "$ref": "#/$defs/Uuid"
+        },
+        "target_semantic_sha256": {
+          "$ref": "#/$defs/Hash"
+        },
+        "scope": {
+          "$ref": "#/$defs/BindingScope"
+        },
+        "channel_credential": {
+          "$ref": "#/$defs/Hash"
+        },
+        "cleanup_grant_id": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Uuid"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "type",
+        "schema_version",
+        "stream",
+        "request_id",
+        "query_sha256",
+        "target_operation_id",
+        "target_semantic_sha256",
+        "scope",
+        "channel_credential",
+        "cleanup_grant_id"
+      ]
+    },
+    "ContentQueryResult": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "type": {
+          "const": "D06_ADDITIONAL_QUERY_RESULT"
+        },
+        "schema_version": {
+          "const": "AMVP_CONTENT_2"
+        },
+        "stream": {
+          "const": "ADDITIONAL_CONTENT"
+        },
+        "request_id": {
+          "$ref": "#/$defs/Uuid"
+        },
+        "query_sha256": {
+          "$ref": "#/$defs/Hash"
+        },
+        "target_operation_id": {
+          "$ref": "#/$defs/Uuid"
+        },
+        "target_semantic_sha256": {
+          "$ref": "#/$defs/Hash"
+        },
+        "scope": {
+          "$ref": "#/$defs/BindingScope"
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "ACK",
+            "NACK"
+          ]
+        },
+        "lookup_state": {
+          "type": "string",
+          "enum": [
+            "FOUND",
+            "NOT_FOUND",
+            "EVICTED",
+            "UNKNOWN"
+          ]
+        },
+        "historical_receipt": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ContentResult"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "progress_state": {
+          "type": "string",
+          "enum": [
+            "PENDING",
+            "IN_DOUBT",
+            "TERMINAL",
+            "UNKNOWN"
+          ]
+        },
+        "current_effect": {
+          "anyOf": [
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "state": {
+                  "type": "string",
+                  "enum": [
+                    "APPLIED",
+                    "RELEASED",
+                    "UNCONFIRMED"
+                  ]
+                },
+                "footprint_sha256": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/$defs/Hash"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "observed_at": {
+                  "$ref": "#/$defs/Utc"
+                }
+              },
+              "required": [
+                "state",
+                "footprint_sha256",
+                "observed_at"
+              ],
+              "allOf": [
+                {
+                  "if": {
+                    "properties": {
+                      "state": {
+                        "enum": [
+                          "APPLIED",
+                          "RELEASED"
+                        ]
+                      }
+                    }
+                  },
+                  "then": {
+                    "properties": {
+                      "footprint_sha256": {
+                        "$ref": "#/$defs/Hash"
+                      }
+                    }
+                  }
+                }
+              ]
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "observed_at": {
+          "$ref": "#/$defs/Utc"
+        },
+        "error_code": {
+          "anyOf": [
+            {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 80
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "type",
+        "schema_version",
+        "stream",
+        "request_id",
+        "query_sha256",
+        "target_operation_id",
+        "target_semantic_sha256",
+        "scope",
+        "status",
+        "lookup_state",
+        "historical_receipt",
+        "progress_state",
+        "current_effect",
+        "observed_at",
+        "error_code"
+      ],
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "lookup_state": {
+                "const": "UNKNOWN"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "status": {
+                "const": "NACK"
+              },
+              "error_code": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 80
+              }
+            }
+          },
+          "else": {
+            "properties": {
+              "status": {
+                "const": "ACK"
+              },
+              "error_code": {
+                "type": "null"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "lookup_state": {
+                "enum": [
+                  "NOT_FOUND",
+                  "EVICTED",
+                  "UNKNOWN"
+                ]
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "historical_receipt": {
+                "type": "null"
+              },
+              "current_effect": {
+                "type": "null"
+              },
+              "progress_state": {
+                "const": "UNKNOWN"
+              }
+            }
+          }
+        }
+      ]
+    }
+  },
+  "oneOf": [
+    {
+      "$ref": "#/$defs/Control"
+    },
+    {
+      "$ref": "#/$defs/ContentResult"
+    },
+    {
+      "$ref": "#/$defs/UsageBatch"
+    },
+    {
+      "$ref": "#/$defs/ReportBatch"
+    },
+    {
+      "$ref": "#/$defs/EventBatch"
+    },
+    {
+      "$ref": "#/$defs/FocusControl"
+    },
+    {
+      "$ref": "#/$defs/ContentQuery"
+    },
+    {
+      "$ref": "#/$defs/ContentQueryResult"
+    }
+  ]
+}

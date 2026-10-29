@@ -1,0 +1,719 @@
+{
+  "revision": "AMVP-CONTRACT-20261029-RC2",
+  "reviewed_sha": "8f48c3b8454c74bb1f998a8f4cdacfe65785d037",
+  "role": "Kim Dahun area technical review by Codex, NOT human approval",
+  "api_operations": [
+    {
+      "id": "CAP-01",
+      "method": "POST",
+      "path": "/api/v1/amvp/capabilities/negotiations",
+      "auth": "E",
+      "request": "CapabilityOffer",
+      "response": "CapabilitySelection",
+      "query": "None",
+      "explicit_product_amvp_handler": "NOT_IMPLEMENTED",
+      "runtime_catch_all": "/api/v1/**; route precedence and selected module need integration verification",
+      "actual_http": "NOT_RUN"
+    },
+    {
+      "id": "CFG-01",
+      "method": "GET",
+      "path": "/api/v1/amvp/configs",
+      "auth": "W_OR_E",
+      "request": "Empty",
+      "response": "ConfigList",
+      "query": "ConfigList",
+      "explicit_product_amvp_handler": "NOT_IMPLEMENTED",
+      "runtime_catch_all": "/api/v1/**; route precedence and selected module need integration verification",
+      "actual_http": "NOT_RUN"
+    },
+    {
+      "id": "CFG-02",
+      "method": "GET",
+      "path": "/api/v1/amvp/configs/{config_id}",
+      "auth": "W_OR_E",
+      "request": "Empty",
+      "response": "ConfigRecord",
+      "query": "None",
+      "explicit_product_amvp_handler": "NOT_IMPLEMENTED",
+      "runtime_catch_all": "/api/v1/**; route precedence and selected module need integration verification",
+      "actual_http": "NOT_RUN"
+    },
+    {
+      "id": "CFG-03",
+      "method": "PUT",
+      "path": "/api/v1/amvp/configs/{config_id}",
+      "auth": "W_OR_E",
+      "request": "ConfigWrite",
+      "response": "ConfigRecord",
+      "query": "None",
+      "explicit_product_amvp_handler": "NOT_IMPLEMENTED",
+      "runtime_catch_all": "/api/v1/**; route precedence and selected module need integration verification",
+      "actual_http": "NOT_RUN"
+    },
+    {
+      "id": "CFG-04",
+      "method": "DELETE",
+      "path": "/api/v1/amvp/configs/{config_id}",
+      "auth": "W_OR_E",
+      "request": "Empty",
+      "response": "OperationState",
+      "query": "None",
+      "explicit_product_amvp_handler": "NOT_IMPLEMENTED",
+      "runtime_catch_all": "/api/v1/**; route precedence and selected module need integration verification",
+      "actual_http": "NOT_RUN"
+    },
+    {
+      "id": "PKG-01",
+      "method": "GET",
+      "path": "/api/v1/amvp/runtime-packages/current",
+      "auth": "E",
+      "request": "Empty",
+      "response": "RuntimePackage",
+      "query": "Executor",
+      "explicit_product_amvp_handler": "NOT_IMPLEMENTED",
+      "runtime_catch_all": "/api/v1/**; route precedence and selected module need integration verification",
+      "actual_http": "NOT_RUN"
+    },
+    {
+      "id": "FOC-01",
+      "method": "POST",
+      "path": "/api/v1/amvp/focus-attachments",
+      "auth": "W_OR_E",
+      "request": "FocusAttachmentRequest",
+      "response": "FocusAttachment",
+      "query": "None",
+      "explicit_product_amvp_handler": "NOT_IMPLEMENTED",
+      "runtime_catch_all": "/api/v1/**; route precedence and selected module need integration verification",
+      "actual_http": "NOT_RUN"
+    },
+    {
+      "id": "USG-01",
+      "method": "POST",
+      "path": "/api/v1/amvp/usage/batch",
+      "auth": "E",
+      "request": "UsageBatch",
+      "response": "UsageBatchAck",
+      "query": "None",
+      "explicit_product_amvp_handler": "NOT_IMPLEMENTED",
+      "runtime_catch_all": "/api/v1/**; route precedence and selected module need integration verification",
+      "actual_http": "NOT_RUN"
+    },
+    {
+      "id": "USG-02",
+      "method": "POST",
+      "path": "/api/v1/amvp/usage/status",
+      "auth": "E",
+      "request": "StatusRequest",
+      "response": "UsageStatusResponse",
+      "query": "None",
+      "explicit_product_amvp_handler": "NOT_IMPLEMENTED",
+      "runtime_catch_all": "/api/v1/**; route precedence and selected module need integration verification",
+      "actual_http": "NOT_RUN"
+    },
+    {
+      "id": "RPT-01",
+      "method": "POST",
+      "path": "/api/v1/amvp/reports/batch",
+      "auth": "E",
+      "request": "ReportBatch",
+      "response": "BatchAck",
+      "query": "None",
+      "explicit_product_amvp_handler": "NOT_IMPLEMENTED",
+      "runtime_catch_all": "/api/v1/**; route precedence and selected module need integration verification",
+      "actual_http": "NOT_RUN"
+    },
+    {
+      "id": "RPT-02",
+      "method": "POST",
+      "path": "/api/v1/amvp/reports/status",
+      "auth": "E",
+      "request": "StatusRequest",
+      "response": "StatusResponse",
+      "query": "None",
+      "explicit_product_amvp_handler": "NOT_IMPLEMENTED",
+      "runtime_catch_all": "/api/v1/**; route precedence and selected module need integration verification",
+      "actual_http": "NOT_RUN"
+    },
+    {
+      "id": "EVT-01",
+      "method": "POST",
+      "path": "/api/v1/amvp/events/batch",
+      "auth": "E",
+      "request": "EventBatch",
+      "response": "BatchAck",
+      "query": "None",
+      "explicit_product_amvp_handler": "NOT_IMPLEMENTED",
+      "runtime_catch_all": "/api/v1/**; route precedence and selected module need integration verification",
+      "actual_http": "NOT_RUN"
+    },
+    {
+      "id": "EVT-02",
+      "method": "POST",
+      "path": "/api/v1/amvp/events/status",
+      "auth": "E",
+      "request": "StatusRequest",
+      "response": "StatusResponse",
+      "query": "None",
+      "explicit_product_amvp_handler": "NOT_IMPLEMENTED",
+      "runtime_catch_all": "/api/v1/**; route precedence and selected module need integration verification",
+      "actual_http": "NOT_RUN"
+    },
+    {
+      "id": "DAY-01",
+      "method": "GET",
+      "path": "/api/v1/amvp/site-time-policies/{policy_id}/usage",
+      "auth": "W_OR_E",
+      "request": "Empty",
+      "response": "DailyUsage",
+      "query": "UsageDay",
+      "explicit_product_amvp_handler": "NOT_IMPLEMENTED",
+      "runtime_catch_all": "/api/v1/**; route precedence and selected module need integration verification",
+      "actual_http": "NOT_RUN"
+    },
+    {
+      "id": "TZ-01",
+      "method": "PUT",
+      "path": "/api/v1/amvp/timezone",
+      "auth": "W",
+      "request": "TimezoneWrite",
+      "response": "TimezoneRecord",
+      "query": "Executor",
+      "explicit_product_amvp_handler": "NOT_IMPLEMENTED",
+      "runtime_catch_all": "/api/v1/**; route precedence and selected module need integration verification",
+      "actual_http": "NOT_RUN"
+    },
+    {
+      "id": "TZ-02",
+      "method": "GET",
+      "path": "/api/v1/amvp/timezone",
+      "auth": "W_OR_E",
+      "request": "Empty",
+      "response": "TimezoneRecord",
+      "query": "Executor",
+      "explicit_product_amvp_handler": "NOT_IMPLEMENTED",
+      "runtime_catch_all": "/api/v1/**; route precedence and selected module need integration verification",
+      "actual_http": "NOT_RUN"
+    },
+    {
+      "id": "STA-01",
+      "method": "GET",
+      "path": "/api/v1/amvp/statistics/browser-usage",
+      "auth": "W_OR_E",
+      "request": "Empty",
+      "response": "Statistics",
+      "query": "Statistics",
+      "explicit_product_amvp_handler": "NOT_IMPLEMENTED",
+      "runtime_catch_all": "/api/v1/**; route precedence and selected module need integration verification",
+      "actual_http": "NOT_RUN"
+    },
+    {
+      "id": "IMP-01",
+      "method": "POST",
+      "path": "/api/v1/amvp/imports/completed-usage",
+      "auth": "W",
+      "request": "ImportSelection",
+      "response": "ImportResult",
+      "query": "None",
+      "explicit_product_amvp_handler": "NOT_IMPLEMENTED",
+      "runtime_catch_all": "/api/v1/**; route precedence and selected module need integration verification",
+      "actual_http": "NOT_RUN"
+    },
+    {
+      "id": "OWN-01",
+      "method": "POST",
+      "path": "/api/v1/amvp/owner-transfers",
+      "auth": "E",
+      "request": "OwnerTransfer",
+      "response": "TransferState",
+      "query": "None",
+      "explicit_product_amvp_handler": "NOT_IMPLEMENTED",
+      "runtime_catch_all": "/api/v1/**; route precedence and selected module need integration verification",
+      "actual_http": "NOT_RUN"
+    },
+    {
+      "id": "OWN-02",
+      "method": "GET",
+      "path": "/api/v1/amvp/owner-transfers/{transfer_id}",
+      "auth": "E",
+      "request": "Empty",
+      "response": "TransferState",
+      "query": "None",
+      "explicit_product_amvp_handler": "NOT_IMPLEMENTED",
+      "runtime_catch_all": "/api/v1/**; route precedence and selected module need integration verification",
+      "actual_http": "NOT_RUN"
+    },
+    {
+      "id": "FOC-02",
+      "method": "POST",
+      "path": "/api/v1/amvp/focus/{session_id}/commands",
+      "auth": "W_OR_E",
+      "request": "FocusControl",
+      "response": "FocusState",
+      "query": "None",
+      "explicit_product_amvp_handler": "NOT_IMPLEMENTED",
+      "runtime_catch_all": "/api/v1/**; route precedence and selected module need integration verification",
+      "actual_http": "NOT_RUN"
+    },
+    {
+      "id": "FOC-03",
+      "method": "GET",
+      "path": "/api/v1/amvp/focus/{session_id}/state",
+      "auth": "W_OR_E",
+      "request": "Empty",
+      "response": "FocusState",
+      "query": "None",
+      "explicit_product_amvp_handler": "NOT_IMPLEMENTED",
+      "runtime_catch_all": "/api/v1/**; route precedence and selected module need integration verification",
+      "actual_http": "NOT_RUN"
+    },
+    {
+      "id": "OP-01",
+      "method": "GET",
+      "path": "/api/v1/amvp/operations/{operation_id}",
+      "auth": "W_OR_E",
+      "request": "Empty",
+      "response": "OperationState",
+      "query": "None",
+      "explicit_product_amvp_handler": "NOT_IMPLEMENTED",
+      "runtime_catch_all": "/api/v1/**; route precedence and selected module need integration verification",
+      "actual_http": "NOT_RUN"
+    },
+    {
+      "id": "UI-01",
+      "method": "GET",
+      "path": "/api/v1/amvp/installations/{executor_id}/state",
+      "auth": "W_OR_E",
+      "request": "Empty",
+      "response": "UIState",
+      "query": "None",
+      "explicit_product_amvp_handler": "NOT_IMPLEMENTED",
+      "runtime_catch_all": "/api/v1/**; route precedence and selected module need integration verification",
+      "actual_http": "NOT_RUN"
+    },
+    {
+      "id": "ART-01",
+      "method": "GET",
+      "path": "/api/v1/amvp/artifacts/{artifact_id}",
+      "auth": "W_OR_E",
+      "request": "Empty",
+      "response": "ArtifactDescriptor",
+      "query": "None",
+      "explicit_product_amvp_handler": "NOT_IMPLEMENTED",
+      "runtime_catch_all": "/api/v1/**; route precedence and selected module need integration verification",
+      "actual_http": "NOT_RUN"
+    }
+  ],
+  "source_evidence": [
+    {
+      "source": "current PR baseline",
+      "path": "backend/src/main/java/kr/ac/kdu/focurve/auth/WebAuthentication.java",
+      "sha256_lf": "a4e287f00a310b900cdcc785bc54522900c4d5720f6ca3849b63ef756ebbf6b9"
+    },
+    {
+      "source": "current PR baseline",
+      "path": "backend/src/main/java/kr/ac/kdu/focurve/execution/MemberLinks.java",
+      "sha256_lf": "af753b1cc5792a5f368db8bcab64497bca747f1ffbab860ffc48ec347e456121"
+    },
+    {
+      "source": "current PR baseline",
+      "path": "backend/src/main/java/kr/ac/kdu/focurve/imports/ImportService.java",
+      "sha256_lf": "01d46e388b6ac05d00cbf0bb1c32f181ebe161b61a5985ee382cc70c2d89b9b5"
+    },
+    {
+      "source": "current PR baseline",
+      "path": "backend/src/main/java/kr/ac/kdu/focurve/records/RecordQueries.java",
+      "sha256_lf": "196b5efd339f42270fc5a0936cc3565701d40c90d1e854f56c59e5b224b9faf8"
+    },
+    {
+      "source": "current PR baseline",
+      "path": "runtime-server/src/main/java/kr/ac/kdu/focurve/MemberApi.java",
+      "sha256_lf": "fd76b3418b08fc00708985daa8f025fdea6f6cf1a0c263a91c7c230b4ec3321c"
+    },
+    {
+      "source": "current PR baseline",
+      "path": "frontend/src/api.ts",
+      "sha256_lf": "eeaf351ccd3689987aec4be618c234f537744e8e788c23c44c826d8f2295070c"
+    },
+    {
+      "source": "existing uncommitted design worktree READ_ONLY, not imported",
+      "path": "backend/src/main/java/kr/ac/kdu/focurve/additional/ConfigurationDrafts.java",
+      "sha256_lf": "dfb3ec7c49faf283b971827caa5166473ea9b43e45e4f004e9c99582b65a2ee9"
+    },
+    {
+      "source": "existing uncommitted design worktree READ_ONLY, not imported",
+      "path": "backend/src/main/java/kr/ac/kdu/focurve/additional/ConfigurationDraftStore.java",
+      "sha256_lf": "f47c45472251de7ee17cd67f747018b5002cf0d2aa15aecc85f0ca9102f3f667"
+    },
+    {
+      "source": "existing uncommitted design worktree READ_ONLY, not imported",
+      "path": "backend/src/main/resources/db/independent/additional_configuration_drafts.sql",
+      "sha256_lf": "5b02bdde9d85b4ad5c6b0a3b870cc888c786133e3f09a8c2bb2bcf5de907e5e8"
+    },
+    {
+      "source": "existing uncommitted design worktree READ_ONLY, not imported",
+      "path": "frontend/src/api.ts",
+      "sha256_lf": "579ec14fa609c7c22c9a7e4e0da50f570795d5988ec923b00eb6ed81e0572b41"
+    }
+  ],
+  "findings": [
+    {
+      "id": "K01",
+      "priority": "P1",
+      "issue": "cross-owner/executor/package/receipt/anchor relationships independently valid but jointly invalid",
+      "files": [
+        "mysql-candidate.sql",
+        "mysql-runtime-candidate.sql"
+      ],
+      "state": "CANDIDATE_FIXED"
+    },
+    {
+      "id": "K02",
+      "priority": "P1",
+      "issue": "resolution source hash/duration not DB-constrained",
+      "files": [
+        "mysql-candidate.sql",
+        "mysql-runtime-candidate.sql"
+      ],
+      "state": "CANDIDATE_FIXED"
+    },
+    {
+      "id": "K03",
+      "priority": "P1",
+      "issue": "precondition before replay contradicts original API contract",
+      "files": [
+        "api.json",
+        "tests/server_reference.py",
+        "docs/design/additional-mvp-contracts/02_API_DB.md"
+      ],
+      "state": "CANDIDATE_FIXED"
+    },
+    {
+      "id": "K04",
+      "priority": "P1",
+      "issue": "missing exact executor target in TZ and INSTALLATION statistics",
+      "files": [
+        "api.json",
+        "examples.json"
+      ],
+      "state": "CANDIDATE_FIXED"
+    },
+    {
+      "id": "K05",
+      "priority": "P2",
+      "issue": "day budget version outside safe range accepted",
+      "files": [
+        "mysql-candidate.sql",
+        "mysql-runtime-candidate.sql"
+      ],
+      "state": "CANDIDATE_FIXED"
+    },
+    {
+      "id": "K06",
+      "priority": "P2",
+      "issue": "Content/Cadence cardinality and import verified source adapter are not specified enough for activation",
+      "state": "REVIEW_PENDING_NOT_INVENTED"
+    }
+  ],
+  "before_api": {
+    "tests": 3,
+    "failures": 3,
+    "errors": 0,
+    "skipped": 0,
+    "failed_ids": [
+      "test_server_review.ServerCounterexamples.test_existing_idempotency_precedes_mutation_precondition",
+      "test_server_review.ServerCounterexamples.test_installation_statistics_requires_executor",
+      "test_server_review.ServerCounterexamples.test_timezone_operations_select_exact_executor"
+    ]
+  },
+  "before_mysql": {
+    "kind": "REAL_ISOLATED_MYSQL_SQL_PROBE",
+    "cases": [
+      {
+        "module": "backend",
+        "case": "baseline migrations + additive candidate DDL",
+        "result": "PASS",
+        "legacy_tables": 31,
+        "new_tables": 19
+      },
+      {
+        "module": "backend",
+        "case": "same segment unique key prevents duplicate insert",
+        "result": "PASS"
+      },
+      {
+        "module": "backend",
+        "case": "negative interval CHECK rejection",
+        "result": "PASS"
+      },
+      {
+        "module": "backend",
+        "case": "unknown owner FK rejection",
+        "result": "PASS"
+      },
+      {
+        "module": "backend",
+        "case": "rollback leaves no artifact",
+        "result": "PASS"
+      },
+      {
+        "module": "backend",
+        "case": "import dedup identity; no automatic quota rows",
+        "result": "PASS"
+      },
+      {
+        "module": "backend",
+        "case": "distinct monotonic intervals may share UTC; quarantined raw is not confirmed aggregate",
+        "result": "PASS"
+      },
+      {
+        "module": "backend",
+        "case": "invalid monotonic interval CHECK rejection",
+        "result": "PASS"
+      },
+      {
+        "module": "backend",
+        "case": "separate resolution keeps raw unchanged; unique segment resolution prevents duplicate aggregation",
+        "result": "PASS"
+      },
+      {
+        "module": "backend",
+        "case": "usage rejects binding/executor mismatch",
+        "result": "FAIL",
+        "observed": "ACCEPTED"
+      },
+      {
+        "module": "backend",
+        "case": "current package rejects other owner",
+        "result": "FAIL",
+        "observed": "ACCEPTED"
+      },
+      {
+        "module": "backend",
+        "case": "focus attachment rejects other owner receipt",
+        "result": "FAIL",
+        "observed": "ACCEPTED"
+      },
+      {
+        "module": "backend",
+        "case": "clock anchor rejects binding/executor mismatch",
+        "result": "FAIL",
+        "observed": "ACCEPTED"
+      },
+      {
+        "module": "backend",
+        "case": "event rejects binding/executor mismatch",
+        "result": "FAIL",
+        "observed": "ACCEPTED"
+      },
+      {
+        "module": "backend",
+        "case": "budget rejects unsafe version",
+        "result": "FAIL",
+        "observed": "ACCEPTED"
+      },
+      {
+        "module": "backend",
+        "case": "resolution rejects cross-owner anchor",
+        "result": "FAIL",
+        "observed": "ACCEPTED"
+      },
+      {
+        "module": "backend",
+        "case": "resolution rejects wrong source hash",
+        "result": "FAIL",
+        "observed": "ACCEPTED"
+      },
+      {
+        "module": "backend",
+        "case": "resolution rejects wrong duration",
+        "result": "FAIL",
+        "observed": "ACCEPTED"
+      },
+      {
+        "module": "backend",
+        "case": "two real connections CAS yield one version/history/outbox winner",
+        "result": "PASS"
+      },
+      {
+        "module": "backend",
+        "case": "two real connections unique idempotency row; loser must re-read hash/receipt",
+        "result": "PASS"
+      },
+      {
+        "module": "backend",
+        "case": "rollback preserves config/history/outbox atomicity",
+        "result": "PASS"
+      },
+      {
+        "module": "backend",
+        "case": "installation row lock serializes physical overlap admission across real connections",
+        "result": "PASS"
+      },
+      {
+        "module": "runtime-server",
+        "case": "baseline migrations + additive candidate DDL",
+        "result": "PASS",
+        "legacy_tables": 31,
+        "new_tables": 19
+      },
+      {
+        "module": "runtime-server",
+        "case": "same segment unique key prevents duplicate insert",
+        "result": "PASS"
+      },
+      {
+        "module": "runtime-server",
+        "case": "negative interval CHECK rejection",
+        "result": "PASS"
+      },
+      {
+        "module": "runtime-server",
+        "case": "unknown owner FK rejection",
+        "result": "PASS"
+      },
+      {
+        "module": "runtime-server",
+        "case": "rollback leaves no artifact",
+        "result": "PASS"
+      },
+      {
+        "module": "runtime-server",
+        "case": "import dedup identity; no automatic quota rows",
+        "result": "PASS"
+      },
+      {
+        "module": "runtime-server",
+        "case": "distinct monotonic intervals may share UTC; quarantined raw is not confirmed aggregate",
+        "result": "PASS"
+      },
+      {
+        "module": "runtime-server",
+        "case": "invalid monotonic interval CHECK rejection",
+        "result": "PASS"
+      },
+      {
+        "module": "runtime-server",
+        "case": "separate resolution keeps raw unchanged; unique segment resolution prevents duplicate aggregation",
+        "result": "PASS"
+      },
+      {
+        "module": "runtime-server",
+        "case": "usage rejects binding/executor mismatch",
+        "result": "FAIL",
+        "observed": "ACCEPTED"
+      },
+      {
+        "module": "runtime-server",
+        "case": "current package rejects other owner",
+        "result": "FAIL",
+        "observed": "ACCEPTED"
+      },
+      {
+        "module": "runtime-server",
+        "case": "focus attachment rejects other owner receipt",
+        "result": "FAIL",
+        "observed": "ACCEPTED"
+      },
+      {
+        "module": "runtime-server",
+        "case": "clock anchor rejects binding/executor mismatch",
+        "result": "FAIL",
+        "observed": "ACCEPTED"
+      },
+      {
+        "module": "runtime-server",
+        "case": "event rejects binding/executor mismatch",
+        "result": "FAIL",
+        "observed": "ACCEPTED"
+      },
+      {
+        "module": "runtime-server",
+        "case": "budget rejects unsafe version",
+        "result": "FAIL",
+        "observed": "ACCEPTED"
+      },
+      {
+        "module": "runtime-server",
+        "case": "resolution rejects cross-owner anchor",
+        "result": "FAIL",
+        "observed": "ACCEPTED"
+      },
+      {
+        "module": "runtime-server",
+        "case": "resolution rejects wrong source hash",
+        "result": "FAIL",
+        "observed": "ACCEPTED"
+      },
+      {
+        "module": "runtime-server",
+        "case": "resolution rejects wrong duration",
+        "result": "FAIL",
+        "observed": "ACCEPTED"
+      },
+      {
+        "module": "runtime-server",
+        "case": "two real connections CAS yield one version/history/outbox winner",
+        "result": "PASS"
+      },
+      {
+        "module": "runtime-server",
+        "case": "two real connections unique idempotency row; loser must re-read hash/receipt",
+        "result": "PASS"
+      },
+      {
+        "module": "runtime-server",
+        "case": "rollback preserves config/history/outbox atomicity",
+        "result": "PASS"
+      },
+      {
+        "module": "runtime-server",
+        "case": "installation row lock serializes physical overlap admission across real connections",
+        "result": "PASS"
+      }
+    ],
+    "not_tested": [
+      "application HTTP auth",
+      "application Server transaction implementation",
+      "actual Chrome",
+      "actual production migration",
+      "raw payload schema enforced by application"
+    ]
+  },
+  "after_mysql_summary": {
+    "cases": 46,
+    "result": "PASS",
+    "port": 33334,
+    "two_real_connections": true,
+    "application_server_transactions": "NOT_RUN",
+    "result_file": "mysql-result.json"
+  },
+  "python_server": {
+    "tests": 11,
+    "result": "PASS",
+    "skipped": 0
+  },
+  "python_full": {
+    "tests": 238,
+    "result": "PASS",
+    "previous_227_is_subset": true
+  },
+  "node": {
+    "tests": 5,
+    "result": "PASS"
+  },
+  "actual_http_chrome_native_long_duration": "NOT_RUN",
+  "human_approvals": "REVIEW_PENDING",
+  "query": "recommend separate read-only target query from HTTP OP-01 and write sequence; current explicit rejection preserved; 3-person choice pending",
+  "common_decisions": "C01-C11 as existing 07/06 tables; no new policy scope",
+  "observed_human_review": {
+    "id": 5695506637,
+    "user": "lucas102469",
+    "sha": "8f48c3b8454c74bb1f998a8f4cdacfe65785d037",
+    "state": "CHANGES_REQUESTED",
+    "existing_content_four": "DESIGN_FIXES_ACCEPTED_BY_REVIEWER",
+    "query": "JOINT_DECISION_PENDING",
+    "query_comment": 4410668821,
+    "not_three_person_approval": true
+  }
+}

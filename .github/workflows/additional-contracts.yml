@@ -1,0 +1,29 @@
+name: Additional MVP contract review
+on:
+  pull_request:
+    branches: [integration/additional-mvp-20261029]
+    paths:
+      - 'contracts/additional-mvp/**'
+      - 'docs/design/additional-mvp-contracts/**'
+      - 'docs/implementation/tasks/ADDITIONAL-CONTRACT-20261029.md'
+      - '.github/workflows/additional-contracts.yml'
+permissions:
+  contents: read
+jobs:
+  contract:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-24.04, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: '3.14'
+      - run: python -m pip install -r contracts/additional-mvp/rc1/requirements.lock
+      - run: python -m unittest discover -s contracts/additional-mvp/rc1/tests -v
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38
+        with:
+          node-version: '24.19.0'
+      - run: node --test contracts/additional-mvp/rc1/tests/legacy-boundary.test.mjs
