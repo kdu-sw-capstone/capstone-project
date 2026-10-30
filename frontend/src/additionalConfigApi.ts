@@ -19,13 +19,13 @@ function canonical(value:unknown):string {
  return JSON.stringify(value);
 }
 export async function listConfigs(executor:string,signal?:AbortSignal):Promise<ConfigRecord[]> {
- identity(executor);const records:ConfigRecord[]=[],seen=new Set<string>();let cursor:string|null=null;
+ identity(executor);const records:ConfigRecord[]=[],seen=new Set<string>(),cursors=new Set<string>();let cursor:string|null=null;
  do {
   const query=new URLSearchParams({executor_id:executor,limit:"100"});if(cursor)query.set("cursor",cursor);
   const page=await request<{items:ConfigRecord[];next_cursor:string|null;has_more:boolean}>("/amvp/configs?"+query,"GET",undefined,{signal});
-  if(!Array.isArray(page?.items)||typeof page.has_more!=="boolean"||page.has_more!==(typeof page.next_cursor==="string"&&page.next_cursor.length>0))throw new UiError("설정 목록을 끝까지 확인하지 못했습니다.");
-  for(const row of page.items){parse(row,executor);if(seen.has(row.config_id))throw new UiError("설정 목록이 변경됐습니다. 다시 조회하세요.");seen.add(row.config_id);records.push(row);}
-  if(page.next_cursor===cursor&&cursor!==null)throw new UiError("설정 목록 조회가 반복됐습니다.");cursor=page.next_cursor;
+  if(!Array.isArray(page?.items)||typeof page.has_more!=="boolean"||page.has_more!==(typeof page.next_cursor==="string"&&page.next_cursor.length>0)||!page.has_more&&page.next_cursor!==null||page.has_more&&!page.items.length)throw new UiError("설정 목록을 끝까지 확인하지 못했습니다.");
+  for(const row of page.items){parse(row,executor);if(row.deleted_at!==null||seen.has(row.config_id))throw new UiError("설정 목록이 변경됐습니다. 다시 조회하세요.");seen.add(row.config_id);records.push(row);}
+  cursor=page.next_cursor;if(cursor){if(cursors.has(cursor))throw new UiError("설정 목록 조회가 반복됐습니다.");cursors.add(cursor);}
  }while(cursor);
  return records;
 }
@@ -50,7 +50,7 @@ export function configWrite(executor:string,id:string,value:ConfigValue,version?
  return {key,async send():Promise<ConfigRecord>{
   const response=parse(await request<ConfigRecord>("/amvp/configs/"+id,"PUT",body,{key,version,create:version===undefined}),executor);
   if(response.config_id!==id)throw new UiError("다른 설정의 응답을 받았습니다.");
-  const saved=parse(await request<ConfigRecord>("/amvp/configs/"+id),executor);
+  const saved=await readConfig(executor,id);
   if(saved.version!==response.version||canonical(saved.value)!==canonical(response.value))throw new UiError("다른 변경이 먼저 저장됐습니다. 현재 설정을 다시 조회하세요.");
   return saved;
  }};
