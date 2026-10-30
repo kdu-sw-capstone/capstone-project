@@ -79,3 +79,33 @@ test('older startup cannot reopen stopped observation', async () => {
   resolve(true); await starting; assert.equal(h.boundaries.length, count);
   assert.equal(h.tabs.onActivated.size(), 0);
 });
+
+test('URL permission revocation fences pending tab reads until explicit verified restart', async () => {
+  for (const change of [{permissions:['tabs']},{origins:['<all_urls>']}]) {
+    const h=setup(); await h.observer.start(); let resolve;
+    h.tabs.query=()=>new Promise(r=>{resolve=r;});
+    const reading=h.observer.refresh(); await Promise.resolve();
+    const revision=h.boundaries.at(-1).revision;
+    h.permissions.onRemoved.fire(change);
+    assert.ok(h.boundaries.at(-1).revision>revision);
+    resolve([h.tab]); await reading;
+    assert.equal(h.boundaries.at(-1).status,'UNKNOWN');
+    h.tabs.query=async()=>[h.tab]; await h.observer.refresh();
+    assert.equal(h.boundaries.at(-1).status,'UNKNOWN');
+    h.permissions.contains=async q=>q.permissions?.[0]==='idle';
+    await h.observer.start(); assert.equal(h.boundaries.at(-1).status,'UNKNOWN');
+    h.permissions.contains=async()=>true;
+    await h.observer.start(); assert.equal(h.boundaries.at(-1).status,'CANDIDATE');
+  }
+});
+test('revocation while current URL permission check is pending cannot publish stale candidate', async () => {
+  const h=setup(); await h.observer.start(); let resolve;
+  h.permissions.contains=()=>new Promise(r=>{resolve=r;});
+  const reading=h.observer.refresh(); await Promise.resolve(); await Promise.resolve();
+  h.permissions.onRemoved.fire({origins:['https://example.com/*']});
+  resolve(true); await reading; assert.equal(h.boundaries.at(-1).status,'UNKNOWN');
+});
+test('origin grant can authorize observation without tabs grant', async()=>{
+  const h=setup();h.permissions.contains=async q=>q.permissions?.[0]==='idle'||q.origins?.[0]==='https://example.com/*';
+  await h.observer.start();assert.equal(h.boundaries.at(-1).status,'CANDIDATE');
+});
