@@ -1,5 +1,21 @@
 # 추가 MVP · 정책 발행·이용시간 수신 경계
 
+## DAY-01 독립 후속 — 구현·격리 검증 완료, 실제 Core 연결 대기 (2026-10-30)
+
+- 담당 김다훈 Web·Server·DB, 계약 RC2 DAY-01/DailyUsage/UsageDay. PR28 head642b87704f8eaaf01d4b9d0b483b33390d9b9b2d를 재사용하고 같은 clean Worktree에서 codex/additional-mvp-daily-usage로 분리했다. PR27/28 브랜치·리뷰 범위는 변경하지 않는다.
+- 코드: AmvpDailyUsage/Api, dailyUsageApi/DailyUsagePanel·기존 AdditionalSettings 배치. 기존 원장/예산/설정/Admission·디자인 Panel 재사용. Schema·공용 api.ts·legacy-lock·Core/Content·생산 bean/기능 플래그·migration 변경 없음.
+- 수용: 실제 인증·소유권·날짜·자연일/DST·검증된 raw/예산 정합성·조회 무변경·지연 응답/설치 전환. 확인된 서버 prefix/carry만 표시하며 최신 live 잔여/차단/다음 허용 시각은 추정하지 않는다. 근거 없는0·timezone/day 추정·계정 재귀속 금지.
+- 실제 경로: `GET /api/v1/amvp/site-time-policies/{policy_id}/usage?executor_id=…&date=YYYY-MM-DD` → 기존 인증/Admission → 동일 소유자의 불변 raw·해소 anchor·day budget 일관 조회 → 기존 `DailyUsage` Schema → AdditionalSettings의 일일 기록 패널. 기존 config API opt-in을 따르며 새 authority/collector bean이나 활성화 플래그는 만들지 않는다.
+- 데이터: 서버 COUNTED prefix와 검증된 예산 carry를 읽는다. 불확실 raw는 보존·제외한다. `quality=PARTIAL`, `enforcement_state=UNKNOWN`, live `remaining_ms=null`이며 현재 차단/다음 허용 시각을 만들지 않는다. 원장·예산·Receipt를 수정하거나 날짜/한도를 초기화하지 않는다. 회원 전환 후 과거 기록은 기존 소유자만 조회할 수 있다.
+- 보수적 한계: 자료 없음은 404, day/시간대 근거 부재·집계 불일치·동일 현지 날짜에 복수 전환 bucket은 503/STORE_UNCONFIRMED다. UTC 광역 탐색은 최대16 budget·50,000 raw로 제한한다. 전환 bucket을 임의 선택·합산하거나0/이용 가능으로 표시하지 않는다. 현재 UI와 API는 이 부분 자료 조회를 제공하며 완전한 live quota 증명은 아니다.
+- 새 검증: Node24.19.0 Web **255 PASS**, TypeScript·Vite build PASS; Java21 Server unit **78 PASS**; 독립 MySQL8.4.8 **9 PASS**(실제 Bearer HTTP/JDBC·토큰 폐기 시험 포함). DB 실행의 추가 API unit2건은 Server78에 포함하므로 중복 합산하지 않는다. 자연일/DST/전환·capability·anchor는 합성 fixture이며 실제 Core clock producer 증거가 아니다.
+- 실패·수정 보존: 최초 HTTP200 기대가503으로 실패한 원인은 기존 인증 `FOR UPDATE`와 새 HTTP read-only transaction의 충돌이었다. 인증 잠금은 유지하고 HTTP transaction만 조정했다. `.local/amvp-mysql-62a768971183/tests.log` 최초 실패, `.local/amvp-mysql-8309fe37e031/` 최종9 DB+2 API PASS·datadir 소유권·정상 종료 증거, `.local/receipt-verification/daily-usage-20261030/` Web·Server unit 로그. 이후 불확실 구간이 들어와도 확정 prefix/예산을 늘리지 않고 raw2건을 보존하는 반례를 실행했다.
+- 재현: `npm --prefix frontend test -- --maxWorkers=2`; `npm --prefix frontend run build`; Java21에서 Maven `-f runtime-server/pom.xml '-Dtest=*,!AdditionalConfigMysqlTest,!AmvpRuntimeBridgeMysqlTest,!AmvpRuntimeReceiptMysqlTest,!AmvpDailyUsageMysqlTest' verify`. DB는 기존 `scripts/test-additional-config-mysql.ps1`에 전용 vendor/Maven 경로·빈 시험 포트·`-Tests 'AmvpDailyUsageMysqlTest,AmvpDailyUsageApiTest'`, 환경 `FOCURVE_AMVP_DAILY_TESTS=1`을 사용한다. 운영 DB URL을 지정하지 않는다. 새 `additional-daily-usage.yml`이 동일 분리 검증을 수행한다.
+- PR 범위: PR28을 base로 하는 별도 Draft 후속. PR27·28의 발행/부착/수신/RPT 검증·화면 연결은 재사용하고 재구현하지 않았다. 공유 계약·`frontend/src/api.ts`·legacy-lock·생산 설정·DB migration은 변경하지 않는다.
+- 실제 Core/Content/Chrome/Native·운영 DB·Figma 시각 수용 **NOT_RUN**. 다음 최소 통합은 윤종민의 실제 capability/collector/clock·day-carry와 report verifier를 기존 경계에 연결한 뒤 수신→조회→표시를 검증하는 것이다. 예약/반복 집중·휴식 actor와 Content 효과는 각각 담당 구현 증거를 기다리며 저장만으로 적용 완료를 선언하지 않는다. legacy-lock 및 미수신 hash는 계약 담당의 별도 결정 대기다.
+
+## PR #27 기준 및 구현 — 기존 기록 보존
+
 - 담당: 김다훈 Web·Server·DB. Core·Content producer와 Shorts 안정화는 변경하지 않는다.
 - 브랜치: `feature/additional-mvp-runtime-adapters`.
 - 시작 기준: PR #25 head `6073442df501c4e381142ea6ed1108808d249814`.
