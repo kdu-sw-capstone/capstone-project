@@ -34,6 +34,16 @@ export async function readConfig(executor:string,id:string,signal?:AbortSignal):
  identity(executor);identity(id);const row=parse(await request<ConfigRecord>(`/amvp/configs/${id}`,"GET",undefined,{signal}),executor);
  if(row.config_id!==id)throw new UiError("다른 설정의 조회 응답을 받았습니다.");return row;
 }
+/** Server-backed Web read model, deliberately separate from RC2 CFG01's active-only list. */
+export async function listSiteTimeDeletions(executor:string,signal?:AbortSignal):Promise<ConfigRecord[]>{
+ identity(executor);const rows:ConfigRecord[]=[],ids=new Set<string>(),cursors=new Set<string>();let cursor:string|null=null;
+ do{const query=new URLSearchParams({executor_id:executor,limit:"100"});if(cursor)query.set("cursor",cursor);
+  const page=await request<{read_model:string;items:ConfigRecord[];has_more:boolean;next_cursor:string|null}>(`/amvp/web/site-time-deletions?${query}`,"GET",undefined,{signal});
+  if(page?.read_model!=="AMVP_SITE_TIME_DELETIONS_1"||!Array.isArray(page.items)||typeof page.has_more!=="boolean"||page.has_more!==(typeof page.next_cursor==="string"&&page.next_cursor.length>0)||!page.has_more&&page.next_cursor!==null||page.has_more&&!page.items.length)throw new UiError("서버 삭제 요청 목록을 끝까지 확인하지 못했습니다.");
+  for(const raw of page.items){const row=parse(raw,executor);if(row.value.kind!=="SITE_TIME"||row.deleted_at===null||!Number.isFinite(Date.parse(row.deleted_at))||row.version<2||row.value.policy_id!==row.config_id||row.value.version!==row.version||ids.has(row.config_id))throw new UiError("삭제 요청의 설치·정책·버전을 확인하지 못했습니다.");ids.add(row.config_id);rows.push(row);}
+  cursor=page.next_cursor;if(cursor){if(cursors.has(cursor))throw new UiError("삭제 요청 목록 조회가 반복됐습니다.");cursors.add(cursor);}
+ }while(cursor);return rows;
+}
 /** One immutable request/key pair survives an explicit retry after a lost response. */
 export function configWrite(executor:string,id:string,value:ConfigValue,version?:number) {
  identity(executor);identity(id);const key=crypto.randomUUID(),body=structuredClone({executor_id:executor,value});

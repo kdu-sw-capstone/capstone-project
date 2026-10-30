@@ -45,21 +45,35 @@ final class AdditionalConfigStore {
   check(row!=null,404,"RESOURCE_NOT_FOUND");return row;
  }
  ObjectNode list(Identity i,String executor,String kind,String cursor,int limit) {
+  return page(i,executor,kind,cursor,limit,false);
+ }
+ /** Web-owned additive read model; CFG01 continues excluding tombstones. */
+ ObjectNode deletions(Identity i,String executor,String cursor,int limit){return page(i,executor,"SITE_TIME",cursor,limit,true);}
+ private ObjectNode page(Identity i,String executor,String kind,String cursor,int limit,boolean deleted) {
   check(limit>=1&&limit<=100,400,"VALIDATION_FAILED");
   check(kind==null||Set.of("CONTENT","CADENCE","SITE_TIME","FOCUS_SCHEDULE").contains(kind),400,"VALIDATION_FAILED");
   return reads.execute(tx->{String binding=binding(i,executor,false);var items=a.json.createArrayNode();String after="";
    if(cursor!=null) {
     try {check(cursor.length()<=2048,400,"VALIDATION_FAILED");var token=parse(a.crypt(cursor,false));
      check(token.path("binding").asText().equals(binding)&&Objects.equals(token.path("kind").isNull()?null:token.path("kind").asText(),kind)&&token.path("limit").asInt()==limit,400,"VALIDATION_FAILED");
+     check(deleted?token.path("view").asText().equals("SITE_TIME_DELETIONS_1"):!token.has("view"),400,"VALIDATION_FAILED");
      after=token.path("after").asText();contract.validate("Uuid",a.json.valueToTree(after));
     }catch(RuntimeException error){throw new Failure(400,"VALIDATION_FAILED");}
    }
-   var rows=a.db.queryForList("SELECT c.*,? AS executor_id FROM amvp_configs c WHERE owner_binding_id=? AND deleted_at IS NULL"+(kind==null?"":" AND kind=?")+" AND config_id>? ORDER BY config_id LIMIT ?",kind==null?new Object[]{executor,binding,after,limit+1}:new Object[]{executor,binding,kind,after,limit+1});
-   for(int n=0;n<Math.min(limit,rows.size());n++)items.add(record(rows.get(n)));
+   var rows=a.db.queryForList("SELECT c.*,? AS executor_id FROM amvp_configs c WHERE owner_binding_id=? AND deleted_at IS "+(deleted?"NOT NULL":"NULL")+(kind==null?"":" AND kind=?")+" AND config_id>? ORDER BY config_id LIMIT ?",kind==null?new Object[]{executor,binding,after,limit+1}:new Object[]{executor,binding,kind,after,limit+1});
+   for(int n=0;n<Math.min(limit,rows.size());n++){var row=rows.get(n);if(deleted)deletionReceipt(binding,row);items.add(record(row));}
    boolean more=rows.size()>limit;
-   String next=more?a.crypt(a.obj("binding",binding,"kind",kind,"limit",limit,"after",items.get(items.size()-1).path("config_id").asText()).toString(),true):null;
-   return a.obj("items",items,"next_cursor",next,"has_more",more);
+   var token=a.obj("binding",binding,"kind",kind,"limit",limit,"after",more?items.get(items.size()-1).path("config_id").asText():null);if(deleted)token.put("view","SITE_TIME_DELETIONS_1");String next=more?a.crypt(token.toString(),true):null;
+   var result=a.obj("items",items,"next_cursor",next,"has_more",more);if(deleted)result.put("read_model","AMVP_SITE_TIME_DELETIONS_1");return result;
   });
+ }
+ private void deletionReceipt(String binding,Map<String,Object> config){
+  var rows=a.db.queryForList("SELECT * FROM amvp_operations WHERE owner_binding_id=? AND route=?",binding,"DELETE:/api/v1/amvp/configs/"+config.get("config_id"));check(rows.size()==1,409,"STORE_UNCONFIRMED");var receipt=rows.getFirst();contract.validate("Uuid",a.json.valueToTree(receipt.get("operation_id")));
+  check(receipt.get("state").equals("CONFIRMED")&&receipt.get("request_sha256").equals(hash("{}")),409,"STORE_UNCONFIRMED");
+  // RC2 permits response-cache expiry while retaining the durable operation identity.
+  // Do not reconstruct the old ACK or confuse its optional cache with release evidence.
+  if(receipt.get("response_json")!=null){var response=parse(receipt.get("response_json"));contract.validate("OperationState",response);check(response.path("operation_id").asText().equals(receipt.get("operation_id"))&&response.path("state").asText().equals("RELEASE_PENDING")&&response.path("actual_effect_confirmed").isBoolean()&&!response.path("actual_effect_confirmed").asBoolean(),409,"STORE_UNCONFIRMED");}
+  var version=a.one("SELECT payload_sha256 FROM amvp_config_versions WHERE config_id=? AND version=?",config.get("config_id"),config.get("version"));check(version!=null&&version.get("payload_sha256").equals(hash(AdditionalConfigContract.canonical(parse(config.get("value_json"))))),409,"STORE_UNCONFIRMED");
  }
  ObjectNode put(Identity principal,String configId,JsonNode body,String match,String none,String key) {
   contract.validate("Uuid",a.json.valueToTree(configId));contract.validate("Uuid",a.json.valueToTree(key));
