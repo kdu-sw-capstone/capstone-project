@@ -112,6 +112,69 @@ test('cross-document nodes and empty claim identities cannot mutate effects', ()
   assert.equal(element.style.getPropertyValue('display'), 'grid');
 });
 
+for (const fault of ['throw','readback']) {
+  test(`pending restore retries original value and priority after partial setter ${fault}`, () => {
+    const {ledger,element}=fixture();
+    element.style.setProperty('display','grid','important');ledger.hide('A',element);
+    const write=element.style.setProperty;
+    element.style.setProperty=(name,value,priority)=>{
+      if(name==='display'&&value==='grid'){
+        write(name,'block','');if(fault==='throw')throw Error('partial restore');return;
+      }
+      write(name,value,priority);
+    };
+    const first=ledger.release('A');
+    assert.equal(first.restored,false);assert.equal(first.remaining_targets,1);
+    element.style.setProperty=write;
+    assert.equal(ledger.release('A').restored,true);
+    assert.equal(element.style.getPropertyValue('display'),'grid');
+    assert.equal(element.style.getPropertyPriority('display'),'important');
+  });
+}
+
+test('pending restore blocks rescan/new owner and retains its fixed goal until readback confirms', () => {
+  const {ledger,element}=fixture();ledger.hide('A',element);
+  const write=element.style.setProperty;
+  element.style.setProperty=(name,value,priority)=>{if(name==='display'&&value==='grid'){write(name,'block');throw Error('partial');}write(name,value,priority);};
+  assert.equal(ledger.release('A').restored,false);
+  assert.equal(ledger.hide('A',element),false);
+  assert.equal(ledger.hide('B',element),false);
+  assert.equal(ledger.inspect('B').remaining_targets,0);
+  assert.equal(ledger.release('A').restored,false);
+  assert.equal(ledger.inspect('A').remaining_targets,1);
+  element.style.setProperty=write;ledger.suspend();
+  assert.equal(ledger.release('A').restored,true);
+  assert.equal(element.style.getPropertyValue('display'),'grid');
+});
+
+test('failed shared-owner reconciliation never promotes its partial write to page baseline', () => {
+  for(const fault of ['throw','readback']){
+    const {ledger,element}=fixture();ledger.hide('A',element);ledger.hide('B',element);
+    element.style.setProperty('display','flex');
+    const write=element.style.setProperty;
+    element.style.setProperty=(name,value,priority)=>{if(name==='display'&&value==='none'){write(name,'block');if(fault==='throw')throw Error('partial');return;}write(name,value,priority);};
+    assert.equal(ledger.release('A').restored,false);
+    element.style.setProperty=write;
+    assert.equal(ledger.release('A').restored,true);
+    assert.equal(element.style.getPropertyValue('display'),'none');
+    assert.equal(ledger.release('B').restored,true);
+    assert.equal(element.style.getPropertyValue('display'),'flex');
+  }
+});
+
+test('filter removal and inert partial failures preserve original cleanup goals', () => {
+  const {ledger,element}=fixture();element.style.removeProperty('filter');ledger.grayscale('gray',element);
+  const remove=element.style.removeProperty;
+  element.style.removeProperty=name=>{element.style.setProperty(name,'blur(2px)');throw Error('partial removal');};
+  assert.equal(ledger.release('gray').restored,false);
+  element.style.removeProperty=remove;
+  assert.equal(ledger.release('gray').restored,true);assert.equal(element.style.getPropertyValue('filter'),'');
+  let inert=false,broken=false;
+  Object.defineProperty(element,'inert',{get:()=>inert,set:value=>{inert=broken?'partial':value;if(broken)throw Error('partial inert');}});
+  ledger.hide('hide',element);broken=true;assert.equal(ledger.release('hide').restored,false);
+  broken=false;assert.equal(ledger.release('hide').restored,true);assert.equal(element.inert,false);
+});
+
 test('unconfirmed computed grayscale returns false and preserves cleanup ownership', () => {
   const { document, element, ledger } = fixture();
   document.defaultView.getComputedStyle = () => ({ filter: 'none' });

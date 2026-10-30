@@ -40,6 +40,16 @@
 
 ## 다음 작은 연결
 
+### 2026-10-30 · PR33 부분 변경 후 복원 재시도 P2 (검증 완료 / 사용자 승인 후 제출)
+
+- 담당 채지민, feature/additional-mvp-content, 시작 040ac5bde2a2f7297da13d8db9d9c540cd0e1ca0. 리뷰 discussion_r4423267282(종민) 및 discussion_r4423360787(다훈) 대조. 기존 codex/content-watch-panels와 codex/content-autoplay는 clean 상태에서 보존하고 PR33 브랜치로 전환했다. PR36/39에 수정 커밋을 전파하거나 병합하지 않는다.
+- 원인: release setter가 일부 변경하고 실패한 뒤 원장에는 목표/pending 정보가 없어 중간 값을 페이지 편집으로 오인해 restored:true로 처리했다. 수정 전 신규 throw/readback 반례2/2 FAIL로 직접 재현했다.
+- 수정: APPLY/RESTORE 쓰기 전에 목표 value+priority와 pending 종류를 보존한다. 예외·readback 불일치 시 목표와 claim을 유지하고, 다음 복원은 그 목표를 재시도/재확인한다. 실패 중간 값의 출처를 별도로 증명할 수 없으므로 자동으로 새 페이지 baseline으로 채택하지 않는다. 정상 완료된 적용 뒤의 페이지 변경 보존 경로는 유지한다.
+- RESTORE pending이 있는 요소는 새 acquire/reapply를 false로 거절해 실패 원본/목표를 덮어쓰거나 owner를 추가하지 않는다. shared-owner 재적용 실패도 APPLY pending 목표를 유지해 원래 페이지 baseline을 잃지 않는다. foreign-document 검사와 suspend 후 cleanup 경계는 유지한다. 영속 Journal/Wire 상태나 새 공용 계약을 추가한 것은 아니다.
+- 관련 시험: 단위16 + Chrome 합성 DOM10 + 기존33 = 59/59 PASS, 실패/skip0. 수정 전 두 반례 FAIL, 수정 후 동일 반례 PASS; 반복 실패/새 owner 거절/재시도, shared-owner 재조정의 throw·readback, filter 제거·inert 실패, 실제 CSS 엔진의 장애 setter 두 경로 및 기존 flex·다중owner·adoption 회귀 포함.
+- 명령: Node24에서 `node --test extension/content-tests/claim-ledger.test.mjs extension/content-tests/claim-ledger-browser.test.mjs extension/content-tests/changes.test.mjs extension/content-tests/detection.test.mjs extension/content-tests/browser.test.mjs`. PLAYWRIGHT_MODULE은 bundled playwright, CHROME_EXECUTABLE은 설치 Windows Chrome, headless+합성 DOM/장애 주입이다. git diff --check PASS. 실제 YouTube/Instagram setter 장애나 제품 MV3/Core/Server/BFCache 수용 시험은 아니다.
+- 변경: claim-ledger.mjs, 해당 단위·브라우저 시험, 이 기록4개 파일만. 사용자 승인으로 같은 PR33 브랜치에 Commit/Push 제출하며 새 HEAD는 GitHub 게시 결과가 원본. PR33 재리뷰와 Core 경계 재확인 전 PR36/39 통합 보류 유지. 사용자 반복 수동 정상 시험으로 이 setter 장애 주입 시험을 대체하지 않는다.
+
 ### 2026-10-30 · PR #33 리뷰 두 결함 수정
 
 - 시작 HEAD: 96745bbe9c3559767bf08ac6e992dd4dd31fb50a. 담당 채지민, 기존 feature/additional-mvp-content 유지. 리뷰 스레드: https://github.com/kdu-sw-capstone/capstone-project/pull/33#discussion_r4421401391 및 https://github.com/kdu-sw-capstone/capstone-project/pull/33#discussion_r4421401400 .

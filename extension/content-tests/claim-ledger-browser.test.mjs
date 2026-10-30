@@ -22,6 +22,24 @@ async function pageFor(t) {
   return page;
 }
 
+for(const fault of ['throw','readback']){
+  test(`Chrome synthetic setter ${fault}: partial restore cannot discharge the original goal`,async t=>{
+    const page=await pageFor(t);
+    const result=await page.evaluate(async fault=>{
+      const {ClaimLedger}=await import('/content/claim-ledger.mjs');const ledger=new ClaimLedger(document);
+      const element=document.querySelector('#target');element.style.setProperty('display','grid','important');ledger.hide('A',element);
+      const write=element.style.setProperty.bind(element.style);
+      element.style.setProperty=(name,value,priority)=>{if(name==='display'&&value==='grid'){write(name,'block','');if(fault==='throw')throw Error('partial restore');return;}write(name,value,priority);};
+      const failed=ledger.release('A');const newOwner=ledger.hide('B',element);
+      element.style.setProperty=write;const retried=ledger.release('A');
+      return {failed,newOwner,retried,display:element.style.display,priority:element.style.getPropertyPriority('display'),remaining:ledger.inspect().remaining_targets};
+    },fault);
+    assert.equal(result.failed.restored,false);assert.equal(result.failed.remaining_targets,1);
+    assert.equal(result.newOwner,false);assert.equal(result.retried.restored,true);
+    assert.equal(result.display,'grid');assert.equal(result.priority,'important');assert.equal(result.remaining,0);
+  });
+}
+
 for (const [variable, expected] of [['none', 'grayscale(1)'], ['brightness(.8)', 'brightness(0.8) grayscale(1)']]) {
   test(`Chrome regression: variable filter ${variable} has a computed grayscale effect and restores declaration`, async t => {
     const page = await pageFor(t);
