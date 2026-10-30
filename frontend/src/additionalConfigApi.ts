@@ -29,6 +29,11 @@ export async function listConfigs(executor:string,signal?:AbortSignal):Promise<C
  }while(cursor);
  return records;
 }
+/** Existing CFG02 reads an explicitly known tombstone; no new enumeration or guest storage access. */
+export async function readConfig(executor:string,id:string,signal?:AbortSignal):Promise<ConfigRecord>{
+ identity(executor);identity(id);const row=parse(await request<ConfigRecord>(`/amvp/configs/${id}`,"GET",undefined,{signal}),executor);
+ if(row.config_id!==id)throw new UiError("다른 설정의 조회 응답을 받았습니다.");return row;
+}
 /** One immutable request/key pair survives an explicit retry after a lost response. */
 export function configWrite(executor:string,id:string,value:ConfigValue,version?:number) {
  identity(executor);identity(id);const key=crypto.randomUUID(),body=structuredClone({executor_id:executor,value});

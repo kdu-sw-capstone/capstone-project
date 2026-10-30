@@ -1,5 +1,46 @@
 # 추가 MVP · 정책 발행·이용시간 수신 경계
 
+## 삭제·해제 상태 후속 및 잔여 연결부 — 독립 구현 PASS / 실제 producer NOT_RUN (2026-10-30)
+
+- 담당 김다훈 Web·Server·DB·UI. clean PR32 `dd490c211cf3ac186bd6e3a2e56465746b9bcd3d`를 재사용하고 같은 Worktree에서 `feature/additional-mvp-release-status`로 분리했다. 기존 PR27~32 HEAD·미커밋/index·실패 설치는 변경하지 않았다. 신규 설치/진단기/Worktree, 운영 DB·Chrome·Native·Core/Content 코드 변경과 Merge는 수행하지 않았다.
+- 작업 중 통합 담당이 PR27/28/29/31을 병합했다. 확인 기준 `e6479fb4c2da4410a0163c983e0f727af28fb32e`의 tree가 기존 비교 기준 `1a4611d48c44d09e3970998822eda19ac5611f0a`와 같아 해당 코드 검증을 재사용한다. PR32는 확인 당시 Draft·미병합이며 실제 선행 의존성으로 남긴다. 이번 diff는 dd490c2 이후다. 통합 담당의 리뷰·Merge를 반복하지 않는다.
+
+### 남은 영역의 분류
+
+| 범위 | 확인 결과 / 다음 경계 |
+|---|---|
+| CRUD·패키지/outbox·report/Receipt·일일 사용량·예약/CADENCE Server/UI | 기존 구현·자동 검증 PASS 재사용. 실제 Core 실행 완료와 구분 |
+| SITE_TIME 삭제 결과 | **이번 미구현 연결부 해결:** 새 패키지에서 빠진 삭제 대상을 기존 보고/원장/CFG 조회로 검증·상태 투영 |
+| Content 16옵션·URL 키워드·성인·블러 설정 | AdditionalSettings/ContentConfig·publisher·검증된 profile gate 기존 구현. 재작성하지 않음. 실제 Content 효과/복원과 profile/artifact producer 결속 대기 |
+| Content/focus 적용·복원 | 기존 FocusAttachment/frozen Snapshot·Core Authority 검증 경계 재사용. RuntimeReport의 SITE_TIME 해제 증거로 Content/기존 집중 의무를 해소하지 않음. session/Attachment/document/generation별 실제 producer 및 조회 투영 연동 대기 |
+| Core capability/effect·예약/CADENCE actor | 기존 CapabilitySource/EvidenceVerifier/Actor/Authority 경계 존재. 생산 provider/transport·실제 효과 증거 결속 및 수용 NOT_RUN. 가짜 bean이나 Core actor를 만들지 않음 |
+| collector·clock/day-carry | UsageReceiver/RegisteredClockProof·격리/집계 경계 존재. 실제 collector/anchor·day-carry producer/실제 브라우저 측정 연결 대기 |
+| 회원·비회원 연속성 | Web은 회원 설치를 명시 선택하고 guest 로컬 자료를 조회/자동 업로드하지 않음. MemberImports의 SITE/CONTENT_POLICY/SCHEDULE/SESSION과 RC2 CompletedImportItem(완료 기록)만으로 새 CADENCE/SITE_TIME/CONTENT 설정 변환이 확정됐다고 볼 수 없음. 추가 설정 import 매핑·소유권/충돌 정책은 미구현/공동 확인 대기이며 임의 변환하지 않음 |
+| 실제 통합 수용 | Core/Content/Chrome/Native·DOM/DNR 복원·재기동/데이터 보존 모두 이 후속에서 NOT_RUN |
+
+### 이번 구현과 안전 경계
+
+- 확인된 반례: 삭제는 정상적으로 tombstone+새 패키지를 발행하지만 해당 정책은 runtime_policies에서 빠진다. 기존 receiver의 published.containsAll 검사 때문에 삭제 대상 RELEASED를 받지 못하고 현재 tombstone은 영구 PENDING이 됐다.
+- AmvpDeletedPolicyRelease가 기존 EvidenceVerifier의 실제 이전 claim/version/operation/generation/footprint 증명을 전제로 제거 대상만 검증한다. 동일 owner binding의 SITE_TIME tombstone·현재 불변 버전/hash·직전 버전과 그 원문을 포함한 실제 발행 패키지/hash·새 runtime_revision을 결속한다. 삭제된 ID를 무조건 허용하지 않는다. RELEASED/FAILED/UNKNOWN만 허용하고 APPLIED·다른 owner·Content·이전 revision은 현재 삭제의 해제 확인으로 쓰지 않는다.
+- 기존 RuntimeReport/BatchAck·amvp_reports/amvp_operations·RPT_STATE/CFG02를 그대로 재사용한다. 새 Wire/API/DB Schema·RuntimePackage carrier는 없다. accepted Receipt와 projection은 같은 트랜잭션이며 gap·중복·지연·원본 UNKNOWN/실패를 보존한다. 실제 RELEASED 증거가 검증된 tombstone만 NOT_APPLICABLE로 조회한다. 패키지에서 빠짐, HTTP200, DELETE202, 빈 affected set은 해제 증거가 아니다.
+- Web은 DELETE 접수 후 편집 목록에서 제거해도 이 화면의 요청 참조를 메모리에 보관한다. 기존 CFG02를 명시적 GET으로 재조회하여 삭제 버전/설치/ID와 해제 대기·UNKNOWN·확인을 구분한다. 오래된 설치 응답을 버린다. 기존 RuntimeDelivery 상태 함수·Panel/디자인·api.ts 인증/CSRF 쓰기를 재사용한다.
+- **UI 한계 PARTIAL:** 참조 목록은 이 화면 메모리 범위다. 화면 새로고침 후 삭제 목록 자동 복원은 지원하지 않으며 이를 명시한다. 서버 tombstone/Receipt/해제 의무는 지속된다. 기존 CFG01은 삭제 목록 enumeration을 정의하지 않으므로 새 query flag나 브라우저 영속 자료 저장을 임의 추가하지 않는다.
+
+### 필요한 공동 결정 — 원문 유지
+
+- ONCE: 기존 actor에 명시적 ONCE 매핑을 합의하거나 별도 typed actor 경계를 합의. occurrence/source version·고정 종료·잔여60초·DST 규칙 및 예약 UI에 영향. 현재는 REVIEW_PENDING, 자동 주간 변환 금지.
+- CADENCE: strict FocusState에 phase/cycle을 추가할지, 별도 합의된 읽기 모델로 제공할지 선택. Wire/Server DTO·타이머/휴식 표시·회귀에 영향. PAUSED를 REST로 추정하지 않음.
+- USG-02: 미수신 status의 payload hash를 nullable로 할지, 조회자가 알고 있는 기대 hash를 명시해 돌려줄지 결정. schema/query/error·재전송과 source identity에 영향. unknown query 실패를 NOT_RECEIVED로 바꾸지 않음.
+- 추가 설정 가져오기: 기존 legacy type으로 손실 변환하지 말고 명시 선택·원본 provenance/hash·kind/version·회원 owner 재결속·충돌 정책의 매핑을 확인해야 함. 이번 후속에서 계약을 확정하거나 import endpoint를 추가하지 않음.
+
+### 검증 및 인계
+
+- Web 전체289 PASS, TypeScript/Vite build PASS. 기존 삭제 멱등/현재 화면 구조를 재사용하고 tombstone GET·버전/설치 불일치·UNKNOWN/허위 APPLIED·Content 해제 오판·실제 삭제 버튼→대기 패널을 추가 검증했다.
+- 격리 MySQL8.4.8/인증 HTTP(MockMvc) **22 PASS = 기존 Receipt/clock 회귀13 + 신규9**, 실패/오류/스킵0. 새 별도 DB에서 부모 suite를 상속해 같은 schema를 중복 초기화하지 않는다. 삭제/비활성화·구버전/타인/Content 거절·gap/중복·UNKNOWN 원문·이전 발행 hash 오염 거절·인증 CFG 조회를 확인했다. Core 효과 verifier는 SYNTHETIC이며 실제 효과 성공이 아니다.
+- Server 단위81/JAR verify·RC2 266 PASS. 신설 additional-release-status.yml이 같은 분리 CI를 수행한다. 공유 계약·legacy-lock/api.ts·Core/Content/Shorts는 보존했다. 새로운 DB migration은 없다. 최종 DB 근거 `.local/amvp-mysql-ad4388057e00`는 소유권 확인 후 정상 종료, 로컬 검증/SHA 색인은 `.local/release-verification-20261030/result.json`이다.
+- 다음 최소 연결은 실제 Core verifier가 삭제 이전 claim의 해제 증거를 기존 RuntimeReport와 affected policy ID에 결속하는 것이다. Content 효과/복원은 별도의 frozen scope producer를 연결한다. 통합 담당은 PR32 후 이 후속만 검토하며 실제 활성화/제품 수용을 별도로 수행한다. `MVP_FINAL_COMPLETE=false`.
+
+
 ## CADENCE 실행 연결 후속 — Web·Server 경계 PASS / 실제 actor·휴식 단계 PARTIAL (2026-10-30)
 
 - 김다훈 Web·Server·DB·UI 담당 범위다. clean PR31 `d307c8aafbb7508f94615fe4e8467ce1a7fba42d` Worktree를 재사용해 `feature/additional-mvp-cadence-bridge`로 분리했다. 이미 병합된 PR30/integration `da1c70b2b2052dece581353f81cd5eb6c604e4b1`을 이 후보에만 로컬 반영한 비교 기준은 `1a4611d48c44d09e3970998822eda19ac5611f0a`다. 기존 PR27~31 HEAD/index와 다른 Worktree는 변경하지 않았다. GitHub Merge는 수행하지 않는다.

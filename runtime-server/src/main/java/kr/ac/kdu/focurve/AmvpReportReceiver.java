@@ -15,7 +15,9 @@ final class AmvpReportReceiver {
  record VerifiedReport(Set<String> affectedPolicies){VerifiedReport{affectedPolicies=Set.copyOf(affectedPolicies);}}
  interface EvidenceVerifier {
   /** Verify operation/execution, current epoch, legal transition, fresh observation and actual evidence
-   * behind evidence_sha256. A digest, client state or successful transport is not proof. */
+   * behind evidence_sha256. A digest, client state or successful transport is not proof.
+   * Removed SITE_TIME IDs require proof of the exact previous claim/version/footprint;
+   * omission from the replacement package is never release evidence. */
   VerifiedReport verify(Identity principal,Binding binding,ObjectNode report,ObjectNode issuedPackage,JsonNode predecessor);
  }
  private final AmvpBridgeSupport s;private final EvidenceVerifier evidence;private final TransactionTemplate writes;
@@ -46,7 +48,7 @@ final class AmvpReportReceiver {
   check(pack.path("owner_binding_id").asText().equals(binding.id())&&pack.path("executor_id").asText().equals(executor)&&pack.path("package_id").equals(report.path("package_id"))&&pack.path("runtime_revision").asLong()==report.path("runtime_revision").asLong()&&issued.get("payload_sha256").equals(pack.path("payload_sha256").asText()),422,"SOURCE_CONFLICT");
   check(!java.time.Instant.parse(report.path("observed_at").asText()).isBefore(java.time.Instant.parse(pack.path("issued_at").asText())),422,"INVALID_EFFECT_EVIDENCE");
   var verified=evidence.verify(principal,binding,report.deepCopy(),pack.deepCopy(),previous==null?null:s.parse(previous.get("payload_json")));check(verified!=null,409,"INVALID_EFFECT_EVIDENCE");
-  Set<String> published=new HashSet<>();for(var policy:pack.path("runtime_policies"))published.add(policy.path("policy_id").asText());check(published.containsAll(verified.affectedPolicies()),409,"INVALID_EFFECT_EVIDENCE");
+  Set<String> published=new HashSet<>();for(var policy:pack.path("runtime_policies"))published.add(policy.path("policy_id").asText());var deleted=AmvpDeletedPolicyRelease.targets(s,binding,report,verified.affectedPolicies(),published);
   var accepted=ack(report,"ACCEPTED",null);var stored=a.obj("profile","AMVP_REPORT_RECEIPT_1","ack",accepted);var covered=stored.putArray("affected_policy_ids");verified.affectedPolicies().stream().sorted().forEach(covered::add);
   a.db.update("INSERT INTO amvp_reports(report_id,owner_binding_id,report_epoch,report_seq,payload_json,payload_sha256) VALUES(?,?,?,?,?,?)",id,binding.id(),epoch,seq,AdditionalConfigContract.canonical(report),hash);
   if(receipt==null)save(binding,report,route,"CONFIRMED",stored);else a.db.update("UPDATE amvp_operations SET state='CONFIRMED',response_json=?,updated_at=? WHERE operation_id=?",AdditionalConfigContract.canonical(stored),now(),id);
@@ -59,6 +61,7 @@ final class AmvpReportReceiver {
    if(cursor==null)a.db.update("INSERT INTO amvp_operations(operation_id,owner_binding_id,route,idempotency_key,request_sha256,state,response_json,updated_at) VALUES(?,?,'RPT_STATE',?,?,'PROJECTED',?,?)",MemberAuth.id(),binding.id(),configId,MemberAuth.hash(configId),projectionJson,now());
    else a.db.update("UPDATE amvp_operations SET response_json=?,updated_at=? WHERE operation_id=?",projectionJson,now(),cursor.get("operation_id"));
   }
+  AmvpDeletedPolicyRelease.project(s,binding,report,deleted);
   return accepted;
  }
  private void save(Binding binding,ObjectNode report,String route,String state,ObjectNode response){s.auth.db.update("INSERT INTO amvp_operations(operation_id,owner_binding_id,route,idempotency_key,request_sha256,state,response_json,updated_at) VALUES(?,?,?,?,?,?,?,?)",report.path("report_id").asText(),binding.id(),route,report.path("report_id").asText(),report.path("payload_sha256").asText(),state,AdditionalConfigContract.canonical(response),now());}
@@ -75,7 +78,7 @@ final class AmvpReportReceiver {
   return switch(report.path("state").asText()){
    case "APPLIED" -> new AdditionalConfigStore.ApplyState("APPLIED",revision);
    case "FAILED","UNKNOWN" -> new AdditionalConfigStore.ApplyState("UNKNOWN",null);
-   case "RELEASED" -> new AdditionalConfigStore.ApplyState(!s.parse(config.get("value_json")).path("enabled").asBoolean()?"NOT_APPLICABLE":"UNKNOWN",null);
+   case "RELEASED" -> new AdditionalConfigStore.ApplyState(config.get("deleted_at")!=null||!s.parse(config.get("value_json")).path("enabled").asBoolean()?"NOT_APPLICABLE":"UNKNOWN",null);
    default -> pending;
   };
  }
