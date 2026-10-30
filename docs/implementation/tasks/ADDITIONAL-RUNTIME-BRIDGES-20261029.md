@@ -1,5 +1,35 @@
 # 추가 MVP · 정책 발행·이용시간 수신 경계
 
+## 야간 담당 경계 보완 — Web 수정·격리 TCP/DB PASS, 생산 producer BLOCKED (2026-10-30)
+
+- T0 **2026-10-30 22:43:22 KST**, 상한 **2026-10-31 04:43:22 KST**. 상한까지 시간을 채우지 않는다. 종료 시각/최종 SHA/PR/CI는 `.local/night-boundary-20261030/session.json`과 후속 PR에 기록한다.
+- 실제 원격 integration **8ba2502a9858c786066f0f2987dcfc604d8dccab** 확인 후 clean 기존 Worktree에서 `feature/additional-mvp-boundary-hardening`으로 분리. PR37/38 병합 포함이며 PR37 재구현/기존 리뷰 HEAD 변경 없음. PR34/38은 기반 모듈 통합이지 제품 실행 성공이 아니다.
+- 확인 당시 Content33 a6468b6, 36 4dd1a73, 39 c70b837, 40 ba4a7e2는 모두 미병합. 공개 설명과 경계만 참고하고 가져오거나 활성화하지 않았다. Core/Content/Shorts 파일·실제 설치·Credential·다른 작업의 index/프로세스는 보존했다.
+
+### 재현된 Web 결함과 최소 수정
+
+- `configWrite`의 후속 GET은 설치·version·value만 검사해서 **같은 원문/버전인 다른 config ID**를 저장 확인으로 반환했다. 이미 있는 `readConfig(executor,id)`를 재사용해 ID까지 결속한다. 기존 PUT/DELETE 요청·멱등 키·인증/CSRF·제품 api.ts는 유지한다.
+- active-only `listConfigs`가 tombstone을 받아들였고, terminal `next_cursor` 누락을 정상 종료로 처리했다. 빈 continuation도 한 번 더 요청했다. 명시적 terminal null·비어 있지 않은 continuation·active row·전체 cursor 중복 검사를 기존 삭제 목록과 같은 수준으로 유지한다. 실패를 빈 목록으로 바꾸지 않는다.
+- 변경 전 신규 반례 **4 FAIL / 기존10 PASS**, 변경 후 해당14 PASS. 전체 Web **298 PASS**, TypeScript/Vite build PASS. 이 반례는 응답 처리 단위시험이며 과거 Chrome 실패의 원인으로 소급 확정하지 않는다.
+
+### 격리 통합 경계 — 실제 TCP와 합성 제공자를 구분
+
+- 기존 `AmvpDeletionHistoryMysqlTest`와 빈 격리 MySQL runner를 재사용. **34 PASS = 기존30 + 추가4**, 실패/오류/스킵0. 추가 범위는 ①실제 loopback HTTP+DB 재연결 ②삭제 발행 실패 rollback ③해제 projection 저장 실패 rollback ④미지원 focus_ref 수신 거절이다.
+- test-source `AmvpLoopbackHttp`만 최소 Tomcat/MVC를 구성한다. 고정 의존성을 재사용하고 loopback·OS 동적 포트에만 bind, 요청 timeout, context/client 정상 종료. 생산 MemberAuth/controllers/services/SQL을 실제 `HttpClient` TCP로 호출한다. 제품 application bootstrap/메일/OAuth/Native는 실행하지 않는다. MockMvc 및 전체 배포 구성 시험과 구분한다.
+- 실제 TCP: 무인증401·잘못된 query400 → PUT version2·패키지 revision2 → report 수신 → usage COUNTED/잘못된 anchor QUARANTINED → DELETE202 → 응답을 버린 뒤 **같은 키 재전송의 동일 JSON 의미/operation** → PENDING→UNKNOWN→검증된 해제 상태 조회. MySQL JSON key order는 원문 바이트 동일 조건이 아니며 canonical/내용을 대조한다.
+- 시험 HTTP context 종료 후 새로운 DataSource/물리 연결·MemberAuth/transaction manager·HTTP context로 재조회하여 삭제 version3/해제 상태·원장·Receipt·usage2/report3 내용 보존을 확인했다. DB 프로세스 재시작/Chrome·Native 제품 재기동 시험은 아니다.
+- capability/effect/clock provider는 **SYNTHETIC**이다. 실제 생산 증거 생성·수집이 아니며 원래 `CAPABILITY_NOT_VERIFIED` 및 focus_ref 미지원 거절을 제거하지 않았다. 저장 실패 주입은 소유 fresh 시험 DB에만 제한했고 rollback 후 원장/명령을 임의 삭제하지 않았다.
+- 최종 DB `.local/amvp-mysql-4e59ab954740`, port33393·datadir/PID 확인 후 mysqladmin 정상 종료. 이전 실패 기록 `.local/amvp-mysql-d785504f7373`(시험 servlet 등록 누락), `8d161036f35e`(시험 JSON 필드 순서 가정)도 보존. 각 시험 서버 정상 종료. 종료된 포트33389의 PID0 관측은 프로세스 강제 종료 없이 새 비점유 시험 포트로 분리했다.
+- Server 단위 **81 PASS**·JAR verify/build PASS. RC2 **266 PASS의 기존 결과 재사용**: 이번 변경은 Web 전용 API 소비자·test-source·작업카드뿐이며 contracts/api.ts/Extension 및 Server 생산 코드는 기준과 동일함을 diff로 확인한다. 공통 계약 시험을 다시 실행한 것으로 보고하지 않는다.
+
+### 생산 연결 차단과 다음 정확한 작업
+
+- 최신 Core38 `AdditionalTimeRuntime`은 `measurementQuality:'UNKNOWN'`, `requiresLimitedSiteHold:true`를 유지하고 원시 관측을 journal에 저장한다. `ClockedUsageSegment`/anchor/day allocation/Server outbox 및 제품 Worker 진입점은 미연결이다. 관측을 COUNTED로 변환하거나 Core 역할을 대신 구현하지 않는다.
+- 생산 CapabilitySource·EvidenceVerifier·등록된 clock/재시작/day-carry·예약 Actor·CADENCE Authority/Receipt 전송이 공개된 이 기준에는 없다. 따라서 A의 실제 producer 연결은 BLOCKED이며 기본 성공 provider/중복 registry를 만들지 않는다.
+- Content는 trusted caller·frozen/native scope·issued operation·영속 Receipt/문서별 복원과 연결 대기다. 국소 OBSERVED를 RuntimeReport/APPLIED/RELEASED로 승격하지 않는다. Core/Content 소유 수정은 각 담당에게 남긴다.
+- ONCE actor 매핑, CADENCE 휴식/주기 표현, USG-02 NOT_RECEIVED hash는 공동 결정 대기. 확정 RC2 전체 승인을 다시 열지 않는다. 필요한 선택지는 아래 기존 카드 절을 재사용한다.
+- 다음 최소 개발: 실제 producer의 기준 SHA와 **원본 증거 조회/검증 인터페이스**를 받은 뒤 SITE_TIME 한 정책의 package→실제 effect→report→삭제/release→UI를 기존 adapter에 결속한다. 해당 구현 전에는 물리 Chrome 수용·제품 기능 완료를 선언하지 않는다. `MVP_FINAL_COMPLETE=false`.
+
 ## SITE_TIME 삭제·해제 UI 재진입 복원 — Web/Server PASS · 실제 효과 NOT_RUN (2026-10-30)
 
 - 김다훈 담당 후속. clean PR35 HEAD `bb865010d1eb7f972c16894022bbb823955cbf9f`를 보존하고 같은 Worktree의 별도 `feature/additional-mvp-deletion-history`에서 구현한다. PR35의 HEAD·리뷰·검증을 수정하지 않았다. 작업 중 통합 담당의 PR35 병합을 확인했으며 이 후속은 PR35에 의존한다. 직접 Merge/운영 DB·Core/Content·PR26·실패 설치/Chrome/Native는 변경하지 않는다.

@@ -4,12 +4,82 @@ import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
 import static kr.ac.kdu.focurve.MemberAuth.*;
 import static org.assertj.core.api.Assertions.*;
 
-/** Fresh MySQL + authenticated MockMvc. Inherits PR35 regressions; effect producer remains SYNTHETIC. */
+/** Fresh MySQL + authenticated MockMvc and loopback TCP. Effect producer remains SYNTHETIC. */
 @EnabledIfEnvironmentVariable(named="FOCURVE_AMVP_TEST_URL",matches="jdbc:mysql://127\\.0\\.0\\.1:[0-9]+/amvp_test_[a-f0-9]+.*")
 @EnabledIfEnvironmentVariable(named="FOCURVE_AMVP_RECEIPT_TESTS",matches="1")
 @EnabledIfEnvironmentVariable(named="FOCURVE_AMVP_RELEASE_TESTS",matches="1")
 @EnabledIfEnvironmentVariable(named="FOCURVE_AMVP_DELETION_HISTORY_TESTS",matches="1")
 class AmvpDeletionHistoryMysqlTest extends AmvpReleaseMysqlTest {
+ @Test void realLoopbackHttpReplaysLostDeleteAndPreservesEvidenceAcrossDatabaseReconnection()throws Exception{
+  var h=helper.fixture();var a=helper.base.auth;String policy=h.policy().path("policy_id").asText();
+  String token=new org.springframework.transaction.support.TransactionTemplate(helper.base.manager).execute(tx->a.mint(h.fixture().executor(),h.fixture().identity().user(),id(),1)).path("access_token").asText();
+  var source=helper.source(h.selection());
+  String historyPath="/api/v1/amvp/web/site-time-deletions?executor_id="+h.fixture().executor();
+  var clock=(AmvpUsageReceiver.ClockProof)(principal,binding,item,previous)->new AmvpUsageReceiver.VerifiedCapture(true,java.util.Map.of(policy,0L));
+  try(var http=new AmvpLoopbackHttp(a,helper.base.manager,h.publisher(),source,proof(h),clock)){
+   assertThat(http.send("GET",historyPath,null,null).statusCode()).isEqualTo(401);
+   assertThat(http.send("GET",historyPath+"&include_deleted=true",token,null).statusCode()).isEqualTo(400);
+   var update=http.send("PUT","/api/v1/amvp/configs/"+policy,token,a.obj("executor_id",h.fixture().executor(),"value",h.policy()).toString(),"If-Match","\"1\"","Idempotency-Key",id());
+   assertThat(update.statusCode()).isEqualTo(200);assertThat(a.json.readTree(update.body()).path("version").asInt()).isEqualTo(2);
+   var current=http.send("GET","/api/v1/amvp/runtime-packages/current?executor_id="+h.fixture().executor(),token,null);
+   assertThat(current.statusCode()).isEqualTo(200);assertThat(a.json.readTree(current.body()).path("runtime_revision").asInt()).isEqualTo(2);
+   var applied=http.send("POST","/api/v1/amvp/reports/batch",token,body(h,report(h,1,"APPLIED")).toString());
+   assertThat(applied.statusCode()).isEqualTo(200);assertThat(a.json.readTree(applied.body()).path("items").get(0).path("status").asText()).isEqualTo("ACCEPTED");
+   var segment=helper.segment(h,1,null);((com.fasterxml.jackson.databind.node.ObjectNode)segment.path("policy_attributions").get(0)).put("policy_version",2);AmvpBridgeSupport.seal(segment);
+   var usage=http.send("POST","/api/v1/amvp/usage/batch",token,helper.batch(h,segment).toString());
+   assertThat(usage.statusCode()).isEqualTo(200);assertThat(a.json.readTree(usage.body()).path("items").get(0).path("measurement_state").asText()).isEqualTo("COUNTED");
+   var unanchored=helper.segment(h,2,segment);((com.fasterxml.jackson.databind.node.ObjectNode)unanchored.path("policy_attributions").get(0)).put("policy_version",2);((com.fasterxml.jackson.databind.node.ObjectNode)unanchored.path("clock")).put("anchor_id",id());AmvpBridgeSupport.seal(unanchored);
+   var quarantine=http.send("POST","/api/v1/amvp/usage/batch",token,helper.batch(h,unanchored).toString());
+   assertThat(quarantine.statusCode()).isEqualTo(200);assertThat(a.json.readTree(quarantine.body()).path("items").get(0).path("measurement_state").asText()).isEqualTo("QUARANTINED");assertThat(helper.budget(h)).isEqualTo(5000);
+   String key=id();var deleted=http.send("DELETE","/api/v1/amvp/configs/"+policy,token,null,"If-Match","\"2\"","Idempotency-Key",key);
+   assertThat(deleted.statusCode()).isEqualTo(202); // Simulate losing this response: retry the immutable key.
+   var replay=http.send("DELETE","/api/v1/amvp/configs/"+policy,token,null,"If-Match","\"2\"","Idempotency-Key",key);
+   assertThat(replay.statusCode()).isEqualTo(202);assertThat(a.json.readTree(replay.body())).isEqualTo(a.json.readTree(deleted.body()));
+   var pending=http.send("GET",historyPath,token,null);assertThat(pending.statusCode()).isEqualTo(200);assertThat(a.json.readTree(pending.body()).path("items").get(0).path("runtime_apply_state").asText()).isEqualTo("PENDING");
+   var unknown=http.send("POST","/api/v1/amvp/reports/batch",token,body(h,report(h,2,"UNKNOWN")).toString());assertThat(unknown.statusCode()).isEqualTo(200);
+   assertThat(a.json.readTree(http.send("GET",historyPath,token,null).body()).path("items").get(0).path("runtime_apply_state").asText()).isEqualTo("UNKNOWN");
+   var release=report(h,3,"RELEASED");var accepted=http.send("POST","/api/v1/amvp/reports/batch",token,body(h,release).toString());
+   assertThat(accepted.statusCode()).isEqualTo(200);assertThat(a.json.readTree(accepted.body()).path("items").get(0).path("status").asText()).isEqualTo("ACCEPTED");
+   assertThat(a.json.readTree(http.send("GET",historyPath,token,null).body()).path("items").get(0).path("runtime_apply_state").asText()).isEqualTo("NOT_APPLICABLE");
+  }
+  String before=fingerprint(h);
+  var ds=new org.springframework.jdbc.datasource.DriverManagerDataSource(System.getenv("FOCURVE_AMVP_TEST_URL"),System.getenv("FOCURVE_AMVP_TEST_USER"),System.getenv("FOCURVE_AMVP_TEST_PASSWORD"));
+  try(var connection=ds.getConnection()){assertThat(connection.isValid(2)).isTrue();}
+  var db=new org.springframework.jdbc.core.JdbcTemplate(ds);var manager=new org.springframework.jdbc.datasource.DataSourceTransactionManager(ds);
+  var reopened=new MemberAuth(db,a.json,"https://localhost:33339",java.util.Base64.getEncoder().encodeToString(new byte[32]),"chrome-extension://aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa/popup/popup.html");
+  var publisher=new AmvpPolicyPublisher(reopened,source);
+  try(var http=new AmvpLoopbackHttp(reopened,manager,publisher,source,proof(h),clock)){
+   var restored=http.send("GET",historyPath,token,null);assertThat(restored.statusCode()).isEqualTo(200);
+   var item=a.json.readTree(restored.body()).path("items").get(0);assertThat(item.path("config_id").asText()).isEqualTo(policy);assertThat(item.path("version").asInt()).isEqualTo(3);assertThat(item.path("runtime_apply_state").asText()).isEqualTo("NOT_APPLICABLE");
+   assertThat(http.send("GET",historyPath+"&executor_id="+h.fixture().executor(),token,null).statusCode()).isEqualTo(400);
+  }
+  assertThat(fingerprint(h)).isEqualTo(before);assertThat(db.queryForObject("SELECT COUNT(*) FROM amvp_usage_segments WHERE owner_binding_id=?",Integer.class,h.fixture().binding())).isEqualTo(2);
+  assertThat(db.queryForObject("SELECT COUNT(*) FROM amvp_reports WHERE owner_binding_id=?",Integer.class,h.fixture().binding())).isEqualTo(3);
+ }
+ @Test void focusBoundUsageCannotBypassTheMissingFrozenFocusVerifier()throws Exception{
+  var h=helper.fixture();var segment=helper.segment(h,1,null);segment.set("focus_ref",helper.example("FocusAttachmentRequest").path("focus_ref"));AmvpBridgeSupport.seal(segment);
+  var result=helper.send(h,helper.receiver(h,true),segment).path("items").get(0);
+  assertThat(result.path("status").asText()).isEqualTo("REJECTED");assertThat(result.path("error_code").asText()).isEqualTo("UNSUPPORTED_CONTRACT");assertThat(helper.budget(h)).isZero();
+  assertThat(helper.base.db.queryForObject("SELECT COUNT(*) FROM amvp_usage_segments WHERE owner_binding_id=?",Integer.class,h.fixture().binding())).isZero();
+ }
+ @Test void failedDeletionPublicationRollsBackVersionsPackagesAndReceipts()throws Exception{
+  var h=helper.fixture();String before=fingerprint(h),pack=helper.current(h).toString();int versions=helper.base.db.queryForObject("SELECT COUNT(*) FROM amvp_config_versions WHERE config_id=?",Integer.class,h.policy().path("policy_id").asText());
+  var failing=new AdditionalConfigStore.Admission(){
+   public void verify(Identity i,String executor,String binding,boolean mutation){h.publisher().verify(i,executor,binding,mutation);}
+   public void publish(String binding,String id,long revision,com.fasterxml.jackson.databind.JsonNode value,boolean deleted){h.publisher().publish(binding,id,revision,value,deleted);throw new Failure(503,"STORE_UNCONFIRMED");}
+  };
+  assertThatThrownBy(()->new AdditionalConfigStore(helper.base.auth,helper.base.manager,failing).delete(h.fixture().identity(),h.policy().path("policy_id").asText(),"\"1\"",id())).hasMessage("STORE_UNCONFIRMED");
+  assertThat(fingerprint(h)).isEqualTo(before);assertThat(helper.current(h).toString()).isEqualTo(pack);
+  assertThat(helper.base.db.queryForObject("SELECT COUNT(*) FROM amvp_config_versions WHERE config_id=?",Integer.class,h.policy().path("policy_id").asText())).isEqualTo(versions);
+ }
+ @Test void failedReleaseProjectionDoesNotCommitReportOrClearTombstone()throws Exception{
+  var h=helper.fixture();delete(h);String before=fingerprint(h);var release=report(h,1,"RELEASED");
+  helper.base.db.execute("ALTER TABLE amvp_operations ADD CONSTRAINT amvp_deleted_rollback CHECK (NOT(owner_binding_id='"+h.fixture().binding()+"' AND route='RPT_STATE'))");
+  try{assertThatThrownBy(()->send(h,release)).isInstanceOf(org.springframework.dao.DataAccessException.class);}finally{helper.base.db.execute("ALTER TABLE amvp_operations DROP CHECK amvp_deleted_rollback");}
+  assertThat(fingerprint(h)).isEqualTo(before);assertThat(history(h).path("items").get(0).path("runtime_apply_state").asText()).isEqualTo("PENDING");
+  assertThat(helper.base.db.queryForObject("SELECT COUNT(*) FROM amvp_reports WHERE owner_binding_id=?",Integer.class,h.fixture().binding())).isZero();
+  assertThat(send(h,release).path("items").get(0).path("status").asText()).isEqualTo("ACCEPTED");
+ }
  AdditionalConfigStore store(AmvpRuntimeBridgeMysqlTest.Harness h){return new AdditionalConfigStore(helper.base.auth,helper.base.manager,h.publisher());}
  com.fasterxml.jackson.databind.node.ObjectNode history(AmvpRuntimeBridgeMysqlTest.Harness h){return store(h).deletions(h.fixture().identity(),h.fixture().executor(),null,100);}
  String add(AmvpRuntimeBridgeMysqlTest.Harness h){String id=id();var value=h.policy().deepCopy().put("policy_id",id);h.configs().put(h.fixture().identity(),id,helper.base.auth.obj("executor_id",h.fixture().executor(),"value",value),null,"*",id());return id;}
