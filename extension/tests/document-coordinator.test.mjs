@@ -42,6 +42,36 @@ test('stale readiness and history cannot replace the current document', () => {
   assert.equal(model.tabs.get(7).documentId, 'document-b');
 });
 
+test('recommitted former document starts unready when BEFORE was not observed', async () => {
+  const f=fixture(),first=doc({documentLifecycle:'active'});
+  await f.engine.event('COMMITTED',first);
+  await f.engine.event('READY',{...first,timeStamp:101});
+  await f.engine.event('COMMITTED',{...first,documentId:'document-b',timeStamp:102});
+  const previousChecks=f.calls.filter(c=>c[0]==='check').length;
+  const restored=await f.engine.event('COMMITTED',{...first,timeStamp:103});
+  assert.equal(restored.accepted,true);
+  assert.equal(restored.phase,'COMMITTED_NOT_READY','old READY cannot be reused on a new activation');
+  assert.equal(f.calls.filter(c=>c[0]==='check').length,previousChecks+1);
+  assert.equal(f.calls.filter(c=>c[0]==='ready').length,1,'COMMITTED must not fabricate READY');
+  assert.equal((await f.engine.event('READY',{...first,timeStamp:104})).accepted,true);
+  assert.equal(f.calls.filter(c=>c[0]==='ready').length,2);
+  assert.equal((await f.engine.event('READY',{...first,documentId:'document-b',timeStamp:105})).reason,'OTHER_DOCUMENT');
+});
+
+test('recommitted former document invalidates READY queued under its previous observer epoch', async () => {
+  const f=fixture();let release;f.core.ready=new Promise(resolve=>release=resolve);
+  const first=doc({documentLifecycle:'active'});
+  const committed=f.engine.event('COMMITTED',first);
+  const oldReady=f.engine.event('READY',{...first,timeStamp:101});
+  const other=f.engine.event('COMMITTED',{...first,documentId:'document-b',timeStamp:102});
+  const restored=f.engine.event('COMMITTED',{...first,timeStamp:103});
+  release();await Promise.all([committed,other]);
+  assert.equal((await oldReady).reason,'SUPERSEDED_DOCUMENT');
+  assert.equal((await restored).phase,'COMMITTED_NOT_READY');
+  assert.equal(f.calls.some(c=>c[0]==='ready'),false);
+  assert.equal((await f.engine.event('READY',{...first,timeStamp:104})).accepted,true);
+});
+
 for (const url of ['https://www.youtube.com/shorts/direct',
   'https://www.youtube.com/results?search_query=cats',
   'https://www.youtube.com/watch?v=general']) test('SPA re-evaluates without retiring document: ' + new URL(url).pathname, async () => {

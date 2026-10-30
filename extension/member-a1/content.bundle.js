@@ -5419,7 +5419,7 @@ class A0ShortsEffect {
    let deferred=false;
    try{if(initializing&&Date.now()>=end){startupTimedOut=true;this.stopEpoch();return;}const plan=this.plan();await saveLedger(plan);if(!this.running||epoch!==this.epoch)return;if(initializing&&Date.now()>=end){startupTimedOut=true;this.stopEpoch();return;}const durable=new Set(plan.map(x=>x.node_id)),result=this.control.apply({allowElement:element=>durable.has(this.nodeIds.get(element))});deferred=result.deferred>0;const evidence=this.evidence();if(!deferred&&result.status==='FAILED'&&evidence.route_kind==='SHORTS'&&evidence.viewer_count>0&&evidence.media_count>0){this.errors++;try{console.error('FOCURVE_SHORTS_APPLY_REJECTED',JSON.stringify(this.control.lastApplyFailure));}catch{}}}
    catch(error){console.error('FOCURVE_EFFECT_SCAN_FAILED',/^[A-Z_]{1,64}$/.test(error?.message??'')?error.message:'UNCONFIRMED');this.errors++;this.stopEpoch();if(!this.preserveOnFailure)this.control.release();}
-   finally{this.scanning=false;if(this.running&&epoch===this.epoch){this.observer.observe(this.document.documentElement,{childList:true,subtree:true,attributes:true,attributeFilter:['style','inert']});if(deferred)this.refresh();}}
+   finally{this.scanning=false;if(this.running&&epoch===this.epoch){this.observer.observe(this.document.documentElement,{childList:true,subtree:true,attributes:true,attributeFilter:['style','inert','href','is-shorts']});if(deferred)this.refresh();}}
   };
   this.refresh=()=>{this.queuedScans++;this.pending=this.pending.then(()=>{this.queuedScans--;return this.scan();}).catch(()=>{this.errors++;});};this.pending=Promise.resolve();
   this.observer.observe(this.document.documentElement,{childList:true,subtree:true});this.refresh();
@@ -5494,6 +5494,11 @@ class A1Content {
      let cap=this.client.domCapability;
      if(cap&&same(cap,confirmedDomCapability)){await this.client.read();cap=this.client.domCapability;if(cap&&same(cap,confirmedDomCapability))return;}
      const o=this.outcome(),needsDomConfirmation=!!cap&&!same(cap,confirmedDomCapability);
+     // A replacement player can be durably planned before its media arrives.
+     // Keep observing within the original Root grant; never confirm provisional
+     // evidence, renew its deadline, or suppress a real hide/pause/scan failure.
+     const e=o.effect_evidence;
+     if(needsDomConfirmation&&Date.now()<cap.deadline_at&&o.result_state==='UNCONFIRMED'&&valid(e,'effect')&&e.route_kind==='SHORTS'&&e.media_count===0&&e.paused_media_count===0&&e.hidden_viewer_count===e.viewer_count&&e.inert_viewer_count===e.viewer_count&&e.observer_ready&&e.scan_completed_without_error&&e.error_count===0)return;
      if(!force&&!needsDomConfirmation&&same(o,confirmedOutcome))return;
      await this.client.commit({kind:needsDomConfirmation?'DOM_CONFIRM':'CHECKPOINT',...(needsDomConfirmation?{dom_cap:cap}:{}),operation_id:p.operation_id,round_id:p.round_id,effect_evidence:o.effect_evidence,coverage_evidence:o.coverage_evidence,observed_at:instant()});confirmedOutcome=structuredClone(o);if(needsDomConfirmation)confirmedDomCapability=structuredClone(cap);}catch(error){if(this.p1Attested===true&&error?.message==='INACTIVE_SCOPE'&&error.cause?.source==='ROOT_SUMMARY'){this.inactive=true;this.document.defaultView.clearInterval(this.heartbeat);this.heartbeat=null;this.effect.stopEpoch();return;}console.error('FOCURVE_EFFECT_CHECKPOINT_FAILED',/^[A-Z_]{1,64}$/.test(error?.message??'')?error.message:'UNCONFIRMED');await this.invalidate('STORE_UNCONFIRMED');this.effect.stopEpoch();/* Preserve owned restrictions and ledger until scoped RELEASE; a failed checkpoint is not END authorization. */}};const refresh=this.effect.refresh;this.effect.refresh=()=>{refresh();this.effect.pending=this.effect.pending.then(this.checkpoint);};this.heartbeat=this.document.defaultView.setInterval(()=>{this.effect.pending=this.effect.pending.then(()=>this.checkpoint(true));},30000);}
   return response;
