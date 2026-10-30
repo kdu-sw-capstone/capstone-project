@@ -5,7 +5,7 @@ import { ClaimLedger } from '../content/claim-ledger.mjs';
 function fixture() {
   const values = new Map([['display', ['grid', '']], ['filter', ['brightness(.8)', '']]]);
   let denied = null, silent = null;
-  const document = { defaultView: { getComputedStyle: e => ({ display: e.style.getPropertyValue('display') }) } };
+  const document = { defaultView: { getComputedStyle: e => ({ display: e.style.getPropertyValue('display'), filter: e.style.getPropertyValue('filter') || 'none' }) } };
   const element = { ownerDocument: document, inert: false, isConnected: true, style: {
     getPropertyValue: name => values.get(name)?.[0] ?? '',
     getPropertyPriority: name => values.get(name)?.[1] ?? '',
@@ -110,4 +110,32 @@ test('cross-document nodes and empty claim identities cannot mutate effects', ()
   assert.throws(() => ledger.hide('owner', other.element), /FOREIGN_DOCUMENT/);
   assert.throws(() => ledger.hide('', element), /INVALID_CLAIM_ID/);
   assert.equal(element.style.getPropertyValue('display'), 'grid');
+});
+
+test('unconfirmed computed grayscale returns false and preserves cleanup ownership', () => {
+  const { document, element, ledger } = fixture();
+  document.defaultView.getComputedStyle = () => ({ filter: 'none' });
+  assert.equal(ledger.grayscale('gray', element), false);
+  assert.equal(ledger.inspect('gray').remaining_targets, 1);
+  assert.equal(ledger.release('gray').restored, true);
+  assert.equal(element.style.getPropertyValue('filter'), 'brightness(.8)');
+});
+
+test('foreign document prevents both restoration and reconciliation of shared claims', () => {
+  const { document, element, ledger } = fixture();
+  ledger.hide('A', element); ledger.hide('B', element);
+  element.ownerDocument = fixture().document;
+  element.style.setProperty('display', 'flex'); element.inert = false;
+  const failed = ledger.release('A');
+  assert.equal(failed.restored, false);
+  assert.equal(failed.error_count, 2);
+  assert.equal(element.style.getPropertyValue('display'), 'flex');
+  assert.equal(element.inert, false);
+  assert.equal(ledger.inspect('A').remaining_properties, 2);
+  // Explicitly returning to the original document makes cleanup eligible again.
+  element.ownerDocument = document;
+  assert.equal(ledger.release('A').restored, true);
+  assert.equal(element.style.getPropertyValue('display'), 'none');
+  assert.equal(ledger.release('B').restored, true);
+  assert.equal(element.style.getPropertyValue('display'), 'flex');
 });

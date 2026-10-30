@@ -21,6 +21,56 @@ async function pageFor(t) {
   await page.waitForFunction(() => document.querySelector('#result').textContent.includes('remaining_targets'));
   return page;
 }
+
+for (const [variable, expected] of [['none', 'grayscale(1)'], ['brightness(.8)', 'brightness(0.8) grayscale(1)']]) {
+  test(`Chrome regression: variable filter ${variable} has a computed grayscale effect and restores declaration`, async t => {
+    const page = await pageFor(t);
+    const result = await page.evaluate(async variable => {
+      const { ClaimLedger } = await import('/content/claim-ledger.mjs');
+      const ledger = new ClaimLedger(document), element = document.querySelector('#target');
+      element.style.setProperty('--page-filter', variable);
+      element.style.setProperty('filter', 'var(--page-filter)', 'important');
+      const verified = ledger.grayscale('A', element);
+      const computed = getComputedStyle(element).filter;
+      ledger.grayscale('B', element); ledger.release('A');
+      const shared = getComputedStyle(element).filter;
+      const cleanup = ledger.release('B');
+      return { verified, computed, shared, cleanup, original: element.style.filter,
+        priority: element.style.getPropertyPriority('filter') };
+    }, variable);
+    assert.equal(result.verified, true);
+    assert.equal(result.computed, expected);
+    assert.equal(result.shared, expected);
+    assert.equal(result.cleanup.restored, true);
+    assert.equal(result.original, 'var(--page-filter)');
+    assert.equal(result.priority, 'important');
+  });
+}
+
+for (const suspended of [false, true]) {
+  test(`Chrome regression: adopted node preserves new document effects and old cleanup debt (suspended=${suspended})`, async t => {
+    const page = await pageFor(t);
+    const result = await page.evaluate(async suspended => {
+      const { ClaimLedger } = await import('/content/claim-ledger.mjs');
+      const element = document.querySelector('#target'), old = new ClaimLedger(document);
+      old.hide('old', element);
+      const frame = document.createElement('iframe'); document.body.append(frame);
+      const nextDocument = frame.contentDocument;
+      nextDocument.body.append(nextDocument.adoptNode(element));
+      const next = new ClaimLedger(nextDocument); next.hide('next', element);
+      if (suspended) old.suspend();
+      const cleanup = old.release('old');
+      return { cleanup, remaining: old.inspect('old'),
+        display: nextDocument.defaultView.getComputedStyle(element).display, inert: element.inert,
+        next: next.inspect('next') };
+    }, suspended);
+    assert.equal(result.cleanup.restored, false);
+    assert.equal(result.remaining.remaining_targets, 1);
+    assert.ok(result.cleanup.error_count > 0);
+    assert.equal(result.display, 'none'); assert.equal(result.inert, true);
+    assert.equal(result.next.remaining_targets, 1);
+  });
+}
 test('Chrome synthetic DOM: one release preserves another claim and final cleanup restores input', async t => {
   const page = await pageFor(t);
   await page.click('#hide-a'); await page.click('#hide-b'); await page.click('#release-a');

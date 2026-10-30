@@ -28,22 +28,35 @@ export class ClaimLedger {
     else element.style.removeProperty(property);
   }
 
-  #restricted(property, original) {
+  #restricted(property, original, filterBase) {
     if (property === 'inert') return { value: true };
     if (property === 'display') return { value: 'none', priority: 'important' };
-    const base = original.value.trim();
+    const base = filterBase.trim();
     return { value: `${base && base !== 'none' ? base + ' ' : ''}grayscale(1)`, priority: 'important' };
   }
 
   #apply(element, property, entry) {
+    if (element.ownerDocument !== this.#document) return false;
     const current = this.#read(element, property);
     // A page edit is the new baseline; never adopt another claim's owned value.
-    if (entry.written && !this.#equal(current, entry.written)) entry.original = current;
-    const next = this.#restricted(property, entry.original);
+    const changed = entry.written && !this.#equal(current, entry.written);
+    if (changed) entry.original = current;
+    // Preserve the original declaration (including variables) for cleanup, but
+    // compose from its resolved value so `var(--x) -> none` stays valid CSS.
+    // Reuse this baseline while owned to avoid accumulating our own grayscale.
+    if (property === 'filter' && (!entry.written || changed)) {
+      entry.filterBase = this.#document.defaultView.getComputedStyle(element).filter;
+      if (typeof entry.filterBase !== 'string' || !entry.filterBase) return false;
+    }
+    const next = this.#restricted(property, entry.original, entry.filterBase);
     // Record intended ownership before the setter: a setter can mutate then throw.
     entry.written = next;
     if (!this.#equal(current, next)) this.#write(element, property, next);
-    return this.#equal(this.#read(element, property), next);
+    const written = this.#equal(this.#read(element, property), next);
+    if (property === 'filter') {
+      return written && /(?:^|\s)grayscale\(1\)$/.test(this.#document.defaultView.getComputedStyle(element).filter);
+    }
+    return written;
   }
 
   #acquire(claim, element, properties) {
@@ -80,6 +93,9 @@ export class ClaimLedger {
     for (const [element, entries] of this.#entries) {
       for (const [property, entry] of entries) {
         if (!entry.claims.has(claim)) continue;
+        // Adoption is not detachment or GONE. No authority to mutate the new
+        // document, including when reasserting another old claim. Retain debt.
+        if (element.ownerDocument !== this.#document) { errors++; continue; }
         try {
           if (entry.claims.size > 1) {
             // Reconcile a page edit while the other owner still needs protection.
