@@ -6,6 +6,7 @@ import TimeRuleEditor,{WhenEditor,type TimeWindow,type RuleWhen} from "./TimeRul
 import {internalFeatures} from "./additionalFeatures";
 import {configWrite,configDelete,listConfigs,type ConfigRecord,type ConfigValue} from "./additionalConfigApi";
 import RuntimeDeliveryPanel from "./RuntimeDeliveryPanel";
+import DailyUsagePanel from "./DailyUsagePanel";
 import {configDelivery} from "./runtimeDeliveryState";
 
 type Kind=ConfigValue["kind"];
@@ -61,6 +62,7 @@ export default function AdditionalSettings({installations}:{installations:{execu
    {confirmDelete&&<div role="group" aria-label="설정 삭제 확인"><p>설정 삭제를 요청할까요? 실제 제한 해제 확인까지 완료로 표시하지 않습니다.</p><button disabled={busy} onClick={()=>{setBusy(true);setError("");const current=generation.current;deletePending.current??=configDelete(confirmDelete);void deletePending.current.send().then(()=>{if(current===generation.current){setNotice("삭제 요청을 저장했습니다. 실제 제한 해제는 확인 대기 중입니다.");setRows(old=>old.filter(r=>r.config_id!==confirmDelete.config_id));setConfirmDelete(null);deletePending.current=null;}}).catch(e=>{if(current===generation.current)setError(message(e));}).finally(()=>{if(current===generation.current)setBusy(false);});}}>삭제 요청 확인</button><button disabled={busy} onClick={()=>{deletePending.current=null;setConfirmDelete(null);}}>취소</button></div>}
   </Panel>
   {loaded&&executor&&<RuntimeDeliveryPanel executor={executor} records={rows} onRefresh={()=>setRetry(n=>n+1)} />}
+  {loaded&&executor&&<DailyUsagePanel executor={executor} records={rows} />}
   {editor&&value&&<Panel title={names[value.kind]+" 편집"}><form onSubmit={e=>{e.preventDefault();void save();}}><fieldset disabled={busy}>
    {value.kind!=="CONTENT"&&<Toggle title="이 설정 사용" checked={Boolean(value.enabled)} onChange={enabled=>change({enabled})}/>}
    {value.kind==="CONTENT"&&<>

@@ -1,0 +1,15 @@
+import {request,UiError} from "./api";
+
+export type DailyUsage={policy_id:string;executor_id:string;day_start_at:string;day_end_at:string;timezone:string;timezone_version:number;day_kind:"NORMAL"|"TRANSITION";confirmed_ms:number|null;budget_carry_debit_ms:number;remaining_ms:number|null;daily_limit_ms:number|null;active_reasons:string[];enforcement_state:"PENDING"|"APPLIED"|"UNKNOWN"|"UNLIMITED";next_usable_at:string|null;next_usable_status:"KNOWN"|"UNKNOWN"|"SETTINGS_REQUIRED";quality:"COMPLETE"|"PARTIAL"|"UNKNOWN"|"NOT_COLLECTED"|"NO_DATA";as_of:string};
+const uuid=/^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/;
+const instant=(v:unknown):v is string=>typeof v==="string"&&/^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d\.\d{3}Z$/.test(v)&&Number.isFinite(Date.parse(v))&&new Date(v).toISOString()===v;
+const amount=(v:unknown)=>typeof v==="number"&&Number.isSafeInteger(v)&&v>=0;
+const nullableAmount=(v:unknown)=>v===null||amount(v);
+export async function dailyUsage(executor:string,policy:string,date:string,signal?:AbortSignal):Promise<DailyUsage>{
+ if(!uuid.test(executor)||!uuid.test(policy)||!/^\d{4}-\d\d-\d\d$/.test(date)||!Number.isFinite(Date.parse(date+"T00:00:00.000Z"))||new Date(date+"T00:00:00.000Z").toISOString().slice(0,10)!==date)throw new UiError("설치·정책·조회 날짜를 확인하세요.");
+ const query=new URLSearchParams({executor_id:executor,date});
+ const value=await request<DailyUsage>("/amvp/site-time-policies/"+policy+"/usage?"+query,"GET",undefined,{signal});
+ let zoneValid=false;try{if(typeof value?.timezone==="string"&&instant(value.day_start_at)){const parts=new Intl.DateTimeFormat("en-US",{timeZone:value.timezone,year:"numeric",month:"2-digit",day:"2-digit"}).formatToParts(new Date(value.day_start_at));const field=(name:string)=>parts.find(p=>p.type===name)?.value;zoneValid=`${field("year")}-${field("month")}-${field("day")}`===date;}}catch{/* Reject invalid capture timezone/date. */}
+ if(!value||value.executor_id!==executor||value.policy_id!==policy||!instant(value.day_start_at)||!instant(value.day_end_at)||value.day_end_at<=value.day_start_at||!instant(value.as_of)||!zoneValid||!amount(value.timezone_version)||value.timezone_version<1||!["NORMAL","TRANSITION"].includes(value.day_kind)||!nullableAmount(value.confirmed_ms)||!amount(value.budget_carry_debit_ms)||!nullableAmount(value.remaining_ms)||!nullableAmount(value.daily_limit_ms)||(value.daily_limit_ms!==null&&(value.daily_limit_ms<60000||value.daily_limit_ms>86400000))||!Array.isArray(value.active_reasons)||value.active_reasons.length>10||value.active_reasons.some(r=>typeof r!=="string"||r.length<1||r.length>40)||new Set(value.active_reasons).size!==value.active_reasons.length||!["PENDING","APPLIED","UNKNOWN","UNLIMITED"].includes(value.enforcement_state)||!["COMPLETE","PARTIAL","UNKNOWN","NOT_COLLECTED","NO_DATA"].includes(value.quality)||!["KNOWN","UNKNOWN","SETTINGS_REQUIRED"].includes(value.next_usable_status)||(value.next_usable_at!==null&&!instant(value.next_usable_at)))throw new UiError("일일 이용시간의 설치·정책·측정 근거를 확인하지 못했습니다.");
+ return value;
+}
