@@ -1,0 +1,35 @@
+name: Additional Core time observation modules
+on:
+  pull_request:
+    branches: [integration/additional-mvp-20261029]
+    paths:
+      - 'extension/src/additional-idle-observer.js'
+      - 'extension/src/additional-foreground-observer.js'
+      - 'extension/src/additional-observation-journal.js'
+      - 'extension/src/additional-time-runtime.js'
+      - 'extension/tests/additional-*.test.mjs'
+      - 'extension/a1/contract.mjs'
+      - 'extension/member-a1/db.mjs'
+      - 'extension/package*.json'
+      - '.github/workflows/additional-core-time.yml'
+permissions:
+  contents: read
+jobs:
+  time-observation:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-24.04, windows-latest]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38
+        with:
+          node-version: '24.19.0'
+      - run: npm ci --ignore-scripts --no-audit --no-fund
+        working-directory: extension
+      - run: node --test extension/tests/additional-idle-observer.test.mjs extension/tests/additional-foreground-observer.test.mjs extension/tests/additional-observation-journal.test.mjs extension/tests/additional-time-runtime.test.mjs
+      - run: node --test contracts/additional-mvp/rc1/tests/legacy-boundary.test.mjs
+      - run: npm run check
+        working-directory: extension
