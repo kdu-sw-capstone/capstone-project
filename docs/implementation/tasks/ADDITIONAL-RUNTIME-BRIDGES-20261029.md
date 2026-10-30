@@ -1,5 +1,21 @@
 # 추가 MVP · 정책 발행·이용시간 수신 경계
 
+## 예약 actor 연결 후속 — Web·Server 구현 PASS / 실제 Core·ONCE BLOCKED (2026-10-30)
+
+- 담당 김다훈 Web·Server·DB. clean PR29 HEAD `974175c5832a63ab018aa0f07f3203909fde4a37`를 재사용해 같은 Worktree의 `feature/additional-mvp-schedule-bridge`에서 구현했다. PR27~30 브랜치 HEAD는 변경하지 않으며 PR30 검사는 별도 리뷰/병합 상태를 유지한다. Draft 대상은 `integration/additional-mvp-20261029`; 선행 병합 순서는 PR27 → PR28 → PR29 → 이 후속이다. 이번 변경만의 diff는 `974175c..후속HEAD`다.
+- **범위 PARTIAL:** RC2 `legacy_adapters.focus_schedule`는 WEEKLY만 기존 actor 경로에 매핑하고 ONCE는 `REVIEW_PENDING`이다. ONCE를 주간 예약으로 변환하지 않고 `UNSUPPORTED_CONTRACT`로 원자 거절한다. 공유 계약 변경·담당 합의 없이 일회성 실행을 활성화하지 않는다. 일회성 전체 연결은 미완료다.
+- PR25 AdditionalConfigStore의 CRUD/버전/멱등/트랜잭션을 그대로 사용한다. 새 AmvpScheduleBridge admission이 FOCUS_SCHEDULE 저장 시 같은 트랜잭션의 단일 legacy `schedules` 행에 전달한다. SITE_TIME/CONTENT는 기존 publisher로 위임하고 CADENCE carrier를 추가하지 않는다. RuntimePackage/outbox에 예약을 넣거나 canonical CFG 사본을 별도 실행하지 않는다.
+- 기존 actor 경로 `GET /api/v1/schedules?executor_id=…`, `POST /api/v1/schedule-occurrences/claim`(기존 3필드), `GET /api/v1/schedules/{id}/occurrences`를 구현했다. 조회는 명시한 설치/현재 binding 소유권을 검사하며 현재 구현의 상한은 100행이다(초과 시 불완전 성공 대신 거절). 삭제된 예약도 동일 소유자의 명시적 재조회에서 확인할 수 있다. 기존 CRUD를 다시 만들지 않는다.
+- claim은 occurrence ID를 내부 request ID로 사용한다. UNIQUE(schedule_id,scheduled_start_at), 동시 설치/소유자 잠금, 동일 version, DST gap 미이동/earlier fold, 고정 UTC end, 잔여 60초 경계를 검사한다. 활성 집중은 WAITING_CONFLICT, 만료는 SKIPPED/EXPIRED. 편집·삭제는 미시작 건만 취소하고 발행된 세션·원래 version/end를 보존한다. 편집 후 같은 발생의 옛 세션을 새 version 요청에 재결속하지 않는다.
+- `AmvpScheduleBridge.Actor.enqueue/verifyReport`는 **서버 내부 adapter 경계**이며 새 Wire 계약이 아니다. enqueue는 같은 DB 트랜잭션 안에서 기존 예약 actor용 세션·명령을 영속화해야 한다(외부 효과/네트워크 호출 금지). 실제 서버 세션/소유자/고정 종료/APPLY 명령/잠금을 확인한다. 생산 Actor/verifier bean은 제공하지 않으므로 미연결 claim은 503이며 가짜 실행을 생성하지 않는다. 원격 Core 브랜치 HEAD `9868a0f5914d7a173c102fc198a9a908b043381f`를 확인했으며, 미공개 Core 작업까지 없다고 단정하지 않는다.
+- 결과 수신은 기존 D06 실행 보고 HTTP/불변 execution_reports를 재사용한다. 조회 projection에서 원래 occurrence·version·binding·session/command/revision·payload hash와 주입된 실제 효과 검증을 확인한다. 클라이언트 APPLIED/HTTP200만으로 RUNNING을 만들지 않는다. RELEASED는 별도 RELEASE 명령·rollback proof·ENDED·해제 시각·잠금 0 확인이 필요하다. 실패/UNKNOWN 보고는 보존하고, 이후 해제 확인과 과거 실행 미확정을 별도로 표시한다. Core 최종 상태·기한·기존 원장을 변경하지 않는다.
+- 기존 AdditionalSettings/Panel/Light·Dark 스타일을 재사용한 ScheduleExecutionPanel과 엄격한 조회 client를 추가했다. 저장/요청 대기/실제 적용/실패/UNKNOWN/해제 확인, 이전 version, 삭제된 예약을 구분한다. 설치/version 전환 시 늦은 응답을 폐기한다. UI는 claim/START/END를 호출하지 않는다.
+- 새 검증: Web 전체 **266 PASS**, 마지막 변경 영향 **11 PASS**, TypeScript·Vite build PASS. Server 단위 **81 PASS**, 예약 격리 MySQL·Bearer HTTP **16 PASS** + 시간 규칙 단위 **3 PASS**(3건은 Server81에 포함). 동시 claim·소유권·토큰 폐기·버전/ACK 불일치·정확한 60초·DST fold/gap·실패 뒤 지연 성공·별도 해제·잠금 잔존·삭제 후 실행 보존·서버 객체 재생성 조회를 검증했다. actor/effect/clock 입력은 **SYNTHETIC**이며 실제 Core 연동 성공이 아니다.
+- 최초 새 SQL 열 이름 오참조 실패는 `.local/amvp-mysql-11ca63e4c23a/tests.log`에 보존했다. 기존 execution_commands의 실제 PK `id`로 최소 수정했고 이후 독립 DB에서 재검증했다. 최종 DB/정상 종료 증거와 source SHA는 `.local/schedule-verification-20261030/result.json`, unit/Web 로그는 같은 폴더다. 전용 CI `additional-schedule-bridge.yml`이 분리된 빈 MySQL에서 재현한다.
+- 재현: 기존 `scripts/test-additional-config-mysql.ps1` + `FOCURVE_AMVP_SCHEDULE_TESTS=1`, `-Tests 'AmvpScheduleMysqlTest,AmvpScheduleBridgeTest'`. 단위 verify에서는 모든 MysqlTest를 제외한다. opt-in DDL은 `runtime-server/src/main/resources/amvp/schedule-bridge.sql`이며 자동 초기화·numbered migration·운영 적용은 없다. 기존 RC2 runtime schema가 선행해야 하고 실제 운영 반영은 별도다.
+- 보존/대기: `frontend/src/api.ts`·legacy-lock·RC2·Core/Content·Shorts·실패 설치·Credential·운영 DB 변경 없음. PR30 결과를 수정/병합하지 않는다. 기존 contract 전체 PASS는 그 후보의 결과이며 현재 제품 후보의 실제 수용으로 승격하지 않는다. 실제 Core actor/검증 provider·ONCE 공동 계약·Chrome/Native·실제 END/DOM/DNR/재기동·Figma 시각 수용은 **BLOCKED/NOT_RUN**, `MVP_FINAL_COMPLETE=false`.
+
+
 ## DAY-01 독립 후속 — 구현·격리 검증 완료, 실제 Core 연결 대기 (2026-10-30)
 
 - 담당 김다훈 Web·Server·DB, 계약 RC2 DAY-01/DailyUsage/UsageDay. PR28 head642b87704f8eaaf01d4b9d0b483b33390d9b9b2d를 재사용하고 같은 clean Worktree에서 codex/additional-mvp-daily-usage로 분리했다. PR27/28 브랜치·리뷰 범위는 변경하지 않는다.
