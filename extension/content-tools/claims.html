@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="ko">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>추가 Content · 공유 제한/복원 시험</title>
+<style>
+body{font:17px/1.7 system-ui,sans-serif;max-width:880px;margin:32px auto;padding:0 20px;color:#17212b}
+button{font:inherit;padding:8px 14px;margin:4px;border:1px solid #8092a1;border-radius:6px;background:#f6f8fa;cursor:pointer}
+#target{display:grid;background:linear-gradient(120deg,#ff785a,#dff15a,#48b5ee);padding:24px;margin:20px 0;border-radius:12px}
+#target button{width:max-content}pre{background:#f1f4f7;padding:16px;white-space:pre-wrap;overflow-wrap:anywhere}
+label{display:block;margin:8px 0}.hint{color:#4f5d69}
+</style>
+<h1>공유 제한과 원상 복원 확인</h1>
+<p class="hint">합성 화면의 독립 DOM 시험입니다. 실제 YouTube·Instagram·Core 연결이나 16개 옵션 전체 완료를 뜻하지 않습니다.</p>
+<section aria-label="가리기 시험">
+  <h2>1. 두 제한이 같은 영역을 가릴 때</h2>
+  <button id="hide-a">A 제한 적용</button><button id="hide-b">B 제한 적용</button>
+  <button id="release-a">A만 해제</button><button id="release-b">B만 해제</button>
+</section>
+<section aria-label="흑백과 페이지 변경 시험">
+  <h2>2. 흑백과 페이지의 스타일 변경</h2>
+  <button id="gray">흑백 적용</button><button id="ungray">흑백 해제</button>
+  <button id="page-change">페이지가 배치 변경</button><button id="rescan">현재 제한 재확인</button>
+  <button id="reset">처음 상태로</button>
+</section>
+<div id="target" style="filter:brightness(.9)">
+  <strong>색상과 버튼이 있는 시험 영역</strong>
+  <button id="target-button">일반 버튼</button><span id="click-count">클릭 0회</span>
+</div>
+<p id="action" role="status">준비됨</p><pre id="result"></pre>
+<h2>직접 확인 체크리스트</h2>
+<label><input type="checkbox"> A → B 적용 → A만 해제하면 영역이 계속 가려진다.</label>
+<label><input type="checkbox"> B까지 해제하면 영역과 일반 버튼이 다시 동작한다.</label>
+<label><input type="checkbox"> 흑백 적용 → A 적용 → A 해제하면 영역은 보이고 흑백은 유지된다.</label>
+<label><input type="checkbox"> 흑백 해제 후 원래 색상과 밝기가 돌아온다.</label>
+<label><input type="checkbox"> A 적용 → 페이지가 배치 변경 → 재확인 → A 해제하면 배치가 flex로 남는다.</label>
+<script type="module" src="claims.mjs"></script>
+</html>

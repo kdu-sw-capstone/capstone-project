@@ -14,7 +14,7 @@ async function fixture(t, html, path = '/watch?v=test', host = 'www.youtube.com'
   t.after(() => context.close());
   await context.route('**/*', async route => {
     const url = new URL(route.request().url());
-    if (/^\/content\/[a-z-]+\.mjs$/.test(url.pathname)) {
+    if (/^\/(content\/[a-z-]+\.mjs|ui\/restriction\.mjs)$/.test(url.pathname)) {
       await route.fulfill({ contentType: 'text/javascript', body: await readFile(new URL('..' + url.pathname, import.meta.url), 'utf8') });
     } else await route.fulfill({ contentType: 'text/html; charset=utf-8', body: html });
   });
