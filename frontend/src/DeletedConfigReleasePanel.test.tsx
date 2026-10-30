@@ -1,0 +1,13 @@
+import {render,screen,fireEvent,cleanup,waitFor,act} from "@testing-library/react";
+import {afterEach,it,expect,vi} from "vitest";
+import DeletedConfigReleasePanel from "./DeletedConfigReleasePanel";
+import {readConfig,type ConfigRecord} from "./additionalConfigApi";
+import {configDelivery} from "./runtimeDeliveryState";
+vi.mock("./additionalConfigApi",()=>({readConfig:vi.fn()}));
+const executor=crypto.randomUUID(),id=crypto.randomUUID(),targets=[{executor,id,previousVersion:1}];
+const row=(state:ConfigRecord['runtime_apply_state']):ConfigRecord=>({config_id:id,executor_id:executor,version:2,deleted_at:"2026-10-30T00:00:00.000Z",updated_at:"2026-10-30T00:00:00.000Z",saved_state:"SAVED",runtime_apply_state:state,saved_runtime_revision:2,applied_runtime_revision:null,next_focus_revision:2,value:{kind:"SITE_TIME",enabled:true}});
+afterEach(()=>{cleanup();vi.mocked(readConfig).mockReset();});
+it("never promotes a deleted APPLIED row or Content absence to release success",()=>{expect(configDelivery(row("APPLIED")).state).toBe("UNKNOWN");expect(configDelivery({...row("NOT_APPLICABLE"),value:{kind:"CONTENT"}}).state).toBe("PENDING");});
+it("keeps an accepted deletion pending and confirms release only after a new verified read",async()=>{vi.mocked(readConfig).mockResolvedValue(row("PENDING"));render(<DeletedConfigReleasePanel executor={executor} targets={targets}/>);await screen.findByText(/실제 해제 확인 대기/);expect(screen.queryByText(/실제 해제 확인됨/)).not.toBeInTheDocument();vi.mocked(readConfig).mockResolvedValue(row("NOT_APPLICABLE"));fireEvent.click(screen.getByRole("button",{name:"삭제 요청 해제 상태 다시 조회"}));await screen.findByText(/실제 해제 확인됨/);expect(readConfig).toHaveBeenCalledTimes(2);});
+it("keeps UNKNOWN and rejects the wrong tombstone version",async()=>{vi.mocked(readConfig).mockResolvedValue(row("UNKNOWN"));render(<DeletedConfigReleasePanel executor={executor} targets={targets}/>);await screen.findByText(/해제 결과 미확인/);vi.mocked(readConfig).mockResolvedValue({...row("NOT_APPLICABLE"),version:3});fireEvent.click(screen.getByRole("button",{name:"삭제 요청 해제 상태 다시 조회"}));expect(await screen.findByRole("alert")).toHaveTextContent("버전");expect(screen.queryByText(/실제 해제 확인됨/)).not.toBeInTheDocument();});
+it("drops late previous-installation responses",async()=>{let resolve!:(r:ConfigRecord)=>void;vi.mocked(readConfig).mockImplementationOnce(()=>new Promise(r=>{resolve=r;}));const {rerender}=render(<DeletedConfigReleasePanel executor={executor} targets={targets}/>);await waitFor(()=>expect(readConfig).toHaveBeenCalledOnce());rerender(<DeletedConfigReleasePanel executor={crypto.randomUUID()} targets={targets}/>);await act(async()=>resolve(row("NOT_APPLICABLE")));expect(screen.queryByText(/실제 해제 확인됨/)).not.toBeInTheDocument();});

@@ -1,11 +1,13 @@
 import {beforeEach,expect,it,vi} from "vitest";
 import {request} from "./api";
-import {listConfigs,configWrite,configDelete,type ConfigRecord,type ConfigValue} from "./additionalConfigApi";
+import {listConfigs,readConfig,configWrite,configDelete,type ConfigRecord,type ConfigValue} from "./additionalConfigApi";
 vi.mock("./api",()=>({request:vi.fn(),UiError:class extends Error{}}));
 const executor="00000000-0000-4000-8000-000000000001",id="00000000-0000-4000-8000-000000000002";
 const value:ConfigValue={kind:"CADENCE",enabled:false,focus_minutes:25,rest_minutes:5,cycles:4,auto_start_next:false,rest_clock:"ELAPSED_WALL_CLOCK",missed_focus:"WAIT_USER",deadline_at:null};
 const row:ConfigRecord={config_id:id,executor_id:executor,version:1,value,deleted_at:null,saved_state:"SAVED",runtime_apply_state:"PENDING",saved_runtime_revision:1,applied_runtime_revision:null,next_focus_revision:1,updated_at:"2026-10-29T00:00:00.000Z"};
 beforeEach(()=>{vi.mocked(request).mockReset();});
+it("reads a known tombstone using the existing read-only route",async()=>{const tombstone={...row,version:2,deleted_at:"2026-10-30T00:00:00.000Z"};vi.mocked(request).mockResolvedValue(tombstone);expect(await readConfig(executor,id)).toEqual(tombstone);expect(vi.mocked(request).mock.calls[0]).toEqual([`/amvp/configs/${id}`,"GET",undefined,{signal:undefined}]);});
+it("rejects another config or installation in a tombstone read",async()=>{vi.mocked(request).mockResolvedValueOnce({...row,config_id:executor}).mockResolvedValueOnce({...row,executor_id:id});await expect(readConfig(executor,id)).rejects.toThrow();await expect(readConfig(executor,id)).rejects.toThrow();});
 it("uses create precondition and immutable payload/key for explicit retry",async()=>{
  const draft=structuredClone(value),write=configWrite(executor,id,draft);draft.cycles=9;
  vi.mocked(request).mockRejectedValueOnce(new Error("response lost")).mockResolvedValueOnce(row).mockResolvedValueOnce(row);

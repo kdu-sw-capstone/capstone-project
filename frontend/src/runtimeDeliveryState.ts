@@ -3,6 +3,11 @@ import type {ConfigRecord} from "./additionalConfigApi";
 export type DeliveryState={state:"PENDING"|"APPLIED"|"UNKNOWN"|"UNSUPPORTED"|"NOT_APPLICABLE";label:string};
 /** Server validates the exact config version; a later package may carry that unchanged version. */
 export function configDelivery(row:ConfigRecord):DeliveryState {
+ if(row.deleted_at!==null){
+  if(row.value.kind==="SITE_TIME"&&row.runtime_apply_state==="NOT_APPLICABLE")return {state:"NOT_APPLICABLE",label:"삭제된 설정의 실제 해제 확인됨"};
+  if(row.runtime_apply_state==="UNKNOWN"||row.runtime_apply_state==="APPLIED")return {state:"UNKNOWN",label:"삭제 요청 보존 · 해제 결과 미확인"};
+  return {state:"PENDING",label:row.value.kind==="SITE_TIME"?"설정 삭제됨 · 실제 해제 확인 대기":"설정 삭제됨 · 기존 집중의 고정 설정·복원 의무는 별도 확인"};
+ }
  if(row.runtime_apply_state==="APPLIED")return row.applied_runtime_revision!==null&&row.applied_runtime_revision>=row.saved_runtime_revision
   ?{state:"APPLIED",label:"적용 확인됨"}:{state:"UNKNOWN",label:"현재 저장된 설정의 적용 여부를 확인하지 못했습니다"};
  if(row.runtime_apply_state==="UNKNOWN")return {state:"UNKNOWN",label:"적용 결과 미확인"};
