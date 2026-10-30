@@ -40,6 +40,18 @@
 
 ## 다음 작은 연결
 
+### 2026-10-30 · 일반 영상 댓글·추천 단위 (사용자 확인 완료 / 별도 PR 제출)
+
+- 시작 기준 040ac5bde2a2f7297da13d8db9d9c540cd0e1ca0, 담당 채지민. 기존 로컬 watch-panels.mjs와 시험 harness를 이어 작업. AMVP YT-03/04 중 일반 /watch top-frame만 지원하며 Shorts 댓글·전체16옵션 완료를 주장하지 않는다.
+- WatchPanelSession은 전달된 옵션을 복제·고정하고 공유 ClaimLedger로 댓글/추천을 독립 제한·복원한다. 늦게 생성된 DOM 관찰, 페이지 스타일 변경 보존, 다른 claim 유지, URL 이동/pagehide 시 신규 적용 중지 및 기존 복원 의무 보존. OBSERVED/NO_TARGET은 국소 관측이며 제품 APPLIED/NOT_APPLICABLE 증거가 아니다. Core/Wire/native 검증·영속 원장 연결 없음.
+- 사용자 실행 결과: 기존 안내 1~6 항목에 대해 “지금 다 되거든” 보고. 실제 YouTube에서 숨김·영상 수동 조작·댓글만 해제·전체 복원·재적용·이동 후 수동 해제/재적용을 정상 확인했다는 사용자 보고이며 AI 직접 관측/버전·영상·로그 수집은 아니다. 실제 BFCache 또는 자동 Core 재결속 PASS로 확대하지 않는다.
+- 요청에 따라 시험 popup에 추천만 해제를 추가. 추천 claim만 해제하고 댓글 제한 유지, 반복 해제, 결과 목록에서 해제된 옵션 제거를 합성 시험으로 확인했다. 개별 해제 후 재적용은 전체 해제 후 가능하도록 명시한다. 제품 메시지 추가가 아니라 TEST 전용 명령이다.
+- 최종 관련 자동: 설치 Chrome headless + Playwright의 watch-panels-browser.test.mjs 9/9 PASS, 실패/skip0. 모의 owner/sender, 합성 HTML, pagehide 이벤트 모사이며 실제 서비스/제품 MV3/Core 시험과 구분. 기존 Shorts 제품 코드 수정 없음. build-chrome-harness.mjs 실행 PASS, git diff --check PASS.
+- 게시 전 관련 회귀 재실행: `node --test extension/content-tests/changes.test.mjs extension/content-tests/detection.test.mjs extension/content-tests/browser.test.mjs extension/content-tests/claim-ledger.test.mjs extension/content-tests/claim-ledger-browser.test.mjs extension/content-tests/watch-panels-browser.test.mjs` → 61/61 PASS, 실패/skip0 (기존33・공통 원장19・댓글/추천9). 환경은 위 Node24·설치 Chrome headless·Playwright이며 실제 서비스와 구분한다.
+- 실행: 기존 bundled Node로 extension/content-tools/build-chrome-harness.mjs 실행 → extension/build/content-harness를 Chrome에 로드/갱신 → 일반 영상 새로고침 → 댓글·추천 적용 → 추천만 해제. 기대: 추천은 복원, 댓글은 계속 숨김; 전체 해제하면 댓글도 복원. 사용자 추가 결과: “문제 없는거 같아 다 되네”로 이 3단계 정상 보고. AI 직접 관측 결과가 아니며 개별 영상·브라우저 버전·실행 hash는 미수집.
+- 게시: 사용자 지시로 댓글·추천 코드/시험/harness/이 기록 7개 파일만 별도 codex/content-watch-panels 브랜치로 제출. PR33은 미병합으로 확인되어 HEAD 040ac5b를 선행 의존성으로 보존하고 해당 브랜치에는 새 커밋을 Push하지 않는다. 통합 브랜치 대상 Draft PR의 전체 diff에는 미병합 PR33이 포함될 수 있으므로 040ac5b 이후의 비교 링크로 이번 변경만 리뷰한다. 실제 SHA/PR 번호는 GitHub 게시 결과가 원본이다.
+- 실제 제품 연결·selector/profile 전체 수용·BFCache·재기동·Core/Server는 미검증. YT-10 다음 영상 자동재생, 홈 추천·종료 카드는 이번 변경에 포함하지 않는다. 정상 영상 재생/수동 조작은 유지한다. develop/통합 브랜치 병합 없음.
+
 ### 2026-10-30 · PR #33 리뷰 두 결함 수정
 
 - 시작 HEAD: 96745bbe9c3559767bf08ac6e992dd4dd31fb50a. 담당 채지민, 기존 feature/additional-mvp-content 유지. 리뷰 스레드: https://github.com/kdu-sw-capstone/capstone-project/pull/33#discussion_r4421401391 및 https://github.com/kdu-sw-capstone/capstone-project/pull/33#discussion_r4421401400 .
