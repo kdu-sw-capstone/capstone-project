@@ -47,6 +47,72 @@ test('watch options use exact YT IDs, preserve video and independently restore c
   assert.equal(await page.locator('ytd-comments').evaluate(e => e.style.display), 'grid');
 });
 
+test('same-scope live sessions are rejected before effects; retired session cannot release its successor', async t => {
+  const page = await fixture(t);
+  const result = await page.evaluate(() => {
+    session.start(); const second = newSession(settings);
+    let rejection=''; try { second.start(); } catch(error) { rejection=error.message; }
+    session.release();
+    const successor=newSession(settings); successor.start();
+    session.releaseFeature('YT-03');
+    const hidden=getComputedStyle(document.querySelector('ytd-comments')).display==='none';
+    successor.release(); return {rejection,hidden};
+  });
+  assert.equal(result.rejection,'WATCH_SCOPE_ALREADY_ACTIVE');
+  assert.equal(result.hidden,true);
+});
+
+test('selector exit restores reused panels and recommendations while preserving another owner', async t => {
+  const page=await fixture(t,'<ytd-watch-flexy><ytd-engagement-panel-section-list-renderer target-id="engagement-panel-comments-section">comments</ytd-engagement-panel-section-list-renderer><div id="related">recommended</div></ytd-watch-flexy>');
+  const result=await page.evaluate(() => {
+    session.start(); const panel=document.querySelector('ytd-engagement-panel-section-list-renderer');
+    const related=document.querySelector('#related'); ledger.hide('other',related);
+    panel.setAttribute('target-id','transcript'); related.id='reused';
+    const scan=session.scan(); const panelRestored=panel.style.display===''&&!panel.inert;
+    const otherPreserved=related.style.display==='none'&&related.inert;
+    ledger.release('other'); const relatedRestored=related.style.display===''&&!related.inert;
+    return {scan,panelRestored,otherPreserved,relatedRestored,remaining:ledger.inspect().remaining_targets};
+  });
+  assert.equal(result.panelRestored,true); assert.equal(result.otherPreserved,true);
+  assert.equal(result.relatedRestored,true); assert.equal(result.remaining,0);
+  assert.deepEqual(result.scan.map(x=>x.status),['NO_TARGET','NO_TARGET']);
+});
+
+test('selector-exit restore failure retains debt and fences replacement until retry succeeds', async t => {
+  const page=await fixture(t);
+  const result=await page.evaluate(() => {
+    session.start(); const element=document.querySelector('ytd-comments');
+    const write=element.style.setProperty.bind(element.style);
+    element.style.setProperty=(name,value,priority)=>{if(name==='display'&&value==='grid')throw Error('restore denied');write(name,value,priority);};
+    document.body.append(element); // Same document, outside the eligible watch tree.
+    const scan=session.scan(); const failed=session.releaseFeature('YT-03');
+    session.releaseFeature('YT-04');
+    let blocked='';try{newSession(settings).start();}catch(error){blocked=error.message;}
+    element.style.setProperty=write;
+    const retried=session.release(); const next=newSession(settings);next.start();next.release();
+    return {scan,failed,blocked,retried,display:element.style.display};
+  });
+  assert.equal(result.scan[0].status,'FAILED'); assert.equal(result.failed.restored,false);
+  assert.equal(result.failed.remaining_targets,1);assert.equal(result.blocked,'WATCH_SCOPE_ALREADY_ACTIVE');
+  assert.equal(result.retried.every(x=>x.restored),true);assert.equal(result.display,'grid');
+});
+
+test('selector-exit adoption preserves the new document owner and unresolved old scope', async t => {
+  const page=await fixture(t);
+  const result=await page.evaluate(() => {
+    session.start();const element=document.querySelector('ytd-comments');
+    const frame=document.createElement('iframe');document.body.append(frame);
+    const doc=frame.contentDocument;doc.body.append(doc.adoptNode(element));
+    const next=new ledger.constructor(doc);next.hide('new-document',element);
+    const scan=session.scan(),released=session.release();
+    let blocked='';try{newSession(settings).start();}catch(error){blocked=error.message;}
+    return {scan,released,blocked,display:element.style.display,inert:element.inert,remaining:next.inspect().remaining_targets};
+  });
+  assert.equal(result.scan[0].status,'FAILED');assert.equal(result.released[0].restored,false);
+  assert.equal(result.blocked,'WATCH_SCOPE_ALREADY_ACTIVE');assert.equal(result.display,'none');
+  assert.equal(result.inert,true);assert.equal(result.remaining,1);
+});
+
 test('frozen option input and preflight reject unsupported/duplicate options without applying', async t => {
   const page = await fixture(t);
   const result = await page.evaluate(() => {

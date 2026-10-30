@@ -3,6 +3,9 @@ import { ClaimLedger } from './claim-ledger.mjs';
 // Initial watch-page adapter; this is not an AMVP wire receiver or capability
 // advertisement. Core must validate scope and persist intent before calling it.
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
+// Internal singleton fence, not a new wire/execution identity. A trusted caller
+// must reuse its live session; unresolved cleanup prevents scope replacement.
+const LIVE = new WeakMap();
 const SELECTORS = Object.freeze({
   'YT-03': 'ytd-watch-flexy ytd-comments, ytd-watch-flexy ytd-engagement-panel-section-list-renderer[target-id="engagement-panel-comments-section"]',
   'YT-04': 'ytd-watch-flexy #related',
@@ -13,6 +16,9 @@ export class WatchPanelSession {
   #ledger;
   #features;
   #claims;
+  #targets = new Map();
+  #scope;
+  #nextTarget = 0;
   #active;
   #url;
   #open = false;
@@ -34,8 +40,10 @@ export class WatchPanelSession {
       ids.add(feature.feature_id);
     }
     this.#document = document; this.#ledger = ledger;
+    this.#scope = JSON.stringify([owner_binding_id, binding_id]);
     this.#features = Object.freeze(features.map(feature => Object.freeze({ feature_id: feature.feature_id, enabled: feature.enabled })));
     this.#claims = new Map(this.#features.map(feature => [feature.feature_id, JSON.stringify([owner_binding_id, binding_id, feature.feature_id])]));
+    for (const feature of this.#features) this.#targets.set(feature.feature_id, new Map());
     this.#active = new Set(this.#features.filter(feature => feature.enabled).map(feature => feature.feature_id));
     this.#onObservation = onObservation; this.#onInvalidated = onInvalidated;
     this.refresh = () => {
@@ -51,8 +59,12 @@ export class WatchPanelSession {
     const url = new URL(this.#document.location.href);
     if (this.#document.defaultView.top !== this.#document.defaultView || url.protocol !== 'https:' || !['youtube.com', 'www.youtube.com'].includes(url.hostname) || url.port || url.username || url.password || url.pathname !== '/watch')
       throw Error('UNSUPPORTED_WATCH_DOCUMENT');
+    let live = LIVE.get(this.#ledger);
+    if (!live) { live = new Map(); LIVE.set(this.#ledger, live); }
+    if (live.has(this.#scope)) throw Error('WATCH_SCOPE_ALREADY_ACTIVE');
     this.#started = true; this.#url = url.href;
     if (!this.#active.size) return [];
+    live.set(this.#scope, this);
     this.#observer = new this.#document.defaultView.MutationObserver(this.refresh);
     this.#open = true;
     const window = this.#document.defaultView;
@@ -74,7 +86,7 @@ export class WatchPanelSession {
     if (!this.#open) return;
     this.#open = false; this.#disconnect();
     // Do not assume a route change/pagehide proves release or document death.
-    this.#onInvalidated({ local_only: true, reason, cleanup_pending: [...this.#active].some(id => this.#ledger.inspect(this.#claims.get(id)).remaining_targets > 0) });
+    this.#onInvalidated({ local_only: true, reason, cleanup_pending: [...this.#targets.values()].some(targets => targets.size > 0) });
   }
 
   scan() {
@@ -86,9 +98,21 @@ export class WatchPanelSession {
       let eligible = 0, restricted = 0, errors = 0;
       try {
         const targets = [...this.#document.querySelectorAll(SELECTORS[feature_id])];
+        const tracked = this.#targets.get(feature_id), current = new Set(targets);
+        for (const [element, claim] of tracked) if (!current.has(element)) {
+          const cleanup = this.#ledger.release(claim);
+          if (cleanup.restored) tracked.delete(element);
+          else errors += cleanup.error_count || 1;
+        }
         eligible = targets.length;
         for (const element of targets) {
-          if (this.#ledger.hide(this.#claims.get(feature_id), element)) restricted++;
+          let claim = tracked.get(element);
+          if (!claim) {
+            if (this.#nextTarget === Number.MAX_SAFE_INTEGER) throw Error('WATCH_TARGET_LIMIT');
+            claim = `${this.#claims.get(feature_id)}:${++this.#nextTarget}`;
+            tracked.set(element, claim);
+          }
+          if (this.#ledger.hide(claim, element)) restricted++;
           else errors++;
         }
       } catch { errors++; }
@@ -108,9 +132,22 @@ export class WatchPanelSession {
 
   releaseFeature(feature_id) {
     if (!this.#claims.has(feature_id)) throw Error('UNOWNED_WATCH_FEATURE');
-    const result = this.#ledger.release(this.#claims.get(feature_id));
+    // A retired object has no authority over a later session using this scope.
+    if (!this.#active.has(feature_id)) return {feature_id,local_only:true,restored:true,remaining_targets:0,error_count:0};
+    const tracked = this.#targets.get(feature_id);
+    let errors = 0;
+    for (const [element, claim] of tracked) {
+      const cleanup = this.#ledger.release(claim);
+      if (cleanup.restored) tracked.delete(element);
+      else errors += cleanup.error_count || 1;
+    }
+    const result = {restored:errors === 0 && tracked.size === 0,remaining_targets:tracked.size,error_count:errors};
     if (result.restored) this.#active.delete(feature_id);
-    if (!this.#active.size) { this.#open = false; this.#disconnect(); }
+    if (!this.#active.size) {
+      this.#open = false; this.#disconnect();
+      const live = LIVE.get(this.#ledger);
+      if (live?.get(this.#scope) === this) live.delete(this.#scope);
+    }
     return { feature_id, local_only: true, ...result };
   }
 

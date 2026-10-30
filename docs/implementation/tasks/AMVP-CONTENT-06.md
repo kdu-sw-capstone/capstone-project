@@ -40,6 +40,15 @@
 
 ## 다음 작은 연결
 
+### 2026-10-30 · PR36 두 P2 수정 (검증 완료 / 사용자 승인 후 제출)
+
+- 기준 0972ea2cfc6a8be273a719086e77b5ea8d6dd4b7, codex/content-watch-panels, 채지민. 리뷰 discussion_r4421899792 / discussion_r4421899797. 기존 PR33 코드와 브랜치는 변경하지 않는다.
+- 동일 ledger·owner·binding의 두 번째 live session은 효과 전에 WATCH_SCOPE_ALREADY_ACTIVE로 거절한다. 무작위 실행 ID나 신규 Wire 필드를 만들지 않고 trusted caller가 live session을 재사용하도록 제한한다. 종료 객체의 개별 해제는 no-op이며, 미해결 cleanup이 있는 동안 후속 세션 진입을 막는다. 실제 execution/generation의 제품 매핑은 Core 연결 시 확인할 후속 경계다.
+- 옵션별 element→내부 claim 집합을 유지하고 현재 selector와 차집합을 비교하여 이탈한 요소의 자기 claim만 회수한다. 페이지 변경/다른 owner는 보존한다. 복원 실패·foreign document는 FAILED 및 원장 의무를 유지하며 NO_TARGET 성공으로 숨기지 않는다. target claim은 내부 메모리 자원 식별이며 영속 Journal identity를 대체하지 않는다.
+- 수정 전 새 반례2/2 FAIL 확인: 동일 scope 중복 시작 거절 누락, selector 이탈 후 가림 잔존. 수정 후 기존 watch9+반례2=11/11 PASS. 이후 복원 실패/재시도 및 adoption 의무 보존2건을 추가했다.
+- 최종 관련 회귀: Node24·설치 Chrome headless/Playwright 합성 DOM에서 `node --test extension/content-tests/watch-panels-browser.test.mjs extension/content-tests/claim-ledger.test.mjs extension/content-tests/claim-ledger-browser.test.mjs` → 32/32 PASS (watch13+원장19), 실패/skip0. git diff --check PASS. 이전 전체61 PASS는 과거 근거이며 이번 전체65 실행 결과로 바꾸지 않는다.
+- 변경 범위는 watch-panels.mjs·관련 시험·이 카드3개. 실제 YouTube에서 리뷰 반례가 발생했다는 증거/새 사용자 실행 결과는 없으며, 제품 Core/Wire/native/영속 복구/실제 BFCache·세대 재결속은 미검증. 사용자 승인으로 PR36 수정분만 같은 브랜치에 Commit·Push 제출하며 실제 원격 HEAD는 GitHub 결과가 원본이다. 병합 없음.
+
 ### 2026-10-30 · 일반 영상 댓글·추천 단위 (사용자 확인 완료 / 별도 PR 제출)
 
 - 시작 기준 040ac5bde2a2f7297da13d8db9d9c540cd0e1ca0, 담당 채지민. 기존 로컬 watch-panels.mjs와 시험 harness를 이어 작업. AMVP YT-03/04 중 일반 /watch top-frame만 지원하며 Shorts 댓글·전체16옵션 완료를 주장하지 않는다.
