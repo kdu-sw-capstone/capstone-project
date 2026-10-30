@@ -20,5 +20,5 @@ it("shows all sixteen existing content options and saves via a version-bound API
   if(method==="PUT")return {config_id:path.split("/").at(-1),executor_id:executor,version:1,value:(body as {value:unknown}).value,saved_state:"SAVED",runtime_apply_state:"PENDING",saved_runtime_revision:1,applied_runtime_revision:null,next_focus_revision:1,deleted_at:null,updated_at:"2026-10-29T00:00:00.000Z"};
   const put=vi.mocked(request).mock.calls.find(c=>c[1]==="PUT")!;return {config_id:path.split("/").at(-1),executor_id:executor,version:1,value:(put[2] as {value:unknown}).value,saved_state:"SAVED",runtime_apply_state:"PENDING",saved_runtime_revision:1,applied_runtime_revision:null,next_focus_revision:1,deleted_at:null,updated_at:"2026-10-29T00:00:00.000Z"};
  });fireEvent.click(screen.getByText("설정 저장"));await waitFor(()=>expect(screen.getByRole("status")).toHaveTextContent("설정을 저장하고 다시 조회했습니다"));
- expect(screen.getByText(/저장됨 \/ 적용 확인 대기/)).toBeInTheDocument();
+ expect(screen.getAllByText(/저장됨 · 다음 집중 적용 대기/).length).toBeGreaterThan(0);
 });

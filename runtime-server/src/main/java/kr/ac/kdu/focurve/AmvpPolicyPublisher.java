@@ -13,6 +13,7 @@ final class AmvpPolicyPublisher implements AdditionalConfigStore.Admission {
  private final AmvpBridgeSupport support;private final Clock clock;
  AmvpPolicyPublisher(MemberAuth auth,CapabilitySource capabilities){this(auth,capabilities,Clock.systemUTC());}
  AmvpPolicyPublisher(MemberAuth auth,CapabilitySource capabilities,Clock clock){support=new AmvpBridgeSupport(auth,capabilities);this.clock=java.util.Objects.requireNonNull(clock);}
+ public AdditionalConfigStore.ApplyState appliedState(java.util.Map<String,Object> config){return AmvpReportReceiver.projection(support,config);}
  public void verify(Identity principal,String executor,String binding,boolean mutation){
   // Statistics may read a member's own closed binding after the installation changes owners.
   // ConfigStore independently requires its current active binding before invoking this admission.

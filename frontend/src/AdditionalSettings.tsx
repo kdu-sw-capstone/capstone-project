@@ -5,6 +5,8 @@ import HostScopeEditor,{type HostScope} from "./HostScopeEditor";
 import TimeRuleEditor,{WhenEditor,type TimeWindow,type RuleWhen} from "./TimeRuleEditor";
 import {internalFeatures} from "./additionalFeatures";
 import {configWrite,configDelete,listConfigs,type ConfigRecord,type ConfigValue} from "./additionalConfigApi";
+import RuntimeDeliveryPanel from "./RuntimeDeliveryPanel";
+import {configDelivery} from "./runtimeDeliveryState";
 
 type Kind=ConfigValue["kind"];
 const names:Record<Kind,string>={CONTENT:"콘텐츠 제한",CADENCE:"반복 집중·휴식",SITE_TIME:"사이트 시간·일일 한도",FOCUS_SCHEDULE:"집중 예약"};
@@ -48,16 +50,17 @@ export default function AdditionalSettings({installations}:{installations:{execu
  function nested(field:string,patch:Nested){if(value)change({[field]:{...(value[field] as Nested),...patch}});}
  return <section className="additional-ui" aria-label="추가 집중 설정">
   <Panel title="추가 집중 설정"><p>설치별로 저장합니다. 저장 완료는 정책 적용 완료를 뜻하지 않습니다. 현재 집중의 고정 설정은 유지됩니다.</p>
-   <label>설치 선택<select value={executor} disabled={busy} onChange={e=>setExecutor(e.target.value)}><option value="">설치를 선택하세요</option>{installations.map(i=><option key={i.executor_id} value={i.executor_id}>{i.client_version} · {i.executor_id}</option>)}</select></label>
+   <label>설치 선택<select value={executor} disabled={busy} onChange={e=>{++generation.current;setRows([]);setLoaded(false);setExecutor(e.target.value);}}><option value="">설치를 선택하세요</option>{installations.map(i=><option key={i.executor_id} value={i.executor_id}>{i.client_version} · {i.executor_id}</option>)}</select></label>
    {!installations.length&&<p>연결된 회원 설치가 없습니다. 비회원 자료는 확장 프로그램에서 관리합니다.</p>}
    {busy&&<p role="status">설정 결과를 확인하고 있습니다.</p>}{error&&<p role="alert">{error}</p>}{notice&&<p role="status">{notice}</p>}
    {executor&&<button disabled={busy} onClick={()=>setRetry(n=>n+1)}>현재 저장 설정 다시 조회</button>}
    {loaded&&<><div className="additional-actions">{(Object.keys(names) as Kind[]).map(kind=><button key={kind} disabled={busy||!!editor||((kind==="CONTENT"||kind==="CADENCE")&&rows.some(row=>row.value.kind===kind))} onClick={()=>{const id=crypto.randomUUID();openEditor({id,value:blank(kind,id)});setNotice("");}}>{names[kind]} 추가</button>)}</div>
     {!rows.length&&<p>저장된 추가 설정이 없습니다.</p>}
-    <ul>{rows.map(row=><li key={row.config_id}><strong>{names[row.value.kind]}</strong> · 버전 {row.version} · 저장됨 / {row.runtime_apply_state==="APPLIED"?"적용 보고 확인":"적용 확인 대기"}<button disabled={busy||!!editor} onClick={()=>{pending.current=null;openEditor({id:row.config_id,version:row.version,value:structuredClone(row.value)});setNotice("");}}>수정</button><button disabled={busy||!!editor} onClick={()=>{deletePending.current=null;setConfirmDelete(row);}}>삭제</button></li>)}</ul>
+    <ul>{rows.map(row=><li key={row.config_id}><strong>{names[row.value.kind]}</strong> · 버전 {row.version} · {configDelivery(row).label}<button disabled={busy||!!editor} onClick={()=>{pending.current=null;openEditor({id:row.config_id,version:row.version,value:structuredClone(row.value)});setNotice("");}}>수정</button><button disabled={busy||!!editor} onClick={()=>{deletePending.current=null;setConfirmDelete(row);}}>삭제</button></li>)}</ul>
    </>}
    {confirmDelete&&<div role="group" aria-label="설정 삭제 확인"><p>설정 삭제를 요청할까요? 실제 제한 해제 확인까지 완료로 표시하지 않습니다.</p><button disabled={busy} onClick={()=>{setBusy(true);setError("");const current=generation.current;deletePending.current??=configDelete(confirmDelete);void deletePending.current.send().then(()=>{if(current===generation.current){setNotice("삭제 요청을 저장했습니다. 실제 제한 해제는 확인 대기 중입니다.");setRows(old=>old.filter(r=>r.config_id!==confirmDelete.config_id));setConfirmDelete(null);deletePending.current=null;}}).catch(e=>{if(current===generation.current)setError(message(e));}).finally(()=>{if(current===generation.current)setBusy(false);});}}>삭제 요청 확인</button><button disabled={busy} onClick={()=>{deletePending.current=null;setConfirmDelete(null);}}>취소</button></div>}
   </Panel>
+  {loaded&&executor&&<RuntimeDeliveryPanel executor={executor} records={rows} onRefresh={()=>setRetry(n=>n+1)} />}
   {editor&&value&&<Panel title={names[value.kind]+" 편집"}><form onSubmit={e=>{e.preventDefault();void save();}}><fieldset disabled={busy}>
    {value.kind!=="CONTENT"&&<Toggle title="이 설정 사용" checked={Boolean(value.enabled)} onChange={enabled=>change({enabled})}/>}
    {value.kind==="CONTENT"&&<>

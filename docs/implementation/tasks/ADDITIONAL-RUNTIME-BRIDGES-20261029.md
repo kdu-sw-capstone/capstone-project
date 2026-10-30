@@ -65,3 +65,23 @@ PR #25의 `AdditionalConfigContract`, `AdditionalConfigStore.Admission`, `Member
 4. 실제 Chrome/Native 검증은 별도 유효 승인 후 수행한다. 기존 UNKNOWN/HOLD·실패 증거·Credential·다른 worktree는 변경하지 않았다.
 
 `MVP_FINAL_COMPLETE=false`. 이 PR은 독립 연동 경계 준비이며 제품 최종 수용 완료가 아니다.
+
+## PR #27 이후 · 검증 보고·현재 상태·UI 연결
+
+- 기준 `9a7b1d798ae9d4f6542f07310ddd09145670bfcc`, 후속 브랜치 `feature/additional-mvp-runtime-receipts`. PR #27은 Draft·미병합이며 해당 브랜치/리뷰 내용은 수정하지 않았다. 같은 작업공간을 재사용한다. 계약 기준 RC2 `e2b3fc3`, 제품 통합 기준 `202d6317`은 구분한다.
+- RPT-01을 기본 비활성 HTTP로 연결했다. 실제 bearer/현재 owner/capability, package/hash/발행 시각, report epoch/seq/ID 중복·gap을 확인하고 원본 report·receipt·read projection을 item별 transaction으로 저장한다. gap은 PENDING_DEPENDENCY로 원래 ID/hash를 예약한다. SQL 실패·commit 응답 유실 시 같은 immutable 요청으로 재확인하며 성공을 추정하지 않는다.
+- `EvidenceVerifier`는 **Core 담당 경계**다. operation/execution/current epoch·합법 전이·fresh observation·evidence hash 뒤의 실제 문서/효과 근거와 전체 policy coverage를 검증해야 한다. 운영 bean·가짜 producer를 만들지 않았다. 없으면503. 검증된 affected policy가 없으면 수신 ACK가 ACCEPTED여도 적용 상태는 PENDING이다.
+- 원본 `amvp_reports`와 개별 receipt는 수정하지 않는다. 기존 `amvp_operations`에 private receipt profile `AMVP_REPORT_RECEIPT_1`과 mutable read cursor `RPT_STATE`를 사용한다. 이 cursor는 immutable report/receipt를 참조하며 외부 Wire 확장이 아니다. 현재 SITE_TIME의 ID·전체 내용·config version이 같을 때만 반영한다. 이전 package 보고가 더 최신 cursor를 덮지 않는다. 새 epoch/늦은 actor의 유효성은 Core verifier가 판정해야 한다.
+- 기존 Admission에 기본 PENDING read hook을 추가했다. 기존 시험/다른 Admission은 그대로 동작한다. APPLIED는 검증된 현재 설정에만, FAILED/UNKNOWN은 기존 ConfigRecord enum의 UNKNOWN으로 투영한다. 상세 FAILED 원본은 report에 보존한다. enum/DTO에 임의 필드를 추가하지 않았으므로 UI에서 상세 실패 원인을 새 필드로 노출하지 않는다. CONTENT/frozen actor 및 삭제 후 release 완료는 이 runtime coverage만으로 확정하지 않고 기존 대기를 유지한다.
+- 한 설정이 바뀌지 않아도 다른 설정 발행으로 package revision이 증가할 수 있다. 서버가 정확한 config version/내용을 검증한 APPLIED에 한해 UI는 `applied_runtime_revision >= saved_runtime_revision`을 허용한다. 오래된 설정 ACK로 최신 편집을 확인 처리하지 않는다. 실제 ACK revision을 저장하며 이전 revision 값으로 위조하지 않는다.
+- `AmvpRegisteredClockProof`는 DB의 VERIFIED anchor, 동일 boot/clock, 서버가 선택한 wall skew, 자연일/timezone 정합성을 실제로 읽는 보수적 생산 코드다. receiver/collector 객체 재생성 후에도 기존 원장·통계를 읽는다. collector_epoch를 바꿔 restart 증명을 우회할 수 없다. 새로운 boot/clock·legacy clock 부재·전환일은 전문 clock/restart proof가 없으면 QUARANTINED. 초기 carry를 추정하거나 격리 원본을 자동 승격하지 않는다. bean 자동 등록·제품 활성화는 하지 않았다.
+- 기존 AdditionalSettings에 RuntimeDeliveryPanel을 연결했다. 같은 설정 조회 결과를 재사용하여 중복 fetch 없이 예약·한도·반복·콘텐츠의 저장/적용 상태를 표시하고 재조회한다. 수정/삭제 UI·디자인 컴포넌트를 재사용하며 다른 설치의 늦은 결과를 표시하지 않는다. 실제 적용 ACK는 SITE_TIME runtime 경계에서만 준비됐고 예약/반복 actor의 실행은 여전히 별도 연결 대기다.
+- legacy-lock/API 공유 파일은 수정하지 않았다. RC2 전체 재승인을 시작하지 않는다. 알려진 api.ts 전체 해시 충돌은 설계/회귀 담당의 좁은 보존 범위 결론 대기이며 독립 후속 개발의 차단 사유로 사용하지 않는다.
+
+### 후속 검증·재개점
+
+- 새 독립 MySQL suite `AmvpRuntimeReceiptMysqlTest`: 13건. verified/partial coverage, 영속 수신·중복·gap·UNKNOWN/FAILED, 현재 버전/후속 package, owner/hash/proof 거절, 동시성, projection SQL 실패 rollback, 실제 bearer HTTP/폐기, 구체 clock verifier·통계·receiver 재생성·drift/restart/collector reset을 시험했다. Core 효과 verifier와 anchor 등록 근거는 명시적 SYNTHETIC fixture다. 실패 주입은 빈 시험 DB의 제한된 CHECK로 수행하며 SUPER 권한을 요청하지 않는다.
+- `AmvpReportApiTest`: 4건. 생산 source 부재·Web principal·restricted service·malformed JSON/query 거절. 새 suite17/17 PASS. 변경 영향의 PR #27 suite20/20, Server 단위76/76 및 JAR verify PASS. Web247/247 및 타입/Vite build PASS. 설치 전환은 조회 effect 전에 기존 행을 동기적으로 비우고 이전 응답 세대를 무효화한다. 원격 최종 결과는 후속 PR에 기록한다.
+- 새 suite는 `$env:FOCURVE_AMVP_RECEIPT_TESTS='1'`와 기존 격리 스크립트의 `-Tests 'AmvpRuntimeReceiptMysqlTest,AmvpReportApiTest'`로 실행한다. suite별 DB를 따로 만들며 기존 두 초기화 suite와 섞지 않는다. 단위 실행에서는 세 `*MysqlTest` 초기화 클래스를 제외한다. 원격 후속 workflow도 별도 서비스 DB를 사용한다.
+- 증거 `.local/receipt-verification/`, `.local/amvp-mysql-3f0fcff8c63b/`; 실패 시험 로그도 유지한다. 실제 설치·Chrome·Native·Core producer·운영 DB·END/복원/재기동 수용은 NOT_RUN. 사용자 데이터·이전 UNKNOWN/HOLD·Credential 변경 없음.
+- 다음: Core 담당의 실제 EvidenceVerifier/clock restart/day carry 등록 연결 → 동일 RC2 계약 HTTP 수용 → Content 효과/복원 proof 연결. 미수신 hash status 합의·예약/반복/frozen 실행 보고·삭제 release 증명은 분리해서 처리한다. 이번 후속 PR은 #27 위에만 쌓고 #27 병합 후 integration으로 기준을 갱신한다. `MVP_FINAL_COMPLETE=false` 유지.
