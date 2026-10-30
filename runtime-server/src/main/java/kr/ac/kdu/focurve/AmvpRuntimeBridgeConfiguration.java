@@ -8,5 +8,5 @@ import org.springframework.context.annotation.*;
 @ConditionalOnProperty(name="focurve.additional.runtime-bridge.enabled",havingValue="true")
 @ConditionalOnBean(AmvpBridgeSupport.CapabilitySource.class)
 class AmvpRuntimeBridgeConfiguration {
- @Bean AdditionalConfigStore.Admission amvpCanonicalPublisher(MemberAuth auth,AmvpBridgeSupport.CapabilitySource source){return new AmvpPolicyPublisher(auth,source);}
+ @Bean AdditionalConfigStore.Admission amvpCanonicalPublisher(MemberAuth auth,AmvpBridgeSupport.CapabilitySource source){return new AmvpScheduleBridge(auth,new AmvpPolicyPublisher(auth,source),null,java.time.Clock.systemUTC());}
 }

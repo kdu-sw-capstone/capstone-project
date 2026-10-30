@@ -7,6 +7,7 @@ import {internalFeatures} from "./additionalFeatures";
 import {configWrite,configDelete,listConfigs,type ConfigRecord,type ConfigValue} from "./additionalConfigApi";
 import RuntimeDeliveryPanel from "./RuntimeDeliveryPanel";
 import DailyUsagePanel from "./DailyUsagePanel";
+import ScheduleExecutionPanel from "./ScheduleExecutionPanel";
 import {configDelivery} from "./runtimeDeliveryState";
 
 type Kind=ConfigValue["kind"];
@@ -63,6 +64,7 @@ export default function AdditionalSettings({installations}:{installations:{execu
   </Panel>
   {loaded&&executor&&<RuntimeDeliveryPanel executor={executor} records={rows} onRefresh={()=>setRetry(n=>n+1)} />}
   {loaded&&executor&&<DailyUsagePanel executor={executor} records={rows} />}
+  {loaded&&executor&&<ScheduleExecutionPanel executor={executor} records={rows} />}
   {editor&&value&&<Panel title={names[value.kind]+" 편집"}><form onSubmit={e=>{e.preventDefault();void save();}}><fieldset disabled={busy}>
    {value.kind!=="CONTENT"&&<Toggle title="이 설정 사용" checked={Boolean(value.enabled)} onChange={enabled=>change({enabled})}/>}
    {value.kind==="CONTENT"&&<>
