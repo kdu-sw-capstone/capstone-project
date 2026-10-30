@@ -206,7 +206,7 @@ export default function MemberApp() {
           ) : tab === "sites" ? (
             <Sites />
           ) : tab === "sessions" ? (
-            <Sessions settings={()=>setTab("sites")} records={(id,from,to)=>{setRecordSession(id);setRecordHost("");setRecordRange({from,to});setTab("logs");}} />
+            <Sessions settings={()=>setTab("sites")} cadenceSettings={()=>setTab("settings")} records={(id,from,to)=>{setRecordSession(id);setRecordHost("");setRecordRange({from,to});setTab("logs");}} />
           ) : tab === "logs" ? (
             <Records
               key={recordHost + recordSession + JSON.stringify(recordRange)}
