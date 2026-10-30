@@ -37,13 +37,61 @@ def segment(n=1,**kw):
       uncertain_ms=0,previous_segment_sha256=None)
     s.update(kw);s['payload_sha256']=digest(s,('payload_sha256',));return s
 
+# Approved PR25 additions only. These are exact source contexts, not regexes or
+# an updated product hash. Restoring them must still reproduce the locked bytes.
+CREATE_ADDITIONS=(
+    (b'export function request<T>(path: string, method = "GET", body?: unknown, options: {key?: string; version?: number; create?: boolean; challenge?: boolean; signal?: AbortSignal} = {}): Promise<T> {\n',
+     b'export function request<T>(path: string, method = "GET", body?: unknown, options: {key?: string; version?: number; challenge?: boolean; signal?: AbortSignal} = {}): Promise<T> {\n'),
+    (b'    version?: number;\n    create?: boolean;\n    challenge?: boolean;\n',
+     b'    version?: number;\n    challenge?: boolean;\n'),
+    (b'  if (options.key) headers["Idempotency-Key"] = options.key;\n  if (options.create) headers["If-None-Match"] = "*";\n  if (options.version !== undefined)\n',
+     b'  if (options.key) headers["Idempotency-Key"] = options.key;\n  if (options.version !== undefined)\n'),
+)
+
+def legacy_bytes_preserved(name,content,locked_sha):
+    original=content.replace(b'\r\n',b'\n')
+    if hashlib.sha256(original).hexdigest()==locked_sha:return True
+    if name!='frontend/src/api.ts':return False
+    for added,prior in CREATE_ADDITIONS:
+        if original.count(added)!=1:return False
+        original=original.replace(added,prior,1)
+    return hashlib.sha256(original).hexdigest()==locked_sha
+
 class SchemaTests(unittest.TestCase):
     def test_schema_is_draft202012(self):Draft202012Validator.check_schema(SCHEMA)
     def test_api_paths_unique(self):
         keys=[(o['method'],o['path']) for o in API['operations']];self.assertEqual(len(keys),len(set(keys)))
     def test_legacy_bytes_preserved(self):
         for name,sha in load('legacy-lock.json')['files'].items():
-            with self.subTest(name=name):self.assertEqual(hashlib.sha256((ROOT/name).read_bytes().replace(b'\r\n',b'\n')).hexdigest(),sha)
+            with self.subTest(name=name):self.assertTrue(legacy_bytes_preserved(name,(ROOT/name).read_bytes(),sha),name)
+    def test_legacy_create_allowlist_is_exact(self):
+        name='frontend/src/api.ts';locked=load('legacy-lock.json')['files'][name]
+        source=(ROOT/name).read_bytes().replace(b'\r\n',b'\n')
+        if hashlib.sha256(source).hexdigest()!=locked:
+            for added,prior in CREATE_ADDITIONS:source=source.replace(added,prior,1)
+        self.assertEqual(hashlib.sha256(source).hexdigest(),locked)
+        approved=source
+        for added,prior in CREATE_ADDITIONS:
+            self.assertEqual(approved.count(prior),1)
+            approved=approved.replace(prior,added,1)
+        for valid in (source,approved,approved.replace(b'\n',b'\r\n')):
+            self.assertTrue(legacy_bytes_preserved(name,valid,locked))
+        mutations={
+            'credentials':(b'credentials: "same-origin"',b'credentials: "include"'),
+            'csrf':(b'"X-CSRF-Token"',b'"X-Unapproved-CSRF"'),
+            'idempotency':(b'headers["Idempotency-Key"] = options.key',b'headers["Idempotency-Key"] = "changed"'),
+            'version-header':(b'headers["If-Match"]',b'headers["If-Changed"]'),
+            'retry':(b'!(method === "GET" || options.key)',b'!(method === "GET")'),
+            'duplicate':(b'    create?: boolean;\n',b'    create?: boolean;\n    create?: boolean;\n'),
+            'relocated':(CREATE_ADDITIONS[1][0],b'    create?: boolean;\n    version?: number;\n    challenge?: boolean;\n'),
+        }
+        for label,(before,after) in mutations.items():
+            with self.subTest(label=label):
+                self.assertIn(before,approved)
+                self.assertFalse(legacy_bytes_preserved(name,approved.replace(before,after,1),locked))
+        for added,prior in CREATE_ADDITIONS:
+            with self.subTest(partial=prior):self.assertFalse(legacy_bytes_preserved(name,approved.replace(added,prior,1),locked))
+        self.assertFalse(legacy_bytes_preserved('another/api.ts',approved,locked))
     def test_traceability_all_18(self):
         ids={o['id'] for o in API['operations']}
         features=load('traceability.json')['features'];self.assertEqual([f['id'] for f in features],[f'F{i:02d}' for i in range(1,19)])
