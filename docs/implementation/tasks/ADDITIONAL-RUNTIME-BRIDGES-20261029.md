@@ -1,5 +1,38 @@
 # 추가 MVP · 정책 발행·이용시간 수신 경계
 
+## SITE_TIME 삭제·해제 UI 재진입 복원 — Web/Server PASS · 실제 효과 NOT_RUN (2026-10-30)
+
+- 김다훈 담당 후속. clean PR35 HEAD `bb865010d1eb7f972c16894022bbb823955cbf9f`를 보존하고 같은 Worktree의 별도 `feature/additional-mvp-deletion-history`에서 구현한다. PR35의 HEAD·리뷰·검증을 수정하지 않았다. 작업 중 통합 담당의 PR35 병합을 확인했으며 이 후속은 PR35에 의존한다. 직접 Merge/운영 DB·Core/Content·PR26·실패 설치/Chrome/Native는 변경하지 않는다.
+- 기존 경계 확인: RC2 CFG01은 non-deleted 목록, CFG02와 OP01은 이미 알려진 ID가 필요하다. 새로고침으로 메모리 ID를 잃으면 기존 API만으로 삭제 요청을 발견할 수 없다. RC2 CFG01에 미정 query를 추가하거나 localStorage/guest 저장소에 회원 참조를 남기지 않는다.
+
+### 최소 Web 읽기 계약 — RC2 원문 변경 없음
+
+- **추가 경로** `GET /api/v1/amvp/web/site-time-deletions?executor_id=<uuid>&limit=1..100&cursor=<opaque>`; 기본 limit50. 본문/알 수 없는 query/중복 query를 거절한다. 현재 회원·설치·ACTIVE owner binding·기존 admission을 검증하며 W/E 기존 인증을 재사용한다. 배포 조건은 기존 config-api.enabled/profile이며 실제 활성화는 이 작업에서 하지 않는다.
+- 응답200: `{read_model:"AMVP_SITE_TIME_DELETIONS_1",items:ConfigRecord[],next_cursor:string|null,has_more:boolean}`, `Cache-Control:no-store`. ConfigRecord와 실제 적용 상태는 기존 원장을 그대로 사용하며 새 Wire/공통 API schema/carrier/DB migration은 없다. 이것은 Web 전용 추가 읽기 모델이며 RC2 CFG01/02/OP01의 의미/형식을 바꾸지 않는다.
+- 페이징은 기존 consistent-read/암호화 cursor를 재사용한다. cursor는 binding·SITE_TIME·limit·read-model view에 결속되어 일반 CFG01/다른 owner/다른 limit으로 전용할 수 없다. 정상 CFG01 cursor 형식/활성 설정 필터는 보존한다.
+- 각 tombstone의 동일 owner+DELETE route·영속 operation ID·CONFIRMED 접수 상태·요청 hash·불변 config version/hash를 확인한다. 원래 ACK body cache가 있으면 ID/RELEASE_PENDING/actual_effect_confirmed=false도 대조한다. RC2 허용 response-cache 만료(SQL NULL)는 영속 ID 검증으로 읽으며 ACK를 소급 생성하지 않는다. Receipt/원장이 불일치하면 실패로 반환하고 빈 목록이나 완료로 바꾸지 않는다.
+- 접수 Receipt는 실제 해제 증거가 아니다. PENDING/UNKNOWN/NOT_APPLICABLE은 PR35의 현재 version/revision과 검증된 RPT_STATE/원본 report/실제 Core verifier를 통해서만 읽는다. 오래된 report나 목록에서 빠짐으로 완료 처리하지 않는다. 조회는 설정/outbox/Receipt/의무를 수정하지 않는다.
+
+### Web 복원 및 범위
+
+- 기존 DeletedConfigReleasePanel이 설치 선택·마운트·새로고침·재진입마다 서버 SITE_TIME 삭제 기록 전체 페이지를 재조회한다. 브라우저 메모리 참조 없이도 대기/UNKNOWN/검증된 해제를 복원한다. 현재 화면에서 방금 접수된 참조는 후속 CFG02 GET으로 다시 읽어 페이징 중 발생한 새 삭제도 놓치지 않는다. 참조 없는 최초 마운트와 원래 DELETE 응답을 잃은 경우에도 Server 기록이 기준이다.
+- 설치 변경·재조회의 오래된 응답을 버리고 조회 실패 시 직전 성공/빈 목록으로 대체하지 않는다. 새 read-model/version·설치·config ID/policy ID·삭제 버전·페이징 완료를 검증한다. 서버 데이터가 기준이며 localStorage/IndexedDB/Worker 호출은 없다.
+- 기존 설정 CRUD·이용시간·디자인/Panel/인증/CSRF 경로를 보존한다. Content/CADENCE/예약의 frozen 실행 의무는 SITE_TIME 기록으로 해소하지 않는다. 다른 kind의 이 화면 삭제 참조는 PR35 범위처럼 메모리에만 남는 한계를 표시한다.
+
+### 검증/인계
+
+- Web **294 PASS**(PR35 289 재사용 경로+추가5), TypeScript/Vite build PASS. 마운트 해제→참조 없는 재마운트, pending/UNKNOWN, 조회 실패 후 성공 표식 제거, 이전 설치 지연 응답, 전체 페이지/잘못된 owner·활성 row·불완전 cursor를 검증했다.
+- 격리 MySQL8.4.8·인증 HTTP(MockMvc) **30 PASS = PR35 회귀22 + 신규8**, 실패/오류/스킵0. 새 reader 객체의 상태 연속성, 조회 무변경, 기존 CFG01 보존, cursor domain/owner/limit, 불일치 Receipt, response cache 만료, CLOSED owner 거절, Content/활성 설정 제외, 실제 인증 경계를 확인했다. Core 효과 producer는 SYNTHETIC이다.
+- Server 단위81/JAR verify·RC2 266 PASS. 신설 additional-deletion-history.yml이 같은 fresh DB/HTTP 경계를 재현한다. 공통 계약·api.ts/legacy-lock·Core/Content·DNR/DOM·기존 실패 기록은 보존한다. 최종 DB 근거 `.local/amvp-mysql-db95be42681d`는 소유권 확인 후 정상 종료했고 `.local/deletion-history-verification-20261030/result.json`에 source SHA/로그를 기록한다.
+- 실제 Core/Content/Chrome/Native·물리 브라우저 새로고침·정책 효과/복원·재기동 수용은 **NOT_RUN**. 자동 UI/HTTP 시험을 실제 제품 수용으로 승격하지 않는다. `MVP_FINAL_COMPLETE=false`.
+
+### 다음 독립 기능 확인 — 기존 재작성 없음
+
+- PR35의 잔여 영역 표를 재사용한다. URL 키워드/성인/블러/16옵션 설정·예약/CADENCE·사용량 수신/집계/조회는 구현됨; 실제 capability/effect·collector/clock/day-carry·예약/CADENCE/Content producer와 세션/Attachment/document/generation별 효과·복원 연결이 남았다. 이 코드에서 실제 provider 결속/브라우저 수용은 아직 완료가 아니다.
+- ONCE actor 매핑, CADENCE 휴식/주기 표시, USG-02 missing hash는 기존 선택지/영향을 유지하며 독자 확정하지 않는다. 추가 설정 guest→member 변환은 기존 legacy import type/완료 기록 schema만으로 확정되지 않아 provenance·소유권·충돌 매핑 확인이 필요하다.
+- 확인된 독립 Web 결함이었던 새로고침 복원은 이번에 해소했다. 다음으로 임의 구현할 확정된 독립 기능은 발견하지 못했다. 프로필/아티팩트 선택이나 추가 설정 import를 미확정 catalog/API 없이 만들지 않는다. 다음 최소 작업은 실제 Core provider/전송과 연결된 첫 기능 시험, 또는 위 좁은 공동 결정 확정 후 해당 Web adapter/UI 구현이다. 통합 담당의 리뷰/Merge와 실제 설치/활성화를 대신하지 않는다.
+
+
 ## 삭제·해제 상태 후속 및 잔여 연결부 — 독립 구현 PASS / 실제 producer NOT_RUN (2026-10-30)
 
 - 담당 김다훈 Web·Server·DB·UI. clean PR32 `dd490c211cf3ac186bd6e3a2e56465746b9bcd3d`를 재사용하고 같은 Worktree에서 `feature/additional-mvp-release-status`로 분리했다. 기존 PR27~32 HEAD·미커밋/index·실패 설치는 변경하지 않았다. 신규 설치/진단기/Worktree, 운영 DB·Chrome·Native·Core/Content 코드 변경과 Merge는 수행하지 않았다.
