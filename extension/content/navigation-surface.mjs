@@ -9,15 +9,16 @@ const LIVE=new WeakMap();
 export class NavigationSurfaceSession {
   #document;#ledger;#scope;#targets=new Map();#next=0;#url;
   #open=false;#started=false;#scheduled=false;#observer;#observe;#invalidateCallback;
-  #profile;
-  constructor(document,{ledger,owner_binding_id,binding_id,onObservation=()=>{},onInvalidated=()=>{}},profile){
+  #profile;#authorizeNavigation;
+  constructor(document,{ledger,owner_binding_id,binding_id,onObservation=()=>{},onInvalidated=()=>{},authorizeNavigation=null},profile){
     // Profiles are module-owned selectors, not page/Wire policy or capability.
-    if(!profile||!['YT-01','YT-05'].includes(profile.feature_id)||typeof profile.collect!=='function'||typeof profile.routeAllowed!=='function')throw Error('INVALID_NAVIGATION_PROFILE');
+    if(!profile||!['YT-01','YT-05','YT-06'].includes(profile.feature_id)||typeof profile.collect!=='function'||typeof profile.routeAllowed!=='function')throw Error('INVALID_NAVIGATION_PROFILE');
     this.#profile=Object.freeze({...profile});
     if(!(ledger instanceof ClaimLedger))throw Error('SHARED_LEDGER_REQUIRED');
     if(![owner_binding_id,binding_id].every(value=>typeof value==='string'&&UUID.test(value)))throw Error('INVALID_CLAIM_SCOPE');
     this.#document=document;this.#ledger=ledger;this.#scope=JSON.stringify([owner_binding_id,binding_id,profile.feature_id]);
     this.#observe=onObservation;this.#invalidateCallback=onInvalidated;
+    this.#authorizeNavigation=authorizeNavigation;
     this.refresh=()=>{
       if(!this.#open||this.#scheduled)return;this.#scheduled=true;
       queueMicrotask(()=>{this.#scheduled=false;if(this.#open)this.scan();});
@@ -48,7 +49,20 @@ export class NavigationSurfaceSession {
   }
   scan(){
     if(!this.#open)return null;
-    if(this.#document.location.href!==this.#url){this.#invalidate('ROUTE_CHANGED');return null;}
+    if(this.#document.location.href!==this.#url){
+      if(this.#profile.feature_id!=='YT-06'){this.#invalidate('ROUTE_CHANGED');return null;}
+      const next=new URL(this.#document.location.href);let authorized=false;
+      // Only a trusted caller may reauthorize a same-document transition.
+      // A page event or URL alone is never authority. Default remains fail-closed.
+      try{authorized=next.protocol==='https:'&&HOSTS.has(next.hostname)&&!next.port&&!next.username&&!next.password
+        &&this.#profile.routeAllowed(next)&&this.#authorizeNavigation?.({previous_url:this.#url,next_url:next.href})===true;}catch{}
+      this.#observer.disconnect();let pending=false;
+      for(const[element,claim]of this.#targets){
+        if(this.#ledger.release(claim).restored)this.#targets.delete(element);else pending=true;
+      }
+      if(pending||!authorized){this.#invalidate(pending?'ROUTE_CLEANUP_FAILED':'ROUTE_CHANGED');return null;}
+      this.#url=next.href;
+    }
     this.#observer.disconnect();let eligible=0,restricted=0,errors=0;
     try{
       const current=this.#profile.collect(this.#document);eligible=current.size;
@@ -66,7 +80,7 @@ export class NavigationSurfaceSession {
       }
     }catch{errors++;}
     if(this.#open)this.#observer.observe(this.#document.documentElement,{subtree:true,childList:true,attributes:true,
-      attributeFilter:['href','page-subtype','id','class','style','inert','hidden']});
+      attributeFilter:['href','page-subtype','browse-id','id','class','style','inert','hidden']});
     const result={feature_id:this.#profile.feature_id,local_only:true,native_verified:false,status:errors?'FAILED':eligible?'OBSERVED':'NO_TARGET',
       eligible_target_count:eligible,restricted_target_count:restricted,error_count:errors,remaining_targets:this.#targets.size};
     this.#observe(result);return result;
