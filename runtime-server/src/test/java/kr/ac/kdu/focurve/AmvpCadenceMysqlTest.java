@@ -47,6 +47,13 @@ class AmvpCadenceMysqlTest {
  AmvpCadenceControl.Receipt receipt(Fixture f,String state,long sequence){var stateBody=view(f).state().deepCopy().put("state",state);if(state.equals("UNKNOWN"))stateBody.put("last_error_code","CORE_EFFECT_UNCONFIRMED");return new AmvpCadenceControl.Receipt(id(),7,sequence,f.clock.instant(),stateBody,frozen(f),hash("SYNTHETIC:"+stateBody.path("operation_id").asText()));}
  ObjectNode receive(Fixture f,AmvpCadenceControl.Receipt receipt){return f.control.receive(()->principal(f),f.session,receipt);}
  void started(Fixture f){command(f,"START");assertThat(receive(f,receipt(f,"RUNNING",1)).path("projected").asBoolean()).isTrue();}
+ @Test void editedDeadlineIsPersistedButDoesNotReplaceTheRunningFrozenDeadline()throws Exception{
+  var f=fixture();String first=utc(f.clock.instant().plusSeconds(3600)),second=utc(f.clock.instant().plusSeconds(7200));var value=f.config.path("value").deepCopy();((ObjectNode)value).put("deadline_at",first);
+  f.store.put(f.base.fixture().identity(),f.config.path("config_id").asText(),helper.base.auth.obj("executor_id",f.base.fixture().executor(),"value",value),"\"1\"",null,id());started(f);var original=frozen(f);
+  assertThat(original.path("cadence").path("deadline_at").asText()).isEqualTo(first);((ObjectNode)value).put("deadline_at",second);
+  var saved=f.store.put(f.base.fixture().identity(),f.config.path("config_id").asText(),helper.base.auth.obj("executor_id",f.base.fixture().executor(),"value",value),"\"2\"",null,id());assertThat(saved.path("value").path("deadline_at").asText()).isEqualTo(second);
+  command(f,"PAUSE");receive(f,receipt(f,"PAUSED",2));command(f,"RESUME");receive(f,receipt(f,"RUNNING",3));assertThat(frozen(f)).isEqualTo(original);
+ }
  @Test void savedCadenceIsSeparateFromRuntimePackageAndReadDoesNotCreateExecution()throws Exception{
   var f=fixture();assertThat(f.config.path("runtime_apply_state").asText()).isEqualTo("PENDING");assertThat(view(f).context().path("start_allowed").asBoolean()).isTrue();view(f);
   assertThat(helper.base.db.queryForObject("SELECT COUNT(*) FROM amvp_focus_runs WHERE session_uuid=?",Integer.class,f.session)).isZero();

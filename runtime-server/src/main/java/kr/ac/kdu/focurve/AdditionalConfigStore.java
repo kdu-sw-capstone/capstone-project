@@ -40,6 +40,25 @@ final class AdditionalConfigStore {
   contract.validate("Uuid",a.json.valueToTree(configId));
   return reads.execute(tx->{var row=owned(i,configId);String active=binding(i,row.get("executor_id").toString(),false);check(row.get("owner_binding_id").equals(active),404,"RESOURCE_NOT_FOUND");return record(row);});
  }
+ /** OP-01 deletion tracking: storage acceptance is never an effect confirmation. */
+ ObjectNode operation(Identity principal,String operationId){
+  contract.validate("Uuid",a.json.valueToTree(operationId));
+  return reads.execute(tx->{
+   var receipt=a.one("SELECT o.*,b.executor_id FROM amvp_operations o JOIN amvp_owner_bindings b ON b.binding_id=o.owner_binding_id WHERE o.operation_id=? AND b.user_id=? AND b.state='ACTIVE' AND b.closed_at IS NULL"+(principal.executor()==null?"":" AND b.executor_id=?"),principal.executor()==null?new Object[]{operationId,principal.user()}:new Object[]{operationId,principal.user(),principal.executor()});
+   check(receipt!=null,404,"RESOURCE_NOT_FOUND");String owner=binding(principal,receipt.get("executor_id").toString(),false);
+   check(receipt.get("owner_binding_id").equals(owner),404,"RESOURCE_NOT_FOUND");
+   String route=receipt.get("route").toString(),prefix="DELETE:/api/v1/amvp/configs/";
+   // Other stream receipts have their own schema/authority; do not reinterpret a usage ACK.
+   check(route.startsWith(prefix),503,"UNSUPPORTED_CONTRACT");String id=route.substring(prefix.length());contract.validate("Uuid",a.json.valueToTree(id));
+   var row=owned(principal,id);check(row.get("owner_binding_id").equals(owner)&&row.get("deleted_at")!=null,409,"RELEASE_UNCONFIRMED");
+   deletionReceipt(owner,row); // durable operation identity, original hash and immutable tombstone
+   var state=admission.appliedState(row);
+   boolean released=row.get("kind").equals("SITE_TIME")&&state.state().equals("NOT_APPLICABLE");
+   String status=released?"CONFIRMED":state.state().equals("UNKNOWN")||state.state().equals("APPLIED")?"IN_DOUBT":"RELEASE_PENDING";
+   ObjectNode result=a.obj("operation_id",operationId,"state",status,"actual_effect_confirmed",released,"error_code",status.equals("IN_DOUBT")?"RELEASE_UNCONFIRMED":null);
+   contract.validate("OperationState",result);return result;
+  });
+ }
  private Map<String,Object> owned(Identity i,String configId) {
   var row=a.one("SELECT c.*,b.executor_id FROM amvp_configs c JOIN amvp_owner_bindings b ON b.binding_id=c.owner_binding_id WHERE c.config_id=? AND b.user_id=?"+(i.executor()==null?"":" AND b.executor_id=?"),i.executor()==null?new Object[]{configId,i.user()}:new Object[]{configId,i.user(),i.executor()});
   check(row!=null,404,"RESOURCE_NOT_FOUND");return row;

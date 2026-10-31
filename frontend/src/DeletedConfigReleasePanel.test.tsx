@@ -3,10 +3,19 @@ import {beforeEach,afterEach,it,expect,vi} from "vitest";
 import DeletedConfigReleasePanel from "./DeletedConfigReleasePanel";
 import {readConfig,listSiteTimeDeletions,type ConfigRecord} from "./additionalConfigApi";
 import {configDelivery} from "./runtimeDeliveryState";
+import {readConfigOperation} from "./configOperationApi";
 vi.mock("./additionalConfigApi",()=>({readConfig:vi.fn(),listSiteTimeDeletions:vi.fn()}));
+vi.mock("./configOperationApi",()=>({readConfigOperation:vi.fn()}));
 const executor=crypto.randomUUID(),id=crypto.randomUUID(),targets=[{executor,id,previousVersion:1}];
 const row=(state:ConfigRecord['runtime_apply_state']):ConfigRecord=>({config_id:id,executor_id:executor,version:2,deleted_at:"2026-10-30T00:00:00.000Z",updated_at:"2026-10-30T00:00:00.000Z",saved_state:"SAVED",runtime_apply_state:state,saved_runtime_revision:2,applied_runtime_revision:null,next_focus_revision:2,value:{kind:"SITE_TIME",enabled:true}});
-beforeEach(()=>vi.mocked(listSiteTimeDeletions).mockResolvedValue([]));
+beforeEach(()=>{vi.mocked(listSiteTimeDeletions).mockResolvedValue([]);vi.mocked(readConfigOperation).mockReset();});
+it("tracks the accepted operation without promoting an uncertain receipt to release",async()=>{
+ const operationId=crypto.randomUUID();vi.mocked(readConfig).mockResolvedValue(row("NOT_APPLICABLE"));vi.mocked(readConfigOperation).mockResolvedValueOnce({operation_id:operationId,state:"IN_DOUBT",actual_effect_confirmed:false,error_code:"RELEASE_UNCONFIRMED"}).mockResolvedValueOnce({operation_id:operationId,state:"CONFIRMED",actual_effect_confirmed:true,error_code:null});
+ render(<DeletedConfigReleasePanel executor={executor} targets={[{...targets[0],operationId}]}/>);await screen.findByText(/해제 결과 미확인/);expect(screen.queryByText(/실제 해제 확인됨/)).not.toBeInTheDocument();fireEvent.click(screen.getByText("삭제 요청 해제 상태 다시 조회"));await screen.findByText(/실제 해제 확인됨/);expect(readConfigOperation).toHaveBeenCalledWith(operationId,expect.any(AbortSignal));
+});
+it("operation lookup failure preserves the obligation instead of repeating DELETE",async()=>{
+ vi.mocked(readConfigOperation).mockRejectedValue(new Error("offline"));render(<DeletedConfigReleasePanel executor={executor} targets={[{...targets[0],operationId:crypto.randomUUID()}]}/>);await screen.findByRole("alert");expect(readConfig).not.toHaveBeenCalled();expect(screen.queryByText(/요청이 없습니다/)).not.toBeInTheDocument();
+});
 afterEach(()=>{cleanup();vi.mocked(readConfig).mockReset();vi.mocked(listSiteTimeDeletions).mockReset();});
 it("never promotes a deleted APPLIED row or Content absence to release success",()=>{expect(configDelivery(row("APPLIED")).state).toBe("UNKNOWN");expect(configDelivery({...row("NOT_APPLICABLE"),value:{kind:"CONTENT"}}).state).toBe("PENDING");});
 it("rebuilds pending and UNKNOWN from the server after a fresh mount with zero memory refs",async()=>{vi.mocked(listSiteTimeDeletions).mockResolvedValueOnce([row("PENDING")]).mockResolvedValueOnce([row("UNKNOWN")]);const first=render(<DeletedConfigReleasePanel executor={executor} targets={[]}/>);await screen.findByText(/실제 해제 확인 대기/);first.unmount();render(<DeletedConfigReleasePanel executor={executor} targets={[]}/>);await screen.findByText(/해제 결과 미확인/);expect(readConfig).not.toHaveBeenCalled();expect(listSiteTimeDeletions).toHaveBeenCalledTimes(2);});
