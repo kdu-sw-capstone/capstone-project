@@ -13,8 +13,12 @@ function setup(Adapter=MemberA1Adapter){
  const session={session_id:randomUUID(),executor_id:owner.executor_id,owner_user_id:'7',source:'SCHEDULE',origin:'MEMBER',planned_end_at:occurrence.scheduled_end_at,execution_status:'STARTING'};
  const a=new Adapter({auth:{},core:{verifyScheduledDeadline:async()=>true},db:{},authority:{},inspectGuest:async()=>({active:false,unresolved:false,cleanup:false})});
  a.identity=async()=>({...owner});
- const h={a,body,calls,schedule,occurrence,session,result:occurrence,ticks:()=>ticks};
- a.request=async(path,payload)=>{calls.push({path,payload:structuredClone(payload)});if(path.startsWith('/schedules?'))return {items:[schedule],has_more:false,next_cursor:null};if(path.endsWith('/occurrences'))return {items:[{...occurrence,session_id:session.session_id}],has_more:false,next_cursor:null};if(path==='/schedule-occurrences/claim')return structuredClone(h.result);if(path.startsWith('/sessions/'))return structuredClone(session);throw Error('UNEXPECTED_ROUTE');};
+ const h={a,body,calls,schedule,occurrence,session,result:occurrence,ticks:()=>ticks,bundle:null,registryRows:[],root:null,startIntent:null,idleChecks:0};
+ a.core.bundle=async()=>structuredClone(h.bundle);a.core.registry={rows:async()=>structuredClone(h.registryRows)};
+ a.authority.current=async()=>structuredClone(h.root);a.authority.idle=async()=>{h.idleChecks++;if(h.root?.phase==='ACTIVE')throw Error('ROOT_OBLIGATION_EXISTS');};
+ a.read=async key=>key==='member:start-intent'?structuredClone(h.startIntent):null;
+ a.status=async()=>({local_status:h.bundle?.a.session_status??'IDLE',session_id:h.bundle?.a.session_id??null});
+ a.request=async(path,payload,headers={},beforeSend=null)=>{if(beforeSend)await beforeSend();calls.push({path,payload:structuredClone(payload)});if(path.startsWith('/schedules?'))return {items:[schedule],has_more:false,next_cursor:null};if(path.endsWith('/occurrences'))return {items:[{...occurrence,session_id:session.session_id}],has_more:false,next_cursor:null};if(path==='/schedule-occurrences/claim')return structuredClone(h.result);if(path.startsWith('/sessions/'))return structuredClone(session);throw Error('UNEXPECTED_ROUTE');};
  a.tickInner=async()=>{ticks++;return {local_status:'NATIVE_VERIFYING',session_id:session.session_id};};return h;
 }
 test('conflict returns existing occurrence and never falls back to manual START',async()=>{
@@ -27,7 +31,7 @@ test('STARTING re-read enters existing command path; transport result is not RUN
 });
 test('lost response retry uses exact occurrence identity, never creates a new START request',async()=>{
  const h=setup(),request=h.a.request;let first=true;
- h.a.request=async(p,b)=>{if(p==='/schedule-occurrences/claim'&&first){first=false;h.calls.push({path:p,payload:structuredClone(b)});throw Error('NETWORK_UNCONFIRMED');}return request(p,b);};
+ h.a.request=async(p,b,...rest)=>{if(p==='/schedule-occurrences/claim'&&first){first=false;h.calls.push({path:p,payload:structuredClone(b)});throw Error('NETWORK_UNCONFIRMED');}return request(p,b,...rest);};
  await assert.rejects(h.a.claimSchedule(h.body),/NETWORK_UNCONFIRMED/);await h.a.claimSchedule(h.body);
  const claims=h.calls.filter(c=>c.path==='/schedule-occurrences/claim');assert.deepEqual(claims[0].payload,claims[1].payload);
 });
@@ -44,7 +48,7 @@ test('owner change after claim cannot consume receipt as current execution',asyn
  await assert.rejects(h.a.claimSchedule(h.body),/OWNER_MISMATCH/);assert.equal(h.ticks(),0);
 });
 test('missing actor is a real failure; no success or local session is manufactured',async()=>{
- const h=setup(),read=h.a.request;h.a.request=async(p,b)=>{if(p==='/schedule-occurrences/claim')throw Error('CAPABILITY_NOT_VERIFIED');return read(p,b);};
+ const h=setup(),read=h.a.request;h.a.request=async(p,b,...rest)=>{if(p==='/schedule-occurrences/claim')throw Error('CAPABILITY_NOT_VERIFIED');return read(p,b,...rest);};
  await assert.rejects(h.a.claimSchedule(h.body),/CAPABILITY_NOT_VERIFIED/);assert.equal(h.ticks(),0);
 });
 test('invalid input, END-only context and Guest obligations block before claim',async()=>{
@@ -66,7 +70,7 @@ test('production default without fixed-end authority refuses before Server claim
 
 test('different durable occurrence session cannot reach command dispatch',async()=>{
  const h=setup();h.result=h.session;const request=h.a.request;
- h.a.request=async(p,b)=>p.endsWith('/occurrences')?{items:[{...h.occurrence,session_id:randomUUID()}],has_more:false,next_cursor:null}:request(p,b);
+ h.a.request=async(p,b,...rest)=>p.endsWith('/occurrences')?{items:[{...h.occurrence,session_id:randomUUID()}],has_more:false,next_cursor:null}:request(p,b,...rest);
  await assert.rejects(h.a.claimSchedule(h.body),/SESSION_UNCONFIRMED/);assert.equal(h.ticks(),0);
 });
 test('another local execution cannot be returned as this occurrence result',async()=>{
@@ -75,7 +79,7 @@ test('another local execution cannot be returned as this occurrence result',asyn
 });
 test('unconfirmed paginated occurrence lookup is never treated as a binding proof',async()=>{
  const h=setup();h.result=h.session;const request=h.a.request;
- h.a.request=async(p,b)=>p.endsWith('/occurrences')?{items:[],has_more:true,next_cursor:'opaque'}:request(p,b);
+ h.a.request=async(p,b,...rest)=>p.endsWith('/occurrences')?{items:[],has_more:true,next_cursor:'opaque'}:request(p,b,...rest);
  await assert.rejects(h.a.claimSchedule(h.body),/OCCURRENCE_UNCONFIRMED/);assert.equal(h.ticks(),0);
 });
 
@@ -86,4 +90,88 @@ test('shipped adapter bundle preserves occurrence binding and default activation
  assert.equal((await h.a.claimSchedule(h.body)).execution.session_id,h.session.session_id);
  delete h.a.core.verifyScheduledDeadline;
  await assert.rejects(h.a.claimSchedule(h.body),/SCHEDULE_FIXED_END_UNSUPPORTED/);
+ busy(h);const before=h.calls.length;
+ await assert.rejects(h.a.claimSchedule(h.body),/CLEANUP_REQUIRED/);
+ assert.ok(h.calls.slice(before).every(c=>c.payload===undefined));
+});
+
+function busy(h,id=randomUUID(),status='UNKNOWN'){
+ h.bundle={a:{session_id:id,owner_context:owner.owner_key,executor_id:owner.executor_id,session_status:status,cleanup_pending:true},state:{journal:{desired:'APPLIED',observed:'UNCONFIRMED'}},bindings:[]};
+ return id;
+}
+test('P2 different UNKNOWN member execution blocks Server claim before mutation',async()=>{
+ const h=setup();busy(h);await assert.rejects(h.a.claimSchedule(h.body),/CLEANUP_REQUIRED/);
+ assert.equal(h.calls.filter(c=>c.path==='/schedule-occurrences/claim').length,0);assert.equal(h.ticks(),0);
+});
+
+const claims=h=>h.calls.filter(c=>c.path==='/schedule-occurrences/claim');
+test('same occurrence UNKNOWN recovery is GET-only and preserves cleanup without replay',async()=>{
+ const h=setup();busy(h,h.session.session_id);const before=structuredClone(h.bundle);
+ // A recovery read does not require or activate the currently unsupported deadline capability.
+ delete h.a.core.verifyScheduledDeadline;
+ const r=await h.a.claimSchedule(h.body);
+ assert.equal(r.occurrence_session_id,h.session.session_id);assert.equal(r.execution.local_status,'UNKNOWN');
+ assert.equal(r.read_only,true);assert.equal(r.recovery_required,true);
+ assert.equal(claims(h).length,0);assert.equal(h.ticks(),0);assert.ok(h.calls.every(c=>c.payload===undefined));assert.deepEqual(h.bundle,before);
+});
+test('same session cannot substitute a different occurrence start, version or schedule',async()=>{
+ for(const change of [{scheduled_start_at:'2026-11-03T00:00:00.000Z'},{version:3},{schedule_id:randomUUID()}]){
+  const h=setup();busy(h,h.session.session_id);
+  await assert.rejects(h.a.claimSchedule({...h.body,...change}),/CLEANUP_REQUIRED/);
+  assert.equal(claims(h).length,0);assert.equal(h.ticks(),0);
+ }
+});
+test('read-only occurrence recovery rejects foreign saved owner or changed fixed end',async()=>{
+ for(const field of ['owner_user_id','executor_id','planned_end_at','source']){
+  const h=setup();busy(h,h.session.session_id);h.session[field]='wrong';
+  await assert.rejects(h.a.claimSchedule(h.body),/SESSION_UNCONFIRMED/);assert.equal(claims(h).length,0);
+ }
+});
+test('terminal status alone cannot erase unresolved binding or operation debt',async()=>{
+ for(const kind of ['binding','operation']){
+  const h=setup(),sid=randomUUID();busy(h,sid,'ENDED');h.bundle.a.cleanup_pending=false;h.bundle.state.journal={desired:'RELEASED',observed:'RELEASED'};
+  h.registryRows=[kind==='binding'?{record_kind:'A1_BINDING',resolution:'NONE',cleanup_pending:true,scope:{session_id:sid,owner_context:owner.owner_key}}:{record_kind:'A1_OPERATION',phase:'IN_DOUBT',command:{owner_context:owner.owner_key,payload:{scope:{session_id:sid}}}}];
+  await assert.rejects(h.a.claimSchedule(h.body),/CLEANUP_REQUIRED/);assert.equal(claims(h).length,0);assert.equal(h.ticks(),0);
+ }
+});
+test('fully released terminal aggregate permits a new claim',async()=>{
+ const h=setup();busy(h,randomUUID(),'ENDED');h.bundle.a.cleanup_pending=false;h.bundle.state.journal={desired:'RELEASED',observed:'RELEASED'};
+ assert.equal((await h.a.claimSchedule(h.body)).status,'WAITING_CONFLICT');assert.equal(claims(h).length,1);assert.ok(h.idleChecks>0);
+});
+test('unresolved manual start intent blocks claim and completed intent does not',async()=>{
+ const h=setup();h.startIntent={id:randomUUID(),completed:false};
+ await assert.rejects(h.a.claimSchedule(h.body),/START_INTENT_CONFLICT/);assert.equal(claims(h).length,0);
+ h.startIntent.completed=true;await h.a.claimSchedule(h.body);assert.equal(claims(h).length,1);
+});
+test('root authority and foreign cleanup prohibit new Server mutation',async()=>{
+ for(const kind of ['root','foreign-binding']){
+  const h=setup();
+  if(kind==='root')h.root={...owner,session_id:randomUUID(),phase:'ACTIVE',owner_key:'MEMBER:8'};
+  else h.registryRows=[{record_kind:'A1_BINDING',scope:{owner_context:'MEMBER:8',session_id:h.session.session_id},resolution:'NONE'}];
+  await assert.rejects(h.a.claimSchedule(h.body),/ROOT_OBLIGATION_EXISTS|CLEANUP_REQUIRED/);assert.equal(claims(h).length,0);
+ }
+});
+test('authority idle refusal and storage failure both stop claim before POST',async()=>{
+ for(const kind of ['authority','storage']){
+  const h=setup();if(kind==='authority')h.a.authority.idle=async()=>{throw Error('ROOT_OBLIGATION_EXISTS');};else h.a.core.registry.rows=async()=>{throw Error('STORE_UNCONFIRMED');};
+  await assert.rejects(h.a.claimSchedule(h.body),/ROOT_OBLIGATION_EXISTS|STORE_UNCONFIRMED/);assert.equal(claims(h).length,0);
+ }
+});
+test('busy state arising during async fixed-end verification blocks mutation',async()=>{
+ const h=setup();h.a.core.verifyScheduledDeadline=async()=>{busy(h);return true;};
+ await assert.rejects(h.a.claimSchedule(h.body),/CLEANUP_REQUIRED/);assert.equal(claims(h).length,0);
+});
+test('real transport rechecks local obligations after async credential acquisition',async()=>{
+ const h=setup(),mock=h.a.request;let posts=0;
+ h.a.auth.credentials=async()=>{busy(h);return {...owner,access_token:'synthetic'};};
+ h.a.fetch=async()=>{posts++;throw Error('MUST_NOT_SEND');};
+ h.a.request=async(p,b,headers,guard)=>p==='/schedule-occurrences/claim'?MemberA1Adapter.prototype.request.call(h.a,p,b,headers,guard):mock(p,b,headers,guard);
+ await assert.rejects(h.a.claimSchedule(h.body),/CLEANUP_REQUIRED/);assert.equal(posts,0);assert.equal(h.ticks(),0);
+});
+test('real transport still sends one claim when final local guard confirms idle',async()=>{
+ const h=setup(),mock=h.a.request;let posts=0;
+ h.a.auth.credentials=async()=>({...owner,access_token:'synthetic'});
+ h.a.fetch=async(url,init)=>{posts++;assert.equal(init.method,'POST');assert.deepEqual(JSON.parse(init.body),h.body);return {ok:true,json:async()=>h.occurrence};};
+ h.a.request=async(p,b,headers,guard)=>p==='/schedule-occurrences/claim'?MemberA1Adapter.prototype.request.call(h.a,p,b,headers,guard):mock(p,b,headers,guard);
+ await h.a.claimSchedule(h.body);assert.equal(posts,1);
 });

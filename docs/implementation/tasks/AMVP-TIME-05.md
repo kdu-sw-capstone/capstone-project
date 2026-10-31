@@ -72,3 +72,14 @@
 - 배포 adapter bundle만 재생성했다. Core/Content bundle, manifest, shared schema/Server 생산 코드는 변경하지 않았다.
 - 리뷰 필요: 기존 회원 adapter·예약/소유권·실행 전달에 영향을 줄 수 있으므로 다훈(Server actor/occurrence/응답 결속)·지민(Content scope/복원 경계)의 담당 리뷰가 필요. 제품 실행/고정 종료 완료 PR이 아닌 기본 거절을 유지한 연결 준비 단위다. 자동 병합/활성화는 하지 않는다.
 - 남은 작업: Core 고정 종료 집행·검증(종민), Server Actor(다훈), 이미발급 old-version occurrence 조회/종료·재시작/응답 유실·실제 적용/해제 수용. 현재 설정을 바꿔 이전 실행의 duration/end를 다시 계산하지 않아야 한다. 이 변경은 기존/종료 occurrence 전체 복구 기능을 제공하지 않는다.
+
+## 2026-10-31 PR46 P2 — Server claim 이전 로컬 복원 의무 검사
+
+- 기준 HEAD573a5c9439e2b7f51cffae078ed9dd8014601b4f, 기존 feature/additional-mvp-schedule-claim에서 수정. 다훈 리뷰4430202605의 UNKNOWN/cleanup 반례를 먼저 실패로 재현한 뒤 수정했다. PR43/48 및 다른 작업 공간은 변경하지 않았다.
+- claim POST 전에 Member Core aggregate(owner/executor/status/journal), unresolved binding·미완료 operation, RootAuthority, Guest 의무와 미완료 member:start-intent를 읽는다. UNKNOWN/HOLD/활성 상태·복원 미확인·외부 owner·저장 실패를 idle로 승격하지 않는다. 현재 root ACTIVE 또는 복원 의무가 있으면 새로운 occurrence mutation을 금지한다.
+- 같은 occurrence 재시도는 schedule_id/start/version과 Server occurrence/session/owner/executor/fixed end를 결속한 GET-only 조회로 구분한다. read_only=true/recovery_required=true와 기존 local 상태를 반환하며 POST·tickInner·APPLY 재실행·cleanup 삭제·RUNNING 승격을 하지 않는다. 다른 occurrence, 복수 실행 의무, 불완전 조회 또는 식별 불일치는 거절한다. old-version 조회에서 현재 schedule duration으로 end를 재계산하지 않는다. 이 읽기 경로는 기존 복원 작업을 실행해 주는 기능이 아니다.
+- 새 claim의 fixed-end verifier 뒤에 로컬 상태를 재확인하고, 실제 request가 인증 정보를 획득한 뒤 fetch 직전에도 같은 guard를 실행한다. adapter serial을 재사용하며 Core serial/DB transaction을 네트워크 동안 붙잡거나 새 영속 원장/공용 계약을 추가하지 않는다.
+- claim 시험26/26 PASS(기존14+신규12): P2에서 POST0, 같은 발생 GET-only 회복·UNKNOWN/debt 보존, 다른 start/version/schedule, owner/fixed end 불일치, terminal 뒤 binding/operation 의무, 정상 released 신규 claim, start-intent 충돌, root/다른 owner, 저장 오류, 비동기 verifier/credentials 중 상태 변경, 실제 request guard 정상 전송, 갱신된 배포 bundle 포함.
+- 검증: focused5파일78/78, 전체 Extension828/828(fail0/skip0), 계약6/6, npm --prefix extension run check, git diff --check, adapter source/bundle exact match PASS. Node24.19.0에서 실행. API·Core 상태는 모의이며 실제 request 시험도 fetch 대체를 사용했다. 실제 Server/Chrome/Native·고정 종료 제품 수용 미실행.
+- 재현 명령(저장소 루트): node --test extension/tests/member-schedule-claim.test.mjs; 기존 PR 본문의 focused/전체/계약/check 명령도 동일하다.
+- 종료 상태: P2 수정·로컬 회귀 완료, PR46 최신 HEAD로 Push 후 다훈·지민 재리뷰 및 원격 CI 확인 필요. 이전 Approve를 수정본 승인으로 간주하지 않는다. 실제 Core verifyScheduledDeadline/Server Actor 연결과 예약 제품 실행은 계속 미완료이며 기본 거절을 보존한다. 병합/활성화하지 않는다.
