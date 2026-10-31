@@ -16,8 +16,9 @@ async function fixture(t,{html=youtube,url='https://www.youtube.com/watch?v=samp
   const page=await context.newPage();await page.goto(url);
   await page.evaluate(async features=>{
     const{ContentSessionAdapter}=await import('/content/session-adapter.mjs');
+    const{ClaimLedger}=await import('/content/claim-ledger.mjs');window.ledger=new ClaimLedger(document);
     window.current=true;window.navigationAllowed=false;window.events=[];window.invalidations=[];
-    window.options={owner_binding_id:'00000000-0000-4000-8000-000000000001',binding_id:'00000000-0000-4000-8000-000000000002',
+    window.options={ledger,owner_binding_id:'00000000-0000-4000-8000-000000000001',binding_id:'00000000-0000-4000-8000-000000000002',
       features:features.map(feature_id=>({feature_id,enabled:true,required:true})),isCurrent:()=>current,
       authorizeNavigation:()=>navigationAllowed,onObservation:r=>events.push(r),onInvalidated:r=>invalidations.push(r)};
     window.make=override=>new ContentSessionAdapter(document,{...options,...override});window.adapter=make();
@@ -151,4 +152,77 @@ for(const field of ['session','generation','document'])test(`caller ${field} fen
 });
 test('a second ledger cannot bypass the same-document adapter scope fence',async t=>{
   const page=await fixture(t);assert.equal(await page.evaluate(async()=>{const{ClaimLedger}=await import('/content/claim-ledger.mjs');try{make({ledger:new ClaimLedger(document)});return false;}catch(e){return e.message;}}),'SHARED_LEDGER_REQUIRED');
+});
+
+for(const kind of ['watch','navigation','instagram','grayscale'])for(const mode of ['invalidate','immediate-release'])test(`P2 ${kind}: ${mode} during a setter stops next target/property and retains retryable cleanup`,async t=>{
+  const ig=kind==='instagram',id=ig?'IG-01':kind==='watch'?'YT-03':kind==='grayscale'?'YT-09':'YT-07';
+  const page=await fixture(t,{html:ig?'<main></main>':'<ytd-watch-flexy></ytd-watch-flexy>',url:ig?'https://www.instagram.com/stories/sample/1/':'https://www.youtube.com/watch?v=sample',features:[id]});
+  await page.evaluate(({kind,mode})=>{
+    window.revoked=false;window.lateWrites=0;window.inner=null;
+    adapter=make({onInvalidated:()=>{if(mode==='immediate-release')inner=adapter.release();}});adapter.start();
+    const tag=kind==='watch'?'ytd-comments':kind==='navigation'?'ytd-masthead':kind==='grayscale'?'ytd-app':'img';
+    window.first=document.createElement(tag);window.second=document.createElement(tag);
+    first.style.display='flex';second.style.display='grid';
+    if(kind==='grayscale')first.style.filter='brightness(0.8)';
+    const property=kind==='grayscale'?'filter':'display';
+    const set=first.style.setProperty.bind(first.style);first.style.setProperty=(n,v,p)=>{set(n,v,p);if(n===property&&(kind==='grayscale'?v.includes('grayscale'):v==='none')&&!revoked){revoked=true;adapter.invalidate('CORE_REVOKED');}};
+    let inert=false;Object.defineProperty(first,'inert',{get:()=>inert,set:v=>{if(revoked&&v===true)lateWrites++;inert=v;}});
+    const setSecond=second.style.setProperty.bind(second.style);second.style.setProperty=(n,v,p)=>{if(revoked&&n===property&&(kind==='grayscale'?v.includes('grayscale'):v==='none'))lateWrites++;setSecond(n,v,p);};
+    (kind==='instagram'?document.querySelector('main'):document.querySelector('ytd-watch-flexy')).append(first,second);
+  },{kind,mode});
+  await page.waitForFunction(()=>revoked);
+  const r=await page.evaluate(()=>({state:adapter.inspect(),inner,lateWrites,second:second.style.display,debt:ledger.inspect()}));
+  assert.equal(r.lateWrites,0);assert.equal(r.second,'grid');assert.equal(r.state.cleanup_pending,true);assert.equal(r.debt.remaining_targets,1);
+  if(mode==='immediate-release'){assert.equal(r.inner.cleanup_pending,true);assert.equal(r.inner.features[0].cleanup.scan_pending,true);}
+  const retried=await page.evaluate(()=>({state:adapter.release(),debt:ledger.inspect(),display:first.style.display}));
+  assert.equal(retried.state.cleanup_pending,false);assert.equal(retried.debt.remaining_targets,0);assert.equal(retried.display,'flex');
+  if(kind==='grayscale')assert.equal(await page.evaluate(()=>first.style.filter),'brightness(0.8)');
+});
+
+test('P2 partial cleanup after mid-scan release remains pending until real retry and preserves another owner',async t=>{
+  const page=await fixture(t,{html:'<ytd-watch-flexy></ytd-watch-flexy>',features:['YT-03']});
+  await page.evaluate(()=>{
+    window.revoked=false;adapter=make({onInvalidated:()=>adapter.release()});adapter.start();
+    window.first=document.createElement('ytd-comments');first.style.setProperty('display','flex','important');
+    const foreign=document.createElement('div');document.body.append(foreign);window.foreign=foreign;ledger.hide('other-owner',foreign);
+    const set=first.style.setProperty.bind(first.style);window.failRestore=true;
+    first.style.setProperty=(n,v,p)=>{if(n==='display'&&v==='flex'&&failRestore){set(n,'block',p);throw Error('partial cleanup');}set(n,v,p);if(n==='display'&&v==='none'&&!revoked){revoked=true;adapter.invalidate();}};
+    document.querySelector('ytd-watch-flexy').append(first);
+  });await page.waitForFunction(()=>revoked);
+  const failed=await page.evaluate(()=>adapter.release());assert.equal(failed.cleanup_pending,true);assert.equal(failed.features[0].cleanup.restored,false);
+  const r=await page.evaluate(()=>{failRestore=false;const state=adapter.release();return{state,debt:ledger.inspect(),foreign:foreign.style.display,display:first.style.display,priority:first.style.getPropertyPriority('display')};});
+  assert.equal(r.state.cleanup_pending,false);assert.equal(r.debt.remaining_targets,1);assert.equal(r.foreign,'none');assert.equal(r.display,'flex');assert.equal(r.priority,'important');
+});
+
+test('P2 releaseFeature during scan fences that feature immediately while other features continue',async t=>{
+  const page=await fixture(t,{html:'<ytd-watch-flexy></ytd-watch-flexy>',features:['YT-03','YT-04']});
+  await page.evaluate(()=>{adapter.start();window.inner=null;const a=document.createElement('ytd-comments'),b=document.createElement('ytd-comments'),related=document.createElement('div');b.id='late-comment';related.id='related';const set=a.style.setProperty.bind(a.style);a.style.setProperty=(n,v,p)=>{set(n,v,p);if(n==='display'&&v==='none'&&!inner)inner=adapter.releaseFeature('YT-03');};document.querySelector('ytd-watch-flexy').append(a,b,related);});
+  await page.waitForFunction(()=>inner!==null);assert.equal(await page.evaluate(()=>inner.restored),false);
+  assert.equal(await page.evaluate(()=>adapter.inspect().features.find(f=>f.feature_id==='YT-03').active),false);
+  assert.equal(await page.locator('#late-comment').evaluate(e=>e.style.display),'');assert.equal(await page.locator('#related').evaluate(e=>e.style.display),'none');
+  assert.equal((await page.evaluate(()=>adapter.releaseFeature('YT-03'))).restored,true);
+  assert.equal(await page.locator('#related').evaluate(e=>e.style.display),'none');assert.equal((await page.evaluate(()=>adapter.release())).cleanup_pending,false);
+});
+
+for(const cancel of ['pagehide','spa','authority'])test(`P2 native autoplay click/${cancel} stops subsequent OFF transitions and supports cleanup retry`,async t=>{
+  const page=await fixture(t,{html:'<ytd-watch-flexy></ytd-watch-flexy>',features:['YT-10']});
+  await page.evaluate(cancel=>{window.revoked=false;window.afterOff=0;window.inner=null;adapter=make({onInvalidated:()=>{inner=adapter.release();}});adapter.start();
+    for(let i=0;i<2;i++){const b=document.createElement('button');b.id='toggle-'+i;b.className='ytp-autonav-toggle-button';b.setAttribute('aria-checked','true');b.addEventListener('click',()=>{
+      const next=b.getAttribute('aria-checked')==='true'?'false':'true';b.setAttribute('aria-checked',next);
+      if(next==='false'&&revoked)afterOff++;
+      if(i===0&&next==='false'&&!revoked){revoked=true;if(cancel==='pagehide')window.dispatchEvent(new Event('pagehide'));else if(cancel==='spa')history.pushState({},'','/watch?v=next');else current=false;}
+    });document.querySelector('ytd-watch-flexy').append(b);}
+  },cancel);await page.waitForFunction(()=>revoked&&adapter.inspect().closed);
+  assert.equal(await page.evaluate(()=>afterOff),0);assert.equal(await page.locator('#toggle-1').getAttribute('aria-checked'),'true');
+  assert.equal(await page.evaluate(()=>inner.cleanup_pending),true);
+  assert.equal((await page.evaluate(()=>adapter.release())).cleanup_pending,false);assert.equal(await page.locator('#toggle-0').getAttribute('aria-checked'),'true');
+});
+
+test('P2 IG pause callback pagehide prevents the next media pause and keeps cleanup pending',async t=>{
+  const page=await fixture(t,{html:'<main></main>',url:'https://www.instagram.com/stories/sample/1/',features:['IG-01']});
+  await page.evaluate(()=>{window.firstPauses=0;window.secondPauses=0;window.inner=null;adapter=make({onInvalidated:()=>{inner=adapter.release();}});adapter.start();
+    for(let i=0;i<2;i++){const v=document.createElement('video');Object.defineProperty(v,'paused',{get:()=>true});v.pause=()=>{if(i===0){firstPauses++;window.dispatchEvent(new Event('pagehide'));}else secondPauses++;};document.querySelector('main').append(v);}
+  });await page.waitForFunction(()=>firstPauses===1);
+  assert.equal(await page.evaluate(()=>secondPauses),0);assert.equal(await page.evaluate(()=>inner.cleanup_pending),true);
+  assert.equal((await page.evaluate(()=>adapter.release())).cleanup_pending,false);assert.equal(await page.evaluate(()=>ledger.inspect().remaining_targets),0);
 });

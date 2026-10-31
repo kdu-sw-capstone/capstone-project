@@ -31,6 +31,17 @@ test('shared node stays hidden until the final independent owner releases', () =
   assert.equal(element.inert, false);
 });
 
+test('reentrant release during a guarded property write stays pending and cannot lose the next property obligation',()=>{
+  const {ledger,element}=fixture();let allowed=true,inner;
+  const set=element.style.setProperty.bind(element.style);
+  element.style.setProperty=(n,v,p)=>{set(n,v,p);if(n==='display'&&v==='none'){allowed=false;inner=ledger.release('own');}};
+  assert.equal(ledger.hide('own',element,()=>allowed),false);
+  assert.equal(inner.restored,false);assert.equal(inner.cleanup_pending,true);
+  assert.equal(element.inert,false);assert.equal(ledger.inspect('own').remaining_targets,1);
+  assert.equal(ledger.release('own').restored,true);assert.equal(ledger.inspect().remaining_targets,0);
+  assert.equal(element.style.getPropertyValue('display'),'grid');
+});
+
 test('grayscale composes with page filter and two owners without accumulating', () => {
   const { ledger, element } = fixture();
   for (let i = 0; i < 3; i++) assert.equal(ledger.grayscale('focus:gray', element), true);

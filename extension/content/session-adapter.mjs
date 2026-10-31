@@ -73,19 +73,20 @@ export class ContentSessionAdapter {
   }
   invalidate(reason='AUTHORITY_REVOKED'){
     if(this.#closed)return this.inspect();this.#closed=true;this.#invalidated=reason;
-    // Existing sessions retain their claims/debt; their guarded scans disconnect
-    // observers without changing DOM. Re-enabling a callback never resumes them.
-    for(const session of new Set([...this.#entries.values()].filter(e=>!e.released).map(e=>e.session)))session.scan();
+    // Stop synchronously without recursively scanning an in-flight target list.
+    // Claims/debt remain retryable; re-enabling a callback never resumes them.
+    for(const session of new Set([...this.#entries.values()].filter(e=>!e.released).map(e=>e.session)))session.stop();
     this.#emit(this.#onInvalidated,{local_only:true,native_verified:false,reason,cleanup_pending:this.#entries.size>0});
     return this.inspect();
   }
   releaseFeature(feature_id){
     const e=this.#entries.get(feature_id);
     if(!e)throw Error('UNOWNED_CONTENT_FEATURE');
+    e.closing=true;
     if(!e.released){
       try{e.cleanup=WATCH.has(feature_id)?e.session.releaseFeature(feature_id):e.session.release();}
       catch{e.cleanup={local_only:true,restored:false,remaining_targets:null,error_count:1};}
-      e.released=e.cleanup.restored===true;
+      e.released=e.cleanup.restored===true&&e.cleanup.cleanup_pending!==true;
     }
     return structuredClone({feature_id,local_only:true,native_verified:false,...e.cleanup});
   }
@@ -105,6 +106,6 @@ export class ContentSessionAdapter {
       // Before release, a live session may own unobserved/failed mutations. Only
       // its verified release result can clear this conservative obligation.
       cleanup_pending:pending.length>0,pending_features:pending,
-      features:[...this.#entries].map(([feature_id,e])=>({feature_id,active:!this.#closed&&!e.released,observation:e.observation??null,cleanup:e.cleanup??null}))});
+      features:[...this.#entries].map(([feature_id,e])=>({feature_id,active:!this.#closed&&!e.released&&!e.closing,observation:e.observation??null,cleanup:e.cleanup??null}))});
   }
 }

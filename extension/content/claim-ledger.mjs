@@ -5,6 +5,7 @@ export class ClaimLedger {
   #document;
   #entries = new Map();
   #open = true;
+  #busy = false;
 
   constructor(document) { this.#document = document; }
 
@@ -12,8 +13,8 @@ export class ClaimLedger {
   // this exact document remains possible after new effects have been closed.
   suspend() { this.#open = false; }
 
-  hide(claim, element) { return this.#acquire(claim, element, ['display', 'inert']); }
-  grayscale(claim, element) { return this.#acquire(claim, element, ['filter']); }
+  hide(claim, element, canApply = () => true) { return this.#acquire(claim, element, ['display', 'inert'], canApply); }
+  grayscale(claim, element, canApply = () => true) { return this.#acquire(claim, element, ['filter'], canApply); }
 
   #read(element, property) {
     if (property === 'inert') return { value: element.inert };
@@ -35,8 +36,8 @@ export class ClaimLedger {
     return { value: `${base && base !== 'none' ? base + ' ' : ''}grayscale(1)`, priority: 'important' };
   }
 
-  #apply(element, property, entry) {
-    if (element.ownerDocument !== this.#document) return false;
+  #apply(element, property, entry, canApply = () => true) {
+    if (element.ownerDocument !== this.#document || canApply() !== true) return false;
     if (entry.pending?.kind === 'RESTORE') return false;
     const current = this.#read(element, property);
     // A page edit is the new baseline; never adopt another claim's owned value.
@@ -53,7 +54,9 @@ export class ClaimLedger {
     // Record intended ownership before the setter: a setter can mutate then throw.
     entry.written = next;
     entry.pending = {kind:'APPLY',target:next};
+    if (canApply() !== true || element.ownerDocument !== this.#document) return false;
     if (!this.#equal(current, next)) this.#write(element, property, next);
+    if (canApply() !== true || element.ownerDocument !== this.#document) return false;
     const written = this.#equal(this.#read(element, property), next);
     const verified = property === 'filter'
       ? written && /(?:^|\s)grayscale\(1\)$/.test(this.#document.defaultView.getComputedStyle(element).filter)
@@ -62,14 +65,19 @@ export class ClaimLedger {
     return verified;
   }
 
-  #acquire(claim, element, properties) {
+  #acquire(claim, element, properties, canApply) {
     if (typeof claim !== 'string' || !claim || claim.length > 256) throw Error('INVALID_CLAIM_ID');
     if (!this.#open) throw Error('DOCUMENT_EFFECTS_CLOSED');
     if (element?.ownerDocument !== this.#document) throw Error('FOREIGN_DOCUMENT');
+    // A page setter can synchronously call back into acquire/release. Never
+    // mutate an entry while an outer effect still owns its pending write.
+    if (this.#busy) return false;
+    if (canApply() !== true) return false;
     let entries = this.#entries.get(element);
     // Do not add another owner or reapply over an unresolved restoration.
     if ([...(entries?.values() ?? [])].some(entry => entry.pending?.kind === 'RESTORE')) return false;
     if (!entries) { entries = new Map(); this.#entries.set(element, entries); }
+    this.#busy = true;
     try {
       // Plan ALL properties before effect. This is an in-memory cleanup ledger,
       // not a replacement for the caller's effect-before-durable-write gate.
@@ -83,17 +91,20 @@ export class ClaimLedger {
       }
       let verified = true;
       for (const property of properties) {
-        if (!this.#apply(element, property, entries.get(property))) verified = false;
+        if (canApply() !== true || !this.#apply(element, property, entries.get(property), canApply)) { verified = false; break; }
       }
       // Inline values alone do not prove hiding against page/user styles.
       if (properties.includes('display')) {
         verified = this.#document.defaultView.getComputedStyle(element).display === 'none' && element.inert === true && verified;
       }
       return verified;
-    } catch { return false; }
+    } catch { return false; } finally { this.#busy = false; }
   }
 
   release(claim) {
+    if (this.#busy) return {restored:false,remaining_targets:this.inspect(claim).remaining_targets,error_count:0,cleanup_pending:true};
+    this.#busy = true;
+    try {
     let errors = 0;
     for (const [element, entries] of this.#entries) {
       for (const [property, entry] of entries) {
@@ -125,6 +136,7 @@ export class ClaimLedger {
     }
     const remaining = this.inspect(claim).remaining_targets;
     return { restored: errors === 0 && remaining === 0, remaining_targets: remaining, error_count: errors };
+    } finally { this.#busy = false; }
   }
 
   inspect(claim) {
