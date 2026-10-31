@@ -203,6 +203,50 @@
 - 별도 Draft PR 대상은 integration/additional-mvp-20261029. 선행 PR33→40→42→44 의존성과 기존 구독 수정 4cf38ec을 보존하며 기존 원격 PR의 HEAD·리뷰는 변경하지 않는다. 상단바만 비교할 기준은 시작 SHA이며 게시 결과의 SHA/PR 링크가 원본이다.
 - 코드/의존성/시험 fixture 변경 없이 사용자 결과와 게시 기록만 추가했으므로 자동106/106을 재실행하지 않는다. git diff --check PASS. 이번 단계에서 제품 Core/실제 BFCache·전체 레이아웃 검증 완료로 표시하지 않는다. develop·통합 브랜치 병합/자동병합은 하지 않는다. 다음은 다훈의 상단바 범위/본문·UI 보존/복원 리뷰, 종민의 재승인·cleanup 경계 리뷰다.
 
+### 2026-10-31 · YT-08 종료 카드 숨기기 착수
+
+- 담당 채지민, codex/content-endcards, 시작 기준 1a48bec1d239e15a77a76dfe01242be085d68101(PR45). clean 상태에서 별도 기능 브랜치로 분리. 기존 PR33/36/39/40/42/44/45·다른 담당 코드는 변경하지 않는다.
+- 기준: AGENTS.md, 개발운영.md, 통합현황.md, 본 작업카드, feature-registry.json YT-08/AC-YT-08-01~03, RC2 03_Wire_D06_복원.md/05_Content_Event_UI.md. 종료 추천 카드와 우측 추천(YT04), 다음 영상 자동 전환(YT10)은 별개다.
+- 범위: 일반 /watch의 현재 video-id에 결속된 player 안 종료 추천 카드 숨김/자기 claim 해제 복원. 자막·일반 재생조작·본문·우측 추천 보존. 기존 공통 원장/재승인 hook을 재사용한다. 실제 Core/native/frozen 정책 연결은 이번 독립 시험에서 구현하지 않는다. 흑백·Instagram 확장/Commit·Push/PR·병합은 별도다.
+
+### 2026-10-31 · YT-08 로컬 구현·사용자 시험 준비
+
+- 코드: endcards.mjs의 EndCardsSession. /watch에 단일 v가 있고 현재 ytd-watch-flexy의 video-id가 일치할 때, hidden tree가 아닌 #movie_player 내부의 .ytp-ce-element/.ytp-videowall-still/.ytp-suggestion-link만 대상으로 한다. 겹친 ancestor/descendant target은 합쳐 중복 claim을 줄인다. 전체 player/endscreen 컨테이너나 우측 related·페이지 본문을 가리지 않는다. 현재 실제 서비스/전체 레이아웃 selector 수용은 사용자 확인 대기다.
+- 영상·일반 재생 버튼·caption·FOCURVE 종료/오류 UI가 든 대상과 해당 보호 영역의 자손은 제외한다. autoplay toggle을 클릭하거나 media paused/muted/volume/currentTime을 변경하지 않는다. 자동 다음 영상 방지는 YT10이며 이 옵션으로 완료 처리하지 않는다.
+- NavigationSurfaceSession에 YT08 등록 및 기존 명시적 동기 재승인 경로를 재사용하고 video-id 변경을 관찰한다. 같은 watch 영상 SPA 시 기존 claim 복원 후 검증된 caller 재승인 및 현재 player ID 일치에 따라 적용, stale player는 미적용 대기. watch 이탈·권한 누락/거절은 scope 닫음, cleanup 실패는 목표/의무 보존 후 새 적용 중지. pagehide/BFCache는 새 권한 없이 재개하지 않는다. UUID·URL·모의 callback을 제품 native 권한 증거로 바꾸지 않는다.
+- 도구: build 복사 endcards 추가, TEST_ENDCARDS_APPLY/RELEASE/STATE와 popup 버튼/설명·시험 이름 변경만. 같은 shared ledger를 사용하며 실제 제품 Core listener/API/Wire/Schema/권한·Server·Journal·frozen 정책을 변경하지 않는다. 상태는 local_only/native_verified:false의 국소 관측이다. 카드 생성 전 NO_TARGET은 관찰 대기이며 실제 카드 제한 성공 증거가 아니다.
+- 신규 endcards-browser.test.mjs는 종료 overlay/최종 grid와 보호 UI·자막/조작·미디어 속성·독립 owner·퇴역 scope·동적 생성/교체/이탈·원래 page style·부분 복원 실패·영상 ID 전환·문서 이탈/미지원·adoption·시험 sender/상단바 독립 해제를 합성 Chrome DOM으로 검사한다. 첫 전용 실행13/13 PASS 후 iframe 거절 반례를 같은 시험에 추가하여 전체 영향 회귀를 실행 중이다. 실제 재생·소리·제품 Chrome/Worker 수용과는 구분한다.
+- 사용자 체크: 시험 확장 갱신→YouTube 새로고침→다른 시험 제한 해제→일반 영상에서 원래 종료 카드가 나오는지 먼저 확인. 끝나기 직전/종료 후 카드가 보이는 상태에서 종료 카드 적용 시 카드만 숨김, 자막·재생/되감기·소리·본문·우측 추천 유지, 해제 복원. 처음부터 적용해도 끝에 늦게 생성된 카드를 숨기는지, 일반 추천 영상을 눌러 다음 watch로 이동한 뒤에도 제한되는지 확인한다. 홈/다른 문서에 나갔다 오거나 새로고침하면 해제→재적용이 필요하다. 원래 카드가 없는 영상은 정상 제한 증거가 아니며 카드가 실제 남는/복원 안 되는 경우 보고한다.
+- 미검증: 실제 사용자 YouTube·지역/언어·플레이어 변형·제품 Core sender/owner/document/navigation/frozen/receipt·영속 cleanup·BFCache/새 문서 자동 재결속. 전체 AC-YT08 제품 수용 완료가 아니다. 변경은 종료 카드 코드/시험/공통 feature 허용·observer/시험 도구·기록8파일, Commit/Push/PR/병합 없음. 다음은 실제 사용자 결과 및 필요한 selector 보완→사용자 게시 수락→별도 PR 리뷰. 흑백은 아직 미착수다.
+
+### 2026-10-31 · YT-08 자동 회귀 최종 결과
+
+- iframe 거절 반례를 포함한 최종 관련 회귀119/119 PASS, 실패/skip0. 기존33+원장26+홈9+구독12+탐색14+상단바12+종료카드13 구성이다. Windows bundled Node24·Playwright·설치 Chrome headless 합성 DOM/모의 권한·재승인·pagehide/장애 주입, 약129.6초 실행 결과이며 실제 Chrome 제품 성능/실제 YouTube 효과 검증 수치가 아니다.
+- 재현: 기존 PLAYWRIGHT_MODULE/CHROME_EXECUTABLE 경로를 설정 후 node --test extension/content-tests/changes.test.mjs extension/content-tests/detection.test.mjs extension/content-tests/browser.test.mjs extension/content-tests/claim-ledger.test.mjs extension/content-tests/claim-ledger-browser.test.mjs extension/content-tests/home-browser.test.mjs extension/content-tests/subscriptions-browser.test.mjs extension/content-tests/explore-browser.test.mjs extension/content-tests/masthead-browser.test.mjs extension/content-tests/endcards-browser.test.mjs . 종료 카드 단독13/13은 iframe 추가 전 실행이며 최종119에 iframe 검사가 포함돼 있다.
+- Node --check endcards.mjs/bootstrap.js, build-chrome-harness.mjs 생성 및 git diff --check PASS. 시험 확장 이름은 FOCURVE 종료 카드 숨기기 독립 검증 — Core 미연결, 기존 extension/build/content-harness 경로를 갱신했다. 제품/실제 사용자 수용·Core 연결/전체 BFCache는 여전히 미검증. 사용자 시험 체크리스트 대기, Commit/Push/PR/병합 미실행이다.
+
+### 2026-10-31 · YT-08 사용자 실패 보고·종료 후 추천 grid 보완
+
+- 사용자 실제 보고: 종료 직전 creator 카드는 숨겨지지만 영상 종료 후 플레이어 안 추천3개가 남는다고 화면과 함께 보고했다. 종료 후 제한 항목은 FAIL이며 이전119/119 합성 PASS를 실제 수용 근거로 대체하지 않는다. 실제 사용자 영상 URL/제목/계정 자료는 이 기록에 복사하지 않는다.
+- 조사: 기존 CARDS는 .ytp-ce-element/.ytp-videowall-still/.ytp-suggestion-link만 포함했다. 공개 원본 필터 https://github.com/DandelionSprout/adfilt/blob/master/YouTubeEvenMorePureVideoExperience.txt 에서 종료 후 추천용 .ytp-fullscreen-grid-stills-container를 확인하고 해당 구조를 합성 반례로 추가했다. 사용자 브라우저의 실제 DOM을 수집한 것은 아니므로 그 화면의 정확한 class 원인까지 확정했다고 기록하지 않는다. 외부 필터 전체/광고·추천 차단 정책은 가져오지 않았다.
+- 수정 전: modern post-play grid 반례1/1 FAIL, timed 카드는 숨겨졌지만 새 grid는 visible=true로 남음. 수정 후: 현재 영상ID에 결속된 ended-mode player 안 새 stills 컨테이너만 추가 처리한다. 전체 player/fullscreen-grid 전체를 숨기지 않으며 replay 버튼·자막·오른쪽 추천을 보존한다. 재생 중 해당 grid는 대상이 아니고, 다시 재생해 ended-mode가 해제되면 자기 claim을 회수한다. 끝난 뒤 늦게 삽입되는 grid도 기존 observer가 처리한다.
+- 신규회귀3건 포함 endcards-browser.test.mjs 16/16 PASS, 실패/skip0. 새 grid 적용/해제 및 replay/자막/sidebar 보존, 재생중→종료→재생/늦은 생성, 다중owner·부분 복원 실패/재시도와 기존13회귀를 검사했다. Node24·설치 Chrome headless·Playwright 합성 DOM/상태 모사이며 실제 사용자 YouTube 보완 후 수용은 아직 대기다.
+- 명령: 기존 PLAYWRIGHT_MODULE/CHROME_EXECUTABLE 설정 후 node --test extension/content-tests/endcards-browser.test.mjs . build-chrome-harness.mjs 재생성, node --check endcards.mjs, git diff --check PASS. 이 보완에서는 selector/해당 시험/기록만 바뀌어 관련16건을 실행했고, 과거119 전체를 보완 후 재실행한 것으로 표시하지 않는다. 공유 원장/navigation primitive·제품 Core·계약은 이 수정에서 변경하지 않았다.
+- 다음 사용자 재시험: 기존 시험 확장 갱신→같은 YouTube 탭 새로고침→종료 카드 적용→끝나기 전과 종료 후 추천 모두 숨김→종료 후 해제 시 추천 복원→재생 버튼/오른쪽 추천 보존 확인. 실패 화면이 계속되면 실제 구조 증거를 최소한으로 수집한 뒤 추가 수정한다. 미커밋 유지, Commit/Push/병합 없음. #36 충돌 해결 게시와 별도 worktree의 #39 대기는 그대로 보존한다.
+
+### 2026-10-31 · YT-08 보완 후 사용자 정상 보고
+
+- 종료 전 카드·종료 후 추천 grid·오른쪽 추천/재생 버튼 보존·종료 후 해제 복원의 재시험 안내 뒤 사용자가 “ㅇㅋ 정상적으로 됐다”라고 회신했다. 보완된 시험판에서 정상 동작했다는 포괄 사용자 결과로 기록한다. 항목별 원본 로그/영상·Chrome 버전/실행 hash나 AI 직접 관측은 없으므로 개별 항목의 독립 PASS 증거로 확대하지 않는다.
+- 최초 종료 후 추천 잔존 FAIL과 합성 반례 FAIL은 보존하고, 보완 후 사용자 확인 대기는 위 정상 보고로 갱신한다. 자동16/16은 별도 합성 시험 결과이며 이번 사용자 결과 기록에서 기능 시험을 다시 실행하지 않았다. 실제 Core/native/frozen 정책 연결·영속 cleanup·실제 BFCache/새 문서 자동 재결속·전체 레이아웃 수용은 미검증으로 유지한다.
+- 상태: codex/content-endcards의 종료 카드 코드/시험/시험 도구/기록8파일 로컬 미커밋. 다음은 게시 전 최신 통합·선행 PR 상태 및 충돌 영향 확인→게시 범위 설명/사용자 수락→별도 PR. Commit/Push/PR/병합 없음. 새 YouTube 옵션으로 남은 것은 YT09 흑백 연결이다.
+
+### 2026-10-31 · YT-08 최종 사용자 결과·게시 준비
+
+- 사용자가 자동재생 countdown 화면을 제시하며 종료 카드만 켰을 때 다음 영상 안내가 남는 것이 맞는지 확인했고, YT08은 추천 카드만 숨기고 YT10의 자동 전환 제어는 별개임을 안내했다. 이어 “ㅇㅋ 테스트 결과 다 정상이야 올리자”라고 최종 정상 보고 및 게시를 승인했다. 최초 종료 후 추천 잔존 실패→합성반례/보완→보완 후 정상 보고 흐름은 보존한다. 새 로그/hash·AI 직접 관측이 없는 포괄 사용자 결과이며 개별 독립 PASS로 확대하지 않는다.
+- 게시 전 원격 통합을 확인해 최신2bf04f0325a9aaebfde888d60e385d9ce1c4ad14를 가져왔다. 시작1a48bec에서 해당 통합까지 Content 코드/시험/시험 도구의 기준 파일 차이가 없고 현재브랜치가 그 ancestor임을 확인해 codex/content-endcards만 ff-only 갱신했다. 종료 카드 미커밋8파일은 그대로 보존, 기존 PR/다른작업공간/통합/develop 브랜치 변경 없음. 같은head의 기존PR이 없음을 확인했다.
+- 검증 재사용: 관련119 전체는 새 post-play grid 보완 전, 보완 후 종료카드16/16은 최종 selector 및 모든 종료카드 회귀다. 통합 기준 갱신으로 해당 Content 파일/의존성 변경이 없어 기능 시험을 다시 반복하지 않았고, 이를 보완 후 전체122건 단일 실행이라고 표시하지 않는다. build 재생성·Node구문·diff검사 근거는 위 기록이며 게시 직전 git diff --check도 PASS다. 기능/실제 제품 Core·전체레이아웃 미검증 경계 유지.
+- 게시 단위8파일: endcards.mjs, endcards-browser.test.mjs, navigation-surface.mjs의 YT08 허용/video-id 관찰, 시험 build/bootstrap/popup/manifest, 본 기록. 기존 Source에 있는 selector 주소와 최소CSS 식별자만 참고했고 외부 filter 정책/파일을 복사하지 않았다. Core/Server/API/Wire/Schema·제품 권한 변경 없음. #36/#39는 이번 PR에 포함하지 않는다.
+- 별도 Draft PR을 integration/additional-mvp-20261029 대상으로 생성하며 비교기준은 위2bf04f03이다. 실제 게시 SHA/PR 번호는 GitHub 결과를 따른다. 담당 리뷰는 다훈(끝 전/후 범위·자막/조작/본문 보존·사용자 실패/보완 근거), 종민(재승인/native/frozen/cleanup 경계). 병합/자동병합하지 않는다. 이후 새 YouTube 옵션으로 남은 것은 YT09 흑백 연결이다.
 ### 2026-10-31 · PR36 최신 통합 2bf04f03 기준 충돌 해결
 
 - 담당 채지민, codex/content-watch-panels, 시작 HEAD 4dd1a739cce1fa2928533e70db55444f179317b1. 별도 content-watch-integration worktree에서 작업해 codex/content-endcards의 미커밋 종료 카드 8파일과 원래 feature/content-control 변경을 보존했다. AGENTS/개발운영/통합현황/본 카드 및 RC2 Content 소유권·복원 기준에 따라 이번에는 기존 PR36 연결부만 조정한다.
@@ -235,3 +279,19 @@
 - 명령: 기존 PLAYWRIGHT_MODULE/CHROME_EXECUTABLE 설정 후 node --test --test-concurrency=2 extension/content-tests/changes.test.mjs extension/content-tests/detection.test.mjs extension/content-tests/browser.test.mjs extension/content-tests/claim-ledger.test.mjs extension/content-tests/claim-ledger-browser.test.mjs extension/content-tests/home-browser.test.mjs extension/content-tests/subscriptions-browser.test.mjs extension/content-tests/explore-browser.test.mjs extension/content-tests/masthead-browser.test.mjs extension/content-tests/watch-panels-browser.test.mjs extension/content-tests/autoplay-browser.test.mjs . node --test contracts/additional-mvp/rc1/tests/legacy-boundary.test.mjs . node extension/content-tools/build-chrome-harness.mjs .
 - 실제 YouTube/제품 Core·native/frozen·실제 SPA/BFCache/재시작/소리 수용은 이번 충돌 조정에서 NOT_RUN. 기존 사용자 정상 보고는 과거 근거다. 새 API/효과/권한을 구현한 것이 아니며 local OBSERVED/readback을 전체 실행 성공으로 승격하지 않는다.
 - 사용자 요청대로 검사 결과·게시6파일을 설명하고 승인 후 같은 PR39에 Commit/Push, 새 HEAD의 연결부/소유권 검토를 받는다. 통합/develop 직접 병합·자동병합은 하지 않는다. 이후 PR47에는 해당39 HEAD를 선행 기준으로 반영해 상대 비교8파일을 제공하고39 이후 통합하도록 유지한다. 게시 SHA/PR 메타데이터는 실제 GitHub 결과가 원본이다.
+
+### 2026-10-31 · PR47 충돌 정리 / PR39 선행 의존성
+
+- 담당 채지민, codex/content-endcards, 시작70e40d3bfee7fe66b63ef06c0b2ccaa3f87c90ac. 사용자 요청대로39를 먼저25e7d115 기준으로 정리·검사·게시한 새HEAD24b8a163afd0e57dd06db6d4c237f4edfe6cde24를 no-commit merge했다. 통합/develop에 병합하지 않고 #39→#47 순서 통합을 준비하는 개발 브랜치 의존성이다.
+- 실제 충돌은 작업기록/build/bootstrap/manifest/popup5파일. 기존기능·모든handler와 양측 기록을 보존해 합쳤다. 공용 시험 이름/버전은 최신39의 Content 독립 검증0.1.1을 유지해 downgrade하지 않았다. 시험도구에 종료카드만 추가하고 제품manifest 권한·Core/Server/계약은 바꾸지 않는다.
+- 종료카드 adapter는70e40d3와 byte동일, 자동재생 adapter는39새HEAD와 동일하며 공통원장/watch/nav 기존 구현 및 복원 의무를 보존한다. nav에는 원래47의 YT08/video-id 관찰만 남긴다. 기존 사용자 정상·다훈 독립8/8은 과거근거이며 새 충돌해결 HEAD의 제품수용으로 확대하지 않는다.
+- 추가회귀1건은 공용harness에서 모든 옵션과 자동재생OFF를 적용한 뒤 종료카드만 해제해도 다른6 DOM제한/자동재생OFF가 남고, 각 마지막 해제에서 원래 상태/원장0이 되는지 확인한다. full Content와 빌드/계약 검증 후 실제 결과를 기록한다.
+- PR47 자체 비교는39새HEAD 기준으로 제공한다. #39 미병합 동안 통합대상 전체diff에 선행39가 포함될 수 있으므로39 먼저 병합→47 최종diff/새HEAD담당승인 순서다. #39의 GitHub승인/병합을 대행하거나 새HEAD를 승인됐다고 간주하지 않는다. 기존 흑백/추가옵션 개발은 이번 범위 밖이다.
+
+### 2026-10-31 · PR47 충돌 정리 최종 검사·게시 준비
+
+- 최종 Content148/148 PASS, 실패/skip0 = 기존33+원장26+홈9+구독12+탐색14+상단바12+watch15+autoplay10+endcards17. 별도 계약6/6 PASS. Node24/Playwright/설치 Chrome headless 합성 DOM·모의sender/재승인·pagehide·장애 setter 시험이며 실제 제품Chrome/Native/Core/Server수용은 NOT_RUN.
+- 명령: 기존 PLAYWRIGHT_MODULE/CHROME_EXECUTABLE 설정 후 node --test --test-concurrency=2 extension/content-tests/changes.test.mjs extension/content-tests/detection.test.mjs extension/content-tests/browser.test.mjs extension/content-tests/claim-ledger.test.mjs extension/content-tests/claim-ledger-browser.test.mjs extension/content-tests/home-browser.test.mjs extension/content-tests/subscriptions-browser.test.mjs extension/content-tests/explore-browser.test.mjs extension/content-tests/masthead-browser.test.mjs extension/content-tests/watch-panels-browser.test.mjs extension/content-tests/autoplay-browser.test.mjs extension/content-tests/endcards-browser.test.mjs . node --test contracts/additional-mvp/rc1/tests/legacy-boundary.test.mjs .
+- build16모듈 byte동일·26고유버튼·권한/WAR 보존 smoke PASS. 최종diff점검에서양측HTML document/title을모두남긴중복header를발견해공용Content헤더하나만유지했다. 이후build재생성과DOCTYPE/title각1개·26버튼·16모듈검사PASS. 이마지막수정은popupHTML헤더뿐이며148기능시험이읽는module/bootstrap/fixture는변경하지않아회귀근거를재사용한다. Node구문/diff검사PASS.
+- 종료카드효과코드/nav는70e40d3와동일, 자동재생/공통원장/watch는39새HEAD와동일. manifest는최신공용Content0.1.1을그대로선택해39대비차이가없다. 따라서47자체diff는이전8파일에서manifest가빠진7파일이다(효과/시험/nav/build/bootstrap/popup/기록). #39가미병합인동안대상통합전체diff에는선행39도보인다.
+- 설명한검증/범위로사용자승인후같은PR47에새커밋·Push하고새HEAD를게시한다. 새HEAD의공유연결부는담당재확인을받고39먼저병합→47최종diff순서를유지한다. 통합/develop병합·자동병합·기존리뷰의새HEAD승격은하지않는다. 사용자/다훈의과거정상및8/8은출처구분하여보존하고현재실제제품연동PASS로바꾸지않는다.
