@@ -61,6 +61,30 @@
 - observer callback→순차 durable append까지 완료한 모듈 리뷰 요청. 제품 Worker 진입점/manifest·anchor 발급·day allocation·한도·예약·실제 Chrome 확장 수용은 미완료다. 실제 tabs/windows/idle는 모의 시험이며 기존 Chromium151 native IndexedDB 시험과 구분한다.
 - 검증 명령: node --test extension/tests/additional-idle-observer.test.mjs extension/tests/additional-foreground-observer.test.mjs extension/tests/additional-observation-journal.test.mjs extension/tests/additional-time-runtime.test.mjs. 기존 계약 Node6/6와 npm run check도 제출 전 실행한다.
 
+## PR38 리뷰 대기 중 독립 예약 판정 단위
+
+- `extension/src/additional-schedule-plan.js`: Core가 재사용할 순수 주간 예약 시각 계산과 실행 후보 판정. 기존 AmvpScheduleBridge의 회원 occurrence 발급/DB/session actor를 재작성하지 않는다. 새로운 Wire/API/occurrence ID를 만들지 않으며 ONCE actor 연결 미합의는 보존한다.
+- WEEKLY local date/weekday/IANA 시각을 UTC 후보로 변환해 gap SKIP/fold EARLIER_ONCE를 적용. 단순 +/-1h 보정을 쓰지 않고 인근 offset을 열거하여 Lord Howe 30분 전환과 Apia 누락 날짜도 확인했다. 26h 양방향 탐색의 CPU 비용은 제품 규모에서 미검증이며 실제 scheduler event loop에 아직 연결하지 않았다.
+- 실제 경과 duration으로 fixed end를 유지. 잔여 정확60초 READY/60초 미만 SKIPPED(EXPIRED), active session WAITING_CONFLICT, 이미 발급된 발생 ALREADY_ISSUED, restart catch-up WAIT_USER. 순수 helper의 decision은 기존 actor status/명령으로 전송하지 않는다.
+- 중복 판정의 alreadyIssued와 activeSession/recovered는 내부 검증 adapter 입력이다. 이 helper만으로 영속 멱등/owner·version·clock 신뢰/실제 APPLY를 보장하지 않는다. 후속 adapter가 기존 발생 원장과 고정 버전/종료를 검증해야 한다.
+- 자동: `node --test extension/tests/additional-schedule-plan.test.mjs` 8/8 PASS. 독립 Python zoneinfo와 US/EU/한국/Nepal/Lord Howe/Apia 9개 벡터 대조 9/9 PASS. syntax 및 diff whitespace PASS. 실제 Chrome alarm/백그라운드/Worker 재시작·회원 actor 연결은 미검증.
+- 범위: 예약 판정 모듈 단위 구현 완료, 예약 제품 기능은 부분 구현. PR38 HEAD/리뷰/원격 브랜치 변경 없이 로컬로 보존하며, 현재 리뷰 단위와 섞어 Push하지 않았다. PR38 리뷰 반영 뒤 다음 제출 단위로 정리한다.
+
+## PR38 P2 권한 회수 수정·재리뷰
+
+- 리뷰 지적: tabs/origin 관측 권한 회수 중 pending tabs.query 응답이 revision을 통과해 CANDIDATE를 발행할 수 있음.
+- 수정 14b96fb2a1def7c80193eecfcaa464d26e34d1e7: permissions.onRemoved를 foreground lifecycle에 결속. tabs 또는 origin 회수 시 revision 증가·UNKNOWN/hold 고정. 명시적 start 뒤 현재 tabs 또는 해당 URL origin 권한 확인 후 새 관측만 허용. 지연 권한 조회도 revision 검사.
+- 추가 회귀3건: tabs/origin 회수 중 pending 조회, 권한 확인 중 회수, origin-only 권한. TIME31/31·npm check PASS. 최신 HEAD Ubuntu/Windows CI 모두 SUCCESS(41050538755; 계약6건 포함). 실제 권한 회수는 모의이며 Chrome 제품 시험 미실행.
+- 수정2파일만 Commit/Push. 예약 모듈/시험 및 작업카드의 독립 작업 기록은 이번 commit에서 제외·로컬 보존. PR38 수정결과 댓글 https://github.com/kdu-sw-capstone/capstone-project/pull/38#issuecomment-6521904638 로 재리뷰 요청. 자동 승인/병합 미실행.
+
+## 2026-10-31 예약 판정 단위 제출
+
+- PR38은 14b96fb 기준 양 담당자 승인 후8ba2502로 병합된 것을 GitHub에서 확인. 로컬 변경 보존 후 최신 통합1f18613e64eb6294bbef14f76af683ee62a68f1b를 ff-only 반영했다.
+- 이번 제출은 순수 예약 helper·시험·본 작업카드·전용 CI 총4파일. 기존 PR38 모듈을 재제출하지 않고 예약 actor/DB/API/Worker/manifest/공유계약을 변경하지 않는다.
+- 순수 helper 입력의 activeSession/alreadyIssued/recovered와 시각은 신뢰 adapter가 검증해야 한다. READY는 실제 세션 시작 허가나 RUNNING 증거가 아니다. 중복 판정은 영속 발생 원장·owner/version 검증과 함께 사용해야 하며 본 모듈은 영속 멱등을 구현하지 않는다.
+- 실행기 연결 전 실제 시간대/이벤트 loop 성능·alarm 지연·재시작·실제 적용/복원을 검증해야 한다. Server weekly 구현을 변경하거나 ONCE legacy actor 매핑을 임의 확정하지 않는다. 제품 기능 전체는 부분 구현이며 작은 모듈 리뷰 단위다.
+- 최신 기준 예약8/8·계약6/6·syntax/whitespace 검증 후 Commit/Push 및 PR 제출. 원격 CI는 Ubuntu/Windows Node24에서 같은 예약·계약 검증을 수행하며 Chrome 수용은 아니다.
+
 ## 2026-10-31 회원 예약 claim 연결 준비 리뷰 단위
 
 - 담당 윤종민. PR43이 OPEN이므로 그 HEAD를 변경하지 않도록 별도 feature/additional-mvp-schedule-claim 브랜치와 /workspace/focurve-schedule-claim 작업 공간 사용. 시작 기준2bf04f0(PR45 병합 포함), PR43 pure helper에 의존하지 않는다. 원래 작업 공간의 로컬 초안은 보존.
@@ -83,3 +107,8 @@
 - 검증: focused5파일78/78, 전체 Extension828/828(fail0/skip0), 계약6/6, npm --prefix extension run check, git diff --check, adapter source/bundle exact match PASS. Node24.19.0에서 실행. API·Core 상태는 모의이며 실제 request 시험도 fetch 대체를 사용했다. 실제 Server/Chrome/Native·고정 종료 제품 수용 미실행.
 - 재현 명령(저장소 루트): node --test extension/tests/member-schedule-claim.test.mjs; 기존 PR 본문의 focused/전체/계약/check 명령도 동일하다.
 - 종료 상태: P2 수정·로컬 회귀 완료, PR46 최신 HEAD로 Push 후 다훈·지민 재리뷰 및 원격 CI 확인 필요. 이전 Approve를 수정본 승인으로 간주하지 않는다. 실제 Core verifyScheduledDeadline/Server Actor 연결과 예약 제품 실행은 계속 미완료이며 기본 거절을 보존한다. 병합/활성화하지 않는다.
+
+### 최신 통합 기준 반영 — 2026-10-31
+
+- P2 수정 Push 뒤 GitHub mergeable_state=dirty를 확인하여 최신 integration dfa787f07d02b54366a69f107c1edfa058cb8b2a(PR36/43 병합 포함)를 작업 브랜치에 반영했다. 충돌은 본 작업카드의 추가 기록뿐이며 양쪽 기록을 모두 보존했다. 제품 source 충돌은 없었다.
+- 통합 후 전체 Extension836/836 PASS(기존 P2 수정 기반828+PR43 예약 판정8), focused78/78·계약6/6·syntax·bundle 일치·whitespace PASS. 제품 활성화/통합 브랜치로의 PR 병합은 수행하지 않았다. 최종 HEAD 재리뷰와 해당 원격 CI가 필요하다.
