@@ -1,5 +1,81 @@
 # AMVP-CONTENT-06 · 추가 Content 연결
 
+## 2026-10-31 IG-01 스토리 · 첫 Instagram 독립 단위
+
+### 최신 제출 상태 · 실제 사용자 재시험 확인
+
+- 최종 nav-3 수정본에서 사용자가 이동 후 정상 동작을 보고했고, 이어 해제 후 화면 복원·직접 재생도 "ㅇㅇ 잘되는데"라고 확인했다. 홈 트레이 숨김/복원·일반 게시물/추천/메시지 보존과 직접 viewer 정지/재생 guard/해제/X 닫기는 앞선 사용자 보고와 구분해 근거로 보존한다. 계정·모든 DOM/지역/브라우저 변형 검증이나 실제 Core/Server 통합 완료로 확대하지 않는다. 아래 대기/실패/미커밋 표기는 각 개발 시점 이력이며 이 절이 최신 사용자 확인 상태다.
+- 사용자 요청: 여러 실제 실패가 있었으므로 리뷰에서 꼼꼼히 확인할 코멘트를 명시해 게시한다. 필수 재검토: href 없는 홈 트레이, 깊게 중첩된 사진/영상 viewer·일반 게시물/DM 제외, HOME→프로필/중간경로→STORIES→다른사람STORIES의 연속성, 재생/소리 및 해제 후 수동 재생, 다른 owner·실패/부분 복원·adoptNode, 무승인/로그인/BFCache의 fail-closed 유지. 합성 PASS만으로 승인하지 말고 실제 구조/사용자 반례와 수용 한계를 함께 검토한다.
+- 게시 후보 자체8파일(IG adapter/시험, 공유 navigation, 시험 build/bootstrap/manifest/popup, 작업카드). 새 Manifest match는 독립 시험 확장에만 Instagram host를 추가한다. 제품 Manifest/Core/Server/공유 Wire는 바꾸지 않는다. 새로고침 자동 재적용/영속 결과·cleanup/제품 Core adapter는 미구현으로 유지한다.
+- 기준 HEAD670647f의 #54는 확인 시 미병합이므로 선행 의존성을 명시한다. 자체 비교는670647f→이번HEAD의8파일이고, 통합 대상 PR 전체 diff에는 아직 #54 변경도 포함될 수 있다. #54 먼저 승인/통합 후 이 PR의 최종 diff·충돌·HEAD를 재확인해야 한다. 원래 #54 브랜치와 다른 담당자 코드는 변경하지 않는다. 자동병합/제품 활성화는 하지 않는다.
+- 최종 소스 근거는 공유 회귀97/97(IG21 포함)·계약6/6·빌드/구문/공백 PASS 및 사용자 재시험 보고. 초기171/89/16/19/20은 각 당시 소스의 이력이고 최신 전수시험으로 합산하지 않는다. 이번 게시 준비는 기록만 갱신하므로 동일 기능 시험을 다시 실행한 것으로 표시하지 않는다. 원격 CI는 게시 후 별도 결과로 확인한다.
+
+### 사용자 실제 NO_TARGET 보완
+
+### 프로필 경유 SPA 제한 연속성 수정
+
+- 사용자 nav-2 캡처: STORIES의 유효한 최종 주소이지만 invalidated.reason=ROUTE_CHANGED/cleanup_pending=false이고 마지막 result는 홈 관찰(media0/null)로 남았다. PAGEHIDE/복원 실패와 구분됐지만 실제 거절된 중간 pathname은 아직 미확보다. 따라서 특정 중간 주소를 실제 원인이라고 확정하지 않는다.
+- 좁은 중간 route whitelist가 /stories/ index·프로필 alias·탐색 등 승인된 무효과 관찰을 종료하는 구조적 문제는 별도 반례1FAIL로 재현했다. supportedRoute를 관찰 수명과 효과 대상 판정으로 분리: 같은 Instagram 문서의 중간 경로는 collect0으로 관찰만 유지하고, 실제 효과는 기존 HOME/STORIES 조건에만 허용한다. accounts/challenge/oauth/login/auth/two_factor 및 host/native reauthorization/pagehide/cleanup failure는 계속 거절한다. 새로운 효과나 Core 권한을 추가하지 않는다.
+- TEST build ig-stories-nav-3, 결과 adapter_revision=ig-stories-observe-3을 표시한다. route 무효화에는 계정명/URL 없이 origin_allowed/route_allowed/reauthorization·path_segment_count/route_family를 남긴다. 일반 YT의 무효화 응답은 바꾸지 않으며 authority 승인 요구 자체는 동일하다. 지원 route가 실패한 실제 원인이 이 변경으로 해결됐는지는 사용자 재시험 전까지 미확정이다.
+- IG21/21 PASS(기존20+중간경로 반례1), 이후 adapter revision 표시를 포함한 공유 영향 회귀/빌드 확인을 진행했다. 이전19/20과 합산하거나 실제 사용자 성공으로 승격하지 않는다. 기존 재생/홈/보호/무승인/BFCache/복원 실패 조건을 재사용한다. 미커밋/미게시 유지.
+- nav-3 최종 공유 영향 회귀7파일97/97 PASS(IG21 포함), fail/skip0, 계약6/6·구문/공백·build PASS. 원본/빌드 IG 모듈 SHA-256 일치 확인. 이는 합성 Chrome이며 사용자 실제 같은 이동 경로 해결은 재시험 대기다. 이번 단계에서 시험 범위를 더 확장하거나 진단기를 새로 만들지 않는다.
+
+- 사용자 실제 재시험에서도 홈→프로필/다른 스토리에서 제한이 끊기고 OLD_SCOPE_CLEANUP_REQUIRED가 지속됐다. 앞선19/19는 합성 경로만의 근거이며 실제 해결 판정을 보류한다. 공통 surface가 scope를 닫는 원인은 PAGEHIDE/ROUTE_CHANGED/ROUTE_CLEANUP_FAILED로 제한되지만 TEST APPLY의 throw/catch가 invalidated를 숨겨 실제 사유를 알 수 없었다.
+- 이번 추가 변경은 TEST handler 진단뿐이다. IG 오류에도 invalidated 원문 사유/result와 test_build=ig-stories-nav-2, 시험 문서 UUID, 익명 page_kind(HOME/STORIES/DM/OTHER)를 유지한다. URL/계정/본문/credential은 새로 반환하지 않는다. 실제 문서 교체/현재 build 불일치와 내부 lifecycle을 구분하기 위한 최소 자료이며 자동 재시작·가짜 재승인·오류 무시는 추가하지 않는다. 기존 pagehide/복원 실패 차단을 유지한다.
+- 진단 반례1건에서 pagehide 후 오류가 reason/build/document ID를 보존하고 cleanup을 계속할 수 있음을 확인했다. IG 전체20/20(기존19+진단1) 실행은 합성이며 실제 사용자 invalidated.reason을 받아야 원인 확정·제품 로직 보완이 가능하다. 원인 미확정/실제 실패 상태를 유지하고 수정 완료로 보고하지 않는다. 시험 확장 재빌드 후 같은 사용자 경로/오류 JSON 확인 요청, Commit/Push 없음.
+
+- 사용자 실제 홈→다른 사람 프로필→스토리 진입에서 영상이 보이고 재적용 때 OLD_SCOPE_CLEANUP_REQUIRED가 발생했다. 원인은 IG-01 routeAllowed가 HOME/STORIES만 허용하여 중간 프로필에서 controller를 닫은 것. 명시적 모의 재승인 callback이 있어도 프로필 route에서 닫히는 반례를 재현했다(수정 전1FAIL; 최초 기본 거절 callback으로 실행한 초안과 명시적 true/3초 timeout으로 고정한 반례를 구분).
+- supportedRoute에 프로필/프로필 탭·게시물·Reel 단일 페이지·DM의 중간 경로를 추가하되 그 페이지의 collect는0이므로 어떤 미디어/프로필도 제한하지 않는다. 동일 문서 내 매 이동은 기존 authorizeNavigation의 동기 true 및 host/문서 경계를 여전히 요구한다. 로그인/외부 host/새 문서/pagehide·복원 실패는 계속 닫는다. 기능을 계속 켠 상태의 중간 페이지 NO_TARGET은 적용 성공이 아니라 대상 관찰 대기이며, STORIES에서 대상0은 계속 미검증/실패다.
+- 직접 IG17/17에 이어 실제 시험 popup 경로 및 이동 중 복원 실패2건을 추가했다. 최종 IG19/19 PASS(fail/skip0): 홈1회적용→프로필→스토리→다른사람스토리 자동 재제한, 실제 TEST handler의 profile STATE/재APPLY 무오류, 이전 복원 실패 시 새효과 차단/의무 재시도, 기존 영상·홈·보호·타owner·BFCache/무승인 거절 포함. DOM/영상정지 근거는 합성이며 실제 사용자 동일경로 재시험이 남는다.
+- 이번 최종 수정은 IG adapter/해당 시험/popup 설명/작업 기록이며 공유 navigation/Core/Wire/제품 Manifest는 추가 변경하지 않는다. 이전89/89 및 전체171은 당시 소스 근거로만 보존하고 이번 재실행으로 합산하지 않는다. 새로고침 자동 재적용/영속 Core 연결은 계속 미구현이다. Commit/Push/PR/병합 없음, 최종 시험 확장 build 후 사용자 확인 대기.
+
+- 홈 숨김/해제 및 일반 게시물·추천·메시지 보존은 사용자가 "오 됐다", "둘다 됐어"라고 확인했다. 직접 viewer는 이후 계정/형태별 NO_TARGET/재생 지속으로 실패가 남았다. 시간바 진행만으로 media pause 성공/실패를 확정하지 않는다.
+- 사용자 세 번째 전체 section에서 실제 video를 확인했다. video는 portrait px frame보다11겹 이상 아래이고 프로필 img는 별도32px 링크 안에 있었다. 최초 fallback의 부모4단계 제한 때문에 video를 찾지 못하는 코드 결함을 익명 구조로 재현(신규1FAIL)했다. 4단계 상한을 제거하되 STORIES route/세로형 frame/게시물·보호 UI·interactive ancestor 제외는 유지했다. 원본 계정/얼굴/URL/휘발 class를 시험에 넣지 않았다. 기존 직접사진·media pause 실패·타문서/owner/보호 범위를 포함한 IG16/16을 최종 실행했고, 영상 replay guard/가리기/해제와 avatar/닫기 보존을 합성으로 확인했다. 실제 Instagram 같은 영상/소리 재시험은 아직 대기이며 Commit/Push는 하지 않는다.
+
+- 직접 viewer도 실제 사용자 화면에서 NO_TARGET/미디어0·재생 지속을 확인했다. 제공된 두 번째 HTML은 video가 아닌 img이며 일반 div(명시적 세로형 px height/width) 안에 있고 main/dialog 역할이 없었다. 이를 익명 구조로 재현해 사진·동형 합성 영상 반례2 FAIL을 확인했다. STORIES route에서만 보호/게시물/링크/버튼 밖 미디어의 가까운 세로형 div frame을 검사하는 fallback을 추가했다. img는 빈 alt/draggable=false를 요구한다. 댓글/편집 UI를 포함하는 frame은 제외한다. 원본 CDN URL/이미지/계정명은 fixture에 넣지 않았다.
+- 보완 후 IG 전용15/15 PASS, fail/skip0. 사진 표시/복원과 동형 합성 video의 pause·재생 guard·일반 게시물 보존을 확인했다. 실제 사용자가 준 것은 사진 HTML이므로 실제 video 구조/재생·소리 제한 성공으로 승격하지 않는다. 이전89/89는 fallback 전 회귀 근거이고 이번 변경은 IG 모듈/해당 시험뿐이므로 전체 회귀를 재실행했다고 주장하지 않는다. 최종 build/공백 검사 확인 후 사용자 사진/영상 재시험 대기, 미커밋/미게시 유지.
+
+- 실제 Instagram 사용자 캡처에서 홈 스토리가 남고 IG-01 NO_TARGET/eligible0/restricted0/error0을 확인했다. 초기 독립 링크 fixture11/11·전체171 PASS가 실제 DOM 성공을 보장하지 않음을 기록한다. 사용자 제공 outerHTML은 href 없는 div[role=button][aria-label] + ul/li + canvas + role=link/img 형태였다. 계정명·CDN URL·휘발성 class는 코드/fixture에 저장하지 않고 익명 구조만 사용한다.
+- 홈 탐지에 한국어/영어 스토리 접근성 라벨과 목록·ring/profile 구조를 함께 검증하는 경로를 추가하고 기존 URL 링크 경로를 보존했다. 일반 프로필/게시물/nav/aside/FOCURVE 영역을 제외한다. IG-01 observer에만 aria-label/role 변화를 추가하여 재사용된 일반 버튼으로 바뀌면 자기 claim을 회수한다.
+- 새 구조 반례2건에서 기존 탐지의 실패를 확인한 후 보완했다. 보완 중 한국어 HTML fixture에 charset이 없어 라벨이 깨지는 별도 시험 환경 문제를 확인하고 UTF-8 meta를 추가했다. 최종 IG13/13 PASS(fail/skip0): 제공 구조의 익명 버튼2개 제한/복원 및 label 재사용·중첩 FOCURVE 보호·일반 profile/article/aside 보존. 합성 Chrome 결과이며 실제 Instagram 사용자 재시험은 대기다.
+- Computer Use는 현재 브라우저 URL을 확신할 수 없어 도구가 중단됐으며 이후 앱 입력/추가 접근을 하지 않았다. 사용자 제공 DOM으로만 진행했다. 제품 Core/영속화·공용 계약 변경·Commit/Push는 하지 않는다. 기존 직접 viewer/미디어 시험은 합성이며 실제 viewer 구조는 추가 사용자 확인이 필요하다.
+- 보완 후 영향 회귀: IG/흑백/홈/상단바/구독/탐색/종료카드 7파일 **89/89 PASS**, fail/skip0. IG13건은 포함돼 있어 합산하지 않는다. 기존 전체171은 보완 전 근거이며 보완 후 전체173 재실행으로 기록하지 않는다. build/JS구문/공백 검사 PASS, 실제 사용자 재시험과 게시는 대기다.
+
+- 담당 채지민, `codex/content-instagram-stories`, clean 시작 HEAD `670647f41f4e9b9c2380faede496815aa2f3d6a8`(#54 흑백). 사용자 확인에 따라 Instagram 필요성 협의는 종료됐고 확정6옵션을 유지한다. 이번에는 IG-01 하나만 구현하며 Reels/탐색/댓글/제안/흑백의 추가 구현은 하지 않는다. #54 브랜치/HEAD/리뷰는 보존한다. 향후 PR은 #54 선행 관계와 실제 통합 diff를 확인해야 한다.
+- 기준 RC2 `05_Content_Event_UI.md`·feature-registry AC-IG-01-01~03: HOME/STORIES의 스토리 트레이/직접 viewer 미디어 제한, DM/일반 게시물 보존, 자기 claim 복원·SPA/native 재검증. `instagram-stories.mjs`의 InstagramStoriesSession은 기존 NavigationSurfaceSession/ClaimLedger를 재사용한다. profile IG-01에만 Instagram host를 허용하고 기존 YT host/옵션 경계는 그대로 유지한다.
+- 홈은 정규 Instagram /stories/<user>[/item] 링크만 숨긴다. article/nav/header/footer/aside/FOCURVE UI 및 그 보호 영역을 포함하는 링크는 제외한다. 직접 route는 main/role=main/dialog/presentation의 img/video/audio만 숨기며 프로필/닫기 버튼·일반 게시물·navigation을 보존한다. Instagram 실제 DOM의 모든 변형을 확인한 selector가 아니며 href 없는 스토리 버튼·다른 viewer 구조는 NO_TARGET/미지원으로 남길 수 있다. 실제 사용자 재현 후 최소 selector 보완이 필요하다.
+- 직접 스토리의 video/audio는 pause/readback과 play guard로 정지한다. paused 실패는 FAILED로 반환하며 국소 성공을 위조하지 않는다. 해제는 자기 display/inert claim을 복원하고 마지막 자기 복원 확인 후 guard를 제거한다. 해제 시 자동 재생을 강제하지 않고 사용자가 직접 재생한다. 다른 owner의 제한/guard는 보존한다. 페이지 이동·adoptNode·복원 실패 의무는 기존 공통 원장에 따른다.
+- 같은 문서 이동도 authorizeNavigation의 명시적 동기 true 없이는 재적용하지 않는다. DM/login/posts 진입으로 새 제한을 부여하지 않으며 old scope는 닫는다. pagehide는 새 적용을 닫고 pageshow만으로 재개하지 않는다. 첫 제품 연결의 native sender/frozen/issued operation/DOM 전 영속 의무·Core 결과 저장은 여전히 미구현이다. 결과는 local_only/native_verified:false/OBSERVED·NO_TARGET·FAILED이며 Server 성공/접근 Event를 만들지 않는다.
+- 기존 시험 build/bootstrap/popup을 재사용하고 Instagram TEST 명령3개를 추가했다. 시험 Manifest에 instagram.com/www.instagram.com의 content_scripts/WAR match만 추가한다. 제품 Manifest/Core/Wire/API/DB는 수정하지 않는다. activeTab 권한 유지. 시험 bootstrap의 임의 ID/모의 SPA 승인은 제품 인증이 아니다. 실제 새로고침은 초기화되고 수동 재적용이다.
+- 최초 전용 시험10PASS/1FAIL은 avatar 이미지의 크기가0인 fixture 때문에 isVisible 기대가 틀린 것이었다. fixture 크기를 명시한 뒤11/11 PASS. 별도로 보호 UI가 anchor 내부에 삽입될 때 ancestor를 숨기지 않도록 collect를 보완했다. 실제 Instagram 성공으로 보고하지 않는다. 영상 pause/play 반례는 합성 property/method를 쓰고 DOM/CSS는 설치 Chrome에서 검사한다.
+- 자동 명령: PLAYWRIGHT_MODULE/CHROME_EXECUTABLE 지정 후 bundled Node24 `--test extension/content-tests/instagram-stories-browser.test.mjs`. 전체 관련 회귀/계약/빌드 최종 결과는 후속 기록한다. 실제 로그인 Instagram·실제 영상/소리·내부 이동·DM·해제 복원은 사용자 시험 대기. 지역/계정별 DOM/브라우저·BFCache·Core/Server/영속 cleanup는 미검증이다.
+- 미커밋/미게시, Instagram trial 대상 추가로 사용자 extension reload·사이트 접근 확인이 필요할 수 있다. 다음: 자동 영향 회귀 → 사용자 Chrome 체크 → 필요한 DOM 보완 → 게시 범위 설명/사용자 승인. 추가 옵션을 한꺼번에 확장하지 않는다.
+- 최종 자동: Windows Node24 + 설치 Chrome headless/Playwright, `--test --test-concurrency=2 extension/content-tests/*.test.mjs` **171/171 PASS**(기존160+IG11), fail/skip0. IG11/11 단독 결과와 겹치므로 합산하지 않는다. legacy-boundary **6/6 PASS**, build·변경JS구문·공백 검사 PASS. build는32버튼/스토리 모듈/Instagram match를 확인했다. 실제 Chrome 확장 sender/권한과 Instagram 실제 페이지는 아직 사용자 시험 대기이며 합성 결과를 제품 수용으로 바꾸지 않는다. 변경은8파일/미커밋, #54는670647f 그대로다.
+
+## 2026-10-31 YT-09 흑백 · 로컬 구현/사용자 확인 대기
+
+- 담당 채지민, `codex/content-grayscale`, 시작 HEAD `113fb697a64eb803317499c9e5a61aee9c5a5a85`의 clean Content 작업을 보존해 분리. 기준 RC2 `05_Content_Event_UI.md` 및 feature-registry의 AC-YT-09-01~03. 이번 범위는 흑백 한 기능이며 Instagram/제품 Core 수신·영속화·Wire/Manifest/Server 변경은 없다. 기존 통합/선행 PR을 병합하지 않는다.
+- `extension/content/grayscale.mjs`의 GrayscaleSession은 기존 NavigationSurfaceSession의 소유 claim·관찰·SPA 재승인·cleanup를 재사용한다. YT-09만 ClaimLedger.grayscale을 사용하고 다른 옵션의 hide 경로는 보존한다. desktop https YouTube의 지원 route/ytd-app을 대상으로 원래 filter와 자기 grayscale(1)을 합성한다. FOCURVE UI/안내가 내부에 있으면 해당 ancestor를 필터링하지 않고 보호 UI 밖의 자식 branch로 나눠 적용한다. 보호 UI에 filter:none만 주어 ancestor 효과를 무효화했다고 오인하지 않는다.
+- 동적 app 교체·페이지 filter 변경은 observer로 관찰한다. 같은 문서 SPA도 trusted authorizeNavigation의 동기 true 없이는 새 적용하지 않는다. pagehide는 새 적용을 닫고 pageshow만으로 재개하지 않는다. 복원 실패·다른 문서 adoptNode는 의무를 유지하며 기존 원장의 재시도·다른 owner/속성 보존을 사용한다.
+- 결과는 local_only:true/native_verified:false 및 OBSERVED/NO_TARGET/FAILED이며 Wire APPLIED/전체 RELEASED/Server 성공 증거가 아니다. 영상 재생/소리/자동재생/댓글·추천 설정은 변경하지 않는다. 시험 bootstrap은 TEST 전용 모의 SPA 승인/임의 시험 ID를 사용하며 coreConnected:false를 유지한다. 승인된 Core adapter의 effect 전 영속 의무·frozen/native/sender·issued operation/result 결속은 아직 미구현이다.
+- 시험 확장 build/bootstrap/popup만 추가 연결하고 기존 모든 버튼/handler를 보존한다. permissions는 activeTab 그대로이며 서버 실행/새 확장 설치는 필요하지 않다. `node extension/content-tools/build-chrome-harness.mjs` 후 기존 시험 확장 reload 및 YouTube 탭 새로고침으로 사용한다.
+- 최초 흑백 전용 설치 Chrome headless/Playwright 합성 DOM 9/9 PASS. 기존 공통 원장·navigation 관련 전체 회귀 및 최종 추가 시험 결과는 아래 후속 기록으로 구분한다. AC의 실제 Core/native·frozen 제품 수용은 이 합성 시험으로 PASS 처리하지 않는다.
+- 사용자 실제 YouTube는 미검증: 적용 시 화면 흑백/팝업 컬러 유지, 재생·소리/수동 조작 유지, 해제 후 컬러 복원, 재적용/지원 SPA 이동, 댓글·추천 제한과 흑백의 독립 해제를 확인할 예정이다. 실제 전체화면·지역/언어/반응형·새 탭 자동 주입·BFCache 재결속·Core/Server 통합은 별도 미검증이다.
+- Commit/Push/PR 없음. 다음: 관련 회귀 확인 → 사용자 체크리스트 실행 → 결과 기록/게시 범위 설명 → 사용자 게시 수락 후 작은 PR. 흑백 개발 결과를 영속 제품 연결 완료나 YouTube 전체 수용 완료로 집계하지 않는다.
+
+### 이번 단위 최종 자동 검증
+
+- 사용자 실제 YouTube 실행 결과: "흑백적용됐거든 올리고"라고 적용 동작 확인 및 게시 요청. 이는 사용자 보고이며 직접 수집한 Chrome 효과 로그가 아니다. 앞서 제공한 해제/미디어/SPA/다른 제한 공존 체크 전체가 완료됐다고 확대하지 않는다. 해당 실제 항목은 개별 확인 미기록이다. 실제 F5 후에는 현재 독립 시험의 모든 추가 옵션이 수동 재적용 구조이며 사용자도 현재 모두 초기화됨을 확인했다. 과거 유지 관찰의 원인은 미확정이다.
+- 제품 연결 후속: Core는 새 문서/새로고침·SPA/BFCache의 권한/owner/document/generation을 재검증해 활성 세션의 frozen Snapshot/Attachment를 전달하고 effect 전 의무/결과·cleanup을 영속 결속해야 한다. Content는 승인된 명령을 기능별 Session에 연결하는 adapter와 적용/복원 증거 반환을 구현해야 한다. Core만의 작업으로 완료 처리하지 않는다. local OBSERVED/restored를 Server 성공으로 직접 전용하지 않는다. 본 PR에는 해당 제품 연결·영속화가 없다.
+
+- 사용자 후속: 흑백은 새로고침 후 컬러 복귀하지만 기존 목록/검색창 숨김은 유지됐다고 보고. 사용자 관찰을 부정하거나 이를 곧바로 Core 결함으로 확정하지 않는다. 실제 유지된 옵션과 F5/탭 reload/확장 reload 구분을 확인 요청했다. 현재 bootstrap/popup/manifest에는 어느 추가 옵션도 저장·자동 재적용 경로가 없음을 확인했다.
+- 새 비교 반례: 동일 시험 bootstrap으로 상단바/댓글/흑백을 적용 → Chrome 합성 페이지 `page.reload()` → bootstrap 새 주입 → STATE 조회. 1/1 PASS, 세 효과 모두 원래 DOM/필터로 초기화되고 상태 null/[]임을 직접 확인. 실제 YouTube 사용자 현상은 미재현·조건 확인 대기이며 제품 원인 수정이나 실제 사이트 PASS로 기록하지 않는다. 이 단계에서는 시험/기록만 추가, 제품 동작 변경·새 영속 저장·Commit/Push 없음.
+- 이전 버전 직접 비교: `git show <ref>:extension/...`로 당시 bootstrap과 모든 import 모듈을 읽어 설치 Chrome 합성 문서에 실행. 댓글·추천0972ea2, 자동재생c70b837, 홈ba4a7e2, 구독12096d0, 탐색f18eba1, 상단바1a48bec, 종료카드70e40d3의 7경로(8옵션) 모두 적용 효과를 먼저 확인하고 `page.reload()` 후 새 bootstrap/STATE를 확인했다. 7/7 PASS: 숨김은 원래 visible, autoplay는 원래 ON, 세션 결과는 null/[]로 초기화. 흑백 추가 전 코드도 새 문서에 자동 재적용하지 않음을 직접 확인했다. Shorts/과거 모든 배포본/사용자 실제 YouTube F5·설치 파일 원본은 이 시험 범위가 아니다. 실행기는 ignored `extension/build/historical-reload-check.mjs`이며 제품/기존 시험 확장 빌드를 덮어쓰지 않았다. 사용자 과거 유지 관찰의 실제 원인은 미확정으로 남긴다.
+
+- Windows Node24 + 설치 Chrome headless/Playwright, `--test --test-concurrency=2 extension/content-tests/*.test.mjs`: **157/157 PASS**, fail/skip0(기존148 + 최초 흑백9). 이후 시험 코드만 2건 추가해 흑백 파일 별도 실행 **11/11 PASS**. 9건은 겹치므로 157+11로 합산하지 않는다. 제품 소스는 두 실행 사이 동일하다. 추가2는 subframe 거절 및 실제 시험 bootstrap의 sender/공유 ledger/댓글 제한 보존이다.
+- `node --test contracts/additional-mvp/rc1/tests/legacy-boundary.test.mjs`: **6/6 PASS**, fail/skip0. `node extension/content-tools/build-chrome-harness.mjs` 및 변경 JS 구문/공백 검사 성공. 정확한 Node/Playwright 경로는 기존 본 카드 시험 명령의 runtime을 사용한다.
+- 사용자 실제 YouTube 결과는 아직 없으며 실제 Core/Server·영속 증거·BFCache 재결속 수용으로 승격하지 않는다. 새 파일2 + 기존 공유 navigation/시험 도구3/기존 작업카드1 = 게시 검토 후보7파일이며 아직 미커밋이다.
+
 담당: 채지민. 브랜치: feature/additional-mvp-content.
 시작 기준: e2b3fc318fe52acc45145a30def07b874b2255f6 (PR24 병합).
 상태: 진행 중. 전체 16옵션/제품 연결 완료 아님.

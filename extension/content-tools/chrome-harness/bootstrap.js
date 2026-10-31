@@ -152,8 +152,56 @@ const endcardsReady=Promise.all([homeReady,import(chrome.runtime.getURL('content
     }};
   });
 
+const grayscaleReady=Promise.all([homeReady,import(chrome.runtime.getURL('content/grayscale.mjs'))])
+  .then(([{ledger},{GrayscaleSession}])=>{
+    let session=null,result=null,invalidated=null;
+    return {handle(type){
+      let released;
+      if(type==='TEST_GRAYSCALE_APPLY'){
+        if(invalidated)throw Error('OLD_SCOPE_CLEANUP_REQUIRED: 흑백 해제 후 다시 적용하세요.');
+        if(!session){
+          session=new GrayscaleSession(document,{ledger,owner_binding_id:crypto.randomUUID(),binding_id:crypto.randomUUID(),
+            // TEST ONLY: actual Core must verify frozen/native scope.
+            authorizeNavigation:()=>true,onObservation:value=>{result=value;},onInvalidated:value=>{invalidated=value;}});
+          try{session.start();}catch(error){session=null;throw error;}
+        }else session.scan();
+      }
+      if(type==='TEST_GRAYSCALE_RELEASE'&&session){released=session.release();if(released.restored){session=null;result=null;invalidated=null;}}
+      return {testOnly:true,coreConnected:false,result,invalidated,released};
+    }};
+  });
+
+const instagramStoriesReady=Promise.all([homeReady,import(chrome.runtime.getURL('content/instagram-stories.mjs'))])
+  .then(([{ledger},{InstagramStoriesSession}])=>{
+    let session=null,result=null,invalidated=null;
+    const document_instance_id=crypto.randomUUID();
+    const state=()=>({testOnly:true,coreConnected:false,test_build:'ig-stories-nav-3',document_instance_id,
+      page_kind:location.pathname==='/'?'HOME':location.pathname.startsWith('/stories/')?'STORIES':location.pathname.startsWith('/direct/')?'DM':'OTHER',
+      result,invalidated});
+    return {handle(type){
+      let released;
+      if(type==='TEST_IG_STORIES_APPLY'){
+        if(invalidated)return {...state(),error:'OLD_SCOPE_CLEANUP_REQUIRED: 스토리 해제 후 다시 적용하세요.'};
+        if(!session){
+          session=new InstagramStoriesSession(document,{ledger,owner_binding_id:crypto.randomUUID(),binding_id:crypto.randomUUID(),
+            // TEST ONLY: this is not a product Core authority provider.
+            authorizeNavigation:()=>true,onObservation:value=>{result=value;},onInvalidated:value=>{invalidated=value;}});
+          try{session.start();}catch(error){session=null;throw error;}
+        }else session.scan();
+      }
+      if(type==='TEST_IG_STORIES_RELEASE'&&session){released=session.release();if(released.restored){session=null;result=null;invalidated=null;}}
+      return {...state(),released};
+    }};
+  });
+
 chrome.runtime.onMessage.addListener((message, sender, reply) => {
   if (sender.id !== chrome.runtime.id || sender.url !== chrome.runtime.getURL('popup.html')) return;
+  if(['TEST_IG_STORIES_APPLY','TEST_IG_STORIES_RELEASE','TEST_IG_STORIES_STATE'].includes(message?.type)){
+    instagramStoriesReady.then(adapter=>reply(adapter.handle(message.type))).catch(error=>reply({testOnly:true,error:error.message}));return true;
+  }
+  if(['TEST_GRAYSCALE_APPLY','TEST_GRAYSCALE_RELEASE','TEST_GRAYSCALE_STATE'].includes(message?.type)){
+    grayscaleReady.then(adapter=>reply(adapter.handle(message.type))).catch(error=>reply({testOnly:true,error:error.message}));return true;
+  }
   if(['TEST_ENDCARDS_APPLY','TEST_ENDCARDS_RELEASE','TEST_ENDCARDS_STATE'].includes(message?.type)){
     endcardsReady.then(adapter=>reply(adapter.handle(message.type))).catch(error=>reply({testOnly:true,error:error.message}));return true;
   }
