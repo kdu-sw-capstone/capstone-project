@@ -1,5 +1,29 @@
 # AMVP-CONTENT-06 · 추가 Content 연결
 
+## 2026-10-31 YT-09 흑백 · 로컬 구현/사용자 확인 대기
+
+- 담당 채지민, `codex/content-grayscale`, 시작 HEAD `113fb697a64eb803317499c9e5a61aee9c5a5a85`의 clean Content 작업을 보존해 분리. 기준 RC2 `05_Content_Event_UI.md` 및 feature-registry의 AC-YT-09-01~03. 이번 범위는 흑백 한 기능이며 Instagram/제품 Core 수신·영속화·Wire/Manifest/Server 변경은 없다. 기존 통합/선행 PR을 병합하지 않는다.
+- `extension/content/grayscale.mjs`의 GrayscaleSession은 기존 NavigationSurfaceSession의 소유 claim·관찰·SPA 재승인·cleanup를 재사용한다. YT-09만 ClaimLedger.grayscale을 사용하고 다른 옵션의 hide 경로는 보존한다. desktop https YouTube의 지원 route/ytd-app을 대상으로 원래 filter와 자기 grayscale(1)을 합성한다. FOCURVE UI/안내가 내부에 있으면 해당 ancestor를 필터링하지 않고 보호 UI 밖의 자식 branch로 나눠 적용한다. 보호 UI에 filter:none만 주어 ancestor 효과를 무효화했다고 오인하지 않는다.
+- 동적 app 교체·페이지 filter 변경은 observer로 관찰한다. 같은 문서 SPA도 trusted authorizeNavigation의 동기 true 없이는 새 적용하지 않는다. pagehide는 새 적용을 닫고 pageshow만으로 재개하지 않는다. 복원 실패·다른 문서 adoptNode는 의무를 유지하며 기존 원장의 재시도·다른 owner/속성 보존을 사용한다.
+- 결과는 local_only:true/native_verified:false 및 OBSERVED/NO_TARGET/FAILED이며 Wire APPLIED/전체 RELEASED/Server 성공 증거가 아니다. 영상 재생/소리/자동재생/댓글·추천 설정은 변경하지 않는다. 시험 bootstrap은 TEST 전용 모의 SPA 승인/임의 시험 ID를 사용하며 coreConnected:false를 유지한다. 승인된 Core adapter의 effect 전 영속 의무·frozen/native/sender·issued operation/result 결속은 아직 미구현이다.
+- 시험 확장 build/bootstrap/popup만 추가 연결하고 기존 모든 버튼/handler를 보존한다. permissions는 activeTab 그대로이며 서버 실행/새 확장 설치는 필요하지 않다. `node extension/content-tools/build-chrome-harness.mjs` 후 기존 시험 확장 reload 및 YouTube 탭 새로고침으로 사용한다.
+- 최초 흑백 전용 설치 Chrome headless/Playwright 합성 DOM 9/9 PASS. 기존 공통 원장·navigation 관련 전체 회귀 및 최종 추가 시험 결과는 아래 후속 기록으로 구분한다. AC의 실제 Core/native·frozen 제품 수용은 이 합성 시험으로 PASS 처리하지 않는다.
+- 사용자 실제 YouTube는 미검증: 적용 시 화면 흑백/팝업 컬러 유지, 재생·소리/수동 조작 유지, 해제 후 컬러 복원, 재적용/지원 SPA 이동, 댓글·추천 제한과 흑백의 독립 해제를 확인할 예정이다. 실제 전체화면·지역/언어/반응형·새 탭 자동 주입·BFCache 재결속·Core/Server 통합은 별도 미검증이다.
+- Commit/Push/PR 없음. 다음: 관련 회귀 확인 → 사용자 체크리스트 실행 → 결과 기록/게시 범위 설명 → 사용자 게시 수락 후 작은 PR. 흑백 개발 결과를 영속 제품 연결 완료나 YouTube 전체 수용 완료로 집계하지 않는다.
+
+### 이번 단위 최종 자동 검증
+
+- 사용자 실제 YouTube 실행 결과: "흑백적용됐거든 올리고"라고 적용 동작 확인 및 게시 요청. 이는 사용자 보고이며 직접 수집한 Chrome 효과 로그가 아니다. 앞서 제공한 해제/미디어/SPA/다른 제한 공존 체크 전체가 완료됐다고 확대하지 않는다. 해당 실제 항목은 개별 확인 미기록이다. 실제 F5 후에는 현재 독립 시험의 모든 추가 옵션이 수동 재적용 구조이며 사용자도 현재 모두 초기화됨을 확인했다. 과거 유지 관찰의 원인은 미확정이다.
+- 제품 연결 후속: Core는 새 문서/새로고침·SPA/BFCache의 권한/owner/document/generation을 재검증해 활성 세션의 frozen Snapshot/Attachment를 전달하고 effect 전 의무/결과·cleanup을 영속 결속해야 한다. Content는 승인된 명령을 기능별 Session에 연결하는 adapter와 적용/복원 증거 반환을 구현해야 한다. Core만의 작업으로 완료 처리하지 않는다. local OBSERVED/restored를 Server 성공으로 직접 전용하지 않는다. 본 PR에는 해당 제품 연결·영속화가 없다.
+
+- 사용자 후속: 흑백은 새로고침 후 컬러 복귀하지만 기존 목록/검색창 숨김은 유지됐다고 보고. 사용자 관찰을 부정하거나 이를 곧바로 Core 결함으로 확정하지 않는다. 실제 유지된 옵션과 F5/탭 reload/확장 reload 구분을 확인 요청했다. 현재 bootstrap/popup/manifest에는 어느 추가 옵션도 저장·자동 재적용 경로가 없음을 확인했다.
+- 새 비교 반례: 동일 시험 bootstrap으로 상단바/댓글/흑백을 적용 → Chrome 합성 페이지 `page.reload()` → bootstrap 새 주입 → STATE 조회. 1/1 PASS, 세 효과 모두 원래 DOM/필터로 초기화되고 상태 null/[]임을 직접 확인. 실제 YouTube 사용자 현상은 미재현·조건 확인 대기이며 제품 원인 수정이나 실제 사이트 PASS로 기록하지 않는다. 이 단계에서는 시험/기록만 추가, 제품 동작 변경·새 영속 저장·Commit/Push 없음.
+- 이전 버전 직접 비교: `git show <ref>:extension/...`로 당시 bootstrap과 모든 import 모듈을 읽어 설치 Chrome 합성 문서에 실행. 댓글·추천0972ea2, 자동재생c70b837, 홈ba4a7e2, 구독12096d0, 탐색f18eba1, 상단바1a48bec, 종료카드70e40d3의 7경로(8옵션) 모두 적용 효과를 먼저 확인하고 `page.reload()` 후 새 bootstrap/STATE를 확인했다. 7/7 PASS: 숨김은 원래 visible, autoplay는 원래 ON, 세션 결과는 null/[]로 초기화. 흑백 추가 전 코드도 새 문서에 자동 재적용하지 않음을 직접 확인했다. Shorts/과거 모든 배포본/사용자 실제 YouTube F5·설치 파일 원본은 이 시험 범위가 아니다. 실행기는 ignored `extension/build/historical-reload-check.mjs`이며 제품/기존 시험 확장 빌드를 덮어쓰지 않았다. 사용자 과거 유지 관찰의 실제 원인은 미확정으로 남긴다.
+
+- Windows Node24 + 설치 Chrome headless/Playwright, `--test --test-concurrency=2 extension/content-tests/*.test.mjs`: **157/157 PASS**, fail/skip0(기존148 + 최초 흑백9). 이후 시험 코드만 2건 추가해 흑백 파일 별도 실행 **11/11 PASS**. 9건은 겹치므로 157+11로 합산하지 않는다. 제품 소스는 두 실행 사이 동일하다. 추가2는 subframe 거절 및 실제 시험 bootstrap의 sender/공유 ledger/댓글 제한 보존이다.
+- `node --test contracts/additional-mvp/rc1/tests/legacy-boundary.test.mjs`: **6/6 PASS**, fail/skip0. `node extension/content-tools/build-chrome-harness.mjs` 및 변경 JS 구문/공백 검사 성공. 정확한 Node/Playwright 경로는 기존 본 카드 시험 명령의 runtime을 사용한다.
+- 사용자 실제 YouTube 결과는 아직 없으며 실제 Core/Server·영속 증거·BFCache 재결속 수용으로 승격하지 않는다. 새 파일2 + 기존 공유 navigation/시험 도구3/기존 작업카드1 = 게시 검토 후보7파일이며 아직 미커밋이다.
+
 담당: 채지민. 브랜치: feature/additional-mvp-content.
 시작 기준: e2b3fc318fe52acc45145a30def07b874b2255f6 (PR24 병합).
 상태: 진행 중. 전체 16옵션/제품 연결 완료 아님.
