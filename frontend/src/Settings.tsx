@@ -3,6 +3,7 @@ import { clearCsrf, request } from "./api";
 import { dateTime, label, useWork, type Session } from "./FocusShared";
 import GuestImports from "./GuestImports";
 import ThemeSettings from "./ThemeSettings";
+import AdditionalSettings from "./AdditionalSettings";
 import "./settings.css";
 
 type AccountUser = { user_id?: string; display_name: string; email: string | null; email_verified?: boolean; providers: string[] };
@@ -35,6 +36,7 @@ export default function Settings({ user, social, refreshUser, sites, sessions, l
   return <section className="page settings-page">
     <header className="settings-heading"><h3>설정</h3><p>계정과 확장 프로그램 연결 상태를 확인하세요.</p></header>
     <ThemeSettings />
+    <AdditionalSettings installations={installations} />
     <section className="settings-card" aria-labelledby="account-title">
       <h4 id="account-title">계정</h4>
       <div className="settings-row"><div><strong>{user.display_name}</strong><p>{user.email ?? "제공된 이메일 없음"}</p></div><span className="settings-badge">{user.providers.includes("EMAIL") ? "이메일 계정" : "소셜 계정"}</span></div>

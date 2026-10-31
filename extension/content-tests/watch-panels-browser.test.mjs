@@ -229,3 +229,36 @@ test('trusted TEST popup connects watch module; untrusted page cannot command it
   assert.equal(result.released.released.every(x => x.restored), true);
   assert.equal(await page.locator('ytd-comments').isVisible(), true);
 });
+
+test('merged TEST harness shares one ledger and releases watch independently of navigation options', async t => {
+  const body='<ytd-masthead><input id="search"></ytd-masthead>'
+    +'<ytd-guide-entry-renderer id="home"><a href="/">home</a></ytd-guide-entry-renderer>'
+    +'<ytd-guide-entry-renderer id="subs"><a href="/feed/subscriptions">subscriptions</a></ytd-guide-entry-renderer>'
+    +'<ytd-guide-entry-renderer id="explore"><a href="/feed/trending">explore</a></ytd-guide-entry-renderer>'
+    +'<ytd-watch-flexy><video></video><ytd-comments>comments</ytd-comments><div id="related">recommendations</div></ytd-watch-flexy>';
+  const page=await fixture(t,body);
+  await page.evaluate(()=>{window.chrome={runtime:{id:'test-extension',getURL:path=>location.origin+'/'+path,onMessage:{addListener:cb=>{window.listener=cb;}}}};});
+  await page.evaluate(await readFile(new URL('../content-tools/chrome-harness/bootstrap.js',import.meta.url),'utf8'));
+  const result=await page.evaluate(async()=>{
+    const sender={id:'test-extension',url:chrome.runtime.getURL('popup.html')};const send=type=>new Promise(resolve=>listener({type},sender,resolve));
+    for(const type of ['TEST_HOME_APPLY','TEST_SUBSCRIPTIONS_APPLY','TEST_EXPLORE_APPLY','TEST_MASTHEAD_APPLY'])await send(type);
+    const applied=await send('TEST_WATCH_PANELS_APPLY');const released=await send('TEST_WATCH_PANELS_RELEASE');
+    const preserved=['#home','#subs','#explore','ytd-masthead'].map(selector=>document.querySelector(selector).style.display);
+    for(const type of ['TEST_HOME_RELEASE','TEST_SUBSCRIPTIONS_RELEASE','TEST_EXPLORE_RELEASE','TEST_MASTHEAD_RELEASE'])await send(type);
+    const final=await send('TEST_WATCH_PANELS_STATE');return{applied,released,preserved,final};
+  });
+  assert.equal(result.applied.ledger.remaining_targets,6);assert.equal(result.released.ledger.remaining_targets,4);
+  assert.deepEqual(result.preserved,['none','none','none','none']);assert.equal(result.final.ledger.remaining_targets,0);
+  assert.equal(await page.locator('ytd-comments').isVisible(),true);assert.equal(await page.locator('#related').isVisible(),true);
+});
+
+test('watch uses latest pending-restore ledger after partial setter mutation', async t => {
+  const page=await fixture(t);const result=await page.evaluate(()=>{
+    session.start();const node=document.querySelector('ytd-comments'),write=node.style.setProperty.bind(node.style);
+    node.style.setProperty=(name,value,priority)=>{if(name==='display'&&value==='grid'){write(name,'block');throw Error('partial restoration');}write(name,value,priority);};
+    const failed=session.release();let blocked='';try{newSession(settings).start();}catch(error){blocked=error.message;}
+    node.style.setProperty=write;const retry=session.release();return{failed,blocked,retry,display:node.style.display};
+  });
+  assert.equal(result.failed.find(value=>value.feature_id==='YT-03').restored,false);
+  assert.equal(result.blocked,'WATCH_SCOPE_ALREADY_ACTIVE');assert.equal(result.retry.every(value=>value.restored),true);assert.equal(result.display,'grid');
+});

@@ -1,5 +1,14 @@
 # ADDITIONAL-CONTRACT-20261029
 
+## 2026-10-30 · 승인된 PR25 CREATE 추가와 legacy-lock 보존
+
+- 계약 확정 기준 RC2/e2b3fc318fe52acc45145a30def07b874b2255f6, 제품 통합 기준202d6317ff7d88b6d5e916ec549e7ffff02f2d91 유지. 과거 REVIEW_PENDING 기록은 당시 이력이며 이번 작업은 계약 재승인/병합 절차를 재개하지 않는다.
+- 담당 근거: 06_인계_승인.md의 김다훈 계약/통합 조정 범위, 이 카드의 계약 작성·조정 담당, test_contract.py Git 이력 및 사용자가 전달한 설계 담당의 이번 좁은 수정 기준. Core/Content 의미·공유 Schema/API/SQL은 변경하지 않는다.
+- 기존 검사 실패1건을 재현했다. api.ts의 public create 옵션, private create 옵션, If-None-Match 헤더 추가의 정확한 세 source context를 각각 한 번만 역변환한 뒤 기존 잠금 SHA와 대조한다. 원본 파일 자체도 기존 SHA 그대로 통과한다. 일부 추가·중복·위치 변경·다른 파일·인증/CSRF/멱등/버전 헤더/재시도 변경은 거절한다.
+- api.ts 제품 코드와 legacy-lock.json(기존 SHA 포함)은 변경하지 않는다. revision-manifest는 실제로 바뀐 검사와 이 작업카드의 산출물 SHA만 갱신한다. 제품 해시를 새 값으로 허용하는 예외는 없다.
+- 검사1개에 대한 회귀1개를 추가했다. 기존265건+새 좁은 허용/거절1건=266/266 PASS. 집중 시험3/3 PASS(legacy174파일 대조·허용/거절·manifest), 거절 반례11개를 확인했다. 기존 잠금 hash와 api.ts bytes 동일. 실제 Git SHA는 독립 fix commit 및 인계 결과를 따른다. 기존 Web·Server·MySQL·제품 실제 수용을 다시 실행했다고 표시하지 않는다.
+- 현재 일일 이용시간 개발의 미커밋 변경/브랜치/실제 index는 보존한다. 새 Worktree·PR27/28 변경·Merge·실제 설치 조작은 없다. 별도 임시 index로 제품 통합 기준 위에 검사 수정만 Commit/Push하여 통합·회귀 담당이 선택 반영할 수 있도록 한다.
+
 ## 현재 작업 — 3인 방향 동의 최종 후보 반영
 
 - AMVP-CON-01, 동일 브랜치/Worktree, 시작06cebf484ffc2a94aa1c0049f4ae25d50f197b50. 담당 변경 없음, 신규 전면 검토 없음.
