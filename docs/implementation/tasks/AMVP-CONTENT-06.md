@@ -1,5 +1,19 @@
 # AMVP-CONTENT-06 · 추가 Content 연결
 
+## 2026-10-31 IG-01 · PR #56 P2 속성 관찰 수정
+
+- 대체 개발 김다훈, 기존 담당 채지민 유지. 브랜치 `fix/ig-story-attribute-observer-p2`, 시작 기준 #56 `08730c86d91d0b1d3790bc5fafc7a7ca9195ece8`. 로컬 주 저장소 Worktree/브랜치 및 사용자 홈의 navigation-surface 소스 검색에서 인계된 미커밋 수정본은 찾지 못했다. 기존 독립 리뷰 fixture/실패 로그는 회수했고, 사용자 허용 범위대로 정확한 #56 HEAD에서 별도 Worktree로 최소 수정 복구. 앱 Worktree 생성기는 sourceRoot가 채팅 workspace 밖이라는 이유로 거절하여 Git worktree를 사용했다. 기존 작업자의 소스/index/실패 환경은 보존했다.
+- 근거: #56 리뷰 `5722451404` / inline `4431482803`, RC2 `docs/design/additional-mvp-contracts/05_Content_Event_UI.md` 공통 ON/OFF 및 feature-registry AC-IG-01-01~03. 관찰 누락만 수정하며 계약의 제품 수용 상태는 변경하지 않는다.
+- 코드: `navigation-surface.mjs` IG-01 전용 attributeFilter에 `alt`, `draggable` 추가. YouTube 관찰 목록/ClaimLedger/제품 receiver/Manifest/Core/Server는 변경하지 않는다.
+- 신규 브라우저 회귀 2건은 각 속성의 늦은 적격 전환→제한→이탈→복원→재진입→다른 owner 공존 중 이탈을 수동 scan 없이 확인한다. 자기 remaining_targets=0, 다른 owner의 숨김 유지, 마지막 owner 해제 후 원래 `display:flex!important` 복원을 검사한다.
+- 환경: Windows Node24.19.0 / Playwright1.62.1 / 설치 Google Chrome156.0.8078.76 headless. 기존 harness의 임시 브라우저 context와 전 요청 route.fulfill 합성 DOM만 사용했다. Instagram 네트워크/로그인·HOLD Chrome PID/프로필·Native·서비스·DB를 사용하지 않았다. 브라우저 설치/다운로드 불필요.
+- 변경 전 정확한 #56 소스에서 신규 브라우저 2건 **0 PASS / 2 FAIL**(속성만 바꾼 후 숨김 미발생 timeout). 수정 후 같은 2건 **2/2 PASS**. 기존 독립 jsdom6 반례도 원본 **4 PASS / 2 FAIL**(늦은 적격 전환, selector 이탈 미복원)→수정 **6/6 PASS**. 기존 실패 로그는 보존했다.
+- 새로 실행: `node --test --test-concurrency=2 extension/content-tests/*.test.mjs` **183/183 PASS**, fail/skip0. IG23(기존21+신규2), YouTube·ClaimLedger/다중 owner·동적 DOM/SPA·pagehide/foreign document·복원 실패/cleanup 포함. 신규2 단독 결과와 합산하지 않는다. `node --test contracts/additional-mvp/rc1/tests/legacy-boundary.test.mjs` **6/6 PASS**. 변경 JS2파일 `node --check`, `git diff --check`, `node extension/content-tools/build-chrome-harness.mjs` PASS. 빌드된 navigation-surface와 소스 SHA256 일치 `cb027db9b5d587aa62199e944efb780cf8a7a5b04272dea5e2885f64d5c662d1`.
+- 로컬 실행 증거는 이번 채팅 artifact 루트의 `p2-before-browser.log`, `p2-after-browser.log`, `independent-before.log`, `independent-after.log`, `content-regression.log`, `contract-regression.log`에 보존. 합성 브라우저 DOM/CSS 및 모의 media 시험이며 실제 Instagram 제품 수용으로 승격하지 않는다.
+- Git 반영: 검증된 이3파일만 한 수정 Commit/별도 브랜치 Push 후 #56 브랜치 `codex/content-instagram-stories`를 base로 한 별도 수정 PR을 제출한다. #56 원본 브랜치에 직접 Commit/Push하지 않는다. #54(`670647f`)→#56(`08730c8`)→P2 수정의 순차 의존성 유지. 이 수정 PR을 integration에 독립 병합하면 선행 기능까지 섞이므로 금지. #54 승인/병합, #56 담당 반영/새 HEAD 재검토 및 통합은 별도 절차이며 이번에 Merge/리뷰 대리 승인하지 않는다.
+- 상태: P2 구현·합성 자동 검증 PASS / 제품 통합·최종 수용 NOT_RUN. 실제 Instagram·Core/Native·BFCache 재결속·정상 END/재기동·영속 effect/cleanup 증거는 미검증. `MVP_FINAL_COMPLETE=false`.
+- 복귀 인계/다음 최소 작업: 채지민은 이 수정 Commit을 #56에 반영하고 변경된 관찰 경계만 재검토받는다. 이후 별도 요청에서 승인된 Core frozen/document-generation 계약에 맞춘 Content adapter와 실제 관찰/release/남은 cleanup 반환을 진행한다. Instagram 추가 옵션·YouTube 추가 개발은 이 수정 PR에 포함하지 않는다.
+
 ## 2026-10-31 IG-01 스토리 · 첫 Instagram 독립 단위
 
 ### 최신 제출 상태 · 실제 사용자 재시험 확인
