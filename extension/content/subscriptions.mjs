@@ -35,9 +35,10 @@ const PROFILE=Object.freeze({feature_id:'YT-05',prefix:'SUBSCRIPTIONS',
       if(urls.every(isSubscription))targets.add(section);
       else{
         // Mixed/legacy navigation: preserve Home/Shorts/history and hide only
-        // known channel entries alongside the subscriptions entry.
-        for(let i=0;i<links.length;i++)if(urls[i]&&channelPath(urls[i].pathname))
-          targets.add(links[i].closest('ytd-guide-entry-renderer')??links[i]);
+        // Use the same subscription classification as the whole-section path,
+        // including /feed/channels, while preserving unrelated siblings.
+        for(let i=0;i<links.length;i++)if(isSubscription(urls[i]))
+          targets.add(links[i].closest('ytd-guide-entry-renderer, ytd-mini-guide-entry-renderer')??links[i]);
       }
     }
     // One ancestor claim covers its descendants without duplicate footprints.

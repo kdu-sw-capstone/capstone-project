@@ -47,14 +47,18 @@ test('sidebar subscription section includes subscribed channels and expands with
 });
 
 test('mixed navigation preserves unrelated entries and reusing a subscriptions section restores its claim',async t=>{
-  const body='<ytd-guide-section-renderer id="mixed"><ytd-guide-entry-renderer id="home"><a href="/">home</a></ytd-guide-entry-renderer><ytd-guide-entry-renderer id="subs"><a href="/feed/subscriptions">subs</a></ytd-guide-entry-renderer><ytd-guide-entry-renderer id="channel"><a href="/@followed">channel</a></ytd-guide-entry-renderer><a id="foreign" href="https://example.test/@other">external</a></ytd-guide-section-renderer>';
+  const body='<ytd-guide-section-renderer id="mixed"><ytd-guide-entry-renderer id="home"><a href="/">home</a></ytd-guide-entry-renderer><ytd-guide-entry-renderer id="subs"><a href="/feed/subscriptions">subs</a></ytd-guide-entry-renderer><ytd-guide-entry-renderer id="channel"><a href="/@followed">channel</a></ytd-guide-entry-renderer><ytd-guide-entry-renderer id="all-channels"><a href="/feed/channels">all subscriptions</a></ytd-guide-entry-renderer><a id="foreign" href="https://example.test/@other">external</a></ytd-guide-section-renderer>';
   const page=await fixture(t,{body,url:'https://www.youtube.com/'});await page.evaluate(()=>session.start());
   assert.equal(await page.locator('#mixed').isVisible(),true);assert.equal(await page.locator('#home').isVisible(),true);
   assert.equal(await page.locator('#subs').isVisible(),false);assert.equal(await page.locator('#channel').isVisible(),false);
   assert.equal(await page.locator('#foreign').isVisible(),true);
+  assert.equal(await page.locator('#all-channels').isVisible(),false);
+  assert.equal(await page.locator('#all-channels').evaluate(e=>e.inert),true);
   await page.evaluate(()=>document.querySelector('#subs a').href='/feed/history');
   await page.waitForFunction(()=>observations.at(-1).status==='NO_TARGET');
   assert.equal(await page.locator('#subs').isVisible(),true);assert.equal(await page.locator('#channel').isVisible(),true);
+  assert.equal(await page.locator('#all-channels').isVisible(),true);
+  assert.equal((await page.evaluate(()=>session.release())).restored,true);
 });
 
 test('YT-05 hides subscription entries/list only, never changes account or search/video',async t=>{
@@ -145,4 +149,19 @@ test('TEST popup validates sender and preserves home restriction when subscripti
     const send=type=>new Promise(resolve=>listener({type},sender,resolve));await send('TEST_HOME_APPLY');const applied=await send('TEST_SUBSCRIPTIONS_APPLY'),released=await send('TEST_SUBSCRIPTIONS_RELEASE');
     const homeStillHidden=document.querySelector('#home').style.display==='none';await send('TEST_HOME_RELEASE');return{leaked,applied,released,homeStillHidden,accountChanges};
   });assert.equal(result.leaked,false);assert.equal(result.applied.result.feature_id,'YT-05');assert.equal(result.applied.coreConnected,false);assert.equal(result.released.released.restored,true);assert.equal(result.homeStillHidden,true);assert.equal(result.accountChanges,0);
+});
+
+test('pure to mixed subscription section retains all subscription entries and restores own claims',async t=>{
+  const body='<ytd-guide-section-renderer id="section" style="display:flex"><ytd-guide-entry-renderer id="subs"><a href="/feed/subscriptions">subscriptions</a></ytd-guide-entry-renderer><ytd-guide-entry-renderer id="channel"><a href="/@followed">channel</a></ytd-guide-entry-renderer><ytd-mini-guide-entry-renderer id="all"><a href="/feed/channels">all</a></ytd-mini-guide-entry-renderer></ytd-guide-section-renderer><main><a id="outside" href="/feed/channels">unrelated body link</a></main>';
+  const page=await fixture(t,{body,url:'https://www.youtube.com/'});await page.evaluate(()=>session.start());
+  assert.equal(await page.locator('#section').isVisible(),false);
+  await page.evaluate(()=>document.querySelector('#section').insertAdjacentHTML('beforeend','<ytd-guide-entry-renderer id="history"><a href="/feed/history">history</a></ytd-guide-entry-renderer><a id="external" href="https://example.test/feed/channels">external</a>'));
+  await page.waitForFunction(()=>document.querySelector('#section').style.display==='flex');
+  for(const selector of ['#subs','#channel','#all']){assert.equal(await page.locator(selector).isVisible(),false);assert.equal(await page.locator(selector).evaluate(e=>e.inert),true);}
+  for(const selector of ['#history','#external','#outside'])assert.equal(await page.locator(selector).isVisible(),true);
+  await page.evaluate(()=>ledger.hide('other',document.querySelector('#all')));
+  assert.equal((await page.evaluate(()=>session.release())).restored,true);
+  assert.equal(await page.locator('#subs').isVisible(),true);assert.equal(await page.locator('#channel').isVisible(),true);assert.equal(await page.locator('#all').isVisible(),false);
+  await page.evaluate(()=>ledger.release('other'));assert.equal(await page.locator('#all').isVisible(),true);assert.equal(await page.locator('#all').evaluate(e=>e.inert),false);
+  assert.equal(await page.locator('#section').evaluate(e=>e.style.display),'flex');
 });
