@@ -27,7 +27,7 @@ jobs:
           node-version: '24.19.0'
       - run: npm ci --ignore-scripts --no-audit --no-fund
         working-directory: extension
-      - run: node --test extension/tests/additional-dnr-inventory.test.mjs extension/tests/additional-dnr-coordinator.test.mjs
+      - run: node --test extension/tests/additional-dnr-inventory.test.mjs extension/tests/additional-dnr-coordinator.test.mjs extension/tests/additional-dnr-site-time-evidence.test.mjs
       - run: node --test contracts/additional-mvp/rc1/tests/legacy-boundary.test.mjs
       - run: npm run check
         working-directory: extension
