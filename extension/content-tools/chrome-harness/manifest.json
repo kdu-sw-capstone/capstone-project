@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
-  "name": "FOCURVE 상단바 숨기기 독립 검증 — Core 미연결",
-  "version": "0.1.0",
+  "name": "FOCURVE Content 독립 검증 — Core 미연결",
+  "version": "0.1.1",
   "permissions": ["activeTab"],
   "action": {"default_popup": "popup.html"},
   "content_scripts": [{"matches": ["https://www.youtube.com/*", "https://youtube.com/*"], "js": ["bootstrap.js"], "run_at": "document_idle"}],
