@@ -138,3 +138,34 @@
 - 최종 관련 회귀: 기존33+원장26+홈9+구독12+탐색14 = 94/94 PASS, 실패/skip0. Node24/Playwright/설치 Windows Chrome headless 합성 DOM·모의 재승인/실패 주입. 위 전체 시험 명령8개 파일 재실행 결과다. 구독 수정 반영 후 build-chrome-harness.mjs 성공 및 git diff HEAD --check PASS, 충돌 마커 없음. 사용자7항목 정상 보고와 자동 시험·제품 미검증 경계는 위 기록 그대로다.
 - 게시 단위: explore-profile.mjs/explore.mjs, 탐색 브라우저 시험, navigation-surface의 YT06 경로 및 browse-id 관찰, 시험 build/bootstrap/popup/manifest, 이 기록 총9파일. 제품 manifest 권한·Core/Server/API/Wire/Schema 변경 없음. testOnly/coreConnected:false·모의 재승인은 제품 권한 부여/연동 완료가 아니다. 새 함수는 trusted caller 전제의 내부 부품이며 실제 native/문서/owner·frozen 재검증 책임은 연결 단계에 남는다.
 - 사용자 게시 준비 동의 후 codex/content-explore의 별도 Draft PR을 integration/additional-mvp-20261029 대상으로 제출한다. PR33→40→42 선행 의존성과 PR42 재리뷰 대기는 유지한다. 선행 PR의 기존 HEAD·리뷰는 수정하지 않는다. 변경 비교 기준은 위4cf38ec이다. 최종 Git SHA/PR 번호는 게시 결과를 따른다. 다음은 다훈의 탐색 영역/보존/복원 리뷰 및 종민의 재승인·cleanup 경계 리뷰, 실제 Core 연결은 후속이다. 전체 YT06 제품 수용 완료로 표시하지 않는다.
+
+### 2026-10-31 · YT-07 상단바 숨기기 착수
+
+- 담당 채지민, codex/content-masthead, 시작 기준 f18eba15abb232c6d3025d460b5bed2cb5a54d2a(PR44). 상태: 로컬 구현/시험 준비. 현재 clean 상태에서 기능별 브랜치로 분리했으며 다른 담당 작업/원격 PR HEAD는 변경하지 않는다.
+- 기준: AGENTS.md, 개발운영.md, 통합현황.md, docs/design/00_문서안내.md 및 설계연결.json, AMVP-CONTRACT-20261029-RC2 feature-registry.json YT-07/AC-YT-07-01~03, 03_Wire_D06_복원.md/05_Content_Event_UI.md. PC 후속 확장 계획은 현재 Chrome 범위와 구분한다.
+- 범위: desktop YouTube masthead와 내부 검색 포함 숨김/소유 claim 해제 복원. 브라우저 주소창·FOCURVE 종료/오류 UI·영상과 재생 조작 보존. 기존 NavigationSurfaceSession/ClaimLedger를 재사용하고 Core/Wire/frozen 정책 선택·제품 권한은 변경하지 않는다. 같은 문서 SPA의 내부 재승인 hook은 모의 시험에만 제공하고 제품 Core 재검증은 후속 연결이다.
+- 이번 단위는 상단바만이며 종료카드/흑백/Instagram 추가 개발·Commit/Push/PR/병합은 아직 하지 않는다. 구현 후 합성 회귀와 사용자 실제 체크리스트로 확인한다.
+
+### 2026-10-31 · YT-07 로컬 구현·자동 회귀 완료 / 사용자 시험 대기
+
+- 코드: extension/content/masthead.mjs의 MastheadSession. desktop ytd-masthead 전체를 제한해 내부 검색·로고·계정 메뉴를 포함한다. 본문/검색 결과/구독 목록/영상·재생 조작은 수정하지 않고 검색 값·계정·미디어 상태를 변경하지 않는다. 주소창은 DOM 대상이 아니며 종료/오류 UI는 data-focurve-restriction/data-focurve-ui의 자기/상위/하위 보호 영역으로 구분한다. 보호 UI가 masthead 안에 들어오면 자기 claim을 회수하여 UI를 보존하고 국소 NO_TARGET을 반환한다. 이를 적용 성공으로 확정하지 않는다.
+- 지원 route: 홈, watch, results, feed/subscriptions·explore·trending·storefront, playlist, shorts·channel·c·user·@handle 경로. HTTPS youtube.com/www·top-frame만 허용한다. /account 등 미지원 route와 iframe/외부 호스트는 효과 전 거절한다. 전체 YouTube 경로/모바일 레이아웃 지원 선언은 아니다.
+- 기존 ClaimLedger/NavigationSurfaceSession 재사용. YT07 feature 등록, 기존 YT06의 명시적 동기 authorizeNavigation 재승인 경로를 YT07에도 허용하고 보호 marker 변경을 관찰한다. 다른 옵션의 default 이동 처리와 권한 의미는 유지한다. SPA 시 기존 claim 복원→승인된 새 route만 적용, cleanup 실패 시 새 적용 중지·목표/의무 유지. 기본 재승인 없음, pagehide/BFCache 복귀는 자동 재개 금지. 모의 시험에서만 callback을 제공한다.
+- 시험 도구: 기존 TEST bootstrap에 TEST_MASTHEAD_APPLY/RELEASE/STATE, 같은 공유 ledger 사용, popup 버튼/안내·시험 표시 이름과 build 복사 목록만 추가. 제품 Core listener/native sender·issued registry·정책·Wire/API/Schema·제품 Manifest 권한을 변경하지 않았다. 실제 Core 검증/영속 cleanup·결과 envelope 연결은 미구현/미검증이다.
+- 자동 결과: masthead-browser.test.mjs 12/12 PASS 후 관련 전체106/106 PASS(기존33+원장26+홈9+구독12+탐색14+상단바12), 실패/skip0. Node24·설치 Windows Chrome headless·Playwright 합성 DOM/모의 재승인·pagehide·setter 장애 주입이다. 영상 상태 미변경은 합성 video 속성 검사이며 실제 재생/소리 시험이 아니다. 다중owner·퇴역 scope·홈과 독립 해제·동적 재생성·FOCURVE UI 보호·부분 복원 실패/재시도·foreign document·권한 거절·iframe 보호를 포함한다.
+- 명령: 기존 PLAYWRIGHT_MODULE/CHROME_EXECUTABLE 환경에서 node --test extension/content-tests/changes.test.mjs extension/content-tests/detection.test.mjs extension/content-tests/browser.test.mjs extension/content-tests/claim-ledger.test.mjs extension/content-tests/claim-ledger-browser.test.mjs extension/content-tests/home-browser.test.mjs extension/content-tests/subscriptions-browser.test.mjs extension/content-tests/explore-browser.test.mjs extension/content-tests/masthead-browser.test.mjs . Node --check masthead.mjs/bootstrap.js, build-chrome-harness.mjs, git diff --check PASS. 줄바꿈 정규화 경고만 있고 검사 실패는 없다.
+- 변경8파일: masthead.mjs, masthead-browser.test.mjs, navigation-surface.mjs, build-chrome-harness.mjs, chrome-harness/bootstrap.js·popup.html·manifest.json 및 이 기록. 시작 SHA f18eba15abb232c6d3025d460b5bed2cb5a54d2a 유지. Commit/Push/PR/병합 없음. 기존 PR33/36/39/40/42/44는 변경하지 않았다.
+- 사용자 실제 Chrome 대기: 기존 시험 확장 갱신→YouTube 새로고침→다른 시험 제한은 끈 상태로 popup 하단 상단바 적용. 홈 상단 로고/검색/계정 영역 숨김과 본문 보존, 해제 시 검색 입력 가능, 일반 watch 적용 시 영상/소리/재생조작 유지, 추천 영상 클릭 및 뒤로/앞으로 SPA 이동 후 상단바 제한 유지, 마지막 해제 복원을 확인한다. 브라우저 퍼즐/주소창/확장 popup의 해제 버튼은 계속 사용 가능해야 한다. NO_TARGET/FAILED·일부 검색만 남음·다른 영역 가림은 미통과로 보고한다. 새로고침/새 문서는 수동 재적용이다.
+- 남은 경계: 사용자 실제 YouTube·전체 지역/언어·반응형 레이아웃·제품 Core/Server·영속화·실제 BFCache 재결속·새 탭/문서 자동 주입 미검증. local OBSERVED/native_verified:false를 Wire APPLIED·제품 완료로 표시하지 않는다. 다음은 사용자 결과와 필요한 selector 보완→게시 내용 설명/사용자 수락→별도 PR 리뷰이며, 이후 YT08 종료카드 및 YT09 흑백 연결은 별도 단위로 진행한다.
+
+### 2026-10-31 · YT-07 사용자 시험 문제없음 보고
+
+- 상단바 수동 체크리스트 안내 후 사용자가 “이건 뭐 딱히 테스트 할거도 없네 문제 없어”라고 회신했다. 사용자 실행에서 문제가 없었다는 포괄 정상 보고로 기록한다. 6개 항목별 결과를 별도 수집하거나 AI가 직접 관측한 것은 아니며 각 항목의 독립 PASS 증거로 바꾸지 않는다.
+- 자동106/106은 위 합성 시험 결과이며 이번 기록에서 기능 시험을 재실행하지 않았다. 실제 Core/frozen/native 권한 연결·실제 BFCache 재결속·전체 레이아웃 검증 대기는 유지한다. 사용자 시험 대기는 위 보고로 갱신하고 제품 전체 검증완료로 표시하지 않는다.
+- 상단바 코드·시험·시험 도구·기록 8파일은 로컬 미커밋 유지. 다음은 게시 범위 설명/사용자 수락 후 별도 PR 제출이며, 종료카드/흑백 추가 구현은 아직 시작하지 않는다.
+
+### 2026-10-31 · YT-07 게시 승인·준비
+
+- 사용자가 상단바 구현·시험·도구·기록 8파일을 별도 PR로 올리는 단계에 동의했다. codex/content-masthead에서 시작 기준 f18eba15abb232c6d3025d460b5bed2cb5a54d2a 유지. 게시 직전 PR44가 같은 HEAD의 open/미병합 상태이고 같은 상단바 head의 기존 PR이 없음을 확인했다.
+- 별도 Draft PR 대상은 integration/additional-mvp-20261029. 선행 PR33→40→42→44 의존성과 기존 구독 수정 4cf38ec을 보존하며 기존 원격 PR의 HEAD·리뷰는 변경하지 않는다. 상단바만 비교할 기준은 시작 SHA이며 게시 결과의 SHA/PR 링크가 원본이다.
+- 코드/의존성/시험 fixture 변경 없이 사용자 결과와 게시 기록만 추가했으므로 자동106/106을 재실행하지 않는다. git diff --check PASS. 이번 단계에서 제품 Core/실제 BFCache·전체 레이아웃 검증 완료로 표시하지 않는다. develop·통합 브랜치 병합/자동병합은 하지 않는다. 다음은 다훈의 상단바 범위/본문·UI 보존/복원 리뷰, 종민의 재승인·cleanup 경계 리뷰다.

@@ -58,8 +58,30 @@ const exploreReady=Promise.all([homeReady,import(chrome.runtime.getURL('content/
       return {testOnly:true,coreConnected:false,result,invalidated,released};
     }};
   });
+const mastheadReady=Promise.all([homeReady,import(chrome.runtime.getURL('content/masthead.mjs'))])
+  .then(([{ledger},{MastheadSession}])=>{
+    let session=null,result=null,invalidated=null;
+    return {handle(type){
+      let released;
+      if(type==='TEST_MASTHEAD_APPLY'){
+        if(invalidated)throw Error('OLD_SCOPE_CLEANUP_REQUIRED: 상단바 제한 해제 후 다시 적용하세요.');
+        if(!session){
+          session=new MastheadSession(document,{ledger,owner_binding_id:crypto.randomUUID(),binding_id:crypto.randomUUID(),
+            // TEST ONLY: actual Core must verify native scope on navigation.
+            authorizeNavigation:()=>true,
+            onObservation:value=>{result=value;},onInvalidated:value=>{invalidated=value;}});
+          try{session.start();}catch(error){session=null;throw error;}
+        }else session.scan();
+      }
+      if(type==='TEST_MASTHEAD_RELEASE'&&session){released=session.release();if(released.restored){session=null;result=null;invalidated=null;}}
+      return {testOnly:true,coreConnected:false,result,invalidated,released};
+    }};
+  });
 chrome.runtime.onMessage.addListener((message, sender, reply) => {
   if (sender.id !== chrome.runtime.id || sender.url !== chrome.runtime.getURL('popup.html')) return;
+  if(['TEST_MASTHEAD_APPLY','TEST_MASTHEAD_RELEASE','TEST_MASTHEAD_STATE'].includes(message?.type)){
+    mastheadReady.then(adapter=>reply(adapter.handle(message.type))).catch(error=>reply({testOnly:true,error:error.message}));return true;
+  }
   if(['TEST_EXPLORE_APPLY','TEST_EXPLORE_RELEASE','TEST_EXPLORE_STATE'].includes(message?.type)){
     exploreReady.then(adapter=>reply(adapter.handle(message.type))).catch(error=>reply({testOnly:true,error:error.message}));return true;
   }
