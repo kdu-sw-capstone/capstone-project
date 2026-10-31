@@ -84,3 +84,24 @@
 - 순수 helper 입력의 activeSession/alreadyIssued/recovered와 시각은 신뢰 adapter가 검증해야 한다. READY는 실제 세션 시작 허가나 RUNNING 증거가 아니다. 중복 판정은 영속 발생 원장·owner/version 검증과 함께 사용해야 하며 본 모듈은 영속 멱등을 구현하지 않는다.
 - 실행기 연결 전 실제 시간대/이벤트 loop 성능·alarm 지연·재시작·실제 적용/복원을 검증해야 한다. Server weekly 구현을 변경하거나 ONCE legacy actor 매핑을 임의 확정하지 않는다. 제품 기능 전체는 부분 구현이며 작은 모듈 리뷰 단위다.
 - 최신 기준 예약8/8·계약6/6·syntax/whitespace 검증 후 Commit/Push 및 PR 제출. 원격 CI는 Ubuntu/Windows Node24에서 같은 예약·계약 검증을 수행하며 Chrome 수용은 아니다.
+
+## 2026-10-31 고정 종료 집행 부품
+
+- 담당 윤종민. PR43/46을 변경하지 않도록 feature/additional-mvp-schedule-deadline 및 /workspace/focurve-schedule-deadline에서 최신 통합2bf04f0 기준으로 독립 구현. 이전 두 PR에 의존하지 않는다.
+- extension/member-a1/schedule-deadline.mjs의 ScheduleDeadline은 이미 admission된 회원 세션에만 작동하는 opt-in 내부 서비스다. Session/명령을 새로 만들지 않고 기존 Core.serial·bundle·endIntent(TIME_LIMIT)·finish의 실제 해제 검증을 호출한다. 기존 Core/Content 소스/manifest/bundle/공유 Schema는 변경하지 않는다.
+- arm 입력은 occurrence/schedule/version/start/end/session/command이며, trusted verifyScheduledAdmission이 실제 Server occurrence/session.source=SCHEDULE·owner·명령·고정종료와 캡처 UTC/mono/boot anchor를 검증해야 한다. 기본 callback은 false. 테스트 true는 합성 admission/clock 근거다. 같은 boot의 deadline은 검증된 anchor+mono 경과로 계산하여 이후 wall rollback/forward가 종료를 연장/단축하지 않는다.
+- 기존 metadata에 member:schedule-deadline:<sid> sidecar. 원래 plan·owner/executor·Snapshot/명령 revision·owner fence·boot/clock과 ARMED/ENDING/RELEASED 및 hash를 저장한다. 재호출이 end/plan/owner를 변경할 수 없고 새 boot는 재검증 전 옛 mono anchor를 사용하지 않는다. 새 boot 재검증 provider·복구 수용은 후속이다.
+- ENDING을 durable 선저장하고 기존 END intent/finish를 수행, 실제 journal RELEASED 및 binding 미해소0/cleanup 해소를 확인한 뒤 RELEASED 기록. 실패는 ENDING에 남고 재시도한다. endIntent 후 scope를 다시 확인해 다른 세션/owner로 진행하지 않는다. 완료 기록 손상/anchor 누락은 거절한다. 관측 공백을 확정시간으로 채우지 않고 기존 마지막 검증 interval만 닫는다.
+- onAlarm은 해당 session 전용 alarm만 해석한다. Worker entrypoint에는 설치하지 않았고 생산 native alarm 시각/지연·종료 오차 보장은 미검증이다. Chrome 유휴/종료 중 정시 해제를 보장하지 않으며 actual alarm 관측 후 검증된 해제만 보고해야 한다. 데이터 retention/sidecar 보존·old-session 조회도 활성화 전 검증 필요.
+- 새 시험15건: 실제 Core/Registry/Content-client JS와 fake-indexeddb를 사용하되 Chrome DNR·DOM effect·admission/clock은 모의. 만료 정확경계/1ms 전·원래 RUN 목표보다 이른 고정 종료·확정시간 공백 미생성·중복/수동 종료·실패 재시도/저장 rollback·벽시계 rollback/forward·새 boot 거절·다른 owner/명령·외부 DNR 보존·옛 알람/새 세션 fencing·손상 anchor를 검사했다.
+- 리뷰 필요: 세션 종료·cleanup 및 시간 의미에 영향을 주므로 다훈(Server admission/고정end·보고)·지민(Content 잔여 의무/새 generation·복원) 검토가 필요. 제품 실행 완료가 아닌 이미-admission된 세션의 종료 집행 부품 리뷰다.
+- PR46의 core.verifyScheduledDeadline readiness를 구현/활성화하지 않는다. 실제 연결에는 trusted admission/clock provider, 명령 적용 전 deadline gate, native Worker alarm/startup/recovery wiring, Server Actor 및 실제 Chrome 수용이 모두 필요하다. 부품 시험 통과만으로 예약 실행 차단을 해제하지 않는다.
+- 제출 검증: 신규15/15, CI와 동일 집중4파일63/63, 최신 통합 기반 전체 Extension817/817(fail0/skip0), 계약6/6·npm check·diff whitespace PASS. 이전 PR46 기반의816은 미병합 claim14건을 포함했고 본 브랜치는 해당14건 대신 deadline15건을 포함한다. 실행 수를 제품 진척률로 환산하지 않는다.
+- 명령: node --test extension/tests/member-schedule-deadline.test.mjs extension/tests/member-preserved-end.test.mjs extension/tests/member-native-confirmation-deadline.test.mjs extension/tests/member-dom-finalize-race.test.mjs; npm --prefix extension test; node --test contracts/additional-mvp/rc1/tests/legacy-boundary.test.mjs; npm --prefix extension run check.
+
+## 2026-10-31 PR48 통합 문서 충돌 해소
+
+- 검토 기준180029bef6e989647223ca7c0851551c24c4f9ad에 최신 integration dfa787f07d02b54366a69f107c1edfa058cb8b2a를 반영했다. PR43 예약 판정 기록과 PR48 고정 종료 집행 기록을 모두 보존했다. 본 카드의 추가 기록 충돌만 있었으며 제품 source 충돌은 없었다.
+- schedule-deadline.mjs와 member-schedule-deadline.test.mjs는 기존 독립 검토 HEAD와 byte-identical임을 확인했다. 같은 모듈의 신규 구현 변경은 없다. PR46의 추가 P2 수정과 섞지 않았다.
+- 최신 통합 기준 deadline 관련63/63·전체 Extension825/825(fail0/skip0)·계약6/6·syntax·whitespace PASS. 기존817에서 통합된 PR43 시험8건을 포함한 수다. 실제 Chrome/Server·고정 종료 제품 수용은 여전히 미검증이다.
+- 최신 HEAD Push 후 문서 충돌 해소분 재확인과 해당 원격 CI가 필요하다. 기존 고정 종료 provider 기본 거절·제품 미연결 범위를 유지하며 PR48 자체를 통합 브랜치에 병합하지 않는다.
