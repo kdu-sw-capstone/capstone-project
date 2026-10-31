@@ -14,11 +14,12 @@ function setup(Adapter=MemberA1Adapter){
  const a=new Adapter({auth:{},core:{verifyScheduledDeadline:async()=>true},db:{},authority:{},inspectGuest:async()=>({active:false,unresolved:false,cleanup:false})});
  a.identity=async()=>({...owner});
  const h={a,body,calls,schedule,occurrence,session,result:occurrence,ticks:()=>ticks,bundle:null,registryRows:[],root:null,startIntent:null,idleChecks:0};
+ let coreTail=Promise.resolve();a.core.serial=f=>{const p=coreTail.then(f);coreTail=p.catch(()=>{});return p;};
  a.core.bundle=async()=>structuredClone(h.bundle);a.core.registry={rows:async()=>structuredClone(h.registryRows)};
  a.authority.current=async()=>structuredClone(h.root);a.authority.idle=async()=>{h.idleChecks++;if(h.root?.phase==='ACTIVE')throw Error('ROOT_OBLIGATION_EXISTS');};
  a.read=async key=>key==='member:start-intent'?structuredClone(h.startIntent):null;
  a.status=async()=>({local_status:h.bundle?.a.session_status??'IDLE',session_id:h.bundle?.a.session_id??null});
- a.request=async(path,payload,headers={},beforeSend=null)=>{if(beforeSend)await beforeSend();calls.push({path,payload:structuredClone(payload)});if(path.startsWith('/schedules?'))return {items:[schedule],has_more:false,next_cursor:null};if(path.endsWith('/occurrences'))return {items:[{...occurrence,session_id:session.session_id}],has_more:false,next_cursor:null};if(path==='/schedule-occurrences/claim')return structuredClone(h.result);if(path.startsWith('/sessions/'))return structuredClone(session);throw Error('UNEXPECTED_ROUTE');};
+ a.request=async(path,payload,headers={},beforeSend=null)=>{const read=()=>{calls.push({path,payload:structuredClone(payload)});if(path.startsWith('/schedules?'))return {items:[schedule],has_more:false,next_cursor:null};if(path.endsWith('/occurrences'))return {items:[{...occurrence,session_id:session.session_id}],has_more:false,next_cursor:null};if(path==='/schedule-occurrences/claim')return structuredClone(h.result);if(path.startsWith('/sessions/'))return structuredClone(session);throw Error('UNEXPECTED_ROUTE');};if(beforeSend){const sent=await beforeSend(()=>({response:Promise.resolve(read())}));return sent.response;}return read();};
  a.tickInner=async()=>{ticks++;return {local_status:'NATIVE_VERIFYING',session_id:session.session_id};};return h;
 }
 test('conflict returns existing occurrence and never falls back to manual START',async()=>{
@@ -174,4 +175,44 @@ test('real transport still sends one claim when final local guard confirms idle'
  h.a.fetch=async(url,init)=>{posts++;assert.equal(init.method,'POST');assert.deepEqual(JSON.parse(init.body),h.body);return {ok:true,json:async()=>h.occurrence};};
  h.a.request=async(p,b,headers,guard)=>p==='/schedule-occurrences/claim'?MemberA1Adapter.prototype.request.call(h.a,p,b,headers,guard):mock(p,b,headers,guard);
  await h.a.claimSchedule(h.body);assert.equal(posts,1);
+});
+
+test('P2 final identity wait cannot bypass the last local obligation check',async()=>{
+ const h=setup();let identities=0,posts=0,release,entered,checking=false;
+ const waiting=new Promise(r=>{entered=r;});const paused=new Promise(r=>{release=r;});
+ h.a.identity=async()=>{if(!checking&&++identities===3){entered();await paused;}return {...owner};};
+ h.a.auth.credentials=async()=>({...owner,access_token:'synthetic'});
+ h.a.fetch=async()=>{posts++;return {ok:true,json:async()=>h.occurrence};};
+ const dispatch=async send=>{checking=true;try{await h.a.guardScheduleClaim(owner);}finally{checking=false;}return send?.();};
+ const pending=MemberA1Adapter.prototype.request.call(h.a,'/schedule-occurrences/claim',h.body,{},dispatch);
+ await waiting;busy(h);release();
+ await assert.rejects(pending,/CLEANUP_REQUIRED/);assert.equal(posts,0);
+});
+
+test('final admission waits for earlier queued Core UNKNOWN and sends no POST',async()=>{
+ const h=setup(),mock=h.a.request;let posts=0;
+ h.a.auth.credentials=async()=>{h.a.core.serial(()=>busy(h));return {...owner,access_token:'synthetic'};};
+ h.a.fetch=async()=>{posts++;throw Error('MUST_NOT_SEND');};
+ h.a.request=async(p,b,headers,dispatch)=>p==='/schedule-occurrences/claim'?MemberA1Adapter.prototype.request.call(h.a,p,b,headers,dispatch):mock(p,b,headers,dispatch);
+ await assert.rejects(h.a.claimSchedule(h.body),/CLEANUP_REQUIRED/);assert.equal(posts,0);
+});
+test('guard and fetch start share Core serial but a pending network does not block cleanup',async()=>{
+ const h=setup(),mock=h.a.request,events=[];let resolveResponse,queued;
+ const response=new Promise(r=>{resolveResponse=r;});const guard=h.a.guardScheduleClaim.bind(h.a);
+ h.a.guardScheduleClaim=async i=>{await guard(i);if(h.inFinal){queued=h.a.core.serial(()=>{events.push('core-transition');busy(h);});events.push('guard');}};
+ const original=h.a.dispatchScheduleClaim.bind(h.a);
+ h.a.dispatchScheduleClaim=(i,send)=>original(i,()=>{h.inFinal=false;return send();});
+ h.a.auth.credentials=async()=>({...owner,access_token:'synthetic'});
+ h.a.fetch=()=>{events.push('fetch-start');return response;};
+ h.a.request=async(p,b,headers,dispatch)=>p==='/schedule-occurrences/claim'?MemberA1Adapter.prototype.request.call(h.a,p,b,headers,send=>{h.inFinal=true;return dispatch(send);}):mock(p,b,headers,dispatch);
+ const pending=h.a.claimSchedule(h.body);
+ // A bounded timeout distinguishes a boxed response from holding serial until HTTP completion.
+ const wait=async()=>{while(!queued)await new Promise(r=>setImmediate(r));await queued;};
+ let timer;try{await Promise.race([wait(),new Promise((_,reject)=>{timer=setTimeout(()=>reject(Error('CORE_HELD_BY_NETWORK')),1000);})]);}finally{clearTimeout(timer);}
+ assert.deepEqual(events,['guard','fetch-start','core-transition']);
+ resolveResponse({ok:true,json:async()=>h.occurrence});await pending;
+});
+test('claim cannot dispatch without the Core admission serialization boundary',async()=>{
+ const h=setup();delete h.a.core.serial;
+ await assert.rejects(h.a.claimSchedule(h.body),/SCHEDULE_ADMISSION_UNSUPPORTED/);assert.equal(claims(h).length,0);
 });

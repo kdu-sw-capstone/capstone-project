@@ -112,3 +112,12 @@
 
 - P2 수정 Push 뒤 GitHub mergeable_state=dirty를 확인하여 최신 integration dfa787f07d02b54366a69f107c1edfa058cb8b2a(PR36/43 병합 포함)를 작업 브랜치에 반영했다. 충돌은 본 작업카드의 추가 기록뿐이며 양쪽 기록을 모두 보존했다. 제품 source 충돌은 없었다.
 - 통합 후 전체 Extension836/836 PASS(기존 P2 수정 기반828+PR43 예약 판정8), focused78/78·계약6/6·syntax·bundle 일치·whitespace PASS. 제품 활성화/통합 브랜치로의 PR 병합은 수행하지 않았다. 최종 HEAD 재리뷰와 해당 원격 CI가 필요하다.
+
+## 2026-10-31 PR46 추가 P2 — 최종 identity 대기와 dispatch 경계
+
+- 기준0046a1d65ddfbff0a2ac5042f93847b235f9ae3c, 리뷰4430445010. 실제 prototype request에서 마지막 identity 대기를 보류한 사이 UNKNOWN/cleanup을 생성한 반례를 수정 전26 PASS/1 FAIL로 재현했다.
+- request의 최종 identity 재확인을 최종 admission보다 먼저 끝낸다. claim의 마지막 guard와 동기 fetch 시작은 dispatchScheduleClaim에서 같은 Core.serial 안에 둔다. guard 이후 identity/credentials 조회나 별도 await를 삽입하지 않는다. 지원 serial이 없으면 SCHEDULE_ADMISSION_UNSUPPORTED로 전송하지 않는다.
+- fetch response Promise를 객체로 감싸 반환하여 실제 네트워크 완료는 Core.serial 밖에서 기다린다. 기존 aggregate/registry/authority/start-intent/Guest 검사와 같은 occurrence의 GET-only 회복, 기본 fixed-end 거절은 보존한다. 공용 Wire/Schema·Server API·RootAuthority 저장 형식은 변경하지 않았다.
+- 경계 책임: 이 직렬 경계는 Core.serial을 통한 실제 Core 상태 전이와 fetch 시작을 순서화한다. 다른 코드가 Core 저장소/RootAuthority를 직접 수정해 경계를 우회해도 안전하다는 의미가 아니다. 제품 연결 때 Guest/인증/RootAuthority 전이의 기존 소유권 경계를 함께 검증해야 하며 provider 부재의 기본 차단을 유지한다.
+- 신규4건: 정확한 최종 identity 지연 POST0, 먼저 대기하던 Core UNKNOWN 이후 POST0, guard/fetch 시작 순서와 응답 대기 중 Core 작업 진행, serial 부재 거절. claim30/30, 관련82/82, 전체 Extension840/840(fail0/skip0), 계약6/6·syntax·source/bundle exact match·whitespace PASS. Node24.19.0의 모의 auth/Core/fetch 시험이며 실제 Server/Windows Chrome 수용은 아니다.
+- 수정 파일은 adapter source·배포 bundle·claim 시험·본 카드 4개. 최신 HEAD Push 뒤 담당자 변경분 재리뷰와 원격 CI 확인 필요. 제품 예약 실행 완료·PR 병합으로 표시하지 않는다.
