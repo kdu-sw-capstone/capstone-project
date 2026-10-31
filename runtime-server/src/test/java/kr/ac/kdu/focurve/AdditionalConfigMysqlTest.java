@@ -59,6 +59,16 @@ class AdditionalConfigMysqlTest {
  ObjectNode body(Fixture f,String kind)throws Exception {return auth.obj("executor_id",f.executor,"value",value(kind));}
  String id(){return UUID.randomUUID().toString();}
  ObjectNode create(Fixture f,String config,ObjectNode body,String key){return f.store.put(f.identity,config,body,null,"*",key);}
+ @Test void preciseOnceWindowRoundTripsThroughAuthenticatedHttpWithoutExecution()throws Exception {
+  var f=fixture();String cookie=id(),csrf=id(),config=id(),key=id();db.update("INSERT INTO web_sessions(id_hash,user_id,csrf_hash,expires_at,auth_version) VALUES(?,?,?,DATE_ADD(UTC_TIMESTAMP(3),INTERVAL 1 HOUR),1)",MemberAuth.hash(cookie),f.identity.user(),MemberAuth.hash(csrf));
+  var beans=new StaticListableBeanFactory();beans.addBean("syntheticAdmission",publication(false));var http=MockMvcBuilders.standaloneSetup(new AdditionalConfigApi(auth,manager,beans.getBeanProvider(AdditionalConfigStore.Admission.class))).build();var request=body(f,"SiteTimePolicy");var policy=(ObjectNode)request.path("value");policy.put("policy_id",config);
+  var when=auth.obj("recurrence","ONCE","start_at","2026-11-11T09:00:12.123Z","end_at","2026-11-11T09:01:34.567Z");policy.putArray("windows").add(auth.obj("window_id",id(),"kind","BLOCK_WINDOW","enabled",true,"when",when));
+  for(int attempt=0;attempt<2;attempt++)http.perform(put("/api/v1/amvp/configs/"+config).cookie(new Cookie("FOCURVE_WEB",cookie)).header("Origin",auth.origin).header("X-CSRF-Token",csrf).contentType("application/json").content(request.toString()).header("If-None-Match","*").header("Idempotency-Key",key)).andExpect(status().isOk()).andExpect(jsonPath("$.runtime_apply_state").value("PENDING")).andExpect(jsonPath("$.value.windows[0].when.start_at").value("2026-11-11T09:00:12.123Z"));
+  http.perform(get("/api/v1/amvp/configs/"+config).cookie(new Cookie("FOCURVE_WEB",cookie))).andExpect(status().isOk()).andExpect(jsonPath("$.value.windows[0].when.end_at").value("2026-11-11T09:01:34.567Z"));
+  assertThat(db.queryForObject("SELECT COUNT(*) FROM amvp_config_versions WHERE config_id=?",Integer.class,config)).isEqualTo(1);assertThat(db.queryForObject("SELECT COUNT(*) FROM amvp_outbox WHERE owner_binding_id=?",Integer.class,f.binding)).isEqualTo(1);
+  var bad=request.deepCopy();((ObjectNode)bad.path("value").path("windows").get(0).path("when")).put("start_at","2026-11-11T09:00:12.123:00.000Z");
+  http.perform(put("/api/v1/amvp/configs/"+config).cookie(new Cookie("FOCURVE_WEB",cookie)).header("Origin",auth.origin).header("X-CSRF-Token",csrf).contentType("application/json").content(bad.toString()).header("If-Match","\"1\"").header("Idempotency-Key",id())).andExpect(status().isUnprocessableEntity());assertThat(f.store.get(f.identity,config).path("value")).isEqualTo(policy);
+ }
  @Test void savedRecordIsNotRuntimeAppliedAndSingletonCannotDuplicate()throws Exception {
   var f=fixture();String config=id();var row=create(f,config,body(f,"CadenceConfig"),id());
   assertThat(row.path("version").asLong()).isEqualTo(1);assertThat(row.path("runtime_apply_state").asText()).isEqualTo("PENDING");assertThat(row.path("applied_runtime_revision").isNull()).isTrue();

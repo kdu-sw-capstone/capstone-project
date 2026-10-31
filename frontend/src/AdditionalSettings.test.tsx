@@ -5,6 +5,18 @@ import {request} from "./api";
 vi.mock("./api",()=>({request:vi.fn(),message:(e:Error)=>e.message,UiError:class extends Error{},ApiError:class extends Error{status=503}}));
 const executor="00000000-0000-4000-8000-000000000001",installations=[{executor_id:executor,client_version:"test"}];
 beforeEach(()=>{vi.mocked(request).mockReset();});
+it("saves and re-reads a SITE_TIME ONCE window with exact UTC seconds and milliseconds",async()=>{
+ const history={read_model:"AMVP_SITE_TIME_DELETIONS_1",items:[],next_cursor:null,has_more:false};
+ vi.mocked(request).mockImplementation(async(path)=>path.startsWith("/amvp/web/site-time-deletions")?history:{items:[],next_cursor:null,has_more:false});
+ render(<AdditionalSettings installations={installations}/>);fireEvent.change(screen.getByLabelText("설치 선택"),{target:{value:executor}});fireEvent.click(await screen.findByText("사이트 시간·일일 한도 추가"));fireEvent.change(screen.getByLabelText("사이트 도메인"),{target:{value:"example.org"}});fireEvent.click(screen.getByText("시간창 추가"));fireEvent.change(screen.getByLabelText("반복 방식"),{target:{value:"ONCE"}});
+ fireEvent.change(screen.getByLabelText("시작 날짜·시각(UTC)"),{target:{value:"2026-11-11T09:00:12.123"}});fireEvent.change(screen.getByLabelText("종료 날짜·시각(UTC)"),{target:{value:"2026-11-11T09:01:34.567"}});
+ let saved:unknown;vi.mocked(request).mockImplementation(async(path,method,body)=>{
+  if(path.startsWith("/amvp/web/site-time-deletions"))return history;
+  if(method==="PUT")saved=(body as {value:unknown}).value;
+  return {config_id:path.split("/").at(-1),executor_id:executor,version:1,value:saved,saved_state:"SAVED",runtime_apply_state:"PENDING",saved_runtime_revision:1,applied_runtime_revision:null,next_focus_revision:1,deleted_at:null,updated_at:"2026-10-31T00:00:00.000Z"};
+ });fireEvent.click(screen.getByText("설정 저장"));await screen.findByText(/설정을 저장하고 다시 조회했습니다/);
+ expect(saved).toMatchObject({kind:"SITE_TIME",windows:[{when:{recurrence:"ONCE",start_at:"2026-11-11T09:00:12.123Z",end_at:"2026-11-11T09:01:34.567Z"}}]});expect(screen.getByLabelText("종료 날짜·시각(UTC)")).toHaveValue("2026-11-11T09:01:34.567");expect(vi.mocked(request).mock.calls.filter(c=>c[1]==="PUT")).toHaveLength(1);expect(vi.mocked(request).mock.calls.every(c=>!c[0].includes("/focus/")&&!c[0].includes("/schedules/"))).toBe(true);
+});
 it("stores and clears the existing CADENCE deadline as UTC without issuing actor commands",async()=>{
  vi.mocked(request).mockResolvedValue({items:[],next_cursor:null,has_more:false});render(<AdditionalSettings installations={installations}/>);fireEvent.change(screen.getByLabelText("설치 선택"),{target:{value:executor}});fireEvent.click(await screen.findByText("반복 집중·휴식 추가"));
  let saved:unknown;vi.mocked(request).mockImplementation(async(path,method,body)=>{
