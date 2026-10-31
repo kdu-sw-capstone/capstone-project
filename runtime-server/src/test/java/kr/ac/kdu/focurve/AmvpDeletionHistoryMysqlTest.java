@@ -10,6 +10,31 @@ import static org.assertj.core.api.Assertions.*;
 @EnabledIfEnvironmentVariable(named="FOCURVE_AMVP_RELEASE_TESTS",matches="1")
 @EnabledIfEnvironmentVariable(named="FOCURVE_AMVP_DELETION_HISTORY_TESTS",matches="1")
 class AmvpDeletionHistoryMysqlTest extends AmvpReleaseMysqlTest {
+ @Test void operationQueryRequiresActualReleaseAndNeverRewritesTheOriginalAck()throws Exception{
+  var h=helper.fixture();String operation=h.configs().delete(h.fixture().identity(),h.policy().path("policy_id").asText(),"\"1\"",id()).path("operation_id").asText();String original=helper.base.auth.one("SELECT response_json FROM amvp_operations WHERE operation_id=?",operation).get("response_json").toString();
+  assertThat(h.configs().operation(h.fixture().identity(),operation).path("state").asText()).isEqualTo("RELEASE_PENDING");
+  assertThat(h.configs().operation(h.fixture().identity(),operation).path("actual_effect_confirmed").asBoolean()).isFalse();
+  send(h,report(h,1,"UNKNOWN"));assertThat(h.configs().operation(h.fixture().identity(),operation).path("state").asText()).isEqualTo("IN_DOUBT");
+  send(h,report(h,2,"RELEASED"));String before=fingerprint(h);var current=h.configs().operation(h.fixture().identity(),operation);
+  assertThat(current.path("state").asText()).isEqualTo("CONFIRMED");assertThat(current.path("actual_effect_confirmed").asBoolean()).isTrue();assertThat(fingerprint(h)).isEqualTo(before);
+  assertThat(helper.base.auth.one("SELECT response_json FROM amvp_operations WHERE operation_id=?",operation).get("response_json").toString()).isEqualTo(original);
+  helper.base.db.update("UPDATE amvp_operations SET response_json=NULL WHERE operation_id=?",operation);
+  assertThat(h.configs().operation(h.fixture().identity(),operation).path("actual_effect_confirmed").asBoolean()).isTrue();assertThat(helper.base.auth.one("SELECT response_json FROM amvp_operations WHERE operation_id=?",operation).get("response_json")).isNull();
+ }
+ @Test void operationLookupKeepsOwnerBindingAndOtherStreamBoundaries()throws Exception{
+  var h=helper.fixture();String operation=h.configs().delete(h.fixture().identity(),h.policy().path("policy_id").asText(),"\"1\"",id()).path("operation_id").asText();var other=helper.fixture();
+  assertThatThrownBy(()->h.configs().operation(other.fixture().identity(),operation)).hasMessage("RESOURCE_NOT_FOUND");
+  assertThatThrownBy(()->h.configs().operation(new Identity(h.fixture().identity().user(),other.fixture().executor()),operation)).hasMessage("RESOURCE_NOT_FOUND");
+  assertThatThrownBy(()->h.configs().operation(h.fixture().identity(),id())).hasMessage("RESOURCE_NOT_FOUND");
+  var report=report(h,1,"UNKNOWN");send(h,report);assertThatThrownBy(()->h.configs().operation(h.fixture().identity(),report.path("report_id").asText())).hasMessage("UNSUPPORTED_CONTRACT");
+  helper.base.db.update("UPDATE amvp_owner_bindings SET state='CLOSED',closed_at=UTC_TIMESTAMP(3) WHERE binding_id=?",h.fixture().binding());
+  helper.base.db.update("INSERT INTO amvp_owner_bindings VALUES(?,?,?,2,'ACTIVE',UTC_TIMESTAMP(3),NULL)",id(),h.fixture().executor(),h.fixture().identity().user());
+  assertThatThrownBy(()->h.configs().operation(h.fixture().identity(),operation)).hasMessage("RESOURCE_NOT_FOUND");
+ }
+ @Test void malformedReceiptCannotBeConfirmedByAnOperationQuery()throws Exception{
+  var h=helper.fixture();String operation=h.configs().delete(h.fixture().identity(),h.policy().path("policy_id").asText(),"\"1\"",id()).path("operation_id").asText();
+  helper.base.db.update("UPDATE amvp_operations SET request_sha256=? WHERE operation_id=?","0".repeat(64),operation);assertThatThrownBy(()->h.configs().operation(h.fixture().identity(),operation)).hasMessage("STORE_UNCONFIRMED");
+ }
  @Test void realLoopbackHttpReplaysLostDeleteAndPreservesEvidenceAcrossDatabaseReconnection()throws Exception{
   var h=helper.fixture();var a=helper.base.auth;String policy=h.policy().path("policy_id").asText();
   String token=new org.springframework.transaction.support.TransactionTemplate(helper.base.manager).execute(tx->a.mint(h.fixture().executor(),h.fixture().identity().user(),id(),1)).path("access_token").asText();
@@ -35,12 +60,15 @@ class AmvpDeletionHistoryMysqlTest extends AmvpReleaseMysqlTest {
    assertThat(deleted.statusCode()).isEqualTo(202); // Simulate losing this response: retry the immutable key.
    var replay=http.send("DELETE","/api/v1/amvp/configs/"+policy,token,null,"If-Match","\"2\"","Idempotency-Key",key);
    assertThat(replay.statusCode()).isEqualTo(202);assertThat(a.json.readTree(replay.body())).isEqualTo(a.json.readTree(deleted.body()));
+   String operationPath="/api/v1/amvp/operations/"+a.json.readTree(deleted.body()).path("operation_id").asText();
+   var operationPending=http.send("GET",operationPath,token,null);assertThat(operationPending.statusCode()).isEqualTo(200);assertThat(a.json.readTree(operationPending.body()).path("actual_effect_confirmed").asBoolean()).isFalse();
    var pending=http.send("GET",historyPath,token,null);assertThat(pending.statusCode()).isEqualTo(200);assertThat(a.json.readTree(pending.body()).path("items").get(0).path("runtime_apply_state").asText()).isEqualTo("PENDING");
    var unknown=http.send("POST","/api/v1/amvp/reports/batch",token,body(h,report(h,2,"UNKNOWN")).toString());assertThat(unknown.statusCode()).isEqualTo(200);
    assertThat(a.json.readTree(http.send("GET",historyPath,token,null).body()).path("items").get(0).path("runtime_apply_state").asText()).isEqualTo("UNKNOWN");
    var release=report(h,3,"RELEASED");var accepted=http.send("POST","/api/v1/amvp/reports/batch",token,body(h,release).toString());
    assertThat(accepted.statusCode()).isEqualTo(200);assertThat(a.json.readTree(accepted.body()).path("items").get(0).path("status").asText()).isEqualTo("ACCEPTED");
    assertThat(a.json.readTree(http.send("GET",historyPath,token,null).body()).path("items").get(0).path("runtime_apply_state").asText()).isEqualTo("NOT_APPLICABLE");
+   var operationReleased=http.send("GET",operationPath,token,null);assertThat(operationReleased.statusCode()).isEqualTo(200);assertThat(a.json.readTree(operationReleased.body()).path("actual_effect_confirmed").asBoolean()).isTrue();assertThat(operationReleased.headers().firstValue("Cache-Control")).hasValue("no-store");
   }
   String before=fingerprint(h);
   var ds=new org.springframework.jdbc.datasource.DriverManagerDataSource(System.getenv("FOCURVE_AMVP_TEST_URL"),System.getenv("FOCURVE_AMVP_TEST_USER"),System.getenv("FOCURVE_AMVP_TEST_PASSWORD"));

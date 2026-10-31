@@ -36,6 +36,8 @@ final class AmvpLoopbackHttp implements AutoCloseable {
    var beans=context.getDefaultListableBeanFactory();
    context.registerBean(AdditionalConfigApi.class,()->new AdditionalConfigApi(auth,manager,beans.getBeanProvider(AdditionalConfigStore.Admission.class)));
    context.registerBean(AmvpWebDeletionApi.class,()->new AmvpWebDeletionApi(auth,manager,beans.getBeanProvider(AdditionalConfigStore.Admission.class)));
+   context.registerBean(AmvpOperationApi.class,()->new AmvpOperationApi(auth,manager,beans.getBeanProvider(AdditionalConfigStore.Admission.class)));
+   context.registerBean(AmvpDailyUsageApi.class,()->new AmvpDailyUsageApi(auth,manager,beans.getBeanProvider(AdditionalConfigStore.Admission.class)));
    context.registerBean(AmvpReportApi.class,()->new AmvpReportApi(auth,manager,beans.getBeanProvider(AmvpBridgeSupport.CapabilitySource.class),beans.getBeanProvider(AmvpReportReceiver.EvidenceVerifier.class)));
    context.registerBean(AmvpRuntimeBridgeApi.class,()->new AmvpRuntimeBridgeApi(auth,manager,beans.getBeanProvider(AmvpBridgeSupport.CapabilitySource.class),beans.getBeanProvider(AmvpUsageReceiver.ClockProof.class),beans.getBeanProvider(AmvpFocusAttachments.FrozenFocusProof.class)));
    context.refresh();
