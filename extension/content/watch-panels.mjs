@@ -27,8 +27,11 @@ export class WatchPanelSession {
   #observer;
   #onObservation;
   #onInvalidated;
+  #canObserve;
+  #busy=false;
+  #closing=new Set();
 
-  constructor(document, { ledger, owner_binding_id, binding_id, features, onObservation = () => {}, onInvalidated = () => {} }) {
+  constructor(document, { ledger, owner_binding_id, binding_id, features, onObservation = () => {}, onInvalidated = () => {}, canObserve = () => true }) {
     if (!(ledger instanceof ClaimLedger)) throw Error('SHARED_LEDGER_REQUIRED');
     if (!UUID.test(owner_binding_id ?? '') || !UUID.test(binding_id ?? '')) throw Error('INVALID_CLAIM_SCOPE');
     if (!Array.isArray(features) || features.length === 0) throw Error('EMPTY_WATCH_FEATURES');
@@ -46,6 +49,7 @@ export class WatchPanelSession {
     for (const feature of this.#features) this.#targets.set(feature.feature_id, new Map());
     this.#active = new Set(this.#features.filter(feature => feature.enabled).map(feature => feature.feature_id));
     this.#onObservation = onObservation; this.#onInvalidated = onInvalidated;
+    this.#canObserve = canObserve;
     this.refresh = () => {
       if (!this.#open || this.#scheduled) return;
       this.#scheduled = true;
@@ -89,12 +93,25 @@ export class WatchPanelSession {
     this.#onInvalidated({ local_only: true, reason, cleanup_pending: [...this.#targets.values()].some(targets => targets.size > 0) });
   }
 
+  stop(){this.#invalidate('AUTHORITY_REVOKED');}
+  #canApply(feature_id){
+    if(!this.#open||!this.#active.has(feature_id)||this.#closing.has(feature_id))return false;
+    let current=false;try{current=this.#canObserve()===true;}catch{}
+    if(!current||!this.#open||this.#document.defaultView?.document!==this.#document){this.#invalidate('AUTHORITY_REVOKED');return false;}
+    if(this.#document.location.href!==this.#url){this.#invalidate('ROUTE_CHANGED');return false;}
+    return this.#active.has(feature_id)&&!this.#closing.has(feature_id);
+  }
   scan() {
-    if (!this.#open) return [];
+    if (!this.#open||this.#busy) return [];
+    this.#busy=true;
+    try{
+    let current=false;try{current=this.#canObserve()===true;}catch{}
+    if(!current||!this.#open){this.#invalidate('AUTHORITY_REVOKED');return [];}
     if (this.#document.location.href !== this.#url) { this.#invalidate('ROUTE_CHANGED'); return []; }
     this.#observer.disconnect();
     const results = [];
     for (const feature_id of this.#active) {
+      if(!this.#canApply(feature_id))continue;
       let eligible = 0, restricted = 0, errors = 0;
       try {
         const targets = [...this.#document.querySelectorAll(SELECTORS[feature_id])];
@@ -106,13 +123,14 @@ export class WatchPanelSession {
         }
         eligible = targets.length;
         for (const element of targets) {
+          if(!this.#canApply(feature_id))break;
           let claim = tracked.get(element);
           if (!claim) {
             if (this.#nextTarget === Number.MAX_SAFE_INTEGER) throw Error('WATCH_TARGET_LIMIT');
             claim = `${this.#claims.get(feature_id)}:${++this.#nextTarget}`;
             tracked.set(element, claim);
           }
-          if (this.#ledger.hide(claim, element)) restricted++;
+          if (this.#ledger.hide(claim, element,()=>this.#canApply(feature_id))) restricted++;
           else errors++;
         }
       } catch { errors++; }
@@ -126,8 +144,10 @@ export class WatchPanelSession {
     });
     // This local observation is deliberately NOT ContentResult/APPLIED. The Core
     // adapter must add issued-operation/profile/scan/native and durable evidence.
+    if(!this.#open)return [];
     this.#onObservation(results);
     return results;
+    }finally{this.#busy=false;}
   }
 
   releaseFeature(feature_id) {
@@ -135,7 +155,11 @@ export class WatchPanelSession {
     // A retired object has no authority over a later session using this scope.
     if (!this.#active.has(feature_id)) return {feature_id,local_only:true,restored:true,remaining_targets:0,error_count:0};
     const tracked = this.#targets.get(feature_id);
-    let errors = 0;
+    this.#closing.add(feature_id);
+    if([...this.#active].every(id=>this.#closing.has(id))){this.#open=false;this.#disconnect();}
+    if(this.#busy)return {feature_id,local_only:true,restored:false,remaining_targets:tracked.size,error_count:0,cleanup_pending:true,scan_pending:true};
+    this.#busy=true;
+    try{let errors = 0;
     for (const [element, claim] of tracked) {
       const cleanup = this.#ledger.release(claim);
       if (cleanup.restored) tracked.delete(element);
@@ -149,6 +173,7 @@ export class WatchPanelSession {
       if (live?.get(this.#scope) === this) live.delete(this.#scope);
     }
     return { feature_id, local_only: true, ...result };
+    }finally{this.#busy=false;}
   }
 
   release() { return [...this.#active].map(id => this.releaseFeature(id)); }

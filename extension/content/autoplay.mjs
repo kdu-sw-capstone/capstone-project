@@ -10,9 +10,9 @@ const checked = element => element.getAttribute('aria-checked');
 export class AutoplaySession {
   #document; #registry; #scope; #targets = new Set(); #url;
   #open = false; #started = false; #observer; #scheduled = false;
-  #observe; #invalidateCallback;
+  #observe; #invalidateCallback; #canObserve; #busy=false;
 
-  constructor(document, {ledger, owner_binding_id, binding_id, onObservation = () => {}, onInvalidated = () => {}}) {
+  constructor(document, {ledger, owner_binding_id, binding_id, onObservation = () => {}, onInvalidated = () => {}, canObserve = () => true}) {
     if (!(ledger instanceof ClaimLedger)) throw Error('SHARED_LEDGER_REQUIRED');
     if (![owner_binding_id,binding_id].every(value => typeof value === 'string' && UUID.test(value))) throw Error('INVALID_CLAIM_SCOPE');
     this.#document = document;
@@ -21,6 +21,7 @@ export class AutoplaySession {
     if (this.#registry.document !== document) throw Error('FOREIGN_DOCUMENT');
     this.#scope = JSON.stringify([owner_binding_id,binding_id]);
     this.#observe = onObservation; this.#invalidateCallback = onInvalidated;
+    this.#canObserve = canObserve;
     this.refresh = () => {
       if (!this.#open || this.#scheduled) return;
       this.#scheduled = true;
@@ -54,8 +55,16 @@ export class AutoplaySession {
     this.#invalidateCallback({local_only:true,reason,cleanup_pending:this.#targets.size>0});
   }
 
+  stop(){this.#invalidate('AUTHORITY_REVOKED');}
+  #canApply(){
+    if(!this.#open)return false;
+    let current=false;try{current=this.#canObserve()===true;}catch{}
+    if(!current||!this.#open||this.#document.defaultView?.document!==this.#document){this.#invalidate('AUTHORITY_REVOKED');return false;}
+    if(this.#document.location.href!==this.#url){this.#invalidate('ROUTE_CHANGED');return false;}
+    return true;
+  }
   #restrict(element) {
-    if(element.ownerDocument!==this.#document)return false;
+    if(element.ownerDocument!==this.#document||!this.#canApply())return false;
     let entry=this.#registry.elements.get(element);
     const value=checked(element);
     if(!['true','false'].includes(value))return false;
@@ -68,7 +77,9 @@ export class AutoplaySession {
     if(value==='false'){entry.failed=false;return true;}
     if(entry.failed)return false; // Do not hammer a rejected toggle on rescans.
     entry.changed=true;entry.failed=true;
+    if(!this.#canApply())return false;
     try{element.click();}catch{return false;}
+    if(!this.#canApply())return false;
     const off=checked(element)==='false';entry.failed=!off;return off;
   }
 
@@ -89,28 +100,38 @@ export class AutoplaySession {
   }
 
   scan() {
-    if(!this.#open)return null;
+    if(!this.#open||this.#busy)return null;
+    this.#busy=true;
+    try{
+    let current=false;try{current=this.#canObserve()===true;}catch{}
+    if(!current||!this.#open){this.#invalidate('AUTHORITY_REVOKED');return null;}
     if(this.#document.location.href!==this.#url){this.#invalidate('ROUTE_CHANGED');return null;}
     this.#observer.disconnect();let eligible=0,restricted=0,errors=0;
     try{
       const targets=[...this.#document.querySelectorAll(SELECTOR)],current=new Set(targets);
       for(const element of this.#targets)if(!current.has(element)&&!this.#releaseTarget(element))errors++;
       eligible=targets.length;
-      for(const element of targets){if(this.#restrict(element))restricted++;else errors++;}
+      for(const element of targets){if(!this.#canApply())break;if(this.#restrict(element))restricted++;else errors++;}
     }catch{errors++;}
     if(this.#open)this.#observer.observe(this.#document.documentElement,{subtree:true,childList:true,attributes:true,
       attributeFilter:['aria-checked','class','id']});
     const result={feature_id:'YT-10',local_only:true,native_verified:false,
       status:errors?'FAILED':eligible?'OBSERVED':'NO_TARGET',eligible_target_count:eligible,
       restricted_target_count:restricted,error_count:errors,remaining_targets:this.#targets.size};
+    if(!this.#open)return null;
     this.#observe(result);return result;
+    }finally{this.#busy=false;}
   }
 
   release() {
-    this.#open=false;this.#disconnect();let errors=0;
+    this.#open=false;this.#disconnect();
+    if(this.#busy)return {local_only:true,restored:false,remaining_targets:this.#targets.size,error_count:0,cleanup_pending:true,scan_pending:true};
+    this.#busy=true;
+    try{let errors=0;
     for(const element of this.#targets)if(!this.#releaseTarget(element))errors++;
     const restored=errors===0&&this.#targets.size===0;
     if(restored&&this.#registry.live.get(this.#scope)===this)this.#registry.live.delete(this.#scope);
     return {local_only:true,restored,remaining_targets:this.#targets.size,error_count:errors};
+    }finally{this.#busy=false;}
   }
 }
