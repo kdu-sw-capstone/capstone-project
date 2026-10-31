@@ -3,10 +3,20 @@ import {beforeEach,expect,it,vi} from "vitest";
 import RuntimeDeliveryPanel from "./RuntimeDeliveryPanel";
 import {listConfigs,type ConfigRecord} from "./additionalConfigApi";
 import {configDelivery,usageReceiptLabel} from "./runtimeDeliveryState";
+import {siteTimeStatus} from "./siteTimeStatusApi";
+vi.mock("./siteTimeStatusApi",()=>({siteTimeStatus:vi.fn()}));
 vi.mock("./additionalConfigApi",()=>({listConfigs:vi.fn()}));
 const executor="00000000-0000-4000-8000-000000000001";
 const row:ConfigRecord={config_id:executor,executor_id:executor,version:1,value:{kind:"CONTENT"},deleted_at:null,saved_state:"SAVED",runtime_apply_state:"PENDING",saved_runtime_revision:2,applied_runtime_revision:null,next_focus_revision:2,updated_at:"2026-10-29T00:00:00.000Z"};
 beforeEach(()=>vi.mocked(listConfigs).mockReset());
+it("opens one SITE_TIME policy with existing reads only after explicit selection and closes on installation change",async()=>{
+ const policy={...row,value:{kind:"SITE_TIME" as const,policy_id:row.config_id,version:1}};
+ vi.mocked(siteTimeStatus).mockReset().mockResolvedValue({config:policy,usage:null,usageUnavailable:true});
+ const view=render(<RuntimeDeliveryPanel executor={executor} records={[policy]}/>);expect(siteTimeStatus).not.toHaveBeenCalled();
+ fireEvent.click(screen.getByText("이 정책의 적용·일일 기록 확인"));await screen.findByText(/사용량 0·이용 가능·해제 완료를 뜻하지/);
+ expect(siteTimeStatus).toHaveBeenCalledWith(executor,row.config_id,expect.any(String),expect.any(AbortSignal));
+ view.rerender(<RuntimeDeliveryPanel executor="00000000-0000-4000-8000-000000000002" records={[]}/>);expect(screen.queryByText("선택한 사이트의 상태")).not.toBeInTheDocument();
+});
 it("keeps storage pending, rejects older ACKs and accepts server-verified superseding packages",()=>{
  expect(configDelivery(row).state).toBe("PENDING");
  for(const revision of [null,1])expect(configDelivery({...row,runtime_apply_state:"APPLIED",applied_runtime_revision:revision}).state).toBe("UNKNOWN");

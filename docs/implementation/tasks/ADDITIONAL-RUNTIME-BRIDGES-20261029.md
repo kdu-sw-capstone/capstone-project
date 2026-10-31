@@ -1,5 +1,36 @@
 # 추가 MVP · 정책 발행·이용시간 수신 경계
 
+> 2026-10-31 PR51 통합 동기화: **c56ccf7039b0e23f132650d9e51347ed1d607cc2**의 PR49·PR50 기록과 아래 PR51 원래 개발 기록을 모두 보존했다. 아래 Draft/미병합/기준 SHA는 각 개발 당시의 이력이다. 수동 충돌 해결은 이 작업카드 한 파일이며, 기존 PR51 기능 코드와 통합된 Core53 코드는 수정하지 않았다.
+
+- 동기화 영향 검증: #51 집중3파일 **16 PASS**, 누적 전체 Web **319 PASS**(#49·#50·#51 포함), TypeScript/Vite build PASS. 원래 #51 소스/시험6파일의 Git blob과 통합에서 가져온 나머지 파일의 blob 동일성을 확인했다. 최신 통합 대비 Server·DB schema·RC2·legacy-lock/api.ts·Core/Content/Shorts·의존성 변경은 없으므로 기존 유효한 관련 검증을 재사용한다. 별도 Server/MySQL/제품 서비스를 기동하지 않았다. 로컬 근거 `.local/pr51-sync-20261031/`. 실제 Core/Content/Chrome/Native 수용은 NOT_RUN이며 Draft 해제/Approve/Merge는 하지 않는다.
+
+## SITE_TIME 단일 정책 조회 연결 — Web 구현·합성 검증, 실제 producer BLOCKED (2026-10-31)
+
+- 김다훈 후속 개발. 시작 통합 `467fe18b176ccd571813d04229e8ee69f19a00d2`, 브랜치 `feature/additional-mvp-site-time-status`. clean 기존 Web Worktree를 재사용해 새 기능 브랜치로 분리했다. PR49 `037e0498ff648409a677c8d2900951bc33ca1e8d`와 PR50 `075e9b12ff30c0610a280dac47149cc651765275` 및 PR50 작업 공간은 그대로 보존한다. 두 PR의 미병합 코드를 가져오지 않는다.
+- 기존 설정 적용 상태 목록에서 SITE_TIME 한 정책을 명시적으로 선택하면 CFG02 GET → DAY-01 GET → CFG02 GET을 연결한다. 현재 서버 적용/해제 projection, 해당 policy_id의 과거 사용량/당시 한도를 함께 보되 서로의 성공 증거로 사용하지 않는다. 현재 실행·최신 잔여 한도·원본 effect를 Web에서 만들지 않는다. 기존 Panel/버튼/날짜 입력과 UI 계층을 재사용하며 새 화면·계약·API·DB schema는 없다.
+- 조회 중 version/saved_runtime_revision/deleted_at이 바뀌면 결과를 버리고 명시 재조회를 요구한다. config ID/executor/정규 SITE_TIME value의 policy_id/version 및 DAY-01의 기존 날짜/owner 식별 검증을 재사용한다. 이후 package가 동일 config version을 운반한 경우의 실제 적용 projection은 최신 CFG02 결과를 쓰며 과거 usage의 revision으로 전용하지 않는다. 조회 시점이 서로 다르므로 원자 Server snapshot 또는 최신 실제 효과라고 주장하지 않는다.
+- 이미 알고 있는 정책이 첫 CFG02부터 tombstone이면 기존 서버 해제 projection을 표시할 수 있다. DAY-01 404/503은 검증 자료 없음으로 보존하며 0·이용 가능·해제 성공으로 바꾸지 않는다. 인증/다른 신원/불일치/통신 실패는 전체 결과를 숨기고 오류·재시도를 제공한다. 설치/정책/설정 version/날짜/재조회 key와 abort/disposed로 지연 응답과 이전 성공을 제거한다.
+- PR49의 삭제 목록 재발견/예약 재진입과 PR50의 OP-01 Receipt/CADENCE 기한 UI는 수정·중복 구현하지 않는다. 이번 연결은 알려진 SITE_TIME ID의 현재 CFG02/DAY-01 재조회에 한정한다. 정책 저장/삭제, START/END/APPLY/RELEASE, collector/clock 발급 호출은 하지 않는다.
+
+### 실행 검증과 보존
+
+- Windows Node24.19.0/Vitest5.0.3/jsdom: 직접 영향 3파일16/16 PASS(신규11+기존 상태 패널5), 전체 Web309/309 PASS(기준298+신규11), TypeScript/Vite build PASS. getter 실제 SDK를 통과하는 모의 HTTP에서 GET3회/본문 없음, 중간 version/revision/삭제 변경 거절, 다른 policy/설치/잘못된 value version 거절, 인증 만료, 404/503, 사용량→적용 오판정 방지, 명시 선택·설치 전환/지연 응답·재조회 실패·재시도를 확인했다. 테스트 건수를 제품 완료율로 환산하지 않는다.
+- 로컬 근거 `.local/site-time-status-20261031/`의 focused-final.log/web-all.log/build.log. 첫 focused.log는 `--root frontend`와 중복 config 경로를 함께 준 실행기 오류(frontend/frontend)이며 수정 후 같은 소스에서 위 검증을 실행했다. 최초 로그도 보존했다. Server 생산·계약·api.ts/legacy-lock·package/lock·Core/Content/Shorts 변경 없음. 따라서 기존 Server/RC2 PASS를 재사용하고 새 MySQL/HTTP 서비스나 전체 Server 회귀는 시작하지 않았다. 원격 CI/PR은 게시 결과를 기준으로 기록한다.
+- 실제 Chrome/Native·Core 효과/collector·정상 END/복원/재기동·Light/Dark 브라우저 시각 수용은 NOT_RUN. Figma 새 레이아웃을 만들지 않았다. 운영 DB/기존 실패 환경/자동화와 타 Worktree/index를 변경하지 않는다. `MVP_FINAL_COMPLETE=false`.
+
+### 실제 SITE_TIME 하나를 연결하기 위해 필요한 외부 제공물 — 기존 인터페이스 요청 규격
+
+이 표는 기존 Java/RC2 경계에 결속할 제공물을 요청하는 것이며 새 Wire/공용 API를 확정하지 않는다. 담당자의 원본 근거 없이 성공 bean·등록 자료·동등성을 생성하지 않는다. 전달은 별도 팀 공유 시 수행하며 이번 작업에서 메시지를 대신 발송하지 않는다.
+
+| 담당/경계 | 받아야 할 정확한 제공물 | 소비 경로·거절 조건 |
+|---|---|---|
+| 윤종민 / capability | 실제 producer 기준 SHA, 구현 파일·symbol·조회/검증 signature, `CapabilitySource.verifiedSelection(Identity, Binding, stream)` 및 `verifyContentProfiles(Binding, JsonNode, selection)`에 결속 가능한 검증 경로. 현재 executor/owner_binding/owner_epoch와 capability_receipt_id·artifact hash/verification_ref·selected·expires_at의 원본 등록 근거 | 기존 PKG-01/publisher/receipt. stored LINKED나 UUID·최신 소스 존재만으로 유효 capability로 간주하지 않음. 실제 provider/등록 writer 미제공으로 BLOCKED |
+| 윤종민 (+DOM 효과 필요 시 채지민) / 적용·해제 | `EvidenceVerifier.verify(Identity, Binding, report, issuedPackage, predecessor)`의 실제 구현 또는 결속 가능한 원본 조회/검증 경로. RuntimeReport의 report_id/report_epoch/report_seq, runtime_execution_id, operation_id, package_id/runtime_revision, state/reason, evidence_sha256/observed_at/payload_sha256를 정확한 owner·issued operation·generation/현재 document와 결속해야 함. 제거 정책은 이전 policy/version/footprint·다른 owner claim 유지·실제 마지막 해제/미해소 의무 근거를 함께 제공 | 기존 RPT-01 `/api/v1/amvp/reports/batch` → immutable report/Receipt → CFG02 projection. ACK/국소 OBSERVED·해제 요청/패키지에서 사라짐만으로 APPLIED/RELEASED를 만들지 않음. runtimeReport 및 proof lookup/검증 미제공으로 BLOCKED |
+| 윤종민 / collector·clock | 실제 collector/outbox 기준 SHA·호출 위치, RC2 ClockedUsageSegment 및 ClockMetadata의 원본 생성/재시도 자료. owner/executor·collector_epoch/local_usage_seq/previous_segment_sha256, package/revision·policy_attributions, start/end/confirmed/uncertain, timezone/version·day boundaries/chain, focus_ref·payload hash. clock_epoch/boot_id/anchor_id/anchor_utc/anchor_mono_ms/mono start·end/quality/observed wall 시작·끝, 그리고 trusted anchor 등록 writer·재시작·day carry 검증 경로와 승인 skew profile 제공 필요 | 기존 USG-01 `/api/v1/amvp/usage/batch`, `ClockProof.verify(Identity, Binding, segment, predecessorHash)` 및 AmvpRegisteredClockProof. anchor 원본 등록·부팅/시계 변경/day allocation/carry 미확인은 QUARANTINED/UNKNOWN 유지. HTTP 수신으로 COUNTED를 만들지 않음. 실제 producer 미제공으로 BLOCKED |
+
+- 최소 연결 순서: 승인된 capability/owner 기준 확정 → 같은 SITE_TIME package의 실제 적용 보고/CFG02 확인 → 같은 policy/clock에 결속된 segment 수신·DAY-01 확인 → 동일 이전 footprint의 해제 보고/CFG02 확인 → 기존 원장/Receipt/사용량 보존 확인. 설치·세션·서비스 활성화/실제 Chrome 재시도는 별도 승인 범위에서만 진행한다.
+- ONCE legacy actor 매핑, CADENCE 휴식/현재 단계·주기 표현, USG-02 NOT_RECEIVED hash는 공동 결정 필요를 유지한다. 이번 Web 조회를 위한 임의 fallback·새 필드·hash sentinel·REST 상태나 시간 계산을 추가하지 않았다. 나머지 독립 Web 개발 전체를 이 BLOCKED에 묶지 않는다.
+
 > 2026-10-31 PR50 통합 동기화: PR49가 병합된 **df2e3927eced366ddb8a9bf007acff4f40acb32e**를 반영하고 양쪽 개발·검증 기록을 보존했다. 아래 Draft/기준 SHA 표기는 각 원래 개발 시점의 이력이다. 이번 수동 충돌 해결은 시험 API 두 등록 유지와 이 기록 병합에 한정한다.
 
 - 동기화 검증: 실제 loopback HTTP/격리 MySQL8.4.8 삭제·해제/OP **38 PASS**(삭제37+API1), 일일 기록 **12 PASS**(DB10+API2), 실패/오류/스킵0. 두 고유 시험 DB는 소유권 확인 후 정상 종료했다. Web **308 PASS**(#49·#50 기능 합산 기준), 타입/Vite·Server package 빌드 PASS. Server package 단계는 테스트를 생략했으며 위 50건은 앞선 별도 실행 결과다. 소스 동일한 CADENCE19·Server 단위82·RC2/legacy-lock266·독립 리뷰5/5를 재사용한다. 로컬 근거 `.local/pr50-sync-20261031/`, DB `bed47ee9d539`/`54b4ee2a356a`. 실제 Chrome/Native/Core/Content 수용은 NOT_RUN이며 Draft 해제/PR Merge는 하지 않는다.
