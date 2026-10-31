@@ -5029,6 +5029,16 @@ class A1Core {
    const actual=await this.chrome.declarativeNetRequest.getSessionRules();
    for(const r of request.addRules??[]){if(!state.journal.rules.some(x=>same(x,r))||actual.some(x=>x.id===r.id&&!same(x,r)))fail('OWNER_MISMATCH');}
    for(const id of request.removeRuleIds??[]){const expected=state.journal.rules.find(r=>r.id===id);if(!expected||actual.some(x=>x.id===id&&!same(x,expected)))fail('OWNER_MISMATCH');}
+   // A pre-lock bundle/fence is not current Member authority. Re-read identity
+   // while holding the DNR lock; a synchronous auth-write token fences the IDB
+   // await that follows. Removal-only cleanup keeps its original exact scope.
+   const adding=(request.addRules?.length??0)>0;
+   const authority=adding?this.env.dnrAuthorityState?.():null;
+   if(adding){
+    if(authority?.pending)fail('OWNER_MISMATCH');
+    const owner=await this.env.owner();
+    if(owner.owner_key!==state.session.owner_key||owner.installation_id!==state.session.executor_id)fail('OWNER_MISMATCH');
+   }
    let reason;
    try{return await this.env.db.transaction('readonly',(tx,done)=>{
     const md=tx.objectStore('metadata'),keys=['current','a1:aggregate:'+state.session.session_id,'a1:owner-fence'],rows={};let pending=keys.length+2;
@@ -5041,6 +5051,7 @@ class A1Core {
       if(a.intent==='END'||terminal(a.session_status)||rows.journal.desired!=='APPLIED')fail('END_WINS');
       if(!rows.session.started_at){const expiry=Date.parse(rows.session.member_admission?.command?.execute_before);if(!Number.isFinite(expiry)||this.now()>=expiry)fail('MEMBER_ADMISSION_REJECTED');}
      }
+     if(adding&&typeof this.env.dnrAuthorityState==='function'&&(authority?.pending||this.env.dnrAuthorityState()!==authority))fail('OWNER_MISMATCH');
      // Linearize dispatch inside the same readonly snapshot as current/END/fence.
      // send boxes its Promise, so neither this transaction nor owner END waits for Chrome.
      done(send());

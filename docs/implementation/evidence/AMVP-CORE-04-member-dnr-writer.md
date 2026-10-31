@@ -27,9 +27,24 @@ gate는 기존 coordinator와 **동일 이름** `focurve:amvp:dnr-writer` Web Lo
 
 1. 원래 session/owner/executor/Snapshot/규칙 집합을 현재 bundle과 대조한다.
 2. 잠금 획득 후 대상 규칙이 자기 journal에 있으며 현재 물리 규칙을 덮어쓰지 않는지 재조회한다.
+   신규 add가 있으면 현재 `env.owner()`를 다시 읽어 원래 owner/executor와 비교한다. `applying` 인자를 생략해도 add 요청이면 이 검사를 건너뛰지 않는다.
 3. current pointer/실행 계약/aggregate 전체 값/session/journal/owner fence를 **하나의 readonly transaction**에서 대조한다. 대기 중 END·generation·owner fence 변화는 거절한다.
 4. APPLY는 기존 END/terminal/desired 조건과 시작 execute_before를 재확인한다. NR01/DP01 기한 검사도 기존 함수를 동기로 재사용한다. 이후 별도 인증 await 없이 같은 snapshot callback에서 Chrome 쓰기를 시작한다.
 5. 응답 후 기존 Core의 적용/해제 검증·실패 복구를 그대로 수행한다. 이 gate의 성공은 APPLIED/RELEASED Receipt가 아니다.
+
+### PR55 P2 수정 — 잠금 대기 중 현재 Member owner 변경
+
+독립 리뷰 `5722433929`, 수정 시작 HEAD `b11dcc582de625152039ad42d3baabe5dc5f52dc`. 기존 검사는 잠금 전 bundle과 예전 실행 DB fence만 비교하여, 현재 owner provider가 변경돼도 로컬 fence가 그대로면 tick의 누락 규칙 복구가 먼저 전송됐다. 수정 전 실제 Member fixture + Node Web Lock queue에서 owner 변경/executor 변경/identity 조회 실패 3건 모두 DNR dispatch 1회가 발생함을 재현했다. 실패 로그는 `/tmp/pr55-owner-before.log`에 보존한다.
+
+- 잠금 안의 물리 규칙 조회 후 신규 add의 현재 owner/executor를 다시 확인한다. 조회 실패도 전송 없이 거절한다.
+- `background/member-auth.js`의 모든 `AuthStore.put()`은 첫 await 전에 Worker 내부 write token을 바꾸고 pending을 표시한다. 성공/실패 모두 finally에서 새 token으로 완료하며, 여러 AuthStore의 동시 저장도 마지막 저장이 끝날 때까지 pending이다. 기존 인증 자료·guest hook·저장 형식은 그대로다.
+- Member bootstrap이 이 내부 `AuthStore.writeState()`를 `dnrAuthorityState`로 주입한다. 신규 add는 owner 조회 전 token을 잡고, 최종 readonly snapshot의 동기 `send()` 직전에 token 동일성을 다시 확인한다. 현재 owner 확인 이후 시작되거나 완료된 인증 저장도 거절한다. token은 권한/Receipt/영속 owner fence의 대체물이 아니며 외부 메시지에 노출하지 않는다.
+- removal-only는 새 owner에게 권한을 주지 않는다. 잠금 전 검증한 원래 실행과 기존 최종 DB fence/자기 journal/물리 규칙 대조를 유지하여, 대기 중 owner 변경 또는 인증 저장 때문에 이미 정당한 자기 cleanup을 새 적용처럼 막지 않는다. 범위 밖 규칙 삭제·다른 owner claim 해제·Content cleanup 삭제·ENDED 확정 권한은 추가하지 않는다. 호출 전에 이미 owner가 바뀌어 bundle 자체를 읽지 못하는 기존 동작을 우회하는 새 recovery 경로도 만들지 않는다.
+- 인증 저장을 DNR Lock으로 감싸거나 역순 Core.serial을 잡지 않는다. 최종 token 검사와 native dispatch 사이에는 await가 없고, Chrome 응답 대기 중 END 저장이 막히지 않는 기존 경계를 유지한다. 임의 source consumer의 custom owner/provider 또는 AuthStore를 우회한 외부 저장까지 이 Worker-local token으로 보호했다고 주장하지 않는다.
+
+변경 영향 검증: 신규 반례/보존 7/7, writer 파일 29/29, DNR 전체 78/78, 인증/재인증 포함 집중 회귀 111/111, Member/Core/인증 영향 24파일 287/287, 계약 6/6 PASS. 이 수는 서로 겹치므로 합산하지 않는다. 전체 Extension 857은 수정 전 기록이며 이번에 전수 재실행하지 않았다. 실제 Chromium IndexedDB/Web Lock의 END 비차단 시험 1/1, 생성 Member 3 bundle 및 DNR guard bundle 원본 일치, syntax/diff check PASS. Node v24.19.0 / Linux Chromium 151.0.7922.173; DNR/현재 owner/Content는 모의이며 실제 MV3/Windows 제품 수용은 여전히 미검증이다.
+
+집중 회귀 명령: `cd extension && node --test tests/additional-dnr-*.test.mjs tests/member-auth*.test.mjs tests/member-reauthentication.test.cjs`. 영향 24파일 목록과 원본 로그는 `/tmp/pr55-owner-impact-files.txt`, `/tmp/pr55-owner-member-impact.log`, 집중 로그는 `/tmp/pr55-owner-regression.log`에 보존한다. CI에는 인증 source/시험 경로와 인증·재인증 시험을 추가하여 Ubuntu/Windows에서도 검사한다. 수정 후 새 HEAD는 PR55에서 다시 리뷰받으며 기존 승인을 새 HEAD 승인으로 간주하지 않는다.
 
 다른 코드가 DNR Lock을 잡은 상태에서 Core.serial을 기다리는 **역순 호출을 만들면 안 된다.** 기존/후속 evidence verifier는 잠금 안에서 readonly 원본 조회만 사용해야 한다. Guest 등 미연결 writer와 다른 프로세스의 native 상태 변화를 이 Lock만으로 막았다는 주장은 없다.
 

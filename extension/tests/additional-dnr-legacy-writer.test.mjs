@@ -87,6 +87,7 @@ test('generated Worker installs immutable Member-only gate using the existing ro
  vm.runInContext(actual,world);assert.equal(world.FocurveMemberDnrWriter.registry_db,LEGACY_DNR_REGISTRY_DB);assert.equal(Object.getOwnPropertyDescriptor(world,'FocurveMemberDnrWriter').writable,false);
  const worker=readFileSync(new URL('../background/service-worker.js',import.meta.url),'utf8'),bootstrap=readFileSync(new URL('../integration/member-a1-bootstrap.js',import.meta.url),'utf8');
  assert.ok(worker.indexOf('additional-dnr-writer.bundle.js')<worker.indexOf('member-a1-bootstrap.js'));assert.ok(bootstrap.includes('dnrWriter:globalThis.FocurveMemberDnrWriter?.write'));
+ assert.ok(bootstrap.includes('dnrAuthorityState=()=>FocurveMemberAuth.AuthStore.writeState()'));assert.ok(bootstrap.includes('MemberA1Factory({dnrAuthorityState,'));
  const noCoverage=world.FocurveMemberDnrWriter.assertWritersGuarded;assert.equal(noCoverage,undefined);assert.equal(h.calls.length,0);
 });
 test('actual Member suspend uses the same gate and keeps session recovery distinct from END',async()=>{
@@ -133,4 +134,75 @@ test('existing native transition deadline is not bypassed by waiting for DNR loc
  const native=f.chrome.declarativeNetRequest.updateSessionRules;f.chrome.declarativeNetRequest.updateSessionRules=r=>{writes++;return native(r);};
  f.env.dnrWriter=(r,dispatch)=>{f.advance(6000);return h.writer.write('SESSION',r,dispatch);};
  await assert.rejects(f.core.guardedDnrUpdate(state,{addRules:state.journal.rules},true),/REVALIDATION_REQUIRED/);assert.equal(writes,0);
+});
+
+for(const change of ['owner','executor','unavailable'])test(`queued actual Member tick rejects current identity ${change} before missing-rule APPLY`,async()=>{
+ const f=await fixture({shortsDocumentGate:true}),h=await harness(f.chrome.declarativeNetRequest);
+ f.env.dnrWriter=(r,dispatch)=>h.writer.write('SESSION',r,dispatch);
+ await f.core.startCommand(f.command);await f.core.suspend();assert.equal(f.rules().length,0);const before=await f.core.bundle();
+ const identity=structuredClone(await f.env.owner()),original=f.env.owner;
+ let unlock,held,queued;const release=new Promise(r=>{unlock=r;}),entered=new Promise(r=>{held=r;}),waiting=new Promise(r=>{queued=r;});
+ const blocker=locks.request('focurve:amvp:dnr-writer',async()=>{held();await release;});await entered;
+ let writes=0;const native=f.chrome.declarativeNetRequest.updateSessionRules;
+ f.chrome.declarativeNetRequest.updateSessionRules=r=>{writes++;return native(r);};
+ f.env.dnrWriter=(r,dispatch)=>{queued();return h.writer.write('SESSION',r,dispatch);};
+ const tick=f.core.tick();const rejected=assert.rejects(tick,/OWNER_MISMATCH|IDENTITY_UNAVAILABLE/);await waiting;
+ f.env.owner=change==='unavailable'?async()=>{throw Error('IDENTITY_UNAVAILABLE');}:async()=>({...identity,...(change==='owner'?{owner_key:'MEMBER:2'}:{installation_id:id()})});
+ unlock();await blocker;await rejected;
+ assert.equal(writes,0);assert.equal(f.rules().length,0);
+ f.env.owner=original;const b=await f.core.bundle();assert.notEqual(b.a.session_status,'RUNNING');assert.equal(b.a.cleanup_pending,before.a.cleanup_pending);assert.deepEqual(b.bindings,before.bindings);
+});
+
+test('queued exact old-owner removal remains available after current identity changes',async()=>{
+ const f=await fixture({shortsDocumentGate:true}),h=await harness(f.chrome.declarativeNetRequest);
+ f.env.dnrWriter=(r,dispatch)=>h.writer.write('SESSION',r,dispatch);await f.core.startCommand(f.command);
+ const state=(await f.core.bundle()).state,original=f.env.owner,identity=structuredClone(await original());
+ let unlock,held,queued;const release=new Promise(r=>{unlock=r;}),entered=new Promise(r=>{held=r;}),waiting=new Promise(r=>{queued=r;});
+ const blocker=locks.request('focurve:amvp:dnr-writer',async()=>{held();await release;});await entered;
+ f.env.dnrWriter=(r,dispatch)=>{queued();return h.writer.write('SESSION',r,dispatch);};
+ const cleanup=f.core.guardedDnrUpdate(state,{removeRuleIds:state.journal.rules.map(r=>r.id)});await waiting;
+ f.env.owner=async()=>({...identity,owner_key:'MEMBER:2'});unlock();await blocker;await cleanup;
+ assert.equal(f.rules().length,0);f.env.owner=original;
+ const b=await f.core.bundle();assert.notEqual(b.a.session_status,'ENDED');assert.equal(b.state.journal.observed,state.journal.observed);
+});
+
+function authFence(storage){
+ const context=vm.createContext({});vm.runInContext(readFileSync(new URL('../background/member-auth.js',import.meta.url),'utf8'),context);
+ const Store=context.FocurveMemberAuth.AuthStore;return {state:()=>Store.writeState(),store:new Store({setAccessLevel:async()=>{},...storage})};
+}
+
+test('auth write starting after identity read fences final dispatch even when applying flag is omitted',async()=>{
+ const f=await fixture({shortsDocumentGate:true}),h=await harness(f.chrome.declarativeNetRequest),auth=authFence({set:async()=>{}});
+ f.env.dnrWriter=(r,dispatch)=>h.writer.write('SESSION',r,dispatch);f.env.dnrAuthorityState=auth.state;
+ await f.core.startCommand(f.command);const state=(await f.core.bundle()).state,native=f.chrome.declarativeNetRequest.updateSessionRules;
+ let writes=0,write;f.chrome.declarativeNetRequest.updateSessionRules=r=>{writes++;return native(r);};
+ const db=f.env.db,transaction=db.transaction;let once=true;
+ // Inject only at the final snapshot, after the locked actor's identity read.
+ f.env.dnrWriter=(r,dispatch)=>h.writer.write('SESSION',r,send=>{
+  f.env.db={...db,transaction:(mode,callback)=>transaction(mode,(tx,done)=>{if(once&&mode==='readonly'){once=false;write=auth.store.put({owner_user_id:'2'});}return callback(tx,done);})};
+  return dispatch(send);
+ });
+ await assert.rejects(f.core.guardedDnrUpdate(state,{addRules:state.journal.rules}),/OWNER_MISMATCH/);await write;
+ assert.equal(writes,0);assert.equal(auth.state().pending,false);f.env.db=db;
+ await f.core.end(f.command.session_id);assert.equal(f.rules().length,0);
+});
+
+test('pending and failed auth writes block new effects without blocking exact cleanup',async()=>{
+ const f=await fixture({shortsDocumentGate:true}),h=await harness(f.chrome.declarativeNetRequest);let finish,entered;
+ const waiting=new Promise(r=>{entered=r;}),auth=authFence({set:()=>{entered();return new Promise((_,reject)=>{finish=()=>reject(Error('AUTH_SAVE_FAILED'));});}});
+ f.env.dnrWriter=(r,dispatch)=>h.writer.write('SESSION',r,dispatch);f.env.dnrAuthorityState=auth.state;
+ await f.core.startCommand(f.command);const state=(await f.core.bundle()).state;
+ const saving=auth.store.put({owner_user_id:'2'}),failed=assert.rejects(saving,/AUTH_SAVE_FAILED/);await waiting;
+ await assert.rejects(f.core.guardedDnrUpdate(state,{addRules:state.journal.rules},true),/OWNER_MISMATCH/);
+ await f.core.guardedDnrUpdate(state,{removeRuleIds:state.journal.rules.map(r=>r.id)});assert.equal(f.rules().length,0);
+ finish();await failed;assert.equal(auth.state().pending,false);
+ await f.core.guardedDnrUpdate(state,{addRules:state.journal.rules},true);assert.ok(f.rules().length>0);
+ await f.core.end(f.command.session_id);assert.equal(f.rules().length,0);
+});
+
+test('auth write fence covers concurrent AuthStore instances until every write settles',async()=>{
+ const pending=[],auth=authFence({set:()=>new Promise(resolve=>pending.push(resolve))}),original=auth.state();
+ const second=new auth.store.constructor(auth.store.storage),one=auth.store.put({owner_user_id:'1'}),two=second.put({owner_user_id:'2'});
+ await new Promise(resolve=>setImmediate(resolve));assert.equal(pending.length,2);assert.notEqual(auth.state(),original);assert.equal(auth.state().pending,true);
+ pending[0]();await one;assert.equal(auth.state().pending,true);pending[1]();await two;assert.equal(auth.state().pending,false);assert.notEqual(auth.state(),original);
 });

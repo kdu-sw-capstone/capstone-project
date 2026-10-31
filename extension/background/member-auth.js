@@ -1,6 +1,9 @@
 // D-09: background-only secrets and durable transitions. Never rewrite guest ownership/data.
 (() => {
   const KEY = 'focurve_member_auth';
+  // Worker-local write fence shared by every AuthStore instance. Identity reads
+  // alone cannot cover an auth write starting while the DNR gate awaits IDB.
+  let pendingWrites = 0, writeState = Object.freeze({ pending: false });
   const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
   const token = value => typeof value === 'string' && /^[A-Za-z0-9_-]{32,256}$/.test(value);
   const defaults = { server_url: 'http://127.0.0.1:8080/api/v1', web_origin: 'http://127.0.0.1:5173' };
@@ -14,13 +17,18 @@
     return api ? url.href : url.origin;
   }
   class AuthStore {
+    static writeState() { return writeState; }
     constructor(storage = globalThis.chrome.storage.local) { this.storage = storage; }
     async protect() {
       if (!this.storage.setAccessLevel) throw new Error('AUTH_STORAGE_UNAVAILABLE');
       await this.storage.setAccessLevel({ accessLevel: 'TRUSTED_CONTEXTS' });
     }
     async get() { await this.protect(); return (await this.storage.get(KEY))[KEY] || null; }
-    async put(record) { await this.protect(); await globalThis.FocurveA1?.beforeAuthWrite(); await this.storage.set({ [KEY]: record }); await globalThis.FocurveA1?.afterAuthWrite(record); return record; }
+    async put(record) {
+      pendingWrites++; writeState = Object.freeze({ pending: true });
+      try { await this.protect(); await globalThis.FocurveA1?.beforeAuthWrite(); await this.storage.set({ [KEY]: record }); await globalThis.FocurveA1?.afterAuthWrite(record); return record; }
+      finally { pendingWrites--; writeState = Object.freeze({ pending: pendingWrites > 0 }); }
+    }
   }
   class MemberAuth {
     constructor({ store, getInstallation, inspectIdle, callbackUri, clientVersion, openApproval,

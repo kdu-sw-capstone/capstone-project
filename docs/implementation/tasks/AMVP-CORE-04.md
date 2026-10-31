@@ -1,5 +1,13 @@
 # AMVP-CORE-04 — Core DNR 소유권·복원
 
+## 2026-10-31 PR55 P2 수정·재리뷰 준비
+
+- 시작 `b11dcc582de625152039ad42d3baabe5dc5f52dc`, 같은 `feature/additional-mvp-legacy-dnr-fence`/PR55에서 독립 리뷰 `5722433929`의 current owner 반례만 수정한다. 기존 로컬 변경 없음과 원격 HEAD 일치를 확인했다.
+- 실제 잠금 queue + Member tick에서 owner/executor/identity 실패 3가지 모두 수정 전 무권한 dispatch가 발생함을 재현했다. 잠금 안에서 신규 add의 현재 owner/executor를 다시 검증하고, AuthStore 저장 시작/완료 token을 최종 동기 dispatch에 결속했다. removal-only는 기존 자기 journal·물리 rule·DB fence 검사를 유지해 정당한 이전 owner cleanup을 보존한다.
+- 새 반례/보존 7/7, writer29/29, DNR78/78, DNR+인증/재인증111/111, Member/Core/인증 영향24파일287/287, 계약6/6 PASS(중복 포함, 합산 금지). Chromium 실제 IDB/Web Lock END 비차단1/1, 생성 bundle 일치·syntax/whitespace PASS. 전체 Extension857은 수정 전 결과로 이번 전수 회귀 결과가 아니다.
+- 시험의 DNR/identity/Content는 모의다. 실제 MV3·Windows Chrome·전체 writer/제품 적용·Report/ACK는 미검증 유지. 재현·코드/영향/로그/내부 token의 한계는 [Member writer 설명의 P2 수정 절](../evidence/AMVP-CORE-04-member-dnr-writer.md)에 기록했다.
+- 상태: 수정·영향 검증 완료, 같은 PR55에 게시 후 최신 HEAD 재리뷰 필요. 기존 Content Approve를 새 HEAD로 승격하지 않고 다훈·지민의 변경 범위 확인을 요청한다. 병합/후속 actor 개발은 이번 수정에 섞지 않는다.
+
 ## 2026-10-31 Member A1 실제 DNR writer 연결 단위
 
 - PR53 f29532c는 다훈·지민 승인 후9e37b37로 통합됐음을 확인했다. 최신 통합 `9e37b37fefb2238f259c6a1bba400eee6955d085`에서 별도 `feature/additional-mvp-legacy-dnr-fence`를 시작했다. 기존 focurve-core 미커밋 변경·PR46/48·승인된 증거 조회 소스를 보존한다.
