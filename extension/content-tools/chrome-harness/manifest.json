@@ -1,6 +1,6 @@
 {
   "manifest_version": 3,
-  "name": "FOCURVE 홈 숨기기 독립 검증 — Core 미연결",
+  "name": "FOCURVE 홈·구독 숨기기 독립 검증 — Core 미연결",
   "version": "0.1.0",
   "permissions": ["activeTab"],
   "action": {"default_popup": "popup.html"},

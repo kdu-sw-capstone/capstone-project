@@ -40,6 +40,24 @@
 
 ## 다음 작은 연결
 
+### 2026-10-31 · YT-05 구독 숨기기 (사용자 시험 완료 / 승인 후 별도 PR 제출)
+
+- 담당 채지민. clean ba4a7e2c2fe11e885431597b32ec738d313bbb87(PR40)에서 codex/content-subscriptions 로컬 브랜치로 시작. PR33/36/39/40 원격 HEAD·리뷰는 변경하지 않는다. 최신 통합 원격 코드를 반영했다고 주장하지 않는다.
+- 기준: feature-registry.json YT-05/AC-YT-05-01~03, RC2 05의 구독취소 금지와 독립 claim/해제·03의 native/문서/영속 증거 경계. 구독 진입 entry와 /feed/subscriptions의 현재 browse 목록만 제한. 홈·검색·일반 watch는 구독 진입 링크만 대상으로 하고 stale subscriptions DOM은 가리지 않는다. 실제 계정/구독 관계·구독 버튼·Server API를 변경하지 않는다.
+- 재사용: PR40 HomeSession의 문서/observer/target별 claim·동일 scope fencing·복원 흐름을 navigation-surface.mjs 내부 부품으로 분리. HomeSession 호출 API/기존 selector와 오류는 유지하고 홈9회귀로 확인했다. 새 subscriptions.mjs는 고정 YT-05 selector/route만 공급한다. 이 내부 selector profile은 승인된 Wire/capability/profile 계약이 아니다.
+- 구독은 shared ClaimLedger와 feature별 scope를 사용해 홈 옵션/다른 owner와 독립 적용·해제. selector 이탈·페이지 style 보존·복원 실패/foreign document 의무 유지, URL/pagehide 시 신규 적용 중지 및 기존 cleanup 보존. OBSERVED/NO_TARGET/FAILED는 국소 DOM 관측, Core APPLIED/세션 성공이 아니다.
+- 새 subscriptions-browser.test.mjs 9/9 PASS 및 추출 후 home-browser.test.mjs 9/9 PASS. Node24·설치 Chrome headless·Playwright 합성 DOM/모의 sender·pagehide 모사다. 실제 YouTube/제품 MV3·BFCache 수용 시험이 아니다. 계정 버튼 미클릭·검색/영상 보존·홈과 독립 해제·다중owner/퇴역객체·selector 재사용·부분 복원 목표 재시도·adoption 보호를 포함한다.
+- 관련 전체 회귀: 기존33+최신 원장26+홈9+구독9 = 77/77 PASS, 실패/skip0. `node --test extension/content-tests/changes.test.mjs extension/content-tests/detection.test.mjs extension/content-tests/browser.test.mjs extension/content-tests/claim-ledger.test.mjs extension/content-tests/claim-ledger-browser.test.mjs extension/content-tests/home-browser.test.mjs extension/content-tests/subscriptions-browser.test.mjs` 실행. build-chrome-harness.mjs 및 git diff --check PASS. 다른 branch의 댓글/자동재생 후속 시험을 이번 실행에 포함하지 않는다.
+- 기존 시험 build에 navigation-surface/subscriptions 복사 및 TEST_SUBSCRIPTIONS_APPLY/RELEASE/STATE 버튼만 추가. 홈+구독 시험판으로 갱신하며 다른 branch의 댓글/자동재생 제품 코드를 삭제한 변경이 아니다. 제품 권한/manifest·API/Wire/Schema 변경 없음.
+- 사용자 시험 대기: 기존 시험 확장 갱신→홈 새로고침→구독 숨기기 적용 시 구독 메뉴 숨김/홈·검색 유지→해제하면 메뉴 복원. 주소창에 https://www.youtube.com/feed/subscriptions 입력→해제 후 다시 적용 시 구독 영상 목록 숨김→검색/직접 영상 정상→해제 후 구독 목록·계정의 구독 상태 유지. 홈과 구독을 함께 적용했다가 구독만 해제해도 홈 제한 유지 확인. 로그인/실제 구독 영상이 없는 경우 목록0은 정상 제한 증거가 아니다.
+- 사용자 최초 실패: 화면에서 구독 제목/진입만 사라지고 왼쪽 구독한 채널 목록은 남는다고 보고. 해당 항목은 PASS가 아니다. 기존 selector가 /feed/subscriptions entry만 잡고 sibling channel 목록을 포함하지 않은 누락이다. 실제 DOM 구조를 직접 수집한 것은 아니며 첨부 화면과 같은 불변식의 합성 section 반례1건을 수정 전 FAIL로 확인했다.
+- 보완: root 구독 URL로 식별한 guide section에서 구독/channel/feed-channels 링크만 있으면 해당 section 전체(채널·더보기 포함)를 제한한다. 다른 메뉴가 섞이면 section 전체를 숨기지 않고 구독/채널 entry만 제한한다. 화면 제목 문자열이나 페이지의 모든 channel 링크로 범위를 넓히지 않으며 account/검색/영상·외부 링크는 보존한다. URL/역할 변경 시 기존 차집합 cleanup을 재사용한다.
+- 보완 후 홈9+구독10=19/19 PASS, 이후 혼합 메뉴·역할 재사용 보호 반례1/1 PASS. 두 실행은 합성 DOM이며 종전77 전체 PASS를 보완 후79 전체 실행으로 바꾸지 않는다. 새 구독 시험 구성은11건. build 재생성·diff 검사 PASS. 실제 사용자 재확인은 확장 갱신/YouTube 새로고침 후 구독 적용→제목·채널·더보기 숨김/홈·Shorts·내페이지 보존→해제 복원이며 대기 중이다.
+- 최종 사용자 재확인: 보완된 시험판에서 안내6항목에 “테스트 다 정상이야” 회신. 홈의 구독 제목·채널·더보기 숨김, 다른 메뉴/검색 보존, 해제 복원, 직접 구독 페이지의 영상 목록 제한·복원 및 구독 상태 유지, 홈/구독 독립 해제를 정상 확인한 사용자 보고다. 위 대기 상태는 이 결과로 갱신하며 최초 누락 실패 근거는 보존한다. AI 직접 관측·실행 hash/Chrome 버전/원본 로그 수집은 아니며 실제 Core/자동 SPA·BFCache 재결속 완료로 확대하지 않는다. 이번 기록 변경에서 기능 시험을 다시 실행하지 않았다. Commit/Push/PR/병합은 아직 미실행이다.
+- 게시 전 최종 실행: 위와 같은7개 시험 파일로 기존33+원장26+홈9+구독11 = 79/79 PASS, 실패/skip0을 한 명령에서 확인했다. 종전77 및19+1 실행과 구분하며, 위 사용자 결과 기록만 하던 단계 이후 새로 실행한 결과다. git diff --check PASS.
+- 사용자 게시 승인으로 codex/content-subscriptions의9파일(구독 모듈/시험·navigation-surface·HomeSession 위임·harness4·이 카드)을 Commit/Push하고 통합 브랜치 대상 Draft PR 제출. 게시 시 PR33 a6468b6와 PR40 ba4a7e2는 미병합 확인. 선행 브랜치 HEAD는 변경하지 않고 ba4a7e2 이후 비교로 구독 단위만 리뷰하며 선행 통합 후 최종 diff를 확인한다. 실제 SHA/PR 번호는 GitHub 게시 결과가 원본이다. 병합 없음.
+- 미검증: 실제 서비스 selector/profile 전체·로그인/언어/창너비, 제품 frozen/native/issued operation·영속 intent/receipt·Core/Server, 자동 SPA/BFCache 재결속·재시작. 인스타 요구 범위 답변 대기는 유지하고 다른 옵션은 확장하지 않는다. 로컬 검증·사용자 시험·승인 후 위 제출 단계만 진행하며 develop/통합 병합 없음.
+
 ### 2026-10-30 · YT-01 홈 숨기기 (사용자 시험 완료 / 별도 PR 제출)
 
 - 담당 채지민. clean a6468b67d97ca32a1ab1ad1af66344f0a45e148e에서 별도 codex/content-home 브랜치로 시작. PR33 최신 부분 실패 복원 목표/pending 수정을 재사용한다. PR36/39 브랜치·코드와 기존 Shorts 제품 코드는 보존하고 홈 묶음7파일만 별도 제출한다. 선행 PR33과의 의존성 및 해당 SHA 이후 비교를 PR에 명시한다.
@@ -76,3 +94,13 @@
 2. issued registry·frozen attachment·native scope를 제공하는 Core simulator 경계에서 exact 결과 집합/실패/cleanup 연결. 공유 Wire를 임의 수정하지 않는다.
 3. 실제 페이지별 selector/profile·동적 재등장·SPA/BFCache/미디어·실패 복원 검증. 운영 listener/주입·claim 영속화는 Core 담당과 승인 계약 기준으로 연결한다.
 4. 검증 가능한 단위별 사용자 시험 후 feature/additional-mvp-content를 Push하고 integration/additional-mvp-20261029 대상 PR. develop 병합 없음.
+
+### 2026-10-31 · PR #42 P2 혼합 구독 영역 /feed/channels 누락 수정
+
+- 담당 채지민. codex/content-subscriptions, 시작 HEAD 12096d0ca4b5dec087a08032568127085443689c. GitHub 리뷰 https://github.com/kdu-sw-capstone/capstone-project/pull/42#discussion_r4429928694 확인. 별도 content-subscriptions-review worktree에서 수정하여 codex/content-explore의 미커밋 탐색/SPA 작업과 원래 feature/content-control 작업을 보존했다.
+- 원인: 순수 구독 section에서는 isSubscription이 /feed/channels를 포함했으나, 혼합 section fallback은 channelPath만 선택해 해당 entry가 제한되지 않았다. OBSERVED는 국소 관측이어도 지원 대상 누락은 결함이다.
+- 수정 전: 기존 혼합 fixture에 /feed/channels entry를 추가한 회귀1건 FAIL(실제 visible=true, 기대=false). 설치 Chrome headless 합성 DOM이며 실제 YouTube 현행 화면 직접 관측이 아니다.
+- 수정: 혼합 분기에서도 동일 isSubscription 분류를 재사용해 /feed/subscriptions·/feed/channels·채널 entry를 제한. guide/mini-guide entry 또는 해당 anchor만 선택하며 history/home/외부 링크가 섞인 section 전체는 숨기지 않는다. API/Wire/Core/frozen/native·공통 원장·탐색 구현 변경 없음.
+- 추가 회귀: 순수 section→history/외부 링크가 섞인 혼합 section 전환, 구독 entry/채널/전체목록의 hidden+inert 유지, history/외부/본문 링크 보존, 다른 owner claim 보존과 마지막 해제 복원, 원래 display:flex 복원 확인.
+- 수정 후 Node24·설치 Windows Chrome headless·Playwright 합성 DOM에서 구독12+홈9=21/21 PASS, 실패/skip0. 명령: PLAYWRIGHT_MODULE/CHROME_EXECUTABLE을 기존 경로로 설정 후 node --test extension/content-tests/subscriptions-browser.test.mjs extension/content-tests/home-browser.test.mjs . git diff --check PASS(줄바꿈 정규화 경고만). 기존79 전체·원격CI·실제 서비스/제품 Core·BFCache 수용을 재실행했다고 표시하지 않는다.
+- 게시 범위: subscriptions.mjs, subscriptions-browser.test.mjs, 이 작업 기록3개만. 사용자 게시 수락 후 동일 PR42에 Commit/Push하고 새 HEAD로 재리뷰 요청. 탐색 미커밋 코드·다른 PR·develop/통합 브랜치 병합 제외. 다음은 다훈 독립 재리뷰이며 그동안 탐색 사용자 시험은 대기 상태로 보존한다.
