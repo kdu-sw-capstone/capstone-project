@@ -60,3 +60,15 @@
 - 제출 범위는 bounded local staging 기반이다. 신규 시간 raw Wire·Server outbox·confirmed_ms·quota debit은 아직 생성하지 않는다. 모든 상태는 measurement UNKNOWN·실제 한도 사이트 hold 필요를 유지한다. 실제 DNR 적용 성공을 주장하지 않는다.
 - observer callback→순차 durable append까지 완료한 모듈 리뷰 요청. 제품 Worker 진입점/manifest·anchor 발급·day allocation·한도·예약·실제 Chrome 확장 수용은 미완료다. 실제 tabs/windows/idle는 모의 시험이며 기존 Chromium151 native IndexedDB 시험과 구분한다.
 - 검증 명령: node --test extension/tests/additional-idle-observer.test.mjs extension/tests/additional-foreground-observer.test.mjs extension/tests/additional-observation-journal.test.mjs extension/tests/additional-time-runtime.test.mjs. 기존 계약 Node6/6와 npm run check도 제출 전 실행한다.
+
+## 2026-10-31 회원 예약 claim 연결 준비 리뷰 단위
+
+- 담당 윤종민. PR43이 OPEN이므로 그 HEAD를 변경하지 않도록 별도 feature/additional-mvp-schedule-claim 브랜치와 /workspace/focurve-schedule-claim 작업 공간 사용. 시작 기준2bf04f0(PR45 병합 포함), PR43 pure helper에 의존하지 않는다. 원래 작업 공간의 로컬 초안은 보존.
+- MemberA1Adapter.claimSchedule은 trusted background 전용의 준비 경로다. 기존 인증 request/serial 및 schedule 목록·claim·occurrence·session 조회와 tickInner 검증 경로 재사용. 수동 START fallback·새 Wire/API/DB/발생 원장·공개 listener/자동 alarm 호출 없음.
+- 입력은 queue 전 복제. owner/executor/config version/enabled/고정 종료를 대조하고, 반환 session을 정확한 Server occurrence(schedule/start/version/end/session_id)에 재결속한다. session GET 재확인 후 기존 명령 경로를 호출하며 반환 execution의 session ID도 대조한다. ACK만으로 RUNNING 처리하지 않는다. waiting/skipped와 오류/응답 유실은 보존하며 재시도는 같은 Server unique occurrence identity를 사용한다.
+- 기본 차단: 현재 Core에는 verifyScheduledDeadline 구현이 없다. 함수가 없거나 true가 아니면 claim POST 전에 SCHEDULE_FIXED_END_UNSUPPORTED로 거절한다. 이 내부 verifier는 미래 trusted Core 고정 종료 집행 구현을 위한 경계이며 공개 Wire/capability 계약이 아니다. 시험의 true stub은 합성 가정이다. 실제 Server Actor도 미연결이며 두 조건을 제품 증거 없이 충족 처리하지 않는다.
+- 새 시험14/14 PASS: owner/version/source/fixed-end, immutable input, 응답 유실, guest/END-only, actor 오류, 실제 Core 기본 거절, occurrence→session 불일치, local execution ID 불일치, 불완전 occurrence 조회 및 배포 bundle 검증.
+- 최신 통합 기반 전체 Extension npm test816/816 PASS(fail0/skip0), 계약 Node6/6, syntax·whitespace·source/bundle exact match PASS. 과거 초안820은 PR43 미병합 pure helper8건을 포함한 다른 기반이므로 현재 수와 직접 비교하지 않는다(이번 신규는10→14). API/고정 종료 지원/명령 진행은 모의이며 실제 Server/Chrome/Native 수용 아님.
+- 배포 adapter bundle만 재생성했다. Core/Content bundle, manifest, shared schema/Server 생산 코드는 변경하지 않았다.
+- 리뷰 필요: 기존 회원 adapter·예약/소유권·실행 전달에 영향을 줄 수 있으므로 다훈(Server actor/occurrence/응답 결속)·지민(Content scope/복원 경계)의 담당 리뷰가 필요. 제품 실행/고정 종료 완료 PR이 아닌 기본 거절을 유지한 연결 준비 단위다. 자동 병합/활성화는 하지 않는다.
+- 남은 작업: Core 고정 종료 집행·검증(종민), Server Actor(다훈), 이미발급 old-version occurrence 조회/종료·재시작/응답 유실·실제 적용/해제 수용. 현재 설정을 바꿔 이전 실행의 duration/end를 다시 계산하지 않아야 한다. 이 변경은 기존/종료 occurrence 전체 복구 기능을 제공하지 않는다.
