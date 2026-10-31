@@ -4,9 +4,12 @@ import { useEffect, useRef, useState } from "react";
 import { request, UiError } from "./api";
 import { connectExecution, executionBridgeConfigured, wakeExecution } from "./executionWake";
 import SessionNote from "./SessionNote";
+import {useCadenceControl} from "./useCadenceControl";
+import {focusControlLabel} from "./cadenceControlApi";
+import CadenceSettingsSummary from "./CadenceSettingsSummary";
 import { allPages, clockTime, dateTime, DateFields, Kpi, label, seoulDay, SiteMark, useWork, type Access, type Page, type Policy, type PolicySite, type Session } from "./FocusShared";
 
-export default function FocusSessions({settings,records}:{settings:()=>void;records:(id:string,from:string,to:string)=>void}) {
+export default function FocusSessions({settings,cadenceSettings=settings,records}:{settings:()=>void;cadenceSettings?:()=>void;records:(id:string,from:string,to:string)=>void}) {
   const work=useWork(); const [minutes,setMinutes]=useState("30"),[executor,setExecutor]=useState("");
   const [current,setCurrent]=useState<Session|null>(null),[selected,setSelected]=useState<Session|null>(null),[policy,setPolicy]=useState<Policy|null>(null),[selectedPolicy,setSelectedPolicy]=useState<Policy|null>(null),[sites,setSites]=useState<PolicySite[]>([]);
   const [installations,setInstallations]=useState<{executor_id:string}[]>([]),[loaded,setLoaded]=useState(false),[fresh,setFresh]=useState(false),[now,setNow]=useState(performance.now());
@@ -14,6 +17,7 @@ export default function FocusSessions({settings,records}:{settings:()=>void;reco
   const [today,setToday]=useState<Session[]>([]),[action,setAction]=useState(""),[draft,setDraft]=useState("");
   const key=useRef(crypto.randomUUID()),previous=useRef<string|null>(null),local=useRef<string|null>(null),checked=useRef(false);
   const [localExecutor,setLocalExecutor]=useState<string|null>(null);
+  const cadence=useCadenceControl(current?.session_id,current?.executor_id);
   async function load(){
     setFresh(false);
     const s=await request<Session|null>("/sessions/current");
@@ -62,15 +66,16 @@ export default function FocusSessions({settings,records}:{settings:()=>void;reco
     const id=setInterval(()=>{void work.run(load);},1000);
     return ()=>clearInterval(id);
   },[current?.execution_status]);
-  const session=current??selected, status=session?.execution_status??"READY", ended=status==="ENDED", failed=status==="START_FAILED", ready=!session;
+  const coordinated=cadence.managed?cadence.frame:null;
+  const session=current??selected, status=coordinated?.state.state??session?.execution_status??"READY", ended=status==="ENDED", failed=status==="START_FAILED", ready=!session;
   useEffect(()=>{const mono=performance.now();countdown.current=session?receiveCountdown(countdown.current,session,mono,Date.now()):null;setNow(mono);},[session]);
   const endLabel=session?.end_reason==="TIME_EXPIRED"?"목표 완료":session?.end_reason==="MANUAL"?"직접 종료":"종료 완료";
-  const title=failed?"집중을 시작하지 못했어요":ready?"집중 세션 준비":ended?(session?.end_reason==="TIME_EXPIRED"?"목표 시간을 채웠어요":session?.end_reason==="MANUAL"?"이번 집중을 직접 종료했어요":"이번 집중을 마쳤어요"):status==="RUNNING"?"집중 세션 진행":"집중 세션 확인";
+  const title=coordinated?focusControlLabel(coordinated.state.state):failed?"집중을 시작하지 못했어요":ready?"집중 세션 준비":ended?(session?.end_reason==="TIME_EXPIRED"?"목표 시간을 채웠어요":session?.end_reason==="MANUAL"?"이번 집중을 직접 종료했어요":"이번 집중을 마쳤어요"):status==="RUNNING"?"집중 세션 진행":"집중 세션 확인";
   // A countdown is a display estimate, never evidence of application or release.
   const anchor=countdown.current;
   const remaining=anchor&&anchor.id===session?.session_id&&anchor.status===status?remainingAt(anchor,now):Math.max(0,(session?.duration_minutes??(Number(minutes)||0))*60000-(session?.active_duration_ms??0));
   const timerStale=status==='RUNNING'&&anchor&&now-anchor.received>=MAX_ESTIMATE_MS;
-  const shown=ended?(session?.active_duration_ms??0):remaining;
+  const shown=coordinated?(ended?coordinated.state.confirmed_ms:coordinated.state.remaining_ms):ended?(session?.active_duration_ms??0):remaining;
   const timer=`${String(Math.floor(shown/60000)).padStart(2,"0")}:${String(Math.floor(shown/1000)%60).padStart(2,"0")}`;
   const recordLink=(s:Session)=>records(s.session_id,s.started_at?seoulDay(new Date(s.started_at)):seoulDay(),s.ended_at?seoulDay(new Date(s.ended_at)):seoulDay());
   return <section className="page focus-session" aria-busy={!loaded}>
@@ -79,9 +84,15 @@ export default function FocusSessions({settings,records}:{settings:()=>void;reco
     <div className="focus-kpis three"><Kpi title={ended?"이번 세션 결과":"종료한 세션"} value={!loaded?"—":ended?endLabel:`${today.length}회`} hint={ended?"실제 정책 해제 확인":"오늘 · 진행 세션 제외"}/><Kpi title={ended?"이번 세션 집중 시간":"오늘 집중 시간"} value={!loaded?"—":`${Math.floor((ended?session!.active_duration_ms:today.reduce((n,s)=>n+s.active_duration_ms,0))/60000)}분`} hint="종료한 세션의 확인된 진행 시간"/><Kpi title="확장 프로그램" value={!loaded?"확인 중":installations.length?"회원 연결됨":"미연결"} hint={status==="RUNNING"?"이번 세션의 정책 적용 확인":status==="ENDING"?"정책 해제 결과 확인 중":"회원 연결과 실제 실행 확인은 별도"}/></div>
     <div className="focus-columns">
       <section className="focus-card timer-card" aria-label="집중 타이머">
-        <h4>{failed?"시작 실패 · 정책 정리 완료":ready?"이번 집중을 준비하세요":ended?"이번 집중을 마쳤어요":status==="RUNNING"?"지금, 집중을 이어가고 있어요":"확장 프로그램의 결과를 확인하고 있어요"}</h4>
-        <div className="focus-timer" data-execution-status={status}><TimerRing ratio={ready?1:shown/Math.max(1,(session?.duration_minutes??1)*60000)}/><span>{ready?"시작 준비":ended?endLabel:label(status)}</span><strong>{timer}</strong><small>{ready||ended?"한 번에 하나씩, 나의 속도로":timerStale?"서버 확인 지연 · 시간 표시 대기":`목표 시간 ${session?.duration_minutes??"—"}분 · 남은 시간은 표시 추정치`}</small></div>
-        {ready?<form className="timer-controls" onSubmit={e=>{e.preventDefault();void work.run(start);}}>
+        <h4>{coordinated?focusControlLabel(coordinated.state.state):failed?"시작 실패 · 정책 정리 완료":ready?"이번 집중을 준비하세요":ended?"이번 집중을 마쳤어요":status==="RUNNING"?"지금, 집중을 이어가고 있어요":"확장 프로그램의 결과를 확인하고 있어요"}</h4>
+        <div className="focus-timer" data-execution-status={status}><TimerRing ratio={ready?1:shown/Math.max(1,(session?.duration_minutes??1)*60000)}/><span>{coordinated?focusControlLabel(coordinated.state.state):ready?"시작 준비":ended?endLabel:label(status)}</span><strong>{timer}</strong><small>{coordinated?"Core가 확인한 남은 시간 · 타이머는 적용 증거가 아닙니다.":ready||ended?"한 번에 하나씩, 나의 속도로":timerStale?"서버 확인 지연 · 시간 표시 대기":`목표 시간 ${session?.duration_minutes??"—"}분 · 남은 시간은 표시 추정치`}</small></div>
+        {cadence.managed?<div className="timer-controls"><div className="session-actions">
+          {coordinated?.context.start_allowed&&<button className="primary" disabled={cadence.busy||!!cadence.error||work.busy} onClick={()=>{void work.run(()=>cadence.send("START",session?.duration_minutes??Number(minutes)));}}>집중 시작</button>}
+          {status==="RUNNING"&&<button disabled={cadence.busy||!!cadence.error||work.busy} onClick={()=>{void work.run(()=>cadence.send("PAUSE"));}}>일시정지</button>}
+          {status==="PAUSED"&&<button className="primary" disabled={cadence.busy||!!cadence.error||work.busy} onClick={()=>{void work.run(()=>cadence.send("RESUME"));}}>집중 재개</button>}
+          {["RUNNING","PAUSED"].includes(status)&&<button className="danger" disabled={cadence.busy||!!cadence.error||work.busy} onClick={()=>{void work.run(()=>cadence.send("END"));}}>세션 종료</button>}
+        </div><p role="status">{cadence.busy?"명령 응답과 실제 실행 결과를 구분해 확인하고 있습니다.":coordinated?focusControlLabel(coordinated.state.state):"실행 결과 확인 대기"}</p>
+        {coordinated?.state.last_error_code&&<p>실행 오류: {coordinated.state.last_error_code}</p>}{cadence.error&&<p role="alert">{cadence.error} · 기존 세션 제어로 전환하지 않습니다.</p>}</div>:ready?<form className="timer-controls" onSubmit={e=>{e.preventDefault();void work.run(start);}}>
           <div className="minute-presets">{[25,30,50].map(value=><button type="button" key={value} disabled={work.busy} aria-pressed={Number(minutes)===value} onClick={()=>{setMinutes(String(value));key.current=crypto.randomUUID();}}>{value}분</button>)}</div>
           <label>집중 시간 (분)<input name="minutes" disabled={work.busy} type="number" min="1" max="180" step="1" required value={minutes} onChange={e=>{setMinutes(e.target.value);key.current=crypto.randomUUID();}}/></label>
           {!localExecutor&&installations.length>1&&<label>실행 설치<select disabled={work.busy} aria-label="실행 설치" value={executor} onChange={e=>{setExecutor(e.target.value);key.current=crypto.randomUUID();}}>{installations.map(i=><option key={i.executor_id}>{i.executor_id}</option>)}</select></label>}
@@ -93,12 +104,13 @@ export default function FocusSessions({settings,records}:{settings:()=>void;reco
           {status==="RUNNING"&&<small>예정 종료까지의 표시 시간입니다. 집중 시간은 확인된 실행 구간으로 집계합니다.</small>}
           {session&&<p className="muted">실행 상태: {label(status)} · 기록 상태: {label(session.record_status)}</p>}
         </div>}
-        <div className="execution-message" role="status">{action? action:!loaded?"세션과 연결 상태를 확인하고 있습니다.":status==="NATIVE_VERIFYING"?"문서 전환을 확인하고 있습니다. 확인 전에는 집중 진행을 확정하지 않습니다.":status==="EFFECT_VERIFYING"?"변경된 제한 대상을 확인하고 있습니다. 확인 전에는 집중 진행을 확정하지 않습니다.":status==="STARTING"?"확장 프로그램의 실제 적용 결과를 기다리고 있습니다. Chrome과 확장 프로그램을 열어 주세요.":status==="ENDING"?"정책 해제 결과를 기다리고 있습니다. 타이머가 0이 되어도 해제 확인 전에는 종료 완료가 아닙니다.":failed?"시작에 실패했지만 남은 정책의 해제는 확인했습니다. 연결·설정을 확인한 뒤 다시 준비할 수 있습니다.":status==="UNKNOWN"?"실행 결과가 미확인입니다. 신규 시작은 잠겨 있습니다. 확장 프로그램에서 복구 상태를 확인하거나 세션 종료로 해제를 요청하세요.":ready&&!installations.length?"회원 연결된 Extension이 없습니다. 연결 후 집중을 시작할 수 있습니다.":ended?`정책 해제 완료 · 기록 ${label(session?.record_status)}`:"설정 변경은 다음 세션부터 적용됩니다."}</div>
+        <div className="execution-message" role="status">{coordinated?(cadence.error?"실행 결과 조회 미확인 · 조작 중지":cadence.busy?"요청 처리 대기 · 실제 결과 확인 전":focusControlLabel(coordinated.state.state)):action? action:!loaded?"세션과 연결 상태를 확인하고 있습니다.":status==="NATIVE_VERIFYING"?"문서 전환을 확인하고 있습니다. 확인 전에는 집중 진행을 확정하지 않습니다.":status==="EFFECT_VERIFYING"?"변경된 제한 대상을 확인하고 있습니다. 확인 전에는 집중 진행을 확정하지 않습니다.":status==="STARTING"?"확장 프로그램의 실제 적용 결과를 기다리고 있습니다. Chrome과 확장 프로그램을 열어 주세요.":status==="ENDING"?"정책 해제 결과를 기다리고 있습니다. 타이머가 0이 되어도 해제 확인 전에는 종료 완료가 아닙니다.":failed?"시작에 실패했지만 남은 정책의 해제는 확인했습니다. 연결·설정을 확인한 뒤 다시 준비할 수 있습니다.":status==="UNKNOWN"?"실행 결과가 미확인입니다. 신규 시작은 잠겨 있습니다. 확장 프로그램에서 복구 상태를 확인하거나 세션 종료로 해제를 요청하세요.":ready&&!installations.length?"회원 연결된 Extension이 없습니다. 연결 후 집중을 시작할 수 있습니다.":ended?`정책 해제 완료 · 기록 ${label(session?.record_status)}`:"설정 변경은 다음 세션부터 적용됩니다."}</div>
         <button className="text-button" disabled={work.busy} onClick={()=>{checked.current=false;void work.run(load);}}>연결·실행 상태 다시 확인</button>
         {!fresh&&loaded&&<p role="status">최신 상태를 확인 중입니다. 마지막 확인 화면을 유지하며 실행 조작을 잠시 제한합니다.</p>}{work.error&&<p role="alert">{work.error}</p>}
       </section>
       <section className="focus-card policy-card"><h4>{current?"이번 세션에 고정된 정책":"다음 집중에 적용할 설정"}</h4><p className="muted">{current?"시작할 때 확정된 설정입니다. 현재 설정과 다를 수 있습니다.":"집중 시작 시 아래 저장된 설정이 적용됩니다."}</p><PolicyGroups sites={current?(policy?.sites??[]):sites}/><div className="session-actions"><button onClick={settings}>사이트 설정 확인</button><button className="primary" onClick={settings}>Shorts 제한 설정</button></div>{selectedPolicy&&selected&&!current&&<details className="historical-policy"><summary>선택한 세션의 당시 정책 보기</summary><PolicyGroups sites={selectedPolicy.sites??[]}/></details>}<SessionNote key={session?.session_id??"draft"} sessionId={session?.session_id} draft={draft} onDraft={setDraft}/><small>현재 정책은 시작할 때의 설정을 유지해요. 변경 사항은 다음 세션에 적용됩니다.</small></section>
     </div>
+    <CadenceSettingsSummary executor={current?.executor_id??executor} settings={cadenceSettings} managed={cadence.managed}/>
     <SessionHistory refreshKey={`${current?.session_id}:${status}`} open={async(s)=>{if(current){recordLink(s);return;}const detail=await request<Session>(`/sessions/${s.session_id}`);setSelectedPolicy(await request<Policy>(`/sessions/${s.session_id}/policy`));setSelected(detail);setDraft("");window.scrollTo(0,0);}} records={recordLink}/>
     {!installations.length&&loaded&&<details className="extension-guidance"><summary>확장 프로그램 연결 방법</summary><p>Chrome에 FOCURVE 확장 프로그램을 설치 → 확장 프로그램에서 회원 연결 요청 → 이 계정으로 승인 → 연결 상태 다시 확인.</p><p>설치된 FOCURVE 팝업에서 이 계정과 연결한 뒤 현재 설치를 확인하세요. 연결이나 적용 결과가 확인되지 않으면 시작을 보류합니다. 기존 기록과 사이트 설정은 웹에서 확인할 수 있습니다.</p></details>}
   </section>;

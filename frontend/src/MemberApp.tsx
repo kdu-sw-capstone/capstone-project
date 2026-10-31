@@ -9,6 +9,7 @@ import EmailSignup, {clearSignupProgress} from "./EmailSignup";
 import Sessions from "./FocusSessions";
 import Records from "./BehaviorRecords";
 import QueryTimestamp from "./QueryTimestamp";
+import BrowserUsageStatistics from "./BrowserUsageStatistics";
 import "./focus-screens.css";
 import { useEffect, useState, useRef, type FormEvent } from "react";
 import Settings from "./Settings";
@@ -205,7 +206,7 @@ export default function MemberApp() {
           ) : tab === "sites" ? (
             <Sites />
           ) : tab === "sessions" ? (
-            <Sessions settings={()=>setTab("sites")} records={(id,from,to)=>{setRecordSession(id);setRecordHost("");setRecordRange({from,to});setTab("logs");}} />
+            <Sessions settings={()=>setTab("sites")} cadenceSettings={()=>setTab("settings")} records={(id,from,to)=>{setRecordSession(id);setRecordHost("");setRecordRange({from,to});setTab("logs");}} />
           ) : tab === "logs" ? (
             <Records
               key={recordHost + recordSession + JSON.stringify(recordRange)}
@@ -215,14 +216,14 @@ export default function MemberApp() {
               settings={() => setTab("sites")}
             />
           ) : tab === "statistics" ? (
-            <Statistics
+            <><Statistics
               records={(host, range) => {
                 setRecordRange(range);
                 setRecordHost(host);setRecordSession("");
                 setTab("logs");
               }}
               settings={() => setTab("sites")}
-            />
+            /><BrowserUsageStatistics/></>
           ) : tab === "account" ? (
             <Settings user={user} social={<SocialButtons link providers={user.providers} />} refreshUser={async()=>setUser(await request<User>("/auth/me"))} sites={()=>setTab("sites")} sessions={()=>setTab("sessions")}
               loggedOut={() => {

@@ -126,3 +126,18 @@ test('TEST popup autoplay commands coexist with comment controls and reject page
   assert.equal(result.leaked,false);assert.equal(result.applied.result.status,'OBSERVED');assert.equal(result.applied.coreConnected,false);
   assert.equal(result.released.released.restored,true);assert.equal(result.commentsStillHidden,true);
 });
+
+test('merged harness preserves all navigation/watch options when autoplay alone releases',async t=>{
+  const body='<ytd-masthead><input id="search"></ytd-masthead><ytd-guide-entry-renderer id="home"><a href="/">home</a></ytd-guide-entry-renderer><ytd-guide-entry-renderer id="subs"><a href="/feed/subscriptions">subs</a></ytd-guide-entry-renderer><ytd-guide-entry-renderer id="explore"><a href="/feed/trending">explore</a></ytd-guide-entry-renderer>'+html;
+  const page=await fixture(t,{body});await page.evaluate(()=>{window.chrome={runtime:{id:'test-extension',getURL:path=>location.origin+'/'+path,onMessage:{addListener:cb=>{window.listener=cb;}}}};});
+  await page.evaluate(await readFile(new URL('../content-tools/chrome-harness/bootstrap.js',import.meta.url),'utf8'));
+  const result=await page.evaluate(async()=>{
+    const sender={id:'test-extension',url:chrome.runtime.getURL('popup.html')};const send=type=>new Promise(resolve=>listener({type},sender,resolve));
+    for(const type of ['TEST_HOME_APPLY','TEST_SUBSCRIPTIONS_APPLY','TEST_EXPLORE_APPLY','TEST_MASTHEAD_APPLY','TEST_WATCH_PANELS_APPLY'])await send(type);
+    const applied=await send('TEST_AUTOPLAY_APPLY'),off=document.querySelector('.ytp-autonav-toggle-button').getAttribute('aria-checked');
+    const released=await send('TEST_AUTOPLAY_RELEASE'),on=document.querySelector('.ytp-autonav-toggle-button').getAttribute('aria-checked');
+    const preserved=['#home','#subs','#explore','ytd-masthead','ytd-comments','#related'].map(selector=>document.querySelector(selector).style.display);
+    for(const type of ['TEST_HOME_RELEASE','TEST_SUBSCRIPTIONS_RELEASE','TEST_EXPLORE_RELEASE','TEST_MASTHEAD_RELEASE','TEST_WATCH_PANELS_RELEASE'])await send(type);
+    return{applied,released,off,on,preserved,remaining:(await send('TEST_WATCH_PANELS_STATE')).ledger.remaining_targets};
+  });assert.equal(result.applied.coreConnected,false);assert.equal(result.off,'false');assert.equal(result.on,'true');assert.equal(result.released.released.restored,true);assert.deepEqual(result.preserved,Array(6).fill('none'));assert.equal(result.remaining,0);
+});

@@ -37,26 +37,29 @@ export class ClaimLedger {
 
   #apply(element, property, entry) {
     if (element.ownerDocument !== this.#document) return false;
+    if (entry.pending?.kind === 'RESTORE') return false;
     const current = this.#read(element, property);
     // A page edit is the new baseline; never adopt another claim's owned value.
-    const changed = entry.written && !this.#equal(current, entry.written);
+    const changed = !entry.pending && entry.written && !this.#equal(current, entry.written);
     if (changed) entry.original = current;
     // Preserve the original declaration (including variables) for cleanup, but
     // compose from its resolved value so `var(--x) -> none` stays valid CSS.
     // Reuse this baseline while owned to avoid accumulating our own grayscale.
-    if (property === 'filter' && (!entry.written || changed)) {
+    if (property === 'filter' && ((!entry.written && !entry.pending) || changed)) {
       entry.filterBase = this.#document.defaultView.getComputedStyle(element).filter;
       if (typeof entry.filterBase !== 'string' || !entry.filterBase) return false;
     }
-    const next = this.#restricted(property, entry.original, entry.filterBase);
+    const next = entry.pending?.target ?? this.#restricted(property, entry.original, entry.filterBase);
     // Record intended ownership before the setter: a setter can mutate then throw.
     entry.written = next;
+    entry.pending = {kind:'APPLY',target:next};
     if (!this.#equal(current, next)) this.#write(element, property, next);
     const written = this.#equal(this.#read(element, property), next);
-    if (property === 'filter') {
-      return written && /(?:^|\s)grayscale\(1\)$/.test(this.#document.defaultView.getComputedStyle(element).filter);
-    }
-    return written;
+    const verified = property === 'filter'
+      ? written && /(?:^|\s)grayscale\(1\)$/.test(this.#document.defaultView.getComputedStyle(element).filter)
+      : written;
+    if (verified) entry.pending = null;
+    return verified;
   }
 
   #acquire(claim, element, properties) {
@@ -64,6 +67,8 @@ export class ClaimLedger {
     if (!this.#open) throw Error('DOCUMENT_EFFECTS_CLOSED');
     if (element?.ownerDocument !== this.#document) throw Error('FOREIGN_DOCUMENT');
     let entries = this.#entries.get(element);
+    // Do not add another owner or reapply over an unresolved restoration.
+    if ([...(entries?.values() ?? [])].some(entry => entry.pending?.kind === 'RESTORE')) return false;
     if (!entries) { entries = new Map(); this.#entries.set(element, entries); }
     try {
       // Plan ALL properties before effect. This is an in-memory cleanup ledger,
@@ -104,7 +109,12 @@ export class ClaimLedger {
           } else {
             const current = this.#read(element, property);
             // A detached node is not GONE: attempt restoration and retain failures.
-            const expected = entry.written && this.#equal(current, entry.written) ? entry.original : current;
+            // Once a write has begun, an unexpected value may be its partial
+            // result, not a page edit. Keep the immutable goal across retries.
+            // Without separate provenance, pending writes never redefine baseline.
+            const expected = entry.pending?.kind === 'RESTORE' ? entry.pending.target
+              : entry.pending?.kind === 'APPLY' || entry.written && this.#equal(current, entry.written) ? entry.original : current;
+            entry.pending = {kind:'RESTORE',target:expected};
             if (!this.#equal(current, expected)) this.#write(element, property, expected);
             if (!this.#equal(this.#read(element, property), expected)) { errors++; continue; }
             entries.delete(property);
