@@ -1,5 +1,15 @@
 # AMVP-CORE-04 — Core DNR 소유권·복원
 
+## 2026-10-31 Member A1 실제 DNR writer 연결 단위
+
+- PR53 f29532c는 다훈·지민 승인 후9e37b37로 통합됐음을 확인했다. 최신 통합 `9e37b37fefb2238f259c6a1bba400eee6955d085`에서 별도 `feature/additional-mvp-legacy-dnr-fence`를 시작했다. 기존 focurve-core 미커밋 변경·PR46/48·승인된 증거 조회 소스를 보존한다.
+- 호출 지점을 조사해 Member A1/Guest A1/구 GuestSession/SiteController로 나뉨을 확인했다. 이번 첫 PR은 현재 제품 Member A1 네 쓰기 경로만 연결하며, 전부 한 번에 수정하거나 전체 guard를 true로 바꾸지 않는다.
+- `additional-dnr-legacy-writer.js`와 생성 Worker bundle, service-worker/Member bootstrap 주입. Member Core의 초기 적용·UNKNOWN 복구·suspend·finish가 동일 DNR Web Lock에서 기존 runtime claim을 보호한다. 현재 실행 DB의 동일 snapshot에서 마지막 owner/END/fence/기한을 확인하고 Native dispatch한다. Chrome 응답이 DB transaction을 붙잡지 않는다.
+- 기존 RootAuthority DB의 metadata 원장을 재사용하며 새 DB version/migration·공용 Wire/Report·Server/Content·관측 모듈은 변경하지 않는다. 다른 DB coordinator나 Guest/이전 writer의 보호/제품 활성화를 자동 승인하지 않는다.
+- 신규22건에서 원장 보호/잠금 대기/실제 Member 네 경로/배포 flags/Native 대기 중 END intent/입력 동결/RootAuthority metadata 보존을 검증했다. 초기 6건은 DNR 없는 fixture 선택 오류였으며 DNR 생성 fixture로 바로잡았다. 자세한 API·잠금 순서·범위: [Member writer 연결](../evidence/AMVP-CORE-04-member-dnr-writer.md).
+- 최종 로컬 검증: 신규22/22·DNR71/71·전체 Extension857/857(fail0/skip0), 계약6/6·syntax/whitespace PASS. 실제 Chromium151 IndexedDB/Web Lock 기반 Chrome 응답 대기 중 END commit 시험1/1 PASS. DNR/실행 신원은 모의다. 생성 Member/guard bundle 일치 검증을 포함한다.
+- 상태: 이번 Member actor 연결 단위 구현·로컬 검증 완료, PR 제출/최신 원격 CI·다훈·지민 리뷰 후 다음 actor로 진행한다. 실제 MV3 DNR·전체 legacy writer 결속·issued binding/RuntimeReport 생산·전송은 미완료다. 원래 미커밋 변경과 다른 PR은 보존한다.
+
 ## 2026-10-31 SITE_TIME 증거 결속·조회 단위
 
 - 담당 윤종민, `feature/additional-mvp-site-time-evidence`, 시작 기준 `467fe18b176ccd571813d04229e8ee69f19a00d2`. 원래 focurve-core의 미커밋 변경과 PR46/48을 보존하고 별도 작업 공간을 사용했다. 현재 열린 Core PR/통합 코드를 조회하여 정책/version/operation→DNR claim 원본 조회가 없음을 확인했다.
