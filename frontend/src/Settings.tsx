@@ -18,6 +18,7 @@ export default function Settings({ user, social, refreshUser, sites, sessions, l
   useEffect(()=>{const form=reauthForm.current;return()=>form?.reset();},[]);
   const [installations, setInstallations] = useState<Installation[]>([]);
   const [active, setActive] = useState<Session | null>(null), [loaded, setLoaded] = useState(false);
+  const [connectionsCurrent, setConnectionsCurrent] = useState(false);
   const [notice, setNotice] = useState(""), [connectionNotice, setConnectionNotice] = useState("");
   const [disconnecting, setDisconnecting] = useState<string | null>(null);
   const [ticket, setTicket] = useState(() => new URLSearchParams(window.location.hash.split("?")[1] ?? "").get("ticket"));
@@ -25,18 +26,22 @@ export default function Settings({ user, social, refreshUser, sites, sessions, l
     const [links, current] = await Promise.all([
       request<Installation[]>("/extension-installations"), request<Session | null>("/sessions/current"),
     ]);
-    setInstallations(links); setActive(current); setLoaded(true);
+    setInstallations(links); setActive(current); setLoaded(true); setConnectionsCurrent(true);
   }
   useEffect(() => { void connection.run(load); const timer = setInterval(() => { void connection.run(load); }, 5000); return () => clearInterval(timer); }, []);
+  useEffect(() => { if (connection.error) setConnectionsCurrent(false); }, [connection.error]);
   function clearTicket() {
     setTicket(null); window.history.replaceState(null, "", window.location.pathname + window.location.search);
     window.dispatchEvent(new HashChangeEvent("hashchange"));
   }
   const canLogout = loaded && !connection.error && !active && installations.length === 0;
+  const additionalReady = loaded && connectionsCurrent && !connection.error;
   return <section className="page settings-page">
     <header className="settings-heading"><h3>설정</h3><p>계정과 확장 프로그램 연결 상태를 확인하세요.</p></header>
     <ThemeSettings />
-    <AdditionalSettings installations={installations} />
+    {!additionalReady && <section className="settings-card" aria-label="추가 집중 설정 연결 확인"><h4>추가 집중 설정</h4><p role={connection.error ? "alert" : "status"}>{connection.error ? "연결된 설치를 확인하지 못했습니다. 아래 연결 상태 새로고침으로 다시 확인해 주세요." : "연결된 설치를 확인하고 있습니다."}</p></section>}
+    {/* Keep the editor/request identity mounted after the first successful discovery. */}
+    {loaded && <div hidden={!additionalReady} inert={!additionalReady}><AdditionalSettings installations={installations} /></div>}
     <section className="settings-card" aria-labelledby="account-title">
       <h4 id="account-title">계정</h4>
       <div className="settings-row"><div><strong>{user.display_name}</strong><p>{user.email ?? "제공된 이메일 없음"}</p></div><span className="settings-badge">{user.providers.includes("EMAIL") ? "이메일 계정" : "소셜 계정"}</span></div>

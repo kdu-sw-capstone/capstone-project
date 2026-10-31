@@ -1,4 +1,4 @@
-import {render,screen,fireEvent,cleanup,waitFor} from "@testing-library/react";
+import {act,render,screen,fireEvent,cleanup,waitFor} from "@testing-library/react";
 import {afterEach,it,expect,vi} from "vitest";
 import Settings from "./Settings";
 import {clearCsrf} from "./api";
@@ -44,4 +44,26 @@ it("재인증 성공 후 비밀번호 입력을 지우며 로그아웃과 별도
  fireEvent.change(screen.getByLabelText("현재 계정 비밀번호"),{target:{value:"synthetic-test-only"}});
  fireEvent.click(screen.getByRole("button",{name:"비밀번호로 재인증"}));await screen.findByText(/현재 계정을 재인증했습니다/);
  expect(screen.getByLabelText("현재 계정 비밀번호")).toHaveValue("");
+});
+
+const executor="00000000-0000-4000-8000-000000000001",links=[{executor_id:executor,client_version:"test",last_seen_at:null,execution_status:"IDLE"}];
+const show=()=>render(<Settings user={user} social={null} refreshUser={async()=>{}} sites={()=>{}} sessions={()=>{}} loggedOut={()=>{}}/>);
+it("initial pending connection discovery is not an empty linked-installation result",async()=>{
+ clearCsrf();let finish!:(r:Response)=>void;vi.stubGlobal("fetch",vi.fn((url:string)=>url.endsWith("/extension-installations")?new Promise<Response>(resolve=>{finish=resolve;}):Promise.resolve(json(null))));
+ show();expect(screen.queryByText(/연결된 회원 설치가 없습니다/)).not.toBeInTheDocument();expect(screen.getByText("연결된 설치를 확인하고 있습니다.")).toBeVisible();await act(async()=>finish(json([])));expect(await screen.findByText(/연결된 회원 설치가 없습니다/)).toBeVisible();
+});
+it("a failed initial connection query is not rendered as no linked installations",async()=>{
+ clearCsrf();vi.stubGlobal("fetch",vi.fn((url:string)=>url.endsWith("/extension-installations")?Promise.resolve(json({error:{code:"CAPABILITY_NOT_VERIFIED",retryable:false}},503)):Promise.resolve(json(null))));show();await screen.findAllByRole("alert");expect(screen.queryByText(/연결된 회원 설치가 없습니다/)).not.toBeInTheDocument();expect(screen.queryByLabelText("설치 선택")).not.toBeInTheDocument();
+});
+it("failed refresh hides stale additional settings but preserves the unsaved editor until a successful recheck",async()=>{
+ clearCsrf();let mode="ready",finish!:(r:Response)=>void;
+ const fetch=vi.fn((url:string)=>{
+  if(url.endsWith("/extension-installations")){if(mode==="offline")return Promise.resolve(json({error:{code:"CAPABILITY_NOT_VERIFIED",retryable:false}},503));if(mode==="pending")return new Promise<Response>(resolve=>{finish=resolve;});return Promise.resolve(json(links));}
+  if(url.endsWith("/sessions/current"))return Promise.resolve(json(null));
+  if(url.includes("/amvp/web/site-time-deletions"))return Promise.resolve(json({read_model:"AMVP_SITE_TIME_DELETIONS_1",items:[],has_more:false,next_cursor:null}));
+  if(url.includes("/amvp/configs?"))return Promise.resolve(json({items:[],has_more:false,next_cursor:null}));
+  return Promise.reject(new Error("unexpected route"));
+ });vi.stubGlobal("fetch",fetch);show();await screen.findByText("회원 연결 1개");fireEvent.change(screen.getByLabelText("설치 선택"),{target:{value:executor}});fireEvent.click(await screen.findByText("반복 집중·휴식 추가"));const input=screen.getByLabelText("집중 시간(분)");fireEvent.change(input,{target:{value:"33"}});
+ mode="offline";fireEvent.click(screen.getByText("연결 상태 새로고침"));await screen.findAllByRole("alert");expect(input).not.toBeVisible();expect(input).toHaveValue(33);
+ mode="pending";fireEvent.click(screen.getByText("연결 상태 새로고침"));expect(input).not.toBeVisible();await act(async()=>finish(json(links)));await waitFor(()=>expect(input).toBeVisible());expect(input).toHaveValue(33);expect(fetch.mock.calls.every(c=>!c[0].includes("/focus/"))).toBe(true);
 });
