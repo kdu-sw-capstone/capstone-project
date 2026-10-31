@@ -27,8 +27,9 @@ export class WatchPanelSession {
   #observer;
   #onObservation;
   #onInvalidated;
+  #canObserve;
 
-  constructor(document, { ledger, owner_binding_id, binding_id, features, onObservation = () => {}, onInvalidated = () => {} }) {
+  constructor(document, { ledger, owner_binding_id, binding_id, features, onObservation = () => {}, onInvalidated = () => {}, canObserve = () => true }) {
     if (!(ledger instanceof ClaimLedger)) throw Error('SHARED_LEDGER_REQUIRED');
     if (!UUID.test(owner_binding_id ?? '') || !UUID.test(binding_id ?? '')) throw Error('INVALID_CLAIM_SCOPE');
     if (!Array.isArray(features) || features.length === 0) throw Error('EMPTY_WATCH_FEATURES');
@@ -46,6 +47,7 @@ export class WatchPanelSession {
     for (const feature of this.#features) this.#targets.set(feature.feature_id, new Map());
     this.#active = new Set(this.#features.filter(feature => feature.enabled).map(feature => feature.feature_id));
     this.#onObservation = onObservation; this.#onInvalidated = onInvalidated;
+    this.#canObserve = canObserve;
     this.refresh = () => {
       if (!this.#open || this.#scheduled) return;
       this.#scheduled = true;
@@ -91,6 +93,8 @@ export class WatchPanelSession {
 
   scan() {
     if (!this.#open) return [];
+    let current=false;try{current=this.#canObserve()===true;}catch{}
+    if(!current){this.#invalidate('AUTHORITY_REVOKED');return [];}
     if (this.#document.location.href !== this.#url) { this.#invalidate('ROUTE_CHANGED'); return []; }
     this.#observer.disconnect();
     const results = [];

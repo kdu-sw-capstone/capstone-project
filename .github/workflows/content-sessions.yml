@@ -1,0 +1,32 @@
+name: Content session browser regression
+on:
+  pull_request:
+    paths:
+      - 'extension/content/**'
+      - 'extension/content-tests/**'
+      - 'extension/content-tools/**'
+      - 'extension/ui/**'
+      - '.github/workflows/content-sessions.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  synthetic-browser:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    env:
+      PLAYWRIGHT_MODULE: ${{ runner.temp }}/content-browser/node_modules/playwright
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38
+        with:
+          node-version: '24.19.0'
+      - run: npm install --prefix "$RUNNER_TEMP/content-browser" --ignore-scripts --no-audit --no-fund --no-package-lock playwright@1.62.1
+      - run: node "$RUNNER_TEMP/content-browser/node_modules/playwright/cli.js" install --with-deps chromium
+      - run: node --test --test-concurrency=2 extension/content-tests/*.test.mjs
+      - run: node --test contracts/additional-mvp/rc1/tests/legacy-boundary.test.mjs
+      - run: node extension/content-tools/build-chrome-harness.mjs
+      - name: Syntax and whitespace
+        run: |
+          for file in extension/content/*.mjs extension/content-tests/*.mjs; do node --check "$file"; done
+          git diff --check

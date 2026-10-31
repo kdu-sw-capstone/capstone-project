@@ -10,9 +10,9 @@ const checked = element => element.getAttribute('aria-checked');
 export class AutoplaySession {
   #document; #registry; #scope; #targets = new Set(); #url;
   #open = false; #started = false; #observer; #scheduled = false;
-  #observe; #invalidateCallback;
+  #observe; #invalidateCallback; #canObserve;
 
-  constructor(document, {ledger, owner_binding_id, binding_id, onObservation = () => {}, onInvalidated = () => {}}) {
+  constructor(document, {ledger, owner_binding_id, binding_id, onObservation = () => {}, onInvalidated = () => {}, canObserve = () => true}) {
     if (!(ledger instanceof ClaimLedger)) throw Error('SHARED_LEDGER_REQUIRED');
     if (![owner_binding_id,binding_id].every(value => typeof value === 'string' && UUID.test(value))) throw Error('INVALID_CLAIM_SCOPE');
     this.#document = document;
@@ -21,6 +21,7 @@ export class AutoplaySession {
     if (this.#registry.document !== document) throw Error('FOREIGN_DOCUMENT');
     this.#scope = JSON.stringify([owner_binding_id,binding_id]);
     this.#observe = onObservation; this.#invalidateCallback = onInvalidated;
+    this.#canObserve = canObserve;
     this.refresh = () => {
       if (!this.#open || this.#scheduled) return;
       this.#scheduled = true;
@@ -90,6 +91,8 @@ export class AutoplaySession {
 
   scan() {
     if(!this.#open)return null;
+    let current=false;try{current=this.#canObserve()===true;}catch{}
+    if(!current){this.#invalidate('AUTHORITY_REVOKED');return null;}
     if(this.#document.location.href!==this.#url){this.#invalidate('ROUTE_CHANGED');return null;}
     this.#observer.disconnect();let eligible=0,restricted=0,errors=0;
     try{

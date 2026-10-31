@@ -62,7 +62,10 @@ export class InstagramStoriesSession {
   #surface;#document;#media=new Set();#open=false;#started=false;#url;#last=null;#observe;#invalidated;
   constructor(document,options){
     this.#document=document;this.#observe=options.onObservation??(()=>{});this.#invalidated=options.onInvalidated??(()=>{});
+    const canObserve=options.canObserve??(()=>true);
     this.onPlay=event=>{if(this.#open&&document.location.href===this.#url&&this.#media.has(event.target)&&event.target.ownerDocument===document&&direct(document)){
+      let current=false;try{current=canObserve()===true;}catch{}
+      if(!current){this.#surface.scan();return;}
       try{event.target.pause();if(!event.target.paused)this.#failure();}catch{this.#failure();}
     }};
     this.#surface=new NavigationSurfaceSession(document,{...options,

@@ -1,5 +1,35 @@
 # AMVP-CONTENT-06 · 추가 Content 연결
 
+## 2026-10-31 Content 대체 개발 2단계 · Session adapter 준비
+
+- 대체 개발 김다훈, 기존 담당 채지민 유지. 브랜치 `feature/content-session-adapter`, 시작 `02a653fb60e671dcf997951b220708ea146b4a7a`(#57). #54→#56→#57 위에 별도 Worktree/PR로 쌓으며 해당 원본 브랜치·미커밋 변경을 수정/병합하지 않는다. 앱 create_worktree가 workspace 하위 저장소를 sourceRoot로 허용하지 않아 기존 Git 저장소의 `git worktree add`를 사용했다. #55의 DNR 통합을 이 Content 브랜치에 다시 merge하지 않는다.
+- 기준 재사용: RC2 `05_Content_Event_UI.md` 공통 ON/OFF, AMVP_CONTENT_2 Projection.features·issued scope/generation/profile/scan·prior footprint 검증, feature-registry의 해당 AC. 이 adapter는 기존 Session의 `{feature_id, enabled, required:true}` 입력 형태만 소비하는 내부 구현이며 새 Wire/Server 계약이 아니다.
+- 실제 확인: InstagramStoriesSession은 HOME/STORIES의 대상 판별·중립 경로 관찰·동기 SPA 재승인·pagehide 종료·원래 CSS/다중 owner 복원을 이미 구현했다. #57의 alt/draggable 수정을 다시 구현하지 않았다. 미검증은 실제 Instagram DOM/소리·BFCache 재결속·Core 권한/영속 증거 연결이다. 기존 제품 `member-a1/content.mjs`의 A1Content/control scope/commit 경로는 Shorts 전용이며 추가16옵션 receiver로 일반화돼 있지 않다. 기존 controller/test bootstrap도 제품 권한 발급자가 아니다.
+- 구현 `extension/content/session-adapter.mjs`: 기존 ClaimLedger, Home/Subscriptions/Explore/Masthead/EndCards/Grayscale/Autoplay/WatchPanel/InstagramStoriesSession 재사용. YT-01,03~10 및 IG-01만 지원한다. YT-02는 기존 Shorts 경로를 보존하고 IG-02~06·KEYWORD/BLUR/ADULT_DOMAIN을 구현했다고 광고하지 않는다. 미지원·중복·잘못된 옵션과 타 host는 DOM 변경 전에 거절한다.
+- features는 생성 시 복사·동결한다. 같은 document의 adapter들은 단일 ledger를 사용하고 owner_binding_id+binding_id의 live scope를 중복 생성하지 못한다. 첫 adapter 생성 시 기존 canonical ledger를 주입할 수 있지만, 같은 document에서 나중에 다른 ledger로 갈아끼울 수 없다. Session 밖의 기존 기능과 함께 쓸 때 caller도 그 canonical ledger를 일관되게 재사용해야 한다.
+- 기존 NavigationSurfaceSession/WatchPanelSession/AutoplaySession에 선택적 내부 `canObserve` 동기 hook을 추가했다. 기존 호출자는 기본 동작을 유지하며 adapter는 필수 `isCurrent` 검사를 매 scan 전에 호출한다. Instagram play guard도 실제 pause 전 이 검사를 사용한다. false/throw/Promise는 새 효과를 허용하지 않는다. hook은 native 권한 검증의 구현이 아니라 이미 검증된 Core 문맥을 확인하기 위한 접점이다.
+- 한 Session의 invalidation은 같은 adapter의 모든 새 효과를 닫고, 기존 claim은 cleanup을 위해 남긴다. pagehide 후 pageshow/콜백 true만으로 자동 재개하지 않는다. 새 document는 새 adapter와 새 검증 문맥이 필요하다. 시작 중 후속 Session 실패 시 이미 시작한 기능을 복원하며 startup_error와 미해결 pending_features를 반환한다. 복원 실패는 기존 원장의 재시도 목표를 유지하고 동일 scope 교체를 차단한다.
+- `releaseFeature(id)`는 자기 기능만 해제하고 다른 기능/owner를 보존한다. `release()`는 모든 자기 Session의 cleanup을 시도한다. 반환은 항상 local_only/native_verified:false이며 성공 Wire/Receipt/Server 기록을 만들지 않는다. inspect의 scope는 기존 두 claim ID만 담고, feature별 observation/cleanup/active, closed/invalidation_reason/startup_error/callback_error_count를 복사해 반환한다. closed=true의 과거 OBSERVED는 현재 적용 성공 증거가 아니다. 외부 callback 실패는 별도 count로 남기며 복원을 방해하지 않는다.
+- cleanup_pending/pending_features는 아직 release가 검증되지 않은 Session의 **보수적인 의무 집합**이다. 실제 remaining claim 수·영속 cleanup 원장·전체 RELEASED를 대체하지 않는다. no-target인 live Session도 release 전에는 여기에 포함된다. release 결과의 remaining_targets=null은 예외로 관찰 부족이며 0으로 바꾸지 않는다. prior footprint/영속 결과 검증은 Core가 별도 수행해야 한다.
+
+### Core 연결의 정확한 입력·출력·책임 경계
+
+| 접점 | 내부 adapter 동작 | Core/제품 caller의 미완료 책임 |
+|---|---|---|
+| constructor(document, options) | owner_binding_id/binding_id와 features를 복사하고 지원 기능 검사 | AMVP_CONTENT_2의 실제 Projection.features 원본·mirror·semantic hash/profile·발급 operation 검증, 두 claim ID의 정당한 매핑 |
+| isCurrent(): boolean | start/매 scan/IG play 전 동기 true만 수락 | 검증된 owner/session/full document scope·generation·권한 회수·issued operation·effect 전 영속 의무와 연결된 현재 상태를 closure로 제공. 여기서 비동기 인증/DB를 기다리지 않음 |
+| authorizeNavigation({previous_url,next_url}) | 기존 Session이 요구하는 승인에 더해 전후 isCurrent 검사 | Core가 native URL/document/generation을 재검증한 뒤만 동기 true 제공. 미완료면 false/미제공. 이벤트/URL 자체로 승인하지 않음 |
+| onObservation(local snapshot) | 기능별 국소 결과와 binding ID 전달 | 실제 profile/scan/issued operation/요청/epoch/hash 결속, 영속화 및 조회·전송. OBSERVED를 APPLIED로 직접 변환 금지 |
+| invalidate(reason) / releaseFeature(id) / release() | 기존 document 신규 효과 종료·원래 자기 cleanup 결과/미해결 기능 반환 | 신원/세대 회수 시 즉시 invalidate 호출, 정당한 cleanup lease와 prior footprint 검증·remaining claim/observer/resource/media 증거 저장. callback false 감지는 다음 scan 또는 IG play 때이므로 조용한 문서는 caller가 명시적으로 invalidate해야 함 |
+| 새 문서/SPA/BFCache | 이전 adapter 자동 재개 금지, 잔여 의무 보존 | 이전 document 의무 정리 또는 정식 분리 보존, 새 native 검증·새 binding/issued operation·frozen 전달. 이 PR에서 sender/credential receiver나 권한 발급/영속 저장을 새로 구현하지 않음 |
+
+- 신규 Chrome 합성 DOM 시험17/17 PASS(Windows Node24.19.0 / 설치 Chrome156.0.8078.76 / Playwright1.62.1). frozen copy·전체9개 YT dispatch/disabled·독립 해제/다중 owner·stale adapter·caller session/generation/document 변경·SPA 승인/거절·pagehide/pageshow·신규 문서·부분 복원/재시도·foreign document·시작 실패 rollback/실패 의무·callback 오류·다른 ledger 거절 포함. 권한/세대 provider와 media.pause/paused는 모의이며 실제 native generation/오디오 수용이 아니다.
+- 기존 Content 포함 직전 전체199/199 PASS(기존183+신규16, fail/skip0). 이후 adapter 출력 metadata/동일 document ledger 검사와 시험1건을 보강해 최종 신규17/17 PASS; 기존183 Session 경로는 그 후 변경하지 않아 검증 재사용. 최종 전체200건은 새 CI에서 확인하며 로컬200 재실행으로 주장하지 않는다. 계약 legacy-boundary6/6, 전체 Content/test JS 문법, build-chrome-harness 및 diff check PASS. harness에 모듈을 복사하지만 popup/제품 Manifest/receiver에 연결하지 않는다. source/build adapter SHA256 일치.
+- 최초 신규12건 실패는 신규 adapter UUID 정규식에서 한 그룹을 누락한 코드 오류로 바로잡았다. 다음11/12의 나머지1건은 지원되는 /results+YT05를 실패 조건으로 쓴 fixture 오류이며 실제 미지원 /results+YT10으로 변경하고 실패 rollback 반례를 보강했다. 로그를 지우지 않는다. 증거는 채팅 artifact 루트의 adapter-focused.log, adapter-focused-v2.log, adapter-focused-v3.log, adapter-focused-final.log, adapter-content-regression.log, adapter-contract.log.
+- 기존 CI에는 Content 브라우저 시험이 없어 `.github/workflows/content-sessions.yml`을 추가했다. 고정 Node/Playwright·독립 Ubuntu Chromium에서 Content 전체/계약/빌드/구문을 검사한다. 최초 Push/PR 전 원격 CI는 NOT_RUN이며 결과는 PR에서 별도 확인한다. 기존 계약·package/lockfile·Core/Server·제품 activation은 변경하지 않는다.
+- 다음 최소 독립 개발: 제품 receiver를 임의 확장하기 전에 Core의 실제 issued/frozen/native·generation callback 제공과 effect 전 영속 예약/cleanup lease 연결을 담당 윤종민과 확정한다. Content는 이 API를 실제 명령에 매핑하고 결과를 기존 검증기에 제출할 준비가 됐지만, 현재 이 독립 adapter가 native/Core/Server에 연결됐다고 판단하지 않는다. 채지민 복귀 시 기존 Session·모의 경계 시험·미해결 실제 Instagram/YouTube/오디오·BFCache/END 복원 의무를 이 절과 PR에서 인계한다.
+- 상태: 독립 adapter 구현/자동 모의 검증 PASS, 제품 Core 연결 BLOCKED(실제 입력 제공/영속 결속 필요), 실제 Chrome/MV3/Instagram·YouTube 제품 수용/강제 종료/정상 END·복원·재기동 NOT_RUN. `MVP_FINAL_COMPLETE=false`.
+
 ## 2026-10-31 IG-01 · PR #56 P2 속성 관찰 수정
 
 - 대체 개발 김다훈, 기존 담당 채지민 유지. 브랜치 `fix/ig-story-attribute-observer-p2`, 시작 기준 #56 `08730c86d91d0b1d3790bc5fafc7a7ca9195ece8`. 로컬 주 저장소 Worktree/브랜치 및 사용자 홈의 navigation-surface 소스 검색에서 인계된 미커밋 수정본은 찾지 못했다. 기존 독립 리뷰 fixture/실패 로그는 회수했고, 사용자 허용 범위대로 정확한 #56 HEAD에서 별도 Worktree로 최소 수정 복구. 앱 Worktree 생성기는 sourceRoot가 채팅 workspace 밖이라는 이유로 거절하여 Git worktree를 사용했다. 기존 작업자의 소스/index/실패 환경은 보존했다.

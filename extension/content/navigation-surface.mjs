@@ -10,8 +10,8 @@ const LIVE=new WeakMap();
 export class NavigationSurfaceSession {
   #document;#ledger;#scope;#targets=new Map();#next=0;#url;
   #open=false;#started=false;#scheduled=false;#observer;#observe;#invalidateCallback;
-  #profile;#authorizeNavigation;
-  constructor(document,{ledger,owner_binding_id,binding_id,onObservation=()=>{},onInvalidated=()=>{},authorizeNavigation=null},profile){
+  #profile;#authorizeNavigation;#canObserve;
+  constructor(document,{ledger,owner_binding_id,binding_id,onObservation=()=>{},onInvalidated=()=>{},authorizeNavigation=null,canObserve=()=>true},profile){
     // Profiles are module-owned selectors, not page/Wire policy or capability.
     if(!profile||!['YT-01','YT-05','YT-06','YT-07','YT-08','YT-09','IG-01'].includes(profile.feature_id)||typeof profile.collect!=='function'||typeof profile.routeAllowed!=='function')throw Error('INVALID_NAVIGATION_PROFILE');
     this.#profile=Object.freeze({...profile});
@@ -20,6 +20,7 @@ export class NavigationSurfaceSession {
     this.#document=document;this.#ledger=ledger;this.#scope=JSON.stringify([owner_binding_id,binding_id,profile.feature_id]);
     this.#observe=onObservation;this.#invalidateCallback=onInvalidated;
     this.#authorizeNavigation=authorizeNavigation;
+    this.#canObserve=canObserve;
     this.refresh=()=>{
       if(!this.#open||this.#scheduled)return;this.#scheduled=true;
       queueMicrotask(()=>{this.#scheduled=false;if(this.#open)this.scan();});
@@ -51,6 +52,8 @@ export class NavigationSurfaceSession {
   }
   scan(){
     if(!this.#open)return null;
+    let current=false;try{current=this.#canObserve()===true;}catch{}
+    if(!current){this.#invalidate('AUTHORITY_REVOKED');return null;}
     if(this.#document.location.href!==this.#url){
       if(!['YT-06','YT-07','YT-08','YT-09','IG-01'].includes(this.#profile.feature_id)){this.#invalidate('ROUTE_CHANGED');return null;}
       const next=new URL(this.#document.location.href);let authorized=false,originAllowed=false,routeAllowed=false,reauthorization='NOT_CALLED';
