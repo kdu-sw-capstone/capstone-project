@@ -4,8 +4,28 @@ const ready = import(chrome.runtime.getURL('content/controller.mjs')).then(({Con
   const controller = new ContentController(document, value => { result = value; });
   return {controller, read: () => result};
 });
+const homeReady=Promise.all([import(chrome.runtime.getURL('content/claim-ledger.mjs')),import(chrome.runtime.getURL('content/home.mjs'))])
+  .then(([{ClaimLedger},{HomeSession}])=>{
+    const ledger=new ClaimLedger(document);let session=null,result=null,invalidated=null;
+    return {handle(type){
+      let released;
+      if(type==='TEST_HOME_APPLY'){
+        if(invalidated)throw Error('OLD_SCOPE_CLEANUP_REQUIRED: 홈 제한 해제 후 다시 적용하세요.');
+        if(!session){
+          session=new HomeSession(document,{ledger,owner_binding_id:crypto.randomUUID(),binding_id:crypto.randomUUID(),
+            onObservation:value=>{result=value;},onInvalidated:value=>{invalidated=value;}});
+          try{session.start();}catch(error){session=null;throw error;}
+        }else session.scan();
+      }
+      if(type==='TEST_HOME_RELEASE'&&session){released=session.release();if(released.restored){session=null;result=null;invalidated=null;}}
+      return {testOnly:true,coreConnected:false,result,invalidated,released};
+    }};
+  });
 chrome.runtime.onMessage.addListener((message, sender, reply) => {
   if (sender.id !== chrome.runtime.id || sender.url !== chrome.runtime.getURL('popup.html')) return;
+  if(['TEST_HOME_APPLY','TEST_HOME_RELEASE','TEST_HOME_STATE'].includes(message?.type)){
+    homeReady.then(adapter=>reply(adapter.handle(message.type))).catch(error=>reply({testOnly:true,error:error.message}));return true;
+  }
   if (!['TEST_SHORTS_APPLY','TEST_SHORTS_RELEASE','TEST_SHORTS_STATE'].includes(message?.type)) return;
   ready.then(({controller, read}) => {
     let released;

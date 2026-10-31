@@ -40,6 +40,18 @@
 
 ## 다음 작은 연결
 
+### 2026-10-30 · YT-01 홈 숨기기 (사용자 시험 완료 / 별도 PR 제출)
+
+- 담당 채지민. clean a6468b67d97ca32a1ab1ad1af66344f0a45e148e에서 별도 codex/content-home 브랜치로 시작. PR33 최신 부분 실패 복원 목표/pending 수정을 재사용한다. PR36/39 브랜치·코드와 기존 Shorts 제품 코드는 보존하고 홈 묶음7파일만 별도 제출한다. 선행 PR33과의 의존성 및 해당 SHA 이후 비교를 PR에 명시한다.
+- 기준: feature-registry.json YT-01/AC-YT-01-01~03, 03_동작규칙.md 내부 제한, RC2 03/05의 owner·scope·실제 증거·복원. 일반 YouTube root HOME에서 홈 feed/진입 링크를 제한하고 검색·직접 watch 보존. 검색/watch에서도 홈 진입 링크만 숨길 수 있으나 현재 아닌 HOME DOM은 제어하지 않는다. 이번 지원 route는 /, /results, /watch top-frame이다.
+- home.mjs는 실제 프로젝트 ClaimLedger를 사용하는 내부 모듈이다. HOME browse와 검증한 https YouTube root 링크를 가진 guide/mini-guide entry 및 masthead logo anchor만 제한한다. 검색 bar·검색 결과·구독·watch/video 전체는 숨기지 않는다. 페이지 문자열은 전송하지 않는다.
+- 옵션별 target 집합·내부 claim 유지, selector 이탈 시 자기 claim 회수, 다중 owner/동일 scope fencing·퇴역 객체 차단, 부분 복원 실패·foreign-document 의무 보존, 동적 재등장/페이지 style 변경 관찰. URL 변경/pagehide 시 신규 적용을 닫고 기존 cleanup은 유지한다. 실제 Core 재결속/영속 원장이나 제품 Wire 수신기가 아니며 OBSERVED/NO_TARGET는 국소 관측이다.
+- 기존 Chrome 시험 도구에 home 모듈/의존 UI 복사와 TEST_HOME_APPLY/RELEASE/STATE 버튼을 추가. 시험 manifest 이름/WAR만 보완, 제품 권한·manifest·Wire/API/Schema 변경 없음. 현재 빌드는 홈+기존 Shorts 시험 버튼이며 다른 후속 branch의 댓글/자동재생 버튼을 삭제한 제품 변경이 아니다.
+- 새 home-browser.test.mjs 9/9 PASS, 실패/skip0: 홈 feed/entry/logo 제한·검색 보존, /results·/watch 보존, 다중 owner/동일 scope·퇴역 객체, 지연 target/자기 관찰 loop, href/subtype 이탈, 페이지 style, 부분 복원 실패/정확한 목표 재시도, adoption 의무 보존, SPA/pagehide 모사·미지원 host, TEST sender. Node24·설치 Chrome headless·Playwright의 합성 DOM 시험이며 실제 YouTube 수용이 아니다.
+- 관련 회귀: 기존33+최신 원장26+홈9 = 68/68 PASS, 실패/skip0. `node --test extension/content-tests/changes.test.mjs extension/content-tests/detection.test.mjs extension/content-tests/browser.test.mjs extension/content-tests/claim-ledger.test.mjs extension/content-tests/claim-ledger-browser.test.mjs extension/content-tests/home-browser.test.mjs` 실행. build-chrome-harness.mjs 및 git diff --check PASS. 댓글/자동재생의 다른 브랜치 시험을 이번 결과에 포함하지 않는다.
+- 사용자 실제 YouTube 보고: 안내6항목(홈 feed 숨김, 홈 메뉴·로고 링크 숨김, 검색 보존, 영상 재생·소리·수동 조작, 해제 후 HOME UI 복원, 재적용·해제)에 “니가 말한거 다돼” 및 “다 잘됐어”로 정상 확인. 실행은 기존 Node build 도구→시험 확장 갱신→홈 새로고침→적용/해제이며 이동 후 필요 시 해제/재적용. AI 직접 관측/영상·Chrome 버전·실행 hash 로그 수집은 아니며 서비스 전체 지원의 증거로 확대하지 않는다. NO_TARGET/FAILED는 성공이 아니다.
+- 미검증: 실제 서비스 selector/profile 전체·로그인/언어/창 너비별 UI, Core frozen/native/issued operation·영속 intent/receipt, 자동 SPA/BFCache 재결속·재시작·Server. 사용자 승인으로 이번 변경만 Commit/Push 및 Draft PR 제출하며 실제 SHA/PR은 GitHub 게시 결과가 원본이다. develop/통합 브랜치 병합 없음. 다음 옵션은 시작하지 않는다.
+
 ### 2026-10-30 · PR33 부분 변경 후 복원 재시도 P2 (검증 완료 / 사용자 승인 후 제출)
 
 - 담당 채지민, feature/additional-mvp-content, 시작 040ac5bde2a2f7297da13d8db9d9c540cd0e1ca0. 리뷰 discussion_r4423267282(종민) 및 discussion_r4423360787(다훈) 대조. 기존 codex/content-watch-panels와 codex/content-autoplay는 clean 상태에서 보존하고 PR33 브랜치로 전환했다. PR36/39에 수정 커밋을 전파하거나 병합하지 않는다.
