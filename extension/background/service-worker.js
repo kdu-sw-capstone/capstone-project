@@ -7,7 +7,14 @@ function safetyDocument(details) {
 }
 globalThis.FocurveSafetyNavigation={document:safetyDocument,tab:id=>safetyObservationTabs.has(id)};
 importScripts('../release-config.js','../integration/deployment-binding.js');
-globalThis.MemberAuthRuntime={status:async()=>globalThis.__memberIntegration?.auth.status()??{phase:'UNREGISTERED'},guardGuestStart:op=>{if(!globalThis.__memberIntegration)throw Error('MEMBER_ADAPTER_NOT_READY');return __memberRootAuthority.idle().then(()=>__memberIntegration.auth.guardGuestStart(op));},credentials:()=>__memberIntegration.auth.credentials()};
+globalThis.MemberAuthRuntime={status:async()=>globalThis.__memberIntegration?.auth.status()??{phase:'UNREGISTERED'},guardGuestStart:op=>{if(!globalThis.__memberIntegration)throw Error('MEMBER_ADAPTER_NOT_READY');return __memberRootAuthority.idle().then(()=>__memberIntegration.auth.guardGuestStart(op));},credentials:()=>__memberIntegration.auth.credentials(),
+ // START already holds MemberAuth.serial. A nested status()/guardGuestStart()
+ // would deadlock; use its existing local load and final auth-write token instead.
+ assertGuestDnrApply:async()=>{
+  const auth=globalThis.__memberIntegration?.auth;if(!auth)throw Error('MEMBER_ADAPTER_NOT_READY');
+  if(!['UNREGISTERED','REGISTERED'].includes((await auth.load()).phase))throw Error('ACCOUNT_TRANSITION_ACTIVE');
+  await __memberRootAuthority.idle();
+ }};
 importScripts("a0-core.bundle.js");
 importScripts("host-policy.js", "local-store.js", "site-store.js", "session-db.js", "session-core.js", "access-store.js", "guest-history.js", "member-events.js", "member-auth.js", "member-execution.js");
 
@@ -136,9 +143,9 @@ chrome.webNavigation.onErrorOccurred.addListener(details => {
 // Do not load the legacy execution actor alongside the current owner.
 
 // A1 isolated trial runtime; disabled until a trusted Worker enables its private trial marker.
-importScripts("a1-core.bundle.js");
+importScripts('additional-dnr-writer.bundle.js',"a1-core.bundle.js");
 
-importScripts('additional-dnr-writer.bundle.js','../integration/member-adapter.bundle.js','member-a1-core.bundle.js','../integration/member-a1-adapter.bundle.js','../integration/member-a1-authority.bundle.js','../integration/member-a1-bootstrap.js','../integration/member-auth-bridge.js','../integration/same-owner-recovery.js','../integration/recovery-runtime.js','../member-ui/runtime.js','../member-ui/access-runtime.js');
+importScripts('../integration/member-adapter.bundle.js','member-a1-core.bundle.js','../integration/member-a1-adapter.bundle.js','../integration/member-a1-authority.bundle.js','../integration/member-a1-bootstrap.js','../integration/member-auth-bridge.js','../integration/same-owner-recovery.js','../integration/recovery-runtime.js','../member-ui/runtime.js','../member-ui/access-runtime.js');
 
 importScripts(chrome.runtime.getURL('integration/member-web-bridge.js'));
 
