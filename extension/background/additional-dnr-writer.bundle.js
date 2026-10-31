@@ -9978,16 +9978,18 @@ class LegacyDnrWriter {
   }
 }
 
-/** Product binding for Member A1 only. Guest/other legacy writers are NOT yet
- * covered, so this does not enable AdditionalDnrCoordinator/assertWritersGuarded.
+/** Shared physical gate for the current Member/Guest A1 actors. Older legacy
+ * writers are NOT covered; this does not enable assertWritersGuarded.
  */
 function installMemberDnrWriter(chromeApi, indexedDB, locks, world = globalThis) {
-  if (Object.hasOwn(world, 'FocurveMemberDnrWriter')) fail('DNR_WRITER_ALREADY_INSTALLED');
+  if (Object.hasOwn(world, 'FocurveMemberDnrWriter') || Object.hasOwn(world, 'FocurveDnrWriter')) fail('DNR_WRITER_ALREADY_INSTALLED');
   const store = new AdditionalDnrStore(createMemberDB(indexedDB, LEGACY_DNR_REGISTRY_DB));
   const writer = new LegacyDnrWriter({ store, dnr: chromeApi.declarativeNetRequest, locks });
   const service = Object.freeze({ store, registry_db: LEGACY_DNR_REGISTRY_DB,
     write: (request, dispatch) => writer.write('SESSION', request, dispatch) });
   Object.defineProperty(world, 'FocurveMemberDnrWriter', { value: service, configurable: false, writable: false });
+  // Preserve the shipped Member name; both actors use the identical lock/store.
+  Object.defineProperty(world, 'FocurveDnrWriter', { value: service, configurable: false, writable: false });
   return service;
 }
 ;return {LEGACY_DNR_REGISTRY_DB,LegacyDnrWriter,installMemberDnrWriter};})();

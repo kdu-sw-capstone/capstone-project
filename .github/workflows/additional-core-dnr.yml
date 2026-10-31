@@ -7,6 +7,9 @@ on:
       - 'extension/tests/additional-dnr-*.test.mjs'
       - 'extension/tests/additional-dnr-legacy-writer-browser.mjs'
       - 'extension/a1/contract.mjs'
+      - 'extension/a1/core.mjs'
+      - 'extension/background/a1-core.bundle.js'
+      - 'extension/scripts/build-a1.mjs'
       - 'extension/member-a1/**'
       - 'extension/background/member-a1-core.bundle.js'
       - 'extension/background/member-auth.js'
@@ -36,7 +39,7 @@ jobs:
           node-version: '24.19.0'
       - run: npm ci --ignore-scripts --no-audit --no-fund
         working-directory: extension
-      - run: node --test extension/tests/additional-dnr-inventory.test.mjs extension/tests/additional-dnr-coordinator.test.mjs extension/tests/additional-dnr-site-time-evidence.test.mjs extension/tests/additional-dnr-legacy-writer.test.mjs
+      - run: node --test extension/tests/additional-dnr-inventory.test.mjs extension/tests/additional-dnr-coordinator.test.mjs extension/tests/additional-dnr-site-time-evidence.test.mjs extension/tests/additional-dnr-legacy-writer.test.mjs extension/tests/additional-dnr-guest-writer.test.mjs
       - run: node --test extension/tests/member-auth.test.mjs extension/tests/member-auth-runtime.test.mjs extension/tests/member-reauthentication.test.cjs
       - run: node --test contracts/additional-mvp/rc1/tests/legacy-boundary.test.mjs
       - run: npm run check
