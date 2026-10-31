@@ -104,3 +104,37 @@
 - 추가 회귀: 순수 section→history/외부 링크가 섞인 혼합 section 전환, 구독 entry/채널/전체목록의 hidden+inert 유지, history/외부/본문 링크 보존, 다른 owner claim 보존과 마지막 해제 복원, 원래 display:flex 복원 확인.
 - 수정 후 Node24·설치 Windows Chrome headless·Playwright 합성 DOM에서 구독12+홈9=21/21 PASS, 실패/skip0. 명령: PLAYWRIGHT_MODULE/CHROME_EXECUTABLE을 기존 경로로 설정 후 node --test extension/content-tests/subscriptions-browser.test.mjs extension/content-tests/home-browser.test.mjs . git diff --check PASS(줄바꿈 정규화 경고만). 기존79 전체·원격CI·실제 서비스/제품 Core·BFCache 수용을 재실행했다고 표시하지 않는다.
 - 게시 범위: subscriptions.mjs, subscriptions-browser.test.mjs, 이 작업 기록3개만. 사용자 게시 수락 후 동일 PR42에 Commit/Push하고 새 HEAD로 재리뷰 요청. 탐색 미커밋 코드·다른 PR·develop/통합 브랜치 병합 제외. 다음은 다훈 독립 재리뷰이며 그동안 탐색 사용자 시험은 대기 상태로 보존한다.
+### 2026-10-31 · YT-06 탐색 숨기기 — 로컬 구현 / 실제 사용자 확인 대기
+
+- 담당 채지민, codex/content-explore, 시작 기준 12096d0ca4b5dec087a08032568127085443689c. 기존 PR33/36/39/40/42 및 다른 담당 코드·공유 계약은 변경하지 않는다. Commit/Push/병합 미실행.
+- 기준: contracts/additional-mvp/rc1/feature-registry.json YT-06 및 AC-YT-06-01~03, docs/design/additional-mvp-contracts/05_Content_Event_UI.md. 기존 탐색/인기 진입·목록 제한과 검색 보존 목적을 유지한다. 사용자가 현재 메뉴 대응 구현을 허용했다. 팀 검토/최종 제품 수용 완료로 간주하지 않는다.
+- 공개 비로그인 KR YouTube에서 확장 메뉴의 음악·영화·라이브 주소를 읽기 전용으로 관찰했다. 음악/라이브는 특정 channel ID, 영화는 storefront의 bp=ogUCKAU=이다. 이 관찰은 DOM 제한/복원 효과 검증이 아니다. 실제 목록의 page-subtype 일치 여부와 로그인/지역별 차이는 사용자 시험에서 확인해야 한다.
+- explore-profile.mjs에 해당 exact 주소와 기존 /feed/explore·/feed/trending을 분리한다. 일반 channel·다른 storefront payload·외부 music.youtube.com은 대상이 아니다. 탐색 heading만 남는 경우 제목을 근거로 다른 메뉴까지 숨기지 않는다. 목록은 현재 대상 route에서 대응 page-subtype만 제한한다.
+- explore.mjs가 기존 NavigationSurfaceSession과 ClaimLedger를 재사용한다. 옵션별 claim, 다중 owner, selector 이탈 회수, 실패 복원 의무, URL/pagehide 이후 신규 적용 중지·기존 cleanup을 유지한다. 주소 변경 후 재승인/제품 Core 결속은 구현하지 않는다. 시험판은 해제→재적용이 필요하다.
+- 검증: Node24·설치 Chrome headless·Playwright 합성 DOM에서 탐색10/10 PASS. 관련 전체 89/89 PASS(기존33+원장26+홈9+구독11+탐색10), 실패/skip0. 실제 서비스·제품 MV3 sender/Core·SPA/BFCache 재결속 수용은 미검증. OBSERVED는 국소 DOM 관찰이며 제품 APPLIED가 아니다.
+- 실행: PLAYWRIGHT_MODULE/CHROME_EXECUTABLE은 기존 위 경로 사용. node --test extension/content-tests/changes.test.mjs extension/content-tests/detection.test.mjs extension/content-tests/browser.test.mjs extension/content-tests/claim-ledger.test.mjs extension/content-tests/claim-ledger-browser.test.mjs extension/content-tests/home-browser.test.mjs extension/content-tests/subscriptions-browser.test.mjs extension/content-tests/explore-browser.test.mjs . build-chrome-harness.mjs 생성 성공.
+- 사용자 확인: 시험 확장 갱신·홈 새로고침→탐색 적용→음악/영화/라이브 메뉴 숨김, 홈/구독/검색 유지→해제 복원. 각 대상 목록은 먼저 방문하고 해제→적용해 목록 숨김/해제 복원 확인. 일반 검색/영상/다른 채널·외부 YouTube Music 보존, 홈/구독과 독립 해제 확인. NO_TARGET/FAILED 또는 메뉴만 숨고 목록이 남으면 미통과로 보고한다.
+- 다음 행동: 실제 YouTube 사용자 결과를 항목별로 기록하고 필요한 selector만 보완. 게시 범위 설명과 사용자 수락 후 별도 PR 제출. 다른 옵션 추가 개발은 이번 범위에 포함하지 않는다.
+
+### 2026-10-31 · YT-06 다훈 의견 반영 보완 (로컬 / 사용자 재시험 대기)
+
+- 기존 목적 유지·검색/일반영상/구독 보존 및 실제 탐색 영역 구분·SPA/복원 검증 요청을 수용했다. 위 최초 시험판의 '항상 이동 후 수동 재적용' 설명은 이번 탐색 시험판에서는 아래 방식으로 갱신한다. 홈/구독 옵션의 기존 이동 처리와 제품 Core 정책 계약은 그대로다.
+- NavigationSurfaceSession의 YT-06에만 trusted caller의 동기 authorizeNavigation 명시적 승인을 받는 이동 경로를 추가했다. 기본값은 승인 없음이다. URL/event만으로 권한을 만들지 않는다. URL 변경 시 기존 claim 전부를 먼저 해제하고, 복원 실패면 ROUTE_CLEANUP_FAILED로 새 적용 중지·cleanup 의무 유지. 재승인 거절이면 기존 효과를 해제한 뒤 invalidation. pagehide/BFCache는 여전히 재승인 없이 복귀하지 않는다.
+- 시험 bootstrap에만 모의 재승인을 제공했다. 제품 Worker의 실제 sender/document/navigation/frozen binding 검증 구현·연결은 아니며, 모의 시험의 성공을 제품 연결 완료로 기록하지 않는다. 같은 지원 문서의 SPA를 시험하며 새로고침/새 문서는 수동 적용이 필요하다.
+- 탐색 목록은 hidden subtree 제외, 음악/라이브는 현재 route의 channel ID와 ytd-browse browse-id가 일치해야 제한한다. 같은 page-subtype의 오래된 다른 채널 DOM은 보존한다. browse-id 변경도 관찰해 target 이탈 시 기존 claim을 회수한다. 영화 storefront subtype의 실제 서비스 대응과 지역별 구조는 사용자 확인 대기다.
+- 실행 검증: 기존 명령의 관련 회귀 92/92 PASS(탐색13 포함), 이후 DOM browse-id 역할 재사용 반례를 추가해 탐색 전용14/14 PASS. 실패/skip0. 합성 Chrome DOM·모의 재승인/실패 주입 결과이며 두 실행을 전체93건 단일 실행으로 표현하지 않는다. build-chrome-harness.mjs 재생성 성공, git diff --check PASS(줄바꿈 정규화 경고만). 기능 코드 최종 변경 이후 관련 회귀를 수행했고 마지막 추가는 시험1건뿐이다.
+- 다음: 시험 확장 갱신 및 YouTube 새로고침. 탐색 적용/해제, 각 대상 목록 제한/복원, YouTube 로고/검색/영상/구독으로 SPA 이동 시 보존, 뒤로/앞으로 대상 재진입 시 제한 재적용을 사용자 확인한다. 메뉴만 제한되고 목록이 남는 경우 미통과이며 selector를 보완한다. 제품 Core/실제 BFCache·새 탭/새로고침 자동 재결속은 미검증이다. Commit/Push/PR/병합 미실행.
+
+### 2026-10-31 · YT-06 사용자 실제 YouTube 시험 정상 보고
+
+- 사용자가 안내한 탐색 시험 체크리스트에 대해 “테스트 다 정상이다”라고 회신했다. 탐색 메뉴 적용/해제, 음악·영화·라이브 목록 숨김/복원, 홈·검색·일반 영상·구독 보존, 지원 SPA 이동 및 뒤로/앞으로 재진입 제한, 마지막 해제 복원의 7항목을 정상 확인했다는 사용자 보고로 기록한다. 항목별 독립 로그·영상·Chrome 버전·실행 hash를 수집하거나 AI가 직접 관측한 결과는 아니다.
+- 사용자가 기존 페이지에서 목록만 사라지고 주소/페이지 틀은 유지되는 동작을 확인·질문했고, 강제 이동이 아닌 DOM 숨김/복원이라는 시험 범위를 안내했다. 재생 정지나 전체 사이트 접근 차단을 검증한 결과로 확대하지 않는다.
+- 시험 확장의 모의 SPA 재승인을 포함한 수동 결과이며 실제 제품 Core sender/document/navigation·frozen 정책 연결, 실제 BFCache 재결속, 새 문서/새로고침 자동 적용, 전체 언어·지역·레이아웃 수용은 미검증이다. 종전 자동92/92 및 탐색14/14와 구분한다. 이번 사용자 보고 기록에서 기능 시험을 새로 실행하지 않았다.
+- 상태: 사용자 시험 대기 항목은 위 정상 보고로 갱신. 탐색 코드/도구/시험/기록은 여전히 codex/content-explore 로컬이며 Commit·Push·PR 생성·병합하지 않았다. 별도 PR42 구독 수정 4cf38ec1ae32db48dd0dc4a68b7adb18dce015f5는 별도 worktree에 보존되어 있고 이 브랜치에 아직 반영하지 않았다. 게시 전 선행 구독 수정 반영과 해당 영향 회귀, 최종 변경 범위 확인 후 사용자 수락을 받는다.
+
+### 2026-10-31 · YT-06 게시 전 구독 수정 반영·최종 회귀
+
+- 기존 탐색 미커밋 작업을 stash에 보관한 뒤 codex/content-explore 기준을 PR42 수정 HEAD 4cf38ec1ae32db48dd0dc4a68b7adb18dce015f5로 fast-forward하고 탐색 작업을 복원했다. 작업카드 append 충돌은 PR42 수정 기록과 YT06 기록을 모두 유지해 해결했다. 구독 코드/시험은 해당 커밋과 동일하며 구독 누락을 되돌리지 않는다. stash 원본은 안전 보관 중이다. 다른 작업공간 변경·develop/통합 브랜치 병합은 없다.
+- 최종 관련 회귀: 기존33+원장26+홈9+구독12+탐색14 = 94/94 PASS, 실패/skip0. Node24/Playwright/설치 Windows Chrome headless 합성 DOM·모의 재승인/실패 주입. 위 전체 시험 명령8개 파일 재실행 결과다. 구독 수정 반영 후 build-chrome-harness.mjs 성공 및 git diff HEAD --check PASS, 충돌 마커 없음. 사용자7항목 정상 보고와 자동 시험·제품 미검증 경계는 위 기록 그대로다.
+- 게시 단위: explore-profile.mjs/explore.mjs, 탐색 브라우저 시험, navigation-surface의 YT06 경로 및 browse-id 관찰, 시험 build/bootstrap/popup/manifest, 이 기록 총9파일. 제품 manifest 권한·Core/Server/API/Wire/Schema 변경 없음. testOnly/coreConnected:false·모의 재승인은 제품 권한 부여/연동 완료가 아니다. 새 함수는 trusted caller 전제의 내부 부품이며 실제 native/문서/owner·frozen 재검증 책임은 연결 단계에 남는다.
+- 사용자 게시 준비 동의 후 codex/content-explore의 별도 Draft PR을 integration/additional-mvp-20261029 대상으로 제출한다. PR33→40→42 선행 의존성과 PR42 재리뷰 대기는 유지한다. 선행 PR의 기존 HEAD·리뷰는 수정하지 않는다. 변경 비교 기준은 위4cf38ec이다. 최종 Git SHA/PR 번호는 게시 결과를 따른다. 다음은 다훈의 탐색 영역/보존/복원 리뷰 및 종민의 재승인·cleanup 경계 리뷰, 실제 Core 연결은 후속이다. 전체 YT06 제품 수용 완료로 표시하지 않는다.
