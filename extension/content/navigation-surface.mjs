@@ -108,7 +108,7 @@ export class NavigationSurfaceSession {
     }catch{errors++;}
     if(this.#open)this.#observer.observe(this.#document.documentElement,{subtree:true,childList:true,attributes:true,
       attributeFilter:['href','page-subtype','browse-id','video-id','id','class','style','inert','hidden','data-focurve-restriction','data-focurve-ui',
-        ...(this.#profile.feature_id==='IG-01'?['aria-label','role','alt','draggable']:[])]});
+        ...(this.#profile.feature_id==='IG-01'?['aria-label','role','alt','draggable','contenteditable']:[])]});
     const result={feature_id:this.#profile.feature_id,local_only:true,native_verified:false,status:errors?'FAILED':eligible?'OBSERVED':'NO_TARGET',
       eligible_target_count:eligible,restricted_target_count:restricted,error_count:errors,remaining_targets:this.#targets.size};
     if(!this.#open)return null;

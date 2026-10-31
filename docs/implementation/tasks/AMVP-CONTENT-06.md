@@ -1,5 +1,23 @@
 # AMVP-CONTENT-06 · 추가 Content 연결
 
+## 2026-10-31 야간 지속 · IG editable 전환 관찰
+
+- #58 P2는 실제 최신 `62a4233aab9a45ade36b4ec308dbe5b1f8290306`/원격 CI215+계약6 SUCCESS 상태를 다시 확인했다. 소스/의존성 불변인 P2 시험은 재실행하지 않고 그대로 재사용한다. 기존 #54/#56/#57/#58 브랜치를 변경하지 않는다.
+- 이번 독립 단위는 `fix/ig-story-editability-observer`, Worktree `ig-story-editability`, base `feature/content-session-adapter`의 위 full SHA. #58 미병합에 의존하므로 해당 브랜치를 base로 별도 Draft PR을 제출하며, integration에 독립 병합하면 선행 변경까지 포함됨을 명시한다. 새 full HEAD/PR/CI/절대 Worktree/실행 소유권은 이 채팅 artifact 루트 `content-nightly-checkpoint.json`과 PR 최종 기록에 보존한다.
+- 확인된 실제 소스 결함: `instagram-stories.mjs`의 portrait-frame fallback은 내부 `[contenteditable="true"]`가 있으면 대상을 제외하지만 공유 navigation observer는 이 속성을 감시하지 않았다. 같은 DOM에서 caption 편집 종료 후 적격 전환과 편집 시작 후 대상 해제가 모두 자동 반영되지 않는다. 기존 alt/draggable 수정의 재구현이 아니다.
+- 최소 수정: navigation-surface.mjs의 **IG-01 전용** attributeFilter에 contenteditable만 추가했다. 기존 selector·다른 owner/ClaimLedger·Session·Core/Server/계약·YouTube observer 목록은 변경하지 않는다. 신규 시험은 수동scan 없이 caption true→false에서 제한, false→true에서 자기 claim 회수·다른 owner 유지·최종 display:flex!important 복원을 확인한다.
+- 같은 설치 Chrome 합성 DOM 반례 **수정 전0 PASS/2 FAIL(exit1 timeout) → 수정 후 PASS**. IG25+adapter31 직접 영향 **56/56 PASS(exit0)**, 계약 legacy-boundary **6/6 PASS(exit0)**, 구문/build/diff check PASS(exit0). 이전 #58의215는 동일 Content 기반의 참고/재사용 근거이며 신규2와 합산한 로컬217 실행을 주장하지 않는다. 새 PR CI에서 전체217을 별도 확인한다.
+- 환경 Windows Node24.19.0/설치 Chrome156.0.8078.76 headless/Playwright1.62.1, 전 요청 route.fulfill fixture. 실제 Instagram 로그인/개인정보·HOLD Chrome/프로필/설치/Native/DB는 사용하지 않았다. 증거: 채팅 artifact 루트 `ig-editability-before.log`, `ig-editability-regression.log`, `ig-editability-contract.log`; 명령은 `--test-name-pattern='IG portrait frame'`의 IG 단독, IG+session-adapter browser2파일, legacy-boundary, build-chrome-harness, 변경JS `--check`, `git diff --check`이다.
+- 예약: 동일 Content 채팅 예약은 없었으며 기존 통합 예약 focurve-2는 변경하지 않았다. 도구 등록으로 **focurve-content ACTIVE**, target thread `01a191b6-1724-73b2-b0e1-0149c53fba64`, 이번 밤 **2026-10-31 22:00~2026-11-01 07:59 KST 매시 정각**만 실행한다. 기존 장기 예약의 종료일/범위를 가져오지 않는다. 체크포인트 active=true인 기존 실행에는 중복 진입하지 않으며, stale 소유권도 근거 없이 삭제하지 않는다. 현재 검증용 장기 서비스는 없고 각 시험 프로세스는 종료됐다. 종료 시 체크포인트를 idle로 갱신해야 한다.
+
+### 실제 Core 연결 확인과 남은 BLOCKED
+
+- 최신 통합 기준을 실제 재조회한 SHA는 `24327d1bd8615a2274a6dead43f23b71cc06b64e`. 그 SHA의 `extension/member-a1/content.mjs` A1Content.handle/scope/perform과 현 Source의 `A1Client.read/commit`은 기존 d06-member-a1-1 / Shorts effect 경로다. `extension/member-a1/schema.json` projection.feature_code는 YOUTUBE_SHORTS로 한정되어 추가 옵션의 AMVP_CONTENT_2 수신기로 그대로 연결할 수 없다. 이 기존 경로를 임의 확장하거나 새 발급/저장 성공을 만들어내지 않았다.
+- 승인된 RC2 원문은 `contracts/additional-mvp/rc1/schema.json`의 BindingScope/Projection/ContentResult/EffectEvidence이다. BindingScope에 owner_epoch/executor/runtime_execution/package/runtime_revision/scope_epoch/generation/tab/frame/document/document_instance/url_sha256/focus_ref가 필요하다. ContentResult에는 issued request_id/operation_id/semantic_sha256/control_seq와 full scope/effects/remaining_claim_count/footprint_sha256/observed_at/error_code가 필요하다. adapter의 두 claim ID와 국소 counts만으로 이 필드를 채우지 않는다.
+- 실제 제공 대기: scan/DOM 효과 **전** 검증된 issued Control+Projection과 current native/document/generation 확인 closure, 영속 복원 예약 ACK 및 정당한 prior footprint/cleanup lease, 결과 저장·재조회/검증 호출. `contracts/additional-mvp/rc1/tests/review_reference.py:306`의 ContentOperationRegistry.issue(control, prior_claims, prior_footprint_sha256)/validate(result)는 **시험 참조 모델**이며 생산 Core 발급기/저장기가 아니다. 그 함수를 생산 성공처럼 호출하거나 복제하지 않는다.
+- 다음 실행은 우선 새 PR CI/실제 HEAD·원격 변경·추가 독립 리뷰를 확인한다. 이 결함과 #58 검증을 조건 변화 없이 반복하지 않는다. 새로 확인된 Content 결함 또는 실제 Core 공급 함수가 있으면 해당 독립 단위로 이어간다. 현재 확인된 다른 안전한 미완료 구현이 없으면 별도 기능/시험/PR로 시간을 채우지 않고 이 BLOCKED와 체크포인트를 보존해 종료한다. 독립 리뷰/병합은 「추가 MVP 기능별 통합 및 회귀」 담당이며 이 채팅은 Approve/Draft해제/Resolve/Merge하지 않는다.
+- 인계: 채지민은 portrait-frame editability에 따른 동적 적격 변화와 기존 다중 owner/취소·복원 경계를 함께 보존한다. local_only/native_verified:false 및 UNKNOWN/미해소 cleanup 의미 유지. 실제 Chrome 제품/Core/Native/Server/오디오/BFCache/정상 END·복원·재기동 수용 NOT_RUN, `MVP_FINAL_COMPLETE=false`.
+
 ## 2026-10-31 PR #58 P2 · scan 중 취소와 재진입 cleanup
 
 - 수정 기준 `a257ce15118c29e8226a53273a5a7eaae29546cc`, 기존 `feature/content-session-adapter` Worktree clean/원격 HEAD 일치 확인 후 같은 브랜치에서 작업. 리뷰4431697837의 P2 범위만 수정한다. #54/#56/#57 원본 SHA 및 다른 Worktree를 보존하고 Draft 해제/Approve/Resolve/Merge하지 않는다.
