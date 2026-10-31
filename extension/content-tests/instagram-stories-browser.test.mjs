@@ -6,6 +6,33 @@ const require=createRequire(import.meta.url),{chromium}=require(process.env.PLAY
 let browser;
 before(async()=>{browser=await chromium.launch({headless:true,...(process.env.CHROME_EXECUTABLE?{executablePath:process.env.CHROME_EXECUTABLE}:{})});});
 after(async()=>{await browser?.close();});
+for(const [attribute,ineligible,eligible]of [['alt','loading',''],['draggable','true','false']]){
+  test(`IG-01 observes ${attribute} eligibility changes without manual scan and restores display priority`,async t=>{
+    const html='<div style="width:300px;height:600px"><img id="dynamic-photo" alt="" draggable="false" style="display:flex!important"></div>';
+    const page=await fixture(t,{html,url:'https://www.instagram.com/stories/sample/1/'});
+    await page.evaluate(({attribute,ineligible})=>document.querySelector('#dynamic-photo').setAttribute(attribute,ineligible),{attribute,ineligible});
+    assert.equal((await page.evaluate(()=>session.start())).status,'NO_TARGET');
+    await page.evaluate(({attribute,eligible})=>document.querySelector('#dynamic-photo').setAttribute(attribute,eligible),{attribute,eligible});
+    await page.waitForFunction(()=>document.querySelector('#dynamic-photo').style.display==='none',null,{timeout:2000});
+    assert.equal(await page.evaluate(()=>observations.at(-1).restricted_target_count),1);
+    await page.evaluate(({attribute,ineligible})=>document.querySelector('#dynamic-photo').setAttribute(attribute,ineligible),{attribute,ineligible});
+    await page.waitForFunction(()=>document.querySelector('#dynamic-photo').style.display==='flex',null,{timeout:2000});
+    assert.equal(await page.locator('#dynamic-photo').evaluate(e=>e.style.getPropertyPriority('display')),'important');
+    assert.equal(await page.evaluate(()=>observations.at(-1).remaining_targets),0);
+
+    // Re-entry, then selector exit while an independent owner still hides the node.
+    await page.evaluate(({attribute,eligible})=>document.querySelector('#dynamic-photo').setAttribute(attribute,eligible),{attribute,eligible});
+    await page.waitForFunction(()=>document.querySelector('#dynamic-photo').style.display==='none');
+    await page.evaluate(()=>ledger.hide('independent-owner',document.querySelector('#dynamic-photo')));
+    await page.evaluate(({attribute,ineligible})=>document.querySelector('#dynamic-photo').setAttribute(attribute,ineligible),{attribute,ineligible});
+    await page.waitForFunction(()=>observations.at(-1).remaining_targets===0,null,{timeout:2000});
+    assert.equal(await page.locator('#dynamic-photo').evaluate(e=>e.style.display),'none');
+    assert.equal((await page.evaluate(()=>session.release())).restored,true);
+    assert.equal(await page.locator('#dynamic-photo').evaluate(e=>e.style.display),'none');
+    assert.equal((await page.evaluate(()=>ledger.release('independent-owner'))).restored,true);
+    assert.deepEqual(await page.locator('#dynamic-photo').evaluate(e=>[e.style.display,e.style.getPropertyPriority('display')]),['flex','important']);
+  });
+}
 test('authorized intermediate story index/profile alias must not close observation before a valid story',async t=>{
   const page=await fixture(t);await page.evaluate(()=>{session=make({...settings,authorizeNavigation:()=>true});session.start();});
   for(const path of ['/stories/','/_u/sample/','/explore/']){
