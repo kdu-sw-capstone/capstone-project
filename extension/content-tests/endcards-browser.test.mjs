@@ -170,3 +170,25 @@ test('new post-play grid preserves another owner and failed cleanup goals',async
     const failed=other.release();node.style.setProperty=write;const retried=other.release();return{shared,failed,retried,display:node.style.display};
   });assert.equal(result.shared,'none');assert.equal(result.failed.restored,false);assert.equal(result.retried.restored,true);assert.equal(result.display,'grid');
 });
+
+test('combined harness releases endcards without enabling autoplay or removing other options',async t=>{
+  const nav='<ytd-guide-entry-renderer id="home"><a href="/">home</a></ytd-guide-entry-renderer><ytd-guide-entry-renderer id="subs"><a href="/feed/subscriptions">subs</a></ytd-guide-entry-renderer><ytd-guide-entry-renderer id="explore"><a href="/feed/trending">explore</a></ytd-guide-entry-renderer>';
+  const body=nav+html.replace('<div id="movie_player">','<div id="movie_player" class="ended-mode">').replace('</video>','</video><div id="post-grid" class="ytp-fullscreen-grid-stills-container" style="display:grid">post-play</div>').replace('<div id="related">','<ytd-comments>comments</ytd-comments><div id="related">');
+  const page=await fixture(t,{body});await page.evaluate(()=>{
+    const toggle=document.querySelector('.ytp-autonav-toggle-button');toggle.onclick=()=>toggle.setAttribute('aria-checked',toggle.getAttribute('aria-checked')==='true'?'false':'true');
+    window.chrome={runtime:{id:'test-extension',getURL:path=>location.origin+'/'+path,onMessage:{addListener:cb=>{window.listener=cb;}}}};
+  });
+  await page.evaluate(await readFile(new URL('../content-tools/chrome-harness/bootstrap.js',import.meta.url),'utf8'));
+  const result=await page.evaluate(async()=>{
+    const sender={id:'test-extension',url:chrome.runtime.getURL('popup.html')};const send=type=>new Promise(resolve=>listener({type},sender,resolve));
+    for(const type of ['TEST_HOME_APPLY','TEST_SUBSCRIPTIONS_APPLY','TEST_EXPLORE_APPLY','TEST_MASTHEAD_APPLY','TEST_WATCH_PANELS_APPLY','TEST_AUTOPLAY_APPLY'])await send(type);
+    await send('TEST_ENDCARDS_APPLY');const hidden=document.querySelector('#post-grid').style.display;
+    const released=await send('TEST_ENDCARDS_RELEASE');const restored=document.querySelector('#post-grid').style.display;
+    const autoStillOff=document.querySelector('.ytp-autonav-toggle-button').getAttribute('aria-checked');
+    const preserved=['#home','#subs','#explore','ytd-masthead','ytd-comments','#related'].map(selector=>document.querySelector(selector).style.display);
+    const remaining=(await send('TEST_WATCH_PANELS_STATE')).ledger.remaining_targets;
+    await send('TEST_AUTOPLAY_RELEASE');const autoRestored=document.querySelector('.ytp-autonav-toggle-button').getAttribute('aria-checked');
+    for(const type of ['TEST_HOME_RELEASE','TEST_SUBSCRIPTIONS_RELEASE','TEST_EXPLORE_RELEASE','TEST_MASTHEAD_RELEASE','TEST_WATCH_PANELS_RELEASE'])await send(type);
+    return{hidden,released,restored,autoStillOff,preserved,remaining,autoRestored,final:(await send('TEST_WATCH_PANELS_STATE')).ledger.remaining_targets};
+  });assert.equal(result.hidden,'none');assert.equal(result.released.released.restored,true);assert.equal(result.restored,'grid');assert.equal(result.autoStillOff,'false');assert.deepEqual(result.preserved,Array(6).fill('none'));assert.equal(result.remaining,6);assert.equal(result.autoRestored,'true');assert.equal(result.final,0);
+});
