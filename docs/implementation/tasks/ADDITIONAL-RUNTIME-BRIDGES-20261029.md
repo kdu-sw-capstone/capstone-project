@@ -1,6 +1,39 @@
 # 추가 MVP · 정책 발행·이용시간 수신 경계
 
 
+## 11월2일 구현 마감·11월11일 시연 준비 체크포인트 — 2026-11-01
+
+- 실행 전 원격 통합 **d386f170f79368907b2f5263a299c3e0d7c65ce8** 및 #72/#74 MERGED를 확인했다. 아래 예전 Draft/미병합/A~J 표현은 당시 이력이다. 새 소스가 없는 Core e903aff/Content a6468b6를 전면 재조사하지 않는다. 통합 Core70 writer 보호를 실제 RuntimeReport/clock producer 완료로 바꾸지 않는다. #71/#75는 담당 트랙을 보존한다.
+- **#73 후속 완료:** 기존 b0b44a5에 이 통합을 반영해 **bad35335aeb83c55160414ed80ea15dd72e585d6**로 Push했다. 공유 카드1파일 양측 전체 원문/제품2·시험3 blob 보존, CI8/8·16/16 job·Web413/413·타입/Vite PASS. 최초 CFG 하한 코드 재구현 없음. Draft/새 HEAD 리뷰 대기이며 본 개발과 분리한다. `.local/pr73-sync-20261101/` 및 PR73 본문.
+- **새 독립 구현:** 계정 전환 중 GuestImports의 이전 history/batch401·owner A→B→A lock/자료 혼입 반례3 FAIL→PASS. owner별 화면과 비동기 수명/GET 취소를 결속하고 구 Chrome ACK 이후 old owner 후속 읽기/성공 표시를 막았다. 현재 불확실 전송의 reconcile/원본 보존·Server 결과 검증·payload는 유지한다. 신규8 포함 관련47·타입/Vite PASS. 상세 [IMPORT-01](IMPORT-01.md) 최신 절, `.local/import-owner-20261101/`, 새 후속 Draft PR의 HEAD/CI를 따른다. 실제 제품 수용 아님.
+
+### 담당 기능별 실제 단계 (통합 기준 및 기존 증거 재사용)
+
+`IMPLEMENTED/PUSHED/MERGED/INTEGRATED`는 아래 명시한 **Web·Server 코드/배포경계** 기준이며 실제 Core/Content 효과나 제품 수용을 뜻하지 않는다. `TESTED`는 자동/격리 범위이다. 개별 과거 승인 SHA를 이번에 전면 재조회하지 않아 `REVIEWED`는 기능별 **미재확인**으로 남기며, 새 후보는 리뷰 대기다. 단순 MERGED에서 담당 전체 승인을 추론하지 않는다. 현재 통합 source/CI408과 원본 카드/PR을 재사용한다.
+
+| 기능 | IMPLEMENTED | TESTED | PUSHED/MERGED | INTEGRATED | REVIEWED / PRODUCT_ACCEPTED |
+|---|---|---|---|---|---|
+| 회원가입·로그인·이메일/소셜 인증 | 기존 AuthFlow/MemberAuth/API | 기존 자동·격리, 외부 mail/OAuth 최신 수용 아님 | 통합 코드 YES | Web/API/SQL 코드 YES | 과거 기능별 승인 미재확인 / 최신 NOT_RUN |
+| 회원/비회원 owner·계정 연결·선택 가져오기 | 기존 코드 YES, 이번 owner 수명 추가 | 기존+이번47(일부 중복 합산 금지) | baseline YES, 새 패치 미병합 | 기존 Web/Server/확장 메시지 경계, 새 패치는 fixture | 새 후보 리뷰 대기 / 최신 NOT_RUN |
+| 사이트 CRUD·정책 설정 | 기존 MemberSites/Sites YES | 기존 조회/쓰기/If-Match/소유권 회귀 | YES | Web/API/MySQL 코드 YES | 과거 미재확인 / 최신 NOT_RUN |
+| 예약·일일 한도 | CRUD/occurrence/수신/조회 YES | 자동·격리 | YES | 기존 계약 경계; 실제 actor/clock BLOCKED | 과거 미재확인 / NOT_RUN |
+| CADENCE UI·frozen 조작 경계 | 설정/수신/UI YES | 자동·격리 | YES | 실제 Authority/actor/단계 계약 BLOCKED | 과거 미재확인 / NOT_RUN |
+| START/END·상태 UI | 기존 세션/ACK/UNKNOWN UI YES | 기존 자동/격리, 과거 Chrome 실패 보존 | YES | Core 생산 실행·정상 END/복원 수용 미완료 | 과거 미재확인 / 최신 NOT_RUN |
+| 행동 기록 | #74 및 기존 목록/상세 YES | #74 관련49/통합408 근거 재사용 | YES(#74 MERGED) | Web/API/원장 조회 경계 YES | 기존 PR근거 유지 / 실제 수용 NOT_RUN |
+| 통계·대시보드·일일/기간/시간대 | 기존 Metrics/DAY/STA/UI YES | #63/#66 및 원격 기존 증거 | YES | 저장 원본 조회 YES; 실제 collector BLOCKED | 과거 미재확인 / NOT_RUN |
+| 실제 Server API 연결 | auth/site/history 생산 route YES, AMVP gate 존재 | 기존 인증/HTTP·격리 MySQL | YES | AMVP runtime bridge는 CapabilitySource 없으면 비활성 | 기존 근거 / 제품 서비스 이번 미기동 |
+| MySQL 저장·조회 | 기존 migration/원장/Receipt/transaction YES | 기존 fresh MySQL/HTTP/재연결 CI 재사용 | YES | 격리 SQL 경계 YES; 운영 DB 이번 변경/기동 없음 | 기존 근거 / 제품 재기동 보존 NOT_RUN |
+| Figma 최신 Web UI | 기존 Web assets/화면 mapping PARTIAL | DOM/타입 회귀, fresh 시각 검수 NOT_RUN | 기존 UI YES | 최신 frame 전체 일치 미확정, #75 popup 별도 | 최신 Web 승인/시각 대조 미확인 / NOT_RUN |
+
+### 남은 구현·활성화 조건과 담당
+
+- Core 윤종민: 기존 `AmvpBridgeSupport.CapabilitySource`, `AmvpReportReceiver.EvidenceVerifier`, `AmvpUsageReceiver.ClockProof`, `AmvpCadenceControl.Authority`에 연결할 실제 issued owner/binding/generation, operation/package/revision/epoch, 효과·해제 원본과 조회/전송, collector/trusted anchor/day allocation이 필요하다. flags/국소 hash/MATCH만으로 활성화하지 않는다. 새 제공물 없이는 같은 adapter/수신기를 다시 만들지 않는다.
+- Content 채지민: DOM 기능의 issued scope/ClaimLedger·적용/복원 증거를 Core verifier 경계로 제공해야 한다. SITE_TIME DNR에 불필요한 Content 의무를 추가하지 않는다. #71 P2를 대신 수정하지 않는다.
+- ONCE actor 매핑, CADENCE 휴식/주기 표현, USG-02 hash는 기존 공동 결정 대기다. AI/동의/provider 저장은 여전히 미구현이며 승인되지 않은 schema/전송 규칙을 새로 만들지 않는다. Figma Web은 현행 원본과 별도 fresh 검수가 필요하고 popup#75를 이식/재설계하지 않는다.
+- **11월2일 가능한 범위:** #73과 새 owner 수명 패치의 담당 리뷰/통합·영향 검증, 기존 저장/조회/오류/재진입 UI 연결 정리. 외부 producer/공동 결정/최신 디자인 승인을 이번 실행에서 완료했다고 보장하지 않는다.
+- **11월11일 실제 시연 조건:** 위 제공물을 단일 승인 통합 후보에 결속하고 유효한 별도 서비스/실제 실행 승인으로 인증·설정 저장→실제 적용→기록/집계→정상 END/해제·복원→재기동/내용 보존을 검증해야 한다. 현재 자동/합성/격리 성공을 실제 제품 PASS로 올리지 않는다. `MVP_FINAL_COMPLETE=false`.
+
+
 ## PR74 독립 리뷰 P2 대응 — 2026-11-01
 
 - 구172012c의 보조 수명 검증만으로는 언마운트된 주 목록 GET401 전파를 막지 못했다. 리뷰 원본5를 **4 PASS/1 FAIL**로 재현 후, 초기/재조회/커서의 주 요청 generation·AbortSignal·성공/catch 폐기 검사를 보완했다. 현재401·목록/필터/페이지·실패 후 마지막 성공 보존은 유지한다. 원본5 + 추가4 **9 PASS**, 기존 관련 포함 **49 PASS**, 타입/Vite PASS. 상세 [LOG-01](LOG-01.md) 최신 절 및 `.local/pr74-primary-fix-20261101/`.
