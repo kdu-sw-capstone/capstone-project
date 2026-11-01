@@ -29,3 +29,19 @@ it("still loads in React's repeated effect setup without leaving the save lock s
 it("preserves editing through an initial read failure and explicit retry",async()=>{
  vi.mocked(request).mockRejectedValueOnce(new Error("offline")).mockResolvedValueOnce({text:"server note",version:0});render(<SessionNote sessionId={a}/>);await screen.findByRole("alert");fireEvent.change(input(),{target:{value:"unsaved note"}});fireEvent.click(screen.getByText("메모 다시 확인"));await waitFor(()=>expect(screen.getByText("메모 저장")).toBeEnabled());expect(input()).toHaveValue("unsaved note");expect(vi.mocked(request).mock.calls.every(c=>c[1]==="GET")).toBe(true);
 });
+it.each([["initial",true],["conflict",true],["initial",false],["conflict",false]] as const)("fences %s GET authentication errors by request lifetime (superseded=%s)",async(phase,superseded)=>{
+ let reject!:(e:unknown)=>void,reads=0;const expired=vi.fn();window.addEventListener("focurve:authentication-expired",expired);
+ try{
+  vi.mocked(request).mockImplementation(async(path,method)=>{
+   if(path.includes(b))return {text:"B current",version:1};
+   if(method==="PUT")throw new ApiError("VERSION_CONFLICT",412);
+   if(phase==="initial"||++reads>1)return new Promise((_r,j)=>{reject=j;});return {text:"A current",version:1};
+  });
+  const view=render(<SessionNote sessionId={a}/>);
+  if(phase==="conflict"){await waitFor(()=>expect(input()).toHaveValue("A current"));fireEvent.click(screen.getByText("메모 저장"));}
+  await waitFor(()=>expect(reject).toBeTypeOf("function"));
+  if(superseded){view.rerender(<SessionNote sessionId={b}/>);await waitFor(()=>expect(input()).toHaveValue("B current"));}
+  await act(async()=>reject(new ApiError("UNAUTHENTICATED",401)));
+  expect(expired).toHaveBeenCalledTimes(superseded?0:1);if(superseded){expect(input()).toHaveValue("B current");expect(screen.queryByRole("alert")).not.toBeInTheDocument();}else expect(screen.getByRole("alert")).toBeInTheDocument();
+ }finally{window.removeEventListener("focurve:authentication-expired",expired);}
+});
