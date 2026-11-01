@@ -20,3 +20,13 @@ it("clears stale metrics when the requested scope changes",async()=>{
 it("refuses mismatched scope, date, quota flag or invalid numeric responses",()=>{
  for(const patch of [{scope:"ACCOUNT_TOTAL"},{from_date:"2026-10-28"},{quota_debit:true},{browser_ms:-1},{repeat_ratio:2}])expect(()=>parseUsage({...result,...patch} as UsageStatistics,"INSTALLATION","2026-10-29","2026-10-29")).toThrow();
 });
+it.each([undefined,null,"","invalid","2026-02-30T00:00:00.000Z","2026-10-29T00:00:00Z","2026-10-29T09:00:00.000+09:00",123])("rejects an unverified statistics observation time: %s",as_of=>{
+ expect(()=>parseUsage({...result,as_of} as UsageStatistics,"INSTALLATION","2026-10-29","2026-10-29")).toThrow();
+});
+it("removes prior metrics after an unverified response and recovers only on a valid explicit read",async()=>{
+ let response:unknown={...result,scope:"ACCOUNT_TOTAL",browser_ms:5000,quality:"PARTIAL"};vi.mocked(request).mockImplementation(async path=>path==="/extension-installations"?[]:response);
+ render(<BrowserUsageStatistics/>);fireEvent.change(screen.getByLabelText("조회 범위"),{target:{value:"ACCOUNT_TOTAL"}});fireEvent.change(screen.getByLabelText("이용시간 시작 날짜"),{target:{value:result.from_date}});fireEvent.change(screen.getByLabelText("이용시간 종료 날짜"),{target:{value:result.to_date}});
+ fireEvent.click(screen.getByText("이용시간 조회"));expect(await screen.findByText("0분 5초")).toBeInTheDocument();
+ response={...result,scope:"ACCOUNT_TOTAL",browser_ms:9000,quality:"COMPLETE",as_of:undefined};fireEvent.click(screen.getByText("이용시간 조회"));expect(await screen.findByRole("alert")).toHaveTextContent("이용시간 조회 범위와 응답을 확인하지 못했습니다.");expect(screen.queryByLabelText("브라우저 이용시간 결과")).not.toBeInTheDocument();expect(screen.queryByText("0분 5초")).not.toBeInTheDocument();expect(screen.queryByText("0분 9초")).not.toBeInTheDocument();
+ response={...result,scope:"ACCOUNT_TOTAL",browser_ms:7000,quality:"PARTIAL",as_of:"2026-10-29T00:00:00.123Z"};fireEvent.click(screen.getByText("이용시간 조회"));expect(await screen.findByText("0분 7초")).toBeInTheDocument();expect(screen.queryByRole("alert")).not.toBeInTheDocument();expect(screen.getByLabelText("브라우저 이용시간 결과")).toHaveTextContent("2026-10-29T00:00:00.123Z");expect(vi.mocked(request).mock.calls.filter(c=>c[0].startsWith("/amvp/statistics/")).every(c=>c[1]==="GET")).toBe(true);
+});
