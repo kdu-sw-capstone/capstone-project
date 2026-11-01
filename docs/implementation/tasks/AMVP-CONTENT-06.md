@@ -1,4 +1,21 @@
 # AMVP-CONTENT-06 · 추가 Content 연결
+## 2026-11-01 IG-05 추천 계정·게시물 독립 구현 시작
+- 담당 채지민 / codex/content-instagram-suggestions / 시작 c9393d5901150e77b96999eefbef14f071436c7a(#71 보존). 선행 #65/#71 누적 코드를 재구현하지 않는다. 기준 contracts/additional-mvp/rc1/feature-registry.json IG-05, AC-IG-05-01~03 및 docs/design/additional-mvp-contracts/05_Content_Event_UI.md. 계약 대상은 추천 게시물·계정, 팔로잉 피드 보존·광고 자동 포함 금지다.
+- instagram-suggestions.mjs: HOME/SUGGESTED(/explore/people)에서 명시 추천 계정 label+profile/follow로 확인한 좁은 그룹, 게시물 own header의 명시 추천 표시만 제한. 전환 버튼/일반 이미지/미디어/본문·feed root·DM/프로필/다른 route·보호 UI를 추천 계정 근거로 쓰지 않는다. 광고 표시는 추천 게시물 대상에서 제외. shared ClaimLedger·NavigationSurfaceSession 재사용; IG-05에만 profile등록/SPA 재승인/문자변경 감시 추가, adapter factory 등록. 제품 Core listener/issued/native/영속증거를 만들지 않는다.
+- TEST harness 추천 적용/해제/상태·기존 복사 UI 재사용, 0.1.10/ig-suggestions-1. 기존 버튼/handler 보존. 새로고침 시 재적용 필요, Core미연결 모의권한이며 OBSERVED를 제품 APPLIED/Server 성공으로 변환하지 않는다.
+- 직접 Chrome 합성DOM 7/7 PASS: 추천 계정/게시물·광고/팔로잉 보존·동적 label변경·오판 방지·다른 owner/page변경·SPA/pagehide·adapter 해제. 최초6/7의 일반 이미지 반례 실패는 null href가 /null로 파싱되던 원인으로 수정했고 재시험7/7. 실제 Instagram DOM·Core/MV3/Native/Server NOT_RUN. 전체 회귀 실행 중. 사용자 시험 후 게시 승인 대기, Commit/Push/PR/Merge 없음, MVP_FINAL_COMPLETE=false.
+
+- 최종 전체 Content299/299 PASS(IG-05 최초7 포함), fail/skip0. Node24/설치Windows Chrome headless/Playwright 합성DOM, 로그 ig-suggestions-full.log. 이후 제품 코드 변경 없이 TEST sender 거절 및 IG-05 해제 후 IG-03 유지 반례2개를 추가하고 IG-05 9/9 재실행 PASS. 전체301건을 재실행했다고 기록하지 않는다. 계약6/6·빌드·JS 구문·diff 검사 PASS. 실제 사용자 Instagram/새HEAD 원격CI 미실행이며 다음은 시험판0.1.10 사용자 확인→게시승인이다.
+### IG-05 실제 제공 DOM 누락 보완 / 0.1.12
+- 사용자0.1.10에서 일부 추천계정/추천영상 잔류 보고. 제공 HTML의 깊은 nested label, 개별 추천사유 없는 mutual-follow 행의14px role=link 프로필 badge, semantic HEADER 없는 author/time DIV를 반영했다. 이름/본문/CDN/class 원문은 커밋하지 않고 익명반례만 추가.
+- 계정: 고정6조상 탐색/첫부분행 선택을 제거하고, 명시추천 label 아래 안전한 account-only 그룹 범위까지 탐색. 프로필 링크 외 작은(양변32px이하)role=link badge만 추가허용, 일반이미지/전환버튼/다른link/미디어/게시물/root 경계거절은 유지. 게시물: exact 추천label+프로필+정확 post time을 포함하고 미디어/본문을 포함하지 않는 최소DIV heading도 인식한다. 캡션의 추천문구만으로 article을 숨기지 않는다.
+- 새 익명3반례 수정전0/3→수정후3/3. 최종 IG-05 Chrome 합성12/12 PASS(기존9포함); 제공 원문을 로컬 ignored 진단에서 직접 구성해 계정5개 전부숨김/복원 및 게시물1개 숨김/복원 확인. 이는 실제 Instagram 실행이 아닌 제공DOM 재현이며 개인자료는 출력/커밋하지 않았다. build/구문/diff PASS.
+- 현재공통 코드 추가변경 없음; 전체299/299는 앞선후보 근거이고 이번새모듈 수정후 전체 재실행하지 않음. 실제사용자0.1.12 확인/원격CI/Core·MV3제품수용 NOT_RUN. TEST0.1.12/ig-suggestions-dom-3, Commit/Push 없음. 다음 사용자 적용·계정전부/추천게시물·일반피드/광고보존·해제복원 재확인.
+
+- 사용자0.1.12에서 'ㅇㅋ 문제 없다' 보고: 안내한 추천계정 전부/추천게시물 제한·일반게시물/광고 보존·해제 복원을 사용자 실행 결과로 기록. 실제 Core연동/에이전트 제품수용으로 승격하지 않는다. 게시 동의 후9파일만 별도 브랜치 Commit/Push·Draft PR 준비; 선행#71(c9393d5)/#65 의존 명시, 제품코드나 기록의 통합충돌 해결·병합은 다훈 담당. 게시 직전 현재최종 소스 전체회귀 재실행 중.
+
+- 게시 직전 최종 소스 전체Content304/304 PASS(IG-05 12 포함), fail/skip0. 기존 Node24/Playwright/설치Windows Chrome headless 합성DOM, 실행 node --test --test-concurrency=2 extension/content-tests/*.test.mjs, 로그 ig-suggestions-final-full.log. 계약6/6·빌드·변경JS 구문·공백 검사 별도PASS. 앞선299/301 미재실행 메모는 그 시점 이력으로 보존하며 현재최종 검증은304다. 원격CI는 게시 후 확인, 실제Core/MV3/Native/Server 제품수용 NOT_RUN.
+
 ## 2026-11-01 PR71 최종 게시 후보 · 정상 baseline0.1.9.2
 - 시작2a22fcb / codex/content-instagram-comments, 선행 #65(4daf3d3) 유지. 아래 중간0.1.10~0.1.14 실패 후보는 이력이며 최종 제출 소스가 아니다. 최종은 사용자 정상0.1.9.1(empty 릴스 보완 포함)에 semantic listitem 경계만 수정한0.1.9.2다.
 - 사용자0.1.9.2에서 '됐다 아무문제 없다' 정상 보고: 안내한 홈/릴스/빈댓글 제한·게시물 사진/영상/본문/좋아요 보존 및 해제 복원 결과로 기록. 에이전트 직접 실제Instagram/MV3수용으로 표시하지 않는다.
