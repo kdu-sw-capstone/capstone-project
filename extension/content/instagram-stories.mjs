@@ -1,4 +1,4 @@
-import {NavigationSurfaceSession} from './navigation-surface.mjs';
+import {InstagramMediaSession} from './instagram-media.mjs';
 
 const HOSTS=new Set(['instagram.com','www.instagram.com']);
 const PROTECTED='[data-focurve-ui], [data-focurve-restriction], article, nav, header, footer, aside, [role="navigation"]';
@@ -56,59 +56,7 @@ function targets(document){
   return new Set([...found].filter(node=>![...found].some(other=>other!==node&&other.contains(node))));
 }
 
-// Internal DOM adapter only. Caller must provide actual frozen/native authority
-// and durable effect/cleanup storage before any product use.
-export class InstagramStoriesSession {
-  #surface;#document;#media=new Set();#open=false;#started=false;#url;#last=null;#observe;#invalidated;#canObserve;#busy=false;
-  constructor(document,options){
-    this.#document=document;this.#observe=options.onObservation??(()=>{});this.#invalidated=options.onInvalidated??(()=>{});
-    const canObserve=options.canObserve??(()=>true);this.#canObserve=canObserve;
-    this.onPlay=event=>{if(this.#open&&document.location.href===this.#url&&this.#media.has(event.target)&&event.target.ownerDocument===document&&direct(document)){
-      if(!this.#canApply())return;
-      if(this.#busy)return;this.#busy=true;
-      try{event.target.pause();if(this.#canApply()&&!event.target.paused)this.#failure();}catch{this.#failure();}finally{this.#busy=false;}
-    }};
-    this.#surface=new NavigationSurfaceSession(document,{...options,
-      onObservation:r=>this.#observeMedia(r),onInvalidated:r=>{this.#stop();this.#invalidated(r);}},
-      // Neutral pages keep the authorized same-document controller alive, but
-      // collect() returns nothing there. Every transition still needs the
-      // caller's explicit native/frozen reauthorization in the shared surface.
-      {feature_id:'IG-01',prefix:'INSTAGRAM_STORIES',routeAllowed:supportedRoute,collect:targets});
-  }
-  #stop(){this.#open=false;this.#document.removeEventListener('play',this.onPlay,true);this.#media.clear();}
-  #failure(){if(this.#last){this.#last={...this.#last,status:'FAILED',error_count:this.#last.error_count+1,media_stopped_if_route_block:false};this.#observe(this.#last);}}
-  stop(){this.#surface.stop();this.#stop();}
-  #canApply(){
-    if(!this.#open)return false;
-    let current=false;try{current=this.#canObserve()===true;}catch{}
-    if(!current||!this.#open||this.#document.defaultView?.document!==this.#document||this.#document.location.href!==this.#url){this.stop();return false;}
-    return true;
-  }
-  #observeMedia(result){
-    if(!this.#open)return;
-    this.#url=this.#document.location.href;
-    this.#media.clear();let errors=0;
-    if(direct(this.#document))for(const media of targets(this.#document))if(media.matches('video, audio')){
-      if(!this.#canApply())break;
-      this.#media.add(media);try{media.pause();if(!this.#canApply())break;if(!media.paused)errors++;}catch{errors++;}
-    }
-    if(!this.#open)return;
-    this.#last={...result,adapter_revision:'ig-stories-observe-3',status:errors?'FAILED':result.status,error_count:result.error_count+errors,
-      media_target_count:this.#media.size,media_stopped_if_route_block:direct(this.#document)?result.eligible_target_count>0&&errors===0:null};
-    this.#observe(this.#last);
-  }
-  start(){
-    if(this.#started)throw Error('INSTAGRAM_STORIES_ALREADY_STARTED');
-    this.#open=true;this.#document.addEventListener('play',this.onPlay,true);
-    try{this.#surface.start();this.#started=true;return this.#last;}catch(error){this.#stop();throw error;}
-  }
-  scan(){const r=this.#surface.scan();return r?this.#last:null;}
-  release(){
-    if(this.#busy){this.stop();return {local_only:true,restored:false,remaining_targets:null,error_count:0,cleanup_pending:true,scan_pending:true};}
-    const result=this.#surface.release();
-    // Retain replay protection for unresolved owned changes in this document.
-    // Do not auto-play on release: the user retains manual playback control.
-    if(result.restored)this.#stop();
-    return result;
-  }
+export class InstagramStoriesSession extends InstagramMediaSession {
+  constructor(document,options){super(document,options,{feature_id:'IG-01',prefix:'INSTAGRAM_STORIES',
+    routeAllowed:supportedRoute,collect:targets,mediaTargets:targets,mediaEligible:direct,direct,revision:'ig-stories-observe-3'});}
 }

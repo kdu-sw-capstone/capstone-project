@@ -13,7 +13,7 @@ export class NavigationSurfaceSession {
   #profile;#authorizeNavigation;#canObserve;#busy=false;
   constructor(document,{ledger,owner_binding_id,binding_id,onObservation=()=>{},onInvalidated=()=>{},authorizeNavigation=null,canObserve=()=>true},profile){
     // Profiles are module-owned selectors, not page/Wire policy or capability.
-    if(!profile||!['YT-01','YT-05','YT-06','YT-07','YT-08','YT-09','IG-01'].includes(profile.feature_id)||typeof profile.collect!=='function'||typeof profile.routeAllowed!=='function')throw Error('INVALID_NAVIGATION_PROFILE');
+    if(!profile||!['YT-01','YT-05','YT-06','YT-07','YT-08','YT-09','IG-01','IG-02'].includes(profile.feature_id)||typeof profile.collect!=='function'||typeof profile.routeAllowed!=='function')throw Error('INVALID_NAVIGATION_PROFILE');
     this.#profile=Object.freeze({...profile});
     if(!(ledger instanceof ClaimLedger))throw Error('SHARED_LEDGER_REQUIRED');
     if(![owner_binding_id,binding_id].every(value=>typeof value==='string'&&UUID.test(value)))throw Error('INVALID_CLAIM_SCOPE');
@@ -30,7 +30,7 @@ export class NavigationSurfaceSession {
   start(){
     if(this.#started)throw Error(this.#profile.prefix+'_ALREADY_STARTED');
     const win=this.#document.defaultView,url=new URL(this.#document.location.href);
-    const hosts=this.#profile.feature_id==='IG-01'?INSTAGRAM:HOSTS;
+    const hosts=this.#profile.feature_id.startsWith('IG-')?INSTAGRAM:HOSTS;
     if(win.top!==win||url.protocol!=='https:'||!hosts.has(url.hostname)||url.port||url.username||url.password
       ||!this.#profile.routeAllowed(url))throw Error('UNSUPPORTED_'+this.#profile.prefix+'_DOCUMENT');
     let live=LIVE.get(this.#ledger);if(!live){live=new Map();LIVE.set(this.#ledger,live);}
@@ -65,11 +65,11 @@ export class NavigationSurfaceSession {
     let current=false;try{current=this.#canObserve()===true;}catch{}
     if(!current||!this.#open){this.#invalidate('AUTHORITY_REVOKED');return null;}
     if(this.#document.location.href!==this.#url){
-      if(!['YT-06','YT-07','YT-08','YT-09','IG-01'].includes(this.#profile.feature_id)){this.#invalidate('ROUTE_CHANGED');return null;}
+      if(!['YT-06','YT-07','YT-08','YT-09','IG-01','IG-02'].includes(this.#profile.feature_id)){this.#invalidate('ROUTE_CHANGED');return null;}
       const next=new URL(this.#document.location.href);let authorized=false,originAllowed=false,routeAllowed=false,reauthorization='NOT_CALLED';
       // Only a trusted caller may reauthorize a same-document transition.
       // A page event or URL alone is never authority. Default remains fail-closed.
-      const hosts=this.#profile.feature_id==='IG-01'?INSTAGRAM:HOSTS;
+      const hosts=this.#profile.feature_id.startsWith('IG-')?INSTAGRAM:HOSTS;
       try{
         originAllowed=next.protocol==='https:'&&hosts.has(next.hostname)&&!next.port&&!next.username&&!next.password;
         routeAllowed=originAllowed&&this.#profile.routeAllowed(next);
@@ -80,7 +80,7 @@ export class NavigationSurfaceSession {
         if(this.#ledger.release(claim).restored)this.#targets.delete(element);else pending=true;
       }
       if(pending||!authorized){
-        this.#invalidate(pending?'ROUTE_CLEANUP_FAILED':'ROUTE_CHANGED',this.#profile.feature_id==='IG-01'?{
+        this.#invalidate(pending?'ROUTE_CLEANUP_FAILED':'ROUTE_CHANGED',this.#profile.feature_id.startsWith('IG-')?{
           origin_allowed:originAllowed,route_allowed:routeAllowed,reauthorization,
           path_segment_count:next.pathname.split('/').filter(Boolean).length,
           route_family:next.pathname==='/'?'HOME':/^\/stories(?:\/|$)/.test(next.pathname)?'STORIES':/^\/accounts(?:\/|$)/.test(next.pathname)?'ACCOUNTS':'OTHER',
@@ -108,7 +108,7 @@ export class NavigationSurfaceSession {
     }catch{errors++;}
     if(this.#open)this.#observer.observe(this.#document.documentElement,{subtree:true,childList:true,attributes:true,
       attributeFilter:['href','page-subtype','browse-id','video-id','id','class','style','inert','hidden','data-focurve-restriction','data-focurve-ui',
-        ...(this.#profile.feature_id==='IG-01'?['aria-label','role','alt','draggable','contenteditable']:[])]});
+        ...(this.#profile.feature_id.startsWith('IG-')?['aria-label','role','alt','draggable','contenteditable']:[])]});
     const result={feature_id:this.#profile.feature_id,local_only:true,native_verified:false,status:errors?'FAILED':eligible?'OBSERVED':'NO_TARGET',
       eligible_target_count:eligible,restricted_target_count:restricted,error_count:errors,remaining_targets:this.#targets.size};
     if(!this.#open)return null;

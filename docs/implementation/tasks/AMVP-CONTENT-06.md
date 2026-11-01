@@ -1,5 +1,30 @@
 # AMVP-CONTENT-06 · 추가 Content 연결
 
+## 2026-11-01 IG-02 Reels 첫 독립 구현 · 사용자 시험 정상 / 게시 준비
+
+- 사용자 상태 확인 개선: 시험 확장 이름/버전을 FOCURVE 릴스 시험판 0.1.2로 구분하고 릴스 버튼을 최상단으로 옮겼다. popup.js는 누른 명령 버튼 바로 아래 결과 패널/상태 복사를 표시하고 action·checked_at·원본 response 또는 연결 error/hint를 JSON으로 제공한다. 최신 요청만 표시하며 URL/본문을 추가 수집하지 않는다. clipboard 실패 시 선택+Ctrl+C 안내, 별도 권한 추가 없음. 설치 Chrome 합성 popup에서 위치/실패 응답 JSON 복사/연결 오류 표시 검증 PASS, 구문/build PASS. 이전230은 DOM 기능 소스 근거이며 이 UI 변경 후 전체 재실행으로 주장하지 않는다.
+
+- 담당 채지민, 브랜치 `codex/content-instagram-reels`, Worktree는 위 인수 공간 `content-resume-20261101` 재사용. 시작 HEAD `2e7fe7582d343c98e12f4a1f8f0fba33a087e251`(#61). #54→#56→#57→#58→#61 선행 코드 보존, 기존 브랜치 Commit을 중복 적용하지 않는다. 현재 작업카드의 인수 기록도 함께 보존한다.
+- 기준: `docs/design/additional-mvp-contracts/05_Content_Event_UI.md`의 16옵션/미디어·복원 증거, `contracts/additional-mvp/rc1/feature-registry.json` IG-02와 AC-IG-02-01~03. 정확한 릴스 링크(/reel/id, /reels 및 /reels/id)·미리보기와 직접 main/dialog 영상·오디오만 제한한다. 일반 피드 수동 영상·스토리·DM·제어 버튼·FOCURVE UI를 유지한다. 사용자가 아래 5항목을 정상으로 보고했으며 모든 계정/DOM 변형 검증은 아니다.
+- 재사용: 스토리의 pause/play guard·중단 fence·재진입 release·retryable cleanup을 `instagram-media.mjs`로 추출, 기존 Stories wrapper/profile 유지. Reels는 별도 collect/media profile이며 IG-02를 navigation 및 Session adapter에 연결했다. Core 생산 코드/권한 발급/저장/Server/계약/제품 Manifest는 변경하지 않는다. 실제 Core 공급 없는 상태에서 OBSERVED를 제품 APPLIED로 전환하지 않는다.
+- 직접 viewer의 media 0은 OBSERVING/route block false, pause 실패 또는 DOM 제한 실패는 성공 증거 금지. entry 링크 안의 preview media도 pause하며 일반 게시물 영상은 건드리지 않는다. 해제 후 자동 play/unmute/seek를 하지 않는다. 같은 문서 이동은 명시적 재승인을 요구하고 pagehide/권한 회수 시 닫힌 scope를 자동 재개하지 않는다.
+- 시험판: 기존 popup에 릴스 적용/해제/상태 3버튼만 추가(총35), TEST popup sender gate 유지, build `ig-reels-1`. 새 unpacked 경로 `C:/Users/user/Documents/capstone-project/.worktrees/content-resume-20261101/extension/build/content-harness`. 이전 additional-mvp-content 폴더의 확장 reload만으로 이 변경이 들어오지 않는다. 기존 시험 확장을 끄고 새 경로를 로드한 뒤 Instagram 새로고침이 필요하다. 제품 sender/native 검증이 아닌 모의 콜백이다.
+- 개발 중 추출 치환의 private field 구문 오류로 최초 실행이 실패해 수정했다. 이후 고정 소스의 Reels10+Stories25+adapter31 **66/66 PASS**. 추가로 DOM 실패 허위 성공 방지·pause 중 release pending·실제 TEST bootstrap sender/릴스 적용·해제 반례3건을 추가했다. 최초 실패를 원래 기능의 회귀 완료나 수정 전 취약성 재현으로 부르지 않는다.
+- 최종 전체 Content 회귀 `node --test --test-concurrency=2 extension/content-tests/*.test.mjs`는 **230/230 PASS**, fail/skip0(109.9초), `reels-regression.log`에 보존했다. Reels13/Stories25/adapter31을 포함하므로 이전66 및 계약6과 합산하지 않는다. `reels-focused.log`는 이전66 실행으로 별도 보존한다. 계약6/6, 관련7JS syntax, harness build·git diff --check 성공. 원본/빌드 Reels SHA256 `F5AB205C17DC6207105D1E7EACFF4879D07211A64E7167E40BB42D2A3390C701` 일치 확인. Windows Node24/설치 Chrome/Playwright, route.fulfill 합성 DOM·모의 authority 및 pause/paused이며 실제 서비스/오디오/MV3 수용으로 확대하지 않는다.
+- 사용자 실제 Chrome 실행 결과: 아래 5항목 모두 정상을 보고했다(“ㅇㅋ 다 정상이야”). 자동시험과 구분하며 독립 수용 로그는 아니다. 체크 항목: (1) 릴스 메뉴/미리보기 숨김과 해제 (2) 직접 릴스 영상 표시·재생·소리 제한 (3) 같은 문서의 다음 릴스 이동/재등장에도 유지 (4) 일반 게시물 영상·스토리·DM 보존 (5) 해제 후 표시·직접 재생 가능. 실제 viewer가 남거나 OBSERVING/NO_TARGET/FAILED이면 성공으로 체크하지 않는다. 전체 새로고침은 시험판 적용이 초기화되므로 다시 적용한다.
+- 실제 Core issued/native/frozen/full scope, 효과 전 영속 의무 ACK, cleanup lease/prior footprint, 결과 영속 조회, 새 문서·BFCache 재결속/재적용 및 제품 START/END/복원/오디오 수용은 미완료. 다른 IG4옵션/키워드/블러는 이번 범위 밖. 사용자 시험 정상 보고 후 게시 준비 승인. Commit/Push는 별도 승인창으로 진행하며 Merge는 하지 않는다. `MVP_FINAL_COMPLETE=false`.
+
+## 2026-11-01 채지민 개발 인수 확인
+
+- 담당 채지민. 인수 브랜치 `codex/content-resume-20261101`, Worktree `C:/Users/user/Documents/capstone-project/.worktrees/content-resume-20261101`, 시작 HEAD `2e7fe7582d343c98e12f4a1f8f0fba33a087e251`(#61). 다훈 PC의 Worktree는 이 PC에 없으므로 새 공간이 필요했다. 기존 로컬 Content 브랜치와 root의 OPTION-11/통합현황/image-filter-demo 변경을 보존했다. 원격 fetch 후 실제 PR HEAD/base를 대조했다.
+- 원격 #54 `670647f41f4e9b9c2380faede496815aa2f3d6a8` → #56 `08730c86d91d0b1d3790bc5fafc7a7ca9195ece8` → #57 `02a653fb60e671dcf997951b220708ea146b4a7a` → #58 `62a4233aab9a45ade36b4ec308dbe5b1f8290306` → #61의 의존성 유지. 다섯 PR 모두 OPEN/Draft/미병합, 조회 시 GitHub mergeable=true였다. 이는 미래 통합 충돌 없음이나 승인 완료를 뜻하지 않는다. #57/#58/#61 자체 diff는 각각 3/11/3파일이고 각 base가 직전 PR HEAD와 일치한다. 중복 patch 적용/기존 브랜치 수정 없음.
+- 인계 완료 범위: IG alt/draggable 및 contenteditable 동적 적격 감시, YouTube 비Shorts 9옵션·IG stories 조합 adapter, frozen 옵션 복사/기능별 해제/다중 owner/중단 중 scan fence/재시도 가능한 cleanup. #58은 수정 전 리뷰가 최신 HEAD의 독립 재승인이 아니므로 통합 담당 재리뷰 대기 상태를 유지한다.
+- 실제 최신 통합 `24327d1bd8615a2274a6dead43f23b71cc06b64e`에서 `extension/member-a1/content.mjs`의 handle/scope/perform과 schema의 Shorts 한정을 재확인했다. extension 생산 코드에서 AMVP_CONTENT_2 발급/수신 경로는 확인되지 않았고 관련 registry는 contracts의 시험 참조 모델이다. 추가 adapter에 기존 Shorts 권한을 전용하지 않는다.
+- 필요한 Core 공급: issued Control/Projection/full BindingScope, 실제 native document·generation의 current 확인, 효과 이전 영속 cleanup 예약 ACK, prior footprint·cleanup lease, 관찰/복원 결과 저장·조회. Content는 검증된 입력과 ACK 이후 기존 Session 조합/결과 반환을 연결한다. 해당 공급 없는 제품 listener/성공 Receipt를 만들지 않는다.
+- 직접 실행: 기존 Node runtime·설치 Chrome·Playwright, PLAYWRIGHT_MODULE/CHROME_EXECUTABLE 지정 후 `node --test --test-concurrency=2 extension/content-tests/instagram-stories-browser.test.mjs extension/content-tests/session-adapter-browser.test.mjs` **56/56 PASS**, fail/skip0, exit0. `node --test contracts/additional-mvp/rc1/tests/legacy-boundary.test.mjs` **6/6 PASS**, exit0. 실제 Chrome 엔진의 route.fulfill 합성 DOM/모의 권한·일부 media 상태이며 실제 서비스/MV3 제품 수용이 아니다. 다훈의 과거183/215/217 및 CI 보고를 이번 독립 전수 실행으로 바꾸지 않는다.
+- 다음 독립 개발 우선순위: IG-02 Reels 제한·복원을 작은 기능 단위로 진행하고 기존 ledger/중단 fence/adapter를 재사용한다. 나머지 Instagram 4옵션·URL 키워드/블러는 후속이며 이번 인수에서 새로 구현하지 않았다. 실제 Core 연결은 위 공급 확인이 선행한다.
+- 제품 미검증: issued/native/영속 cleanup·lease 연결, 새 문서/SPA/BFCache 재결속·재적용, 정상 START/END·실제 오디오/복원/재기동. 인수 기록 외 제품 수정·Commit/Push/Approve/Merge 없음. `MVP_FINAL_COMPLETE=false`.
+
 ## 2026-10-31 야간 지속 · IG editable 전환 관찰
 
 - #58 P2는 실제 최신 `62a4233aab9a45ade36b4ec308dbe5b1f8290306`/원격 CI215+계약6 SUCCESS 상태를 다시 확인했다. 소스/의존성 불변인 P2 시험은 재실행하지 않고 그대로 재사용한다. 기존 #54/#56/#57/#58 브랜치를 변경하지 않는다.
