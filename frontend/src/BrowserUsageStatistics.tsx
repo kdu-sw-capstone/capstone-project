@@ -6,7 +6,8 @@ export type UsageStatistics={scope:"INSTALLATION"|"ACCOUNT_TOTAL";quota_debit:fa
 function latestDate(from:string){const epoch=Date.parse(from+"T00:00:00Z");if(!Number.isFinite(epoch))return undefined;try{return new Date(epoch+365*86400000).toISOString().slice(0,10);}catch{return undefined;}}
 function duration(value:number|null){return value===null?"미확인":`${Math.floor(value/60000)}분 ${Math.floor(value/1000)%60}초`;}
 export function parseUsage(value:UsageStatistics,scope:string,from:string,to:string){
- if(!value||value.scope!==scope||value.from_date!==from||value.to_date!==to||value.quota_debit!==false||value.aggregation!=="SUM_OF_DEVICE_USAGE"||!["COMPLETE","PARTIAL","UNKNOWN","NOT_COLLECTED","NO_DATA"].includes(value.quality))throw new UiError("이용시간 조회 범위와 응답을 확인하지 못했습니다.");
+ const observed=typeof value?.as_of==="string"?Date.parse(value.as_of):NaN;
+ if(!value||value.scope!==scope||value.from_date!==from||value.to_date!==to||value.quota_debit!==false||value.aggregation!=="SUM_OF_DEVICE_USAGE"||!["COMPLETE","PARTIAL","UNKNOWN","NOT_COLLECTED","NO_DATA"].includes(value.quality)||!Number.isFinite(observed)||!/^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d\.\d{3}Z$/.test(value.as_of)||new Date(observed).toISOString()!==value.as_of)throw new UiError("이용시간 조회 범위와 응답을 확인하지 못했습니다.");
  for(const field of [value.browser_ms,value.focus_ms,value.repeat_count])if(field!==null&&(!Number.isSafeInteger(field)||field<0))throw new UiError("이용시간 수치를 확인하지 못했습니다.");
  if(value.repeat_ratio!==null&&(typeof value.repeat_ratio!=="number"||!Number.isFinite(value.repeat_ratio)||value.repeat_ratio<0||value.repeat_ratio>1))throw new UiError("반복 비율을 확인하지 못했습니다.");
  return value;

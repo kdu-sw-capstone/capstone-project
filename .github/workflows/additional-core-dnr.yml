@@ -6,12 +6,18 @@ on:
       - 'extension/src/additional-dnr-*.js'
       - 'extension/tests/additional-dnr-*.test.mjs'
       - 'extension/tests/additional-dnr-legacy-writer-browser.mjs'
+      - 'extension/tests/additional-dnr-site-controller-browser.mjs'
       - 'extension/a1/contract.mjs'
-      - 'extension/a1/core.mjs'
-      - 'extension/background/a1-core.bundle.js'
-      - 'extension/scripts/build-a1.mjs'
       - 'extension/member-a1/**'
       - 'extension/background/member-a1-core.bundle.js'
+      - 'extension/src/site-controller.js'
+      - 'extension/src/member-journal-store.js'
+      - 'extension/src/member-execution-loop.js'
+      - 'extension/background/member-execution.js'
+      - 'extension/scripts/build-member-worker.js'
+      - 'extension/tests/site-controller.test.js'
+      - 'extension/tests/member-execution-loop.test.mjs'
+      - 'extension/tests/member-execution-runtime.test.mjs'
       - 'extension/background/member-auth.js'
       - 'extension/tests/member-auth*.test.mjs'
       - 'extension/tests/member-reauthentication.test.cjs'
@@ -22,6 +28,9 @@ on:
       - 'extension/package*.json'
       - 'contracts/additional-mvp/**'
       - '.github/workflows/additional-core-dnr.yml'
+      - 'extension/a1/core.mjs'
+      - 'extension/background/a1-core.bundle.js'
+      - 'extension/scripts/build-a1.mjs'
 permissions:
   contents: read
 jobs:
@@ -39,7 +48,8 @@ jobs:
           node-version: '24.19.0'
       - run: npm ci --ignore-scripts --no-audit --no-fund
         working-directory: extension
-      - run: node --test extension/tests/additional-dnr-inventory.test.mjs extension/tests/additional-dnr-coordinator.test.mjs extension/tests/additional-dnr-site-time-evidence.test.mjs extension/tests/additional-dnr-legacy-writer.test.mjs extension/tests/additional-dnr-guest-writer.test.mjs
+      - run: node --test extension/tests/additional-dnr-inventory.test.mjs extension/tests/additional-dnr-coordinator.test.mjs extension/tests/additional-dnr-site-time-evidence.test.mjs extension/tests/additional-dnr-legacy-writer.test.mjs extension/tests/additional-dnr-site-controller.test.mjs extension/tests/additional-dnr-guest-writer.test.mjs
+      - run: node --test extension/tests/site-controller.test.js extension/tests/member-execution-loop.test.mjs extension/tests/member-execution-runtime.test.mjs
       - run: node --test extension/tests/member-auth.test.mjs extension/tests/member-auth-runtime.test.mjs extension/tests/member-reauthentication.test.cjs
       - run: node --test contracts/additional-mvp/rc1/tests/legacy-boundary.test.mjs
       - run: npm run check
