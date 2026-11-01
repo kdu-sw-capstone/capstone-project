@@ -25,7 +25,7 @@ export class SiteController {
   }
 
   async guard(command, desired, provider = this.getContext) {
-    const context = await provider();
+    const context = await provider.call(this);
     if (!context || context.reconciled !== true) throw new Error('RECONCILE_REQUIRED');
     if (!UUID.test(command?.command_id) || !UUID.test(command.session_id)
       || !UUID.test(command.executor_id) || !Number.isSafeInteger(command.desired_revision)
