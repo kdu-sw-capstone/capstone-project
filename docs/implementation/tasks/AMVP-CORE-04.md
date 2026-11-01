@@ -1,5 +1,17 @@
 # AMVP-CORE-04 — Core DNR 소유권·복원
 
+## 2026-11-01 RuntimeReport 영속 발신함 착수
+
+- 담당 윤종민, `feature/additional-mvp-runtime-report-outbox`, 시작 `79409240e65ec6b92fa12f3422c3e67bea0308f0`. PR59/68은 최신 담당 재확인 대기로 보존한다.
+- 기존 계획의 RuntimeReport 생산/전달 중, 이미 승인된 report/ReportBatch/BatchAck를 영속 보관·재시도·항목별 ACK로 결속하는 Core 내부 발신함부터 구현한다. 실제 effect producer·epoch/seq 발급·HTTP/Server/Worker 활성화·증거 매핑은 제외한다.
+- authorizeScope/verifyReport/verifyAck는 실제 Core/transport adapter가 구현해야 하며 기본 false다. message body/단순 hash만으로 APPLIED/RELEASED 증거를 발급하지 않는다. 승인 Wire/Schema를 그대로 읽고 기존 metadata sidecar에 저장한다. 상태: 구현·검증 진행 중.
+
+### RuntimeReport 발신함 단위 구현·검증 종료
+
+- `RuntimeReportOutbox.enqueue/batch/acknowledge/recover`: immutable report·동일 batch 재전송·항목별 ACK·owner/executor 분리·순번/hash 검사·IDB snapshot CAS. 기존 report/ACK Schema와 metadata store를 재사용하고 새로운 공용 Wire/DB migration은 없다.
+- 신규21/21·전체908/908·계약6/6·Chromium 실제 IndexedDB1/1 PASS(fail/skip0). 신규 시험은 전체에 포함된다. browser의 권한/증거/ACK는 모의이며 process 재시작·실제 MV3/Server/HTTP 수용 시험이 아니다.
+- 이번 단위 구현·로컬 검증 완료, 리뷰/통합 대기. [함수·저장 형식·재현·제한](../evidence/AMVP-CORE-04-runtime-report-outbox.md). producer의 issued 증거/epoch/seq·생산 원자성·인증 HTTP·Worker/capability/collector/clock은 미연결이며 기본 거절을 유지한다. 실제 적용/해제나 전체 Core 완료를 뜻하지 않는다.
+
 ## 2026-11-01 SiteController DNR guard 착수
 
 - 담당 윤종민, `feature/additional-mvp-site-controller-dnr`, 시작 `10ab6026f1cf7d244a75ee529830afb8bcf6b8c8`. PR59/68은 OPEN/리뷰 대기로 보존하고 독립 worktree에서 병합55 gate에만 의존한다.
