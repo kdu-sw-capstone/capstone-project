@@ -1,5 +1,15 @@
 # 추가 MVP · 정책 발행·이용시간 수신 경계
 
+
+## 후속 집중 화면 fixture·종료 기록 조회 수명 — 2026-11-01
+
+- 담당 김다훈 Web, 브랜치 `fix/additional-mvp-focus-state-fixtures`, 기존 managed Worktree `C:/Users/dahun/.codex/worktrees/site-usage-period-20261101/04 · 추가 MVP 구현` 재사용. 시작 기준 **b2dc6ffed6593197ef4de6cb0ee8915cc98453bf**에서 진행 중 통합 **4e6ff6ced95b96f362f2fbf088aa192e17278529**를 fast-forward 반영했다. 유입 PR70은 Core 소유의 기존 통합 변경이며 자체 수정이 아니다. 두 기준의 Web/Server/계약/의존성이 같아 기존 검증을 재사용한다. #54/#62/#67/#69 완료를 다시 개발하지 않는다. 아래 과거 Draft·SHA·검증 숫자는 당시 이력이다.
+- **독립 재현:** FocusScreens의 정상 집중 상태 fixture가 CFG-01 필수 `has_more`를 누락했다. 정상 요약을 기다리는 결정적 반례 **1 FAIL → PASS**. 기존 복수 alert CI 변동을 단순 재실행/단일 alert 무시로 숨기지 않고 정확한 `/amvp/configs?` 정상 응답을 제공했다. 의도적으로 불완전한 CFG-01과 세션 조회422가 함께 오면 **두 alert 표시·START 차단**을 별도 검증한다. `contracts/additional-mvp/rc1/schema.json` ConfigList의 required와 SDK `listConfigs` 검증은 변경하지 않았다.
+- **실제 제품 코드 결함:** 종료 기록 A→B에서 `EndedAccess`가 컴포넌트/상태/조회 lock을 공유해 A 요약 잔존, 대기 A로 B 조회 누락, 늦은 A 응답 혼입 가능. 완료 기록 소유권을 session_id에 결속해 remount하고 읽기 AbortSignal/수명 세대로 폐기 응답·401을 소비한다. **변경 전3 FAIL → 변경 후5 PASS**(늦은 성공/401, 기존 요약 제거·현재 실패/성공 재조회, 현재401 전파, StrictMode). 현재 유효한 오류·전역 인증 만료/세션 실행·Core 상태/0건의 의미는 유지한다. PR69의 Note 코드/API는 재수정하지 않았다.
+- **검증:** FocusSummaryScope5 + FocusScreens19 + 기존 NoteScope11/CadenceSummary2 = **37 PASS**, TypeScript/Vite build PASS. 해당 시험은 jsdom/모의 HTTP이며 제품 Server·DB나 실제 producer 수용이 아니다. 정상 Server/DB/계약/의존성은 변경 없어 기존 검증을 재사용하며 불필요한 MySQL/서비스·전체 로컬 회귀는 반복하지 않는다. 추가 CADENCE 영향 시험·게시 HEAD/CI는 PR 본문 및 `.local/focus-fixture-20261101/` 원본/result에 기록한다. 최초 실패 로그와 fixture 보완 중 시험 준비 오류도 그대로 남긴다.
+- **범위/재개:** 자체 diff는 FocusSessions 제품1·FocusScreens/FocusSummaryScope 시험2·이 카드1뿐이다. #63/#66 원격 HEAD, 다른 Worktree/index·공유 루트 staged 삭제1,036개·인증/api.ts·DB schema·RC2/legacy-lock·Core/Content/Shorts를 변경하지 않는다. ONCE actor 매핑/CADENCE 단계/USG-02 hash 공동 결정과 capability/effect/release/collector/clock producer는 기존 차단으로 유지한다. 새 공유 계약/모의 producer/추가 조회 화면은 만들지 않는다. 추가 독립 결함 근거 없이 새 PR을 늘리지 않는다.
+- Approve·Draft 해제·Merge 없음. 실제 Core·Content·Chrome·Native·Server 제품 수용 **NOT_RUN**, `MVP_FINAL_COMPLETE=false`. 검토 범위는 정상/불완전 CFG fixture 분리, 종료 기록 A→B의 요청·오류 수명과 기존 상태/메모/CADENCE 회귀다.
+
 > 2026-11-01 PR69 후속 동기화: PR67 병합 **005b90134a436fd651cd07baff1be1fc934173e4**를 기존 #69에 이력 보존 merge로 반영한다. 수동 충돌은 이 작업카드1파일이며 아래 양측 전체 기록을 보존한다. `SessionNote.tsx`, `SessionNoteScope.test.tsx`, `SESSION-06.md`는 기존 **b043737102422c4618f655e99c882c56e8cadc50**의 blob과 동일하다. 그 외 변경은 통합 기준에서 가져온 #67의 기존 구현이며 재구현하지 않는다. 기존 검증/승인은 내용 동일한 근거로만 재사용하고 새 HEAD 승인으로 소급하지 않는다. 새 HEAD·CI·후보 tree 근거는 PR69 본문 및 `.local/pr69-pr67-sync-20261101/`. #63/#66·Core/Content·다른 Worktree·공유 루트 index는 변경하지 않으며 Approve/Draft 해제/Merge·실제 제품 수용은 수행하지 않는다. `MVP_FINAL_COMPLETE=false`.
 
 > 2026-11-01 PR69 리뷰 보완·통합 동기화: 독립 리뷰의 폐기 GET401 전역 인증 만료 P2를 초기 load/PUT412 후속 GET 양쪽에서 재현·수정했다. 폐기2 FAIL·현재401 대조군2 PASS → 관련33 PASS. 원래 오류 수명 경계만 보완했으며 api.ts/인증/useWork 계약은 유지한다. PR62 병합 **624c99c7846f514b683ecaaa2eac8deb48ec72f4**를 반영하면서 아래 양측 기록 전체와 Note 제품/시험 및 SESSION-06 카드 blob을 보존한다. 과거 리뷰/승인을 새 HEAD로 소급하지 않는다. #66은 기존 수정 금지 범위로 남겨 HEAD를 변경하지 않는다. 새 HEAD/CI는 PR69 본문과 `.local/pr69-review-fix-20261101/`에 기록한다.
