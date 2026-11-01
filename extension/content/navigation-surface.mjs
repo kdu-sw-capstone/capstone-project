@@ -13,7 +13,7 @@ export class NavigationSurfaceSession {
   #profile;#authorizeNavigation;#canObserve;#busy=false;
   constructor(document,{ledger,owner_binding_id,binding_id,onObservation=()=>{},onInvalidated=()=>{},authorizeNavigation=null,canObserve=()=>true},profile){
     // Profiles are module-owned selectors, not page/Wire policy or capability.
-    if(!profile||!['YT-01','YT-05','YT-06','YT-07','YT-08','YT-09','IG-01','IG-02'].includes(profile.feature_id)||typeof profile.collect!=='function'||typeof profile.routeAllowed!=='function')throw Error('INVALID_NAVIGATION_PROFILE');
+    if(!profile||!['YT-01','YT-05','YT-06','YT-07','YT-08','YT-09','IG-01','IG-02','IG-03'].includes(profile.feature_id)||typeof profile.collect!=='function'||typeof profile.routeAllowed!=='function')throw Error('INVALID_NAVIGATION_PROFILE');
     this.#profile=Object.freeze({...profile});
     if(!(ledger instanceof ClaimLedger))throw Error('SHARED_LEDGER_REQUIRED');
     if(![owner_binding_id,binding_id].every(value=>typeof value==='string'&&UUID.test(value)))throw Error('INVALID_CLAIM_SCOPE');
@@ -65,7 +65,7 @@ export class NavigationSurfaceSession {
     let current=false;try{current=this.#canObserve()===true;}catch{}
     if(!current||!this.#open){this.#invalidate('AUTHORITY_REVOKED');return null;}
     if(this.#document.location.href!==this.#url){
-      if(!['YT-06','YT-07','YT-08','YT-09','IG-01','IG-02'].includes(this.#profile.feature_id)){this.#invalidate('ROUTE_CHANGED');return null;}
+      if(!['YT-06','YT-07','YT-08','YT-09','IG-01','IG-02','IG-03'].includes(this.#profile.feature_id)){this.#invalidate('ROUTE_CHANGED');return null;}
       const next=new URL(this.#document.location.href);let authorized=false,originAllowed=false,routeAllowed=false,reauthorization='NOT_CALLED';
       // Only a trusted caller may reauthorize a same-document transition.
       // A page event or URL alone is never authority. Default remains fail-closed.
@@ -102,7 +102,8 @@ export class NavigationSurfaceSession {
           if(this.#next===Number.MAX_SAFE_INTEGER)throw Error(this.#profile.prefix+'_TARGET_LIMIT');
           claim=`${this.#scope}:${++this.#next}`;this.#targets.set(element,claim);
         }
-        const verified=this.#profile.feature_id==='YT-09'?this.#ledger.grayscale(claim,element,()=>this.#canApply()):this.#ledger.hide(claim,element,()=>this.#canApply());
+        const apply=this.#profile.feature_id==='YT-09'?'grayscale':this.#profile.preserveLayout?'conceal':'hide';
+        const verified=this.#ledger[apply](claim,element,()=>this.#canApply());
         if(verified)restricted++;else errors++;
       }
     }catch{errors++;}

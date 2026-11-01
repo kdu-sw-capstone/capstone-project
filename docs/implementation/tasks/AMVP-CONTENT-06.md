@@ -1,5 +1,30 @@
 # AMVP-CONTENT-06 · 추가 Content 연결
 
+## 2026-11-01 IG-03 탐색 · 사용자 재시험 정상 / 게시 준비
+
+### 목록 로딩 잔여 보완
+
+- 최신 사용자 실행 근거: 0.1.5에서 게시물/로딩 표시 숨김·검색 유지·해제 후 복원을 사용자가 “ㅇㅋ 문제없네”로 정상 보고했다. 최초 검색 소실/로딩 잔여 실패 이력과 구분한다. 실제 네트워크 요청 반복 여부·전체 성능/모든 계정 DOM·제품 Core 수용은 미검증이다. 이번 게시 준비는 기록만 갱신하며 자동시험을 다시 실행한 것으로 표시하지 않는다.
+
+- 사용자 0.1.4 실제 결과: EXPLORE eligible/restricted18/18·errors0, 목록은 숨겨졌으나 로딩 표시가 계속 보임. 해제 후 정상 복원은 사용자가 확인했다. 실제 network request 반복/로딩 DOM 원문은 미확보이므로 무한 요청 발생을 확정하지 않는다.
+- 원인 후보의 최소 대응: 카드 display:none으로 인한 목록 높이 축소를 피하도록 IG03 profile만 preserveLayout으로 적용한다. ClaimLedger.conceal은 opacity:0!important+inert를 기존 property별 ownership/pending 복원 경로로 관리하고 computed opacity를 확인한다. 자손 visibility override로 노출되지 않도록 opacity를 쓴다. 기존 hide/grayscale 호출 의미는 유지한다. 이는 화면 숨김이며 네트워크/API 차단 구현이 아니다.
+- 정확한 /explore/에서 카드가 확인되는 main의 role=progressbar만 같은 claim 방식으로 숨긴다. 검색/dialog/form/FOCURVE 영역·카드 없는 최초 loading은 보존한다. 표시 역할이 다른 실제 Instagram spinner의 지원은 사용자 재확인 전 미검증이다.
+- 신규 합성 반례: 숨김 전후 main 높이 동일, 목록 로딩만 숨김/검색 로딩 보존, 원래 opacity priority/inert 복원, 다른 owner·페이지 opacity 변경 보존, 최초 로딩 유지. 공유 ledger 확장 후 전체 Content 회귀 **241/241 PASS**, fail/skip0, 124.2초, ig-explore-loading-regression.log 보존. 계약6/6·변경JS구문 PASS. 마지막 0.1.5/build ig-explore-layout-3 표기와 설명만 변경 후 build/diff 검사하며 기능 시험을 새로 실행한 것으로 주장하지 않는다. 검색 전회 실패와 이번 로딩 이력을 지우거나 기존77/9PASS를 최종 전수로 바꾸지 않는다.
+- 재시험 범위: 0.1.5에서 목록 적용 후 로딩 표시/목록 미노출, 검색 가능, 해제 후 카드/원래 화면 복원. 실제 요청 반복·CPU/장시간 성능은 미검증. Core·Server·Wire·제품 Manifest 변경/Commit/Push/Merge 없음.
+
+
+- 사용자 실제 실패: 홈 적용 후 검색 메뉴가 사라짐. 기존 설명의 검색/탐색 메뉴가 항상 별도라는 전제는 잘못이며 원본 DOM은 아직 미확보다. exact /explore/만으로 모든 링크를 숨기는 소스의 과대 판별을 확인했다. 같은 href+Search/검색 label 및 불명 링크를 추가한 합성 반례는 수정 전 FAIL(true!==false) → 수정 후 PASS. 실제 DOM이 해당 shape인지는 단정하지 않고 사용자 재시험으로 확인한다.
+- 수정: route와 명시적 탐색 identity(aria-label/title/svg title·label/aria-labelledby/text)를 함께 요구, Search/검색 표시가 하나라도 있으면 보존, 불명 메뉴도 보존한다. 직접 /explore/ 카드 제한은 유지한다. 시험판0.1.4/build ig-explore-search-fix-2로 구분하고 EXPLORE page_kind 수정. 최종 탐색9/9 PASS, 변경JS구문/build/diff PASS. 이전77은 당시 범위 기록이며 최신78 전수 실행으로 합산하지 않는다. 사용자 검색 복원·실제 검색/목록 확인 대기.
+
+- 담당 채지민, 브랜치 `codex/content-instagram-explore`, 시작 `7e271c87ed89f62c9bb4f65796b439524a8d5954`(#64). 같은 clean Worktree에서 별도 브랜치를 생성했다. 릴스/기존 스토리/adapter·P2 수정 Commit 보존. #64를 선행으로 하며 현재 통합/병합 상태를 완료로 추정하지 않는다.
+- 기준 `docs/design/additional-mvp-contracts/05_Content_Event_UI.md`의 IG03 explore-only/search 제외, `contracts/additional-mvp/rc1/feature-registry.json` IG-03 / AC-IG-03-01~03. 탐색 메뉴의 exact local /explore/ 링크와 직접 /explore/ main 내부 p/reel 카드 링크를 제한한다. 검색 경로·q/query 조회·dialog/search/form/편집기·DM/FOCURVE 보호, 일반 profile/post/home 목록은 변경하지 않는다. 전체 main/nav를 숨기거나 텍스트/휘발 class로 판별하지 않는다.
+- 재사용: NavigationSurfaceSession의 same-document 명시 재승인/claim 정리/중단/부분 실패 보존. IG-03 profile 등록과 Session adapter factory 추가, 기존 API/Wire/Core/Server/제품 Manifest 변경 없음. DOM 목록 숨김이며 일반 영상 재생 설정/미디어 pause는 변경하지 않는다. 실제 selector 변형은 사용자 확인 전 미검증이다.
+- 시험 확장 0.1.3 `FOCURVE 탐색 시험판 — Core 미연결`, 팝업 최상단 탐색 적용/해제/상태 추가. 기존 모든 버튼·버튼 아래 결과/복사 유지. build 경로는 content-resume-20261101의 기존 unpacked 폴더 그대로다. TEST 전용 authority 재승인/새로고침 초기화, 제품 권한/영속 증거 아님.
+- 검증 진행: exact 메뉴/grid·검색/일반 화면 보존, 동적 href/카드·다중 owner·SPA 승인/거절·pagehide·부분 복원/재시도·adapter/TEST sender gate 브라우저 반례8건 및 기존 adapter 회귀. 실제 실행 결과는 아래 최종 절에 기록한다.
+- 최종 직접 실행: 탐색8+기존 adapter31 = **39/39 PASS**, 기존 Stories25+Reels13 = **38/38 PASS**, 서로 다른4파일 총77건 fail/skip0. 로그 ig-explore-focused.log/ig-explore-regression.log. 계약 legacy-boundary **6/6 PASS**, 변경JS5파일 --check/build/git diff --check 성공. Node24/설치Chrome/Playwright route.fulfill 합성 DOM·모의 권한/미디어이며 실제 서비스/MV3 제품 수용이 아니다. module/build SHA256 87E926A1567538C9D79AD521A00D8D9C1E2E4A3E84E997858D4FFA06767DEDFD 일치. 이전230/217을 최신 전체 전수시험으로 소급하지 않는다.
+- 최초 사용자 시험 계획(현재 최신 보고는 위 절): 홈 적용 시 탐색 메뉴만 숨김/검색 유지, 직접 /explore/ 적용 시 카드 숨김/현재 페이지 유지, 지원 SPA 이동 재등장 제한, 해제 후 메뉴/목록 복원, 일반 게시물/프로필/DM 유지. 목록이 남거나 FAILED는 성공으로 체크하지 않는다. 새로고침 후 다시 적용한다.
+- 제품 Core issued/native/full scope·효과 전 영속 ACK·cleanup lease·제품 결과 저장/새 문서/BFCache 재결속은 미연결. 실제 Chrome 사용자 결과는 위 국소 범위만 정상 보고이며 Server/Core 제품 통합은 NOT_RUN. IG04/05/06·키워드·블러는 이번 범위 밖. Commit/Push/PR/Merge 없음, `MVP_FINAL_COMPLETE=false`.
+
 ## 2026-11-01 IG-02 Reels 첫 독립 구현 · 사용자 시험 정상 / 게시 준비
 
 - 사용자 상태 확인 개선: 시험 확장 이름/버전을 FOCURVE 릴스 시험판 0.1.2로 구분하고 릴스 버튼을 최상단으로 옮겼다. popup.js는 누른 명령 버튼 바로 아래 결과 패널/상태 복사를 표시하고 action·checked_at·원본 response 또는 연결 error/hint를 JSON으로 제공한다. 최신 요청만 표시하며 URL/본문을 추가 수집하지 않는다. clipboard 실패 시 선택+Ctrl+C 안내, 별도 권한 추가 없음. 설치 Chrome 합성 popup에서 위치/실패 응답 JSON 복사/연결 오류 표시 검증 PASS, 구문/build PASS. 이전230은 DOM 기능 소스 근거이며 이 UI 변경 후 전체 재실행으로 주장하지 않는다.
