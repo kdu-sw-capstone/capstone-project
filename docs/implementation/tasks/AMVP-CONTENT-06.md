@@ -1,4 +1,19 @@
 # AMVP-CONTENT-06 · 추가 Content 연결
+## 2026-11-01 IG-06 Instagram 흑백 독립 구현
+- 최종후보0.1.16 사용자 'ㅇㅋ 아무문제없다': 안내한 탐색에서열린영상·알림·프로필포함흑백, DM/FOCURVE 제외·재생/소리·해제복원 정상보고. 사용자 실행 결과이며 에이전트제품수용과구분. 게시준비 동의 후최종전체회귀 재실행중. #82 P2수정20d5c26/기록154c769는별도브랜치에 보존했으며 본브랜치시작은70ff3e6이다. 이PR은 #82최신수정 선행통합 후최종diff·CI 재확인이 필요하며 통합충돌/순서는다훈관리. #82효과파일을구버전으로되돌리는 통합을허용하지 않는다.
+- 사용자0.1.15 잔여실패: 탐색목록은흑백이나 클릭해열린 portal영상 및본문밖알림패널은색유지. 기존main/article/dialog 수집은 본문존재시 의미표식없는추가panel을누락한다. 익명Chrome 반례2건수정전0/2 PASS→공개페이지body직계branch수집+보호branch분리로수정후2/2 PASS. 기존IG-06총13/13 PASS(프로필11+추가2), DM/login/FOCURVE 제외·미디어상태/owner/부분복원회귀 유지. TEST0.1.16/ig-grayscale-panels-3 빌드·구문·공백PASS. 새사용자재확인과원격CI/제품Core연결은미검증, 이전정상보고를전체완료로승격하지않는다. Commit/Push없음.
+- 최신 범위: 사용자가 팀 회신으로 프로필까지 포함해 흑백 적용하라고 전달. 위05_Content_Event_UI.md에 범위확인을 추가하고 route를 DM/accounts/auth/challenge 제외 공개Instagram으로 확장했다. 프로필/프로필reels/tagged·탐색·스토리와 main없는공개화면 fallback을 추가, DM/login/FOCURVE 제외 및 기존복원 규칙유지. 이전 프로필제외 기록/312시험은 과거 후보이며 현재수용으로 재사용하지 않는다. TEST0.1.15/ig-grayscale-profile-2. #82 P2수정은 별도worktree/브랜치 유지하고 여기에 섞지 않았다.
+- 담당 채지민 / codex/content-instagram-grayscale / 시작70ff3e652da642cba81c5ce140131b90409c7f72(#82). AGENTS·개발운영·통합현황의 기존범위 유지. 기준feature-registry IG-06/AC-IG-06-01~03 및05_Content_Event_UI.md: feed/post/reels 흑백, DM/login/FOCURVE UI 제외. 프로필/스토리 활성화는 추가하지 않는다. #71/#56/#82 기존작업 보존, 별도브랜치.
+- InstagramGrayscaleSession은 NavigationSurfaceSession/ClaimLedger의 기존 grayscale 합성·복원/owner원장 재사용. main/article 및 canonical post의 portal dialog를 수집하고 보호UI·Messages/메시지/Direct·로그인form branch는 분리하여 ancestor grayscale로 오염되지 않게 한다. 영상 pause/mute/time 변경 없음. 새factory·IG-06 profile/SPA등록·grayscale dispatch만 공통부품에 추가, YouTube profile 의미변경 없음.
+- TEST0.1.13/ig-grayscale-1 적용/해제/상태와 기존popup복사 재사용, 기존버튼/handler보존. 제품 listener/실제권한/영속cleanup·Core/Server/공용계약 변경없음.
+- 직접Windows 설치Chrome headless/Playwright 합성8/8 PASS: feed/filter변수·미디어상태, post/reelsportal·DM/login보존, 동적FOCURVE 분리, 다중owner/hide, 페이지filter변경·부분복원실패재시도, SPA/DM종료, 범위거절, TESTsender거절. 실제사이트 및 Core/MV3/Native/Server 제품수용 NOT_RUN. 전체회귀 실행중, Commit/Push/PR/Merge 없음, MVP_FINAL_COMPLETE=false. 다음 최종시험판 사용자확인→게시승인.
+
+- 최종 전체Content312/312 PASS(IG-06 8포함), fail/skip0. 실행 기존환경 node --test --test-concurrency=2 extension/content-tests/*.test.mjs, 로그ig-grayscale-full.log. 계약6/6·빌드·변경JS 구문·공백검사 별도PASS. 기존YouTube흑백/추천/댓글/Instagram 회귀 포함. 사용자0.1.13 재시험/새HEAD 원격CI/제품권한 연결은 미검증, 미커밋 상태로 사용자확인 대기.
+
+- 프로필포함 후보 직접검증: IG-06 11/11·기존YouTube흑백12/12·계약6/6 PASS, 빌드/공백검사PASS. 범위수정후전체315시험은 재실행하지 않았고 기존312는수정전근거로구분. 사용자0.1.13 홈/게시물/릴스 정상·프로필미적용 보고는과거결과이며 새0.1.15 실제프로필/스토리/탐색·복원 및제품Core/MV3수용은미검증. Commit/Push없음.
+
+- 게시직전최종전체Content317/317 PASS(IG-06 13포함), fail/skip0. Node24/설치Windows Chrome headless/Playwright 합성DOM, 기존환경 node --test --test-concurrency=2 extension/content-tests/*.test.mjs, 로그ig-grayscale-final-full.log. 별도계약6/6·build·변경JS구문·공백PASS. #82별도P2시험3건은이기반에포함되지않으므로 최종통합시험과구분한다. 사용자0.1.16실제화면정상은별도근거이며 에이전트Core/MV3/Native/Server수용은NOT_RUN. 제출10파일(기능/시험/공통등록/시험판/범위확인·기록), 새HEAD원격CI는Push후확인. Draft/미병합유지, MVP_FINAL_COMPLETE=false.
+
 ## 2026-11-01 IG-05 추천 계정·게시물 독립 구현 시작
 - 담당 채지민 / codex/content-instagram-suggestions / 시작 c9393d5901150e77b96999eefbef14f071436c7a(#71 보존). 선행 #65/#71 누적 코드를 재구현하지 않는다. 기준 contracts/additional-mvp/rc1/feature-registry.json IG-05, AC-IG-05-01~03 및 docs/design/additional-mvp-contracts/05_Content_Event_UI.md. 계약 대상은 추천 게시물·계정, 팔로잉 피드 보존·광고 자동 포함 금지다.
 - instagram-suggestions.mjs: HOME/SUGGESTED(/explore/people)에서 명시 추천 계정 label+profile/follow로 확인한 좁은 그룹, 게시물 own header의 명시 추천 표시만 제한. 전환 버튼/일반 이미지/미디어/본문·feed root·DM/프로필/다른 route·보호 UI를 추천 계정 근거로 쓰지 않는다. 광고 표시는 추천 게시물 대상에서 제외. shared ClaimLedger·NavigationSurfaceSession 재사용; IG-05에만 profile등록/SPA 재승인/문자변경 감시 추가, adapter factory 등록. 제품 Core listener/issued/native/영속증거를 만들지 않는다.

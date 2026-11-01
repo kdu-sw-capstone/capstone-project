@@ -8,13 +8,14 @@ import {GrayscaleSession} from './grayscale.mjs';
 import {InstagramStoriesSession} from './instagram-stories.mjs';
 import {InstagramReelsSession} from './instagram-reels.mjs';
 import {InstagramExploreSession} from './instagram-explore.mjs';
+import {InstagramGrayscaleSession} from './instagram-grayscale.mjs';
 import {InstagramSuggestionsSession} from './instagram-suggestions.mjs';
 import {InstagramCommentsSession} from './instagram-comments.mjs';
 import {WatchPanelSession} from './watch-panels.mjs';
 import {AutoplaySession} from './autoplay.mjs';
 
 const FACTORIES=new Map([['YT-01',HomeSession],['YT-05',SubscriptionsSession],['YT-06',ExploreSession],
-  ['YT-07',MastheadSession],['YT-08',EndCardsSession],['YT-09',GrayscaleSession],['YT-10',AutoplaySession],['IG-01',InstagramStoriesSession],['IG-02',InstagramReelsSession],['IG-03',InstagramExploreSession],['IG-04',InstagramCommentsSession],['IG-05',InstagramSuggestionsSession]]);
+  ['YT-07',MastheadSession],['YT-08',EndCardsSession],['YT-09',GrayscaleSession],['YT-10',AutoplaySession],['IG-01',InstagramStoriesSession],['IG-02',InstagramReelsSession],['IG-03',InstagramExploreSession],['IG-04',InstagramCommentsSession],['IG-05',InstagramSuggestionsSession],['IG-06',InstagramGrayscaleSession]]);
 const WATCH=new Set(['YT-03','YT-04']);
 const DOCUMENTS=new WeakMap(),LIVE=new WeakMap();
 const UUID=/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
