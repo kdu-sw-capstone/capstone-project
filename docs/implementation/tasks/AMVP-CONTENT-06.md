@@ -19,6 +19,15 @@
 
 - 게시직전최종전체Content317/317 PASS(IG-06 13포함), fail/skip0. Node24/설치Windows Chrome headless/Playwright 합성DOM, 기존환경 node --test --test-concurrency=2 extension/content-tests/*.test.mjs, 로그ig-grayscale-final-full.log. 별도계약6/6·build·변경JS구문·공백PASS. #82별도P2시험3건은이기반에포함되지않으므로 최종통합시험과구분한다. 사용자0.1.16실제화면정상은별도근거이며 에이전트Core/MV3/Native/Server수용은NOT_RUN. 제출10파일(기능/시험/공통등록/시험판/범위확인·기록), 새HEAD원격CI는Push후확인. Draft/미병합유지, MVP_FINAL_COMPLETE=false.
 
+
+## 2026-11-01 PR82 추천 소유 경계 수정
+- 담당 채지민 / codex/content-instagram-suggestions / 시작70ff3e652da642cba81c5ce140131b90409c7f72. review5727802096의 두P2(추천그룹 조상확장·중첩헤더 오승격) 3반례를 설치Chrome 합성DOM에서 수정전0/3 PASS로 재현, 수정후3/3 PASS. 미커밋IG-06은 원래content-resume-20261101 worktree/브랜치 그대로 보존하고 별도content-suggestions-review에서 기존#82만 수정한다.
+- 계정: 검증된 semantic section/list/aside에서 확장을 중단하고 비추천 heading을 가진 별도그룹은 포함하지 않는다. 기존 deep wrapper·무표시 sibling·mutual-follow badge 지원 유지. 게시물: 해당article 소유경계의 header만 인정하고 section/aside/article/listitem/dialog 중첩 근거를 바깥article로 승격하지 않는다. 별도own header가 있는 경우 pseudoDIV도 그 소유범위에 결속. semanticHEADER없는 정상DIV 지원 유지.
+- 직접 IG-05 Chrome 합성15/15 PASS(기존12+신규3). 계약6/6·빌드·공백검사 PASS. 전체회귀 실행중. #71/댓글·릴스·복원원장·공통Core/계약 변경없음, 통합충돌/병합은다훈관리. TEST0.1.14/ig-suggestions-boundary-4. 새사용자시험/원격CI/실제Core·MV3·Native·Server수용 NOT_RUN, Commit/Push 없음, MVP_FINAL_COMPLETE=false.
+
+- 최종 전체Content307/307 PASS(IG-05 15포함), fail/skip0. Windows Node24/설치Chrome headless/Playwright 합성DOM, 기존환경 node --test --test-concurrency=2 extension/content-tests/*.test.mjs, 로그ig-suggestions-p2-full.log. 계약6/6·build/구문/diff 별도PASS. 제공원문 로컬재현도 계정5/5 및게시물1/1 숨김/복원PASS(실제서비스수용과구분). 새사용자화면 확인은 아직없으며 과거0.1.12 정상보고를 새후보로 승격하지 않는다. 새HEAD 원격CI는Push후확인, 독립재리뷰필요.
+
+- 수정코드20d5c26a33f859e8c68c6a9d432a64b43260a726 기존#82 Push완료. 사용자0.1.14 추천시험판만 켠 상태에서 재시험 후 'ㅇㅇ 문제 없네' 정상보고. 추천계정/추천게시물·일반게시물보존·해제복원 사용자확인으로 기록하며 별도Following목록의 실제존재/개별확인 여부는 미확인이다(해당특수경계는 합성반례PASS). 에이전트제품수용으로 승격하지 않음. 이번추가기록은 문서만 변경하며 제품코드/시험동일성을 근거로307/307 재사용, 기능시험재실행없음. IG-06미커밋작업과 #71 선행 보존, 독립재리뷰/새HEAD CI 확인필요.
 ## 2026-11-01 IG-05 추천 계정·게시물 독립 구현 시작
 - 담당 채지민 / codex/content-instagram-suggestions / 시작 c9393d5901150e77b96999eefbef14f071436c7a(#71 보존). 선행 #65/#71 누적 코드를 재구현하지 않는다. 기준 contracts/additional-mvp/rc1/feature-registry.json IG-05, AC-IG-05-01~03 및 docs/design/additional-mvp-contracts/05_Content_Event_UI.md. 계약 대상은 추천 게시물·계정, 팔로잉 피드 보존·광고 자동 포함 금지다.
 - instagram-suggestions.mjs: HOME/SUGGESTED(/explore/people)에서 명시 추천 계정 label+profile/follow로 확인한 좁은 그룹, 게시물 own header의 명시 추천 표시만 제한. 전환 버튼/일반 이미지/미디어/본문·feed root·DM/프로필/다른 route·보호 UI를 추천 계정 근거로 쓰지 않는다. 광고 표시는 추천 게시물 대상에서 제외. shared ClaimLedger·NavigationSurfaceSession 재사용; IG-05에만 profile등록/SPA 재승인/문자변경 감시 추가, adapter factory 등록. 제품 Core listener/issued/native/영속증거를 만들지 않는다.
@@ -681,3 +690,37 @@
 - 첫 수정 검사에서 semantic 빈 본문에 추가 body조건을 요구한 후보가 기존회귀1건에 실패해 해당 추가조건을 제거했다. 최초실패로그 ig-comments-three-review-after.log 보존. 최종전체회귀 실행 중; 계약6/6/build/구문/diff 별도PASS. 시험판0.1.9.3/ig-comments-review-three-3. 실제 사용자재시험/원격CI 미실행, 미커밋/미게시. 제품Core/MV3/Native/Server NOT_RUN, MVP_FINAL_COMPLETE=false.
 - 최종 Node24/설치Windows Chrome headless/Playwright 합성DOM 전체 Content290/290 PASS(댓글35 포함), 실패/skip0. 명령 기존환경 node --test --test-concurrency=2 extension/content-tests/*.test.mjs, 로그 ig-comments-three-review-full.log. 리뷰3반례0/3→3/3, 기존32댓글·mixedpost·empty릴스·owner·복원/YouTube 회귀 포함. 계약6/6/build/구문/diff 별도PASS. 기존다훈 독립15건을 직접 재실행했다고 기록하지 않는다. 다음 사용자0.1.9.3 정상경로 확인→Commit/Push승인→동일PR71 새HEAD/CI상태 보고; 충돌순서는다훈관리 유지.
 - 사용자0.1.9.3에서 'ㅇㅋ 문제 없어' 정상 보고: 안내한 홈/hashtag 댓글·릴스/GIF/빈댓글 제한·게시물 보존·해제 복원 사용자 실행 결과로 기록한다. 에이전트 실제 제품수용으로 승격하지 않는다. 게시범위6파일(효과/시험/TEST bootstrap·manifest·popup/본기록), 통합충돌·선행순서는다훈관리. 새HEAD 원격CI는Push후 확인.
+
+
+## 2026-11-01 김다훈 인계: PR71 잔존 P2 직접 수정
+- 사용자/채지민 협의로 IG-04 기존 결함만 인계. 독립 worktree ig-comments-suggestions-p2 / codex/ig-comments-p2-repair, 시작 c9393d5901150e77b96999eefbef14f071436c7a. 원격 codex/content-instagram-comments 동일 확인. 원본 Content worktree·공유 staged 삭제1,036파일·#83 및 다른 PR 변경 없음.
+- 기준: feature-registry.json AC-IG-04-01~03 및 docs/design/additional-mvp-contracts/05_Content_Event_UI.md. 게시물/좋아요 보존, 옵션별 own claim/복원, 문서/세대/권한 경계 유지. Core/Server/계약/공통 원장은 수정하지 않음.
+- discussion4435270652/656 반례를 설치 Windows Chrome headless/Playwright 합성 DOM에서 재현. 링크로 감싼 사진/본문 mixed LI·role=listitem2건, span·DIV timestamp wrapper 정상 GIF2건: 수정 전0PASS/4FAIL → 수정 후4PASS. 과거 flat GIF/hashtag DIV/빈댓글/중첩답글/동적DOM/SPA/원래mixed-post 반례 유지.
+- nestedIdentityBoundary: post permalink는 role과 무관하게 댓글 row 근거에서 제외. timestamp만 있는 투명 wrapper는 flat timestamp와 동등하게 취급. 중첩 identity 외부에서 검증된 프로필/avatar·댓글 조작만 제외하고 임의 role=link/button의 사진·본문을 지우지 않음. 첫 후보의 무링크 avatar 회귀는 pr71-focused.log에 보존하고 검증된 무링크 avatar만 허용해 해결.
+- 신규4 포함 댓글41/41, 전체 Content296/296(실패/skip0), 계약6/6, build·변경JS node --check·git diff --check PASS. Node24.19.0 / Playwright1.62.1 / 설치Chrome headless. 명령: PLAYWRIGHT_MODULE/CHROME_EXECUTABLE 지정 후 node --test --test-concurrency=2 extension/content-tests/*.test.mjs; node --test contracts/additional-mvp/rc1/tests/legacy-boundary.test.mjs; node extension/content-tools/build-chrome-harness.mjs. 로그는 수정worktree의 ignored pr71-{before,focused,focused-final,full,contract,build}.log. 전체회귀는 owner/부분복원재시도/foreign document/generation/SPA/pagehide/늦은callback 및 기존 YouTube·IG 기능 포함. 합성DOM이며 실제 로그인/제품 수용은 미실행.
+- Commit/Push 후 동일HEAD workflow_dispatch 원격CI와 checkout SHA/tree를 별도 확인한다. 독립 재리뷰 필요: 링크된 게시물 보존 + wrapped GIF 정상 제한 및 기존 경계. Approve/Draft해제/Resolve/Merge 없음. 실제 Chrome/MV3/Core/Native/Server 제품 수용 NOT_RUN, MVP_FINAL_COMPLETE=false.
+
+
+## 2026-11-01 김다훈 인계: PR82 잔존 P2 직접 수정
+- 사용자/채지민 협의 인계. 독립 worktree ig-suggestions-p2-repair / codex/ig-suggestions-p2-repair, 시작154c7696d7cad13ed65d256fb9cd40a5693be2ff. #71 c9393d59의 자손임을 merge-base로 확인. 원격 게시브랜치 codex/content-instagram-suggestions 유지; #71 수정adc9d14ff3841ff3bae4a2599308cc6c0135266a를 일반 merge로 상속(이력 재작성/force push/PR 병합 아님). #83·원본worktree·공유 staged 삭제1,036파일 보존.
+- 기준 feature-registry.json AC-IG-05-01~03 / docs/design/additional-mvp-contracts/05_Content_Event_UI.md: 추천 계정·게시물 제한, 일반피드·광고·다른owner·복원 보존. IG05 생산코드/시험/본작업카드만 추가수정; Core/Server/계약/공통원장/adapter는 변경하지 않음.
+- review5727802096의 기존 section+h3 Following 및 nested semantic section/header 반례3건은 시작HEAD에서 이미 PASS. 잔존 DIV+h3 추천 + DIV+span Following 형제, 일반 DIV author + nested DIV widget/header는 같은 시작HEAD에서2FAIL 재현(pr82-before.log: 추가 header-author 대조1PASS/2FAIL). 수정 후 전부PASS. 원격/과거 PASS를 잔존결함 해소로 전용하지 않음.
+- accountRegion은 추천표식+계정행을 처음 함께 입증한 공통container에서 멈추며 태그에 따라 상위aside/형제로 확장하지 않음. postHeadings는 실제 게시물 내용·author·조작보다 뒤에 있는 header/identity를 게시물 근거로 사용하지 않음. DIV/header 없는 정상 author+정확posttime+추천표식 경로와 deep wrapper/무표시 sibling/mutual badge 지원 보존.
+- 신규추천6건(잔존/대조3 + 실제display복원실패재시도/foreign document/세대권한취소3), 추천21건 포함 최종 전체Content317/317(실패/skip0), 계약6/6·build·모든 content/content-tests MJS 구문·diff 검사PASS. #71 신규4도 누적회귀에 포함하며296+317을 합산하지 않음. 설치Windows Chrome headless/Playwright1.62.1/Node24.19.0 합성DOM·모의권한; 실제Chrome제품수용 아님.
+- 명령 기존환경 node --test --test-concurrency=2 extension/content-tests/*.test.mjs; node --test contracts/additional-mvp/rc1/tests/legacy-boundary.test.mjs; node extension/content-tools/build-chrome-harness.mjs; node --check; git diff --check. ignored 로그 pr82-{before,focused,full,contract,build}.log. display!important/inert,다른owner,부분복원원장/재시도,foreign doc 무변경/원문서복귀cleanup,SPA/pagehide/늦은callback/세대경계 및 기존댓글·릴스·스토리·탐색·YouTube 보존.
+- #71 CI run41304354211은 정확adc9d14 checkout에서Content296/296+계약6/6·build·구문·diff 성공. #82 게시후 최신HEAD workflow_dispatch와 checkout SHA/tree를 별도확인한다. 독립재리뷰는 추천DIV 소유범위·DIV widget header·정상추천보존 및 #71상속diff에 한정. Draft해제/Approve/Resolve/PR Merge 없음. 실제Chrome/MV3/Core/Native/Server 수용 NOT_RUN, MVP_FINAL_COMPLETE=false.
+
+
+## 2026-11-01 PR83 검증된 PR71·82 선행 P2 수정 상속
+- 담당 김다훈 / 독립 worktree ig-grayscale-predecessor-fixes / codex/ig-grayscale-predecessor-fixes. 시작 #83 d1fd8357d42560929c53d39a5f869413c1a94a2e, 게시 대상 codex/content-instagram-grayscale. 원격 #71 adc9d14ff3841ff3bae4a2599308cc6c0135266a / #82 84f7b0f157c5959b9f1112941de665fb793ca3d4와 일치 확인. #83과 #82의 merge-base는 최초 추천70ff3e652da642cba81c5ce140131b90409c7f72로 최신댓글·추천P2가 누락된 상태였다.
+- #82 최신84f7b0f를 일반 merge ancestry로 상속해 #71 adc9d14·#82 자체20d5c26/154c769 및 최신수정 이력을 보존한다. 기존 두 PR 재개발/변경/새PR/force push 없음. 최소 실제변경은 댓글·추천 모듈과 기존 관련시험, 추천 TEST build 식별문구, 작업카드다.
+- 충돌은 본후보 내부의 작업카드·TEST manifest/popup 버전3파일. 작업카드는 양측 개발/실패/사용자시험/미완료 기록을 모두 보존하여 결합. manifest/popup은 #83 0.1.16 흑백 시험판·버튼·제외설명을 그대로 유지. #83 흑백모듈/navigation/adapter/흑백시험은 시작d1fd와 바이트정규화 비교·staged diff동일 확인, 로그인type/action 감시·복원실패시 신규효과중단 보존.
+- 기준 docs/design/additional-mvp-contracts/05_Content_Event_UI.md 공개화면전체·프로필/알림/portal/탐색/스토리 포함, DM/login/FOCURVE제외·영상재생/소리불변·원장복원; feature-registry AC-IG-04/05/06-01~03. 계약·Core·Server·Native·DNR 변경 없음.
+- review5728060673의 기존fixture를 동일조건으로 개발자가 재실행: 정확d1fd snapshot source대조 후 댓글18PASS/2FAIL→누적후보20/20 PASS, 추천6PASS/5FAIL→11/11 PASS. 새 독립재리뷰 승인으로 표시하지 않는다. 흑백은 기존제출16+독립브라우저3=19/19 PASS: 동적password/action, 다른owner/hide·filter!important, 부분복원실패·신규branch0·재시도,공개전체/보호UI/미디어/SPA 포함. 별도중복집합은 전체Content수에 합산하지 않는다.
+- 로그(모두 수정worktree ignored): pr83-comments-{before,after}.log, pr83-suggestions-{before,after}.log, pr83-grayscale.log. 시험용 재사용fixture는 extension/build/*-{before,after}.test.mjs 및 independent-ig-grayscale.test.mjs. 원본리뷰 fixture/실패증거는 수정하지 않음.
+- 환경 Node24.19.0/Playwright1.62.1/설치Windows Chrome headless 합성DOM·모의권한. 실제로그인·HOLD환경 접근없음. 명령: node --test extension/build/comments-{before,after}.test.mjs; node --test extension/build/suggestions-{before,after}.test.mjs extension/build/boundary-{before,after}.test.mjs; node --test extension/build/independent-ig-grayscale.test.mjs extension/content-tests/instagram-grayscale-browser.test.mjs. PLAYWRIGHT_MODULE/CHROME_EXECUTABLE은 기존 독립환경을 재사용.
+- 누적전체는 node --test --test-concurrency=2 extension/content-tests/*.test.mjs(pr83-full.log). 계약 node --test contracts/additional-mvp/rc1/tests/legacy-boundary.test.mjs 6/6, node extension/content-tools/build-chrome-harness.mjs 및 모든content/test MJS·변경bootstrap node --check·diff검사PASS(pr83-contract/build.log). 전체회귀 최종결과는 아래에 기록한다.
+- 최신integration9ebec52dc533dd497e454815b53b654ab42ef4fa와 문서 AMVP-CONTENT-06.md 충돌은 통합담당의 후속조건. 양측 실패/검증/미완료 기록 보존 후 최종diff·후보CI·담당승인이 필요하다. 이번에 integration브랜치를 변경/병합하지 않는다. #71/#82원격·타worktree/index·공유 staged삭제1,036파일 보존. Approve/Resolve/Draft해제/PR Merge 없음.
+- 실제 Chrome/MV3/Core issued/frozen/native·효과전영속cleanup/lease·제품새문서/BFCache·Native/Server제품수용 NOT_RUN. MVP_FINAL_COMPLETE=false. 새HEAD exact checkout CI 및 최신독립재리뷰·기존CHANGES_REQUESTED 해소·Core승인은 별도조건이다.
+
+- 최종 로컬 Content333/333 PASS(실패/skip0), 계약6/6·build·구문·diff PASS. IG06 16은 원본동일·독립3과별도집합이며 댓글20/추천11도전체333과합산하지 않는다. Git source/test동일성을 확인한 후보를 Commit/Push하고 새HEAD원격CI checkout SHA/tree는 외부검증기록과 PR설명에 남긴다. 로컬/CI 합성을 실제제품수용으로 승격하지 않는다.

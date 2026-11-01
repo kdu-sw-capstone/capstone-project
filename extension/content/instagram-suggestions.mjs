@@ -27,13 +27,31 @@ function accountRegion(node,document){
   });
 }
 function postHeadings(article,document){
-  const headings=[...article.querySelectorAll('header')];
+  const owns=node=>{
+    for(let parent=node.parentElement;parent&&parent!==article;parent=parent.parentElement)
+      if(parent.matches('section, aside, article, [role="listitem"], [role="dialog"]'))return false;
+    return node.closest('article')===article;
+  };
+  // The post identity precedes its content. A later widget header cannot
+  // become the article header just because its wrappers are DIVs.
+  const leadsPost=node=>{
+    for(let branch=node;branch&&branch!==article;branch=branch.parentElement){
+      for(let sibling=branch.previousSibling;sibling;sibling=sibling.previousSibling){
+        if(sibling.textContent.trim()||sibling.nodeType===1&&(sibling.matches('img, picture, video, audio, a[href], button, [role="button"]')
+          ||sibling.querySelector('img, picture, video, audio, a[href], button, [role="button"]')))return false;
+      }
+    }
+    return true;
+  };
+  const ownHeader=[...article.querySelectorAll('header')].find(node=>owns(node)&&leadsPost(node));
+  const headings=ownHeader?[ownHeader]:[];
   for(const label of article.querySelectorAll('span')){
-    if(!postLabel(text(label))||label.closest('p, a, button, [role="button"]'))continue;
+    if(!owns(label)||!postLabel(text(label))||label.closest('p, a, button, [role="button"]'))continue;
     for(let node=label.parentElement;node&&node!==article;node=node.parentElement){
+      if(ownHeader&&!ownHeader.contains(node)&&!node.contains(ownHeader))continue;
       if(node.querySelector('video, audio, p, article, [aria-label="Video player"], textarea, [role="textbox"]'))break;
       if([...node.querySelectorAll('img')].some(img=>!profile(img.closest('a[href]'),document)))break;
-      if([...node.querySelectorAll('a[href]')].some(a=>profile(a,document))
+      if(leadsPost(node)&&[...node.querySelectorAll('a[href]')].some(a=>profile(a,document))
         &&[...node.querySelectorAll('a[href]')].some(a=>a.querySelector('time[datetime]')&&/^\/(?:p|reel)\/[^/]+\/?$/.test(new URL(a.getAttribute('href'),document.location.href).pathname))){headings.push(node);break;}
     }
   }
@@ -55,8 +73,11 @@ function collect(document){
     let node=label.parentElement,candidate=null;
     for(;node;node=node.parentElement){
       if(node.matches('body, main, [role="main"], article')||node.closest(PROTECTED))break;
-      if(accountRegion(node,document))candidate=node;
-      else if(candidate)break;
+      if([...node.querySelectorAll('h2, h3, h4, [role="heading"]')].some(heading=>!accountLabel(text(heading))))break;
+      // The first common container proving marker + account rows owns the
+      // group. Do not expand it to siblings solely because they also look
+      // like accounts (e.g. Following has no semantic heading).
+      if(accountRegion(node,document)){candidate=node;break;}
     }
     if(candidate)found.add(candidate);
   }

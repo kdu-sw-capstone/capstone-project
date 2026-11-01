@@ -267,7 +267,7 @@ const instagramSuggestionsReady=Promise.all([homeReady,import(chrome.runtime.get
   .then(([{ledger},{InstagramSuggestionsSession}])=>{
     let session=null,result=null,invalidated=null;
     const document_instance_id=crypto.randomUUID();
-    const state=()=>({testOnly:true,coreConnected:false,test_build:'ig-suggestions-dom-3',document_instance_id,
+    const state=()=>({testOnly:true,coreConnected:false,test_build:'ig-suggestions-boundary-4',document_instance_id,
       page_kind:/^\/(?:p|reel|reels)(?:\/|$)/.test(location.pathname)?'POST_OR_REELS':location.pathname==='/'?'HOME':location.pathname.startsWith('/direct/')?'DM':'OTHER',
       result,invalidated});
     return {handle(type){
