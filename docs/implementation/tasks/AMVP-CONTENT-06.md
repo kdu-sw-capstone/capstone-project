@@ -1,4 +1,11 @@
 # AMVP-CONTENT-06 · 추가 Content 연결
+## 2026-11-01 PR82 추천 소유 경계 수정
+- 담당 채지민 / codex/content-instagram-suggestions / 시작70ff3e652da642cba81c5ce140131b90409c7f72. review5727802096의 두P2(추천그룹 조상확장·중첩헤더 오승격) 3반례를 설치Chrome 합성DOM에서 수정전0/3 PASS로 재현, 수정후3/3 PASS. 미커밋IG-06은 원래content-resume-20261101 worktree/브랜치 그대로 보존하고 별도content-suggestions-review에서 기존#82만 수정한다.
+- 계정: 검증된 semantic section/list/aside에서 확장을 중단하고 비추천 heading을 가진 별도그룹은 포함하지 않는다. 기존 deep wrapper·무표시 sibling·mutual-follow badge 지원 유지. 게시물: 해당article 소유경계의 header만 인정하고 section/aside/article/listitem/dialog 중첩 근거를 바깥article로 승격하지 않는다. 별도own header가 있는 경우 pseudoDIV도 그 소유범위에 결속. semanticHEADER없는 정상DIV 지원 유지.
+- 직접 IG-05 Chrome 합성15/15 PASS(기존12+신규3). 계약6/6·빌드·공백검사 PASS. 전체회귀 실행중. #71/댓글·릴스·복원원장·공통Core/계약 변경없음, 통합충돌/병합은다훈관리. TEST0.1.14/ig-suggestions-boundary-4. 새사용자시험/원격CI/실제Core·MV3·Native·Server수용 NOT_RUN, Commit/Push 없음, MVP_FINAL_COMPLETE=false.
+
+- 최종 전체Content307/307 PASS(IG-05 15포함), fail/skip0. Windows Node24/설치Chrome headless/Playwright 합성DOM, 기존환경 node --test --test-concurrency=2 extension/content-tests/*.test.mjs, 로그ig-suggestions-p2-full.log. 계약6/6·build/구문/diff 별도PASS. 제공원문 로컬재현도 계정5/5 및게시물1/1 숨김/복원PASS(실제서비스수용과구분). 새사용자화면 확인은 아직없으며 과거0.1.12 정상보고를 새후보로 승격하지 않는다. 새HEAD 원격CI는Push후확인, 독립재리뷰필요.
+
 ## 2026-11-01 IG-05 추천 계정·게시물 독립 구현 시작
 - 담당 채지민 / codex/content-instagram-suggestions / 시작 c9393d5901150e77b96999eefbef14f071436c7a(#71 보존). 선행 #65/#71 누적 코드를 재구현하지 않는다. 기준 contracts/additional-mvp/rc1/feature-registry.json IG-05, AC-IG-05-01~03 및 docs/design/additional-mvp-contracts/05_Content_Event_UI.md. 계약 대상은 추천 게시물·계정, 팔로잉 피드 보존·광고 자동 포함 금지다.
 - instagram-suggestions.mjs: HOME/SUGGESTED(/explore/people)에서 명시 추천 계정 label+profile/follow로 확인한 좁은 그룹, 게시물 own header의 명시 추천 표시만 제한. 전환 버튼/일반 이미지/미디어/본문·feed root·DM/프로필/다른 route·보호 UI를 추천 계정 근거로 쓰지 않는다. 광고 표시는 추천 게시물 대상에서 제외. shared ClaimLedger·NavigationSurfaceSession 재사용; IG-05에만 profile등록/SPA 재승인/문자변경 감시 추가, adapter factory 등록. 제품 Core listener/issued/native/영속증거를 만들지 않는다.

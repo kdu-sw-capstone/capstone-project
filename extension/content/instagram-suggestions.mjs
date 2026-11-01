@@ -27,10 +27,17 @@ function accountRegion(node,document){
   });
 }
 function postHeadings(article,document){
-  const headings=[...article.querySelectorAll('header')];
+  const owns=node=>{
+    for(let parent=node.parentElement;parent&&parent!==article;parent=parent.parentElement)
+      if(parent.matches('section, aside, article, [role="listitem"], [role="dialog"]'))return false;
+    return node.closest('article')===article;
+  };
+  const ownHeader=[...article.querySelectorAll('header')].find(owns);
+  const headings=ownHeader?[ownHeader]:[];
   for(const label of article.querySelectorAll('span')){
-    if(!postLabel(text(label))||label.closest('p, a, button, [role="button"]'))continue;
+    if(!owns(label)||!postLabel(text(label))||label.closest('p, a, button, [role="button"]'))continue;
     for(let node=label.parentElement;node&&node!==article;node=node.parentElement){
+      if(ownHeader&&!ownHeader.contains(node)&&!node.contains(ownHeader))continue;
       if(node.querySelector('video, audio, p, article, [aria-label="Video player"], textarea, [role="textbox"]'))break;
       if([...node.querySelectorAll('img')].some(img=>!profile(img.closest('a[href]'),document)))break;
       if([...node.querySelectorAll('a[href]')].some(a=>profile(a,document))
@@ -55,8 +62,12 @@ function collect(document){
     let node=label.parentElement,candidate=null;
     for(;node;node=node.parentElement){
       if(node.matches('body, main, [role="main"], article')||node.closest(PROTECTED))break;
+      if([...node.querySelectorAll('h2, h3, h4, [role="heading"]')].some(heading=>!accountLabel(text(heading))))break;
       if(accountRegion(node,document))candidate=node;
       else if(candidate)break;
+      // A verified semantic group is an ownership boundary, not a stepping
+      // stone to an ASIDE that also contains independent Following groups.
+      if(candidate&&node.matches('section, [role="list"], aside'))break;
     }
     if(candidate)found.add(candidate);
   }

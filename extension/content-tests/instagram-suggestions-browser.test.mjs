@@ -10,6 +10,15 @@ const html='<main></main>';
 const accounts='<section id="suggestions" style="display:grid!important"><h3>회원님을 위한 추천</h3><div><a href="/sample/"><img></a><a href="/sample/">sample</a><button>팔로우</button></div></section>';
 const suggestedPost='<article id="suggested-post"><header><span>추천 게시물</span></header><img><p>caption</p><button>Like</button></article>';
 const mutualRow='<div id="mutual"><a href="/mutual-user/"><img></a><a href="/mutual-user/">account</a><div><span role="link" style="width:14px;height:14px"><img></span><span>someone follows</span></div><button>팔로우</button></div>';
+
+test('review: recommendation group never expands across a separate Following section',async t=>{
+ const p=await fixture(t,{url:'https://www.instagram.com/',body:'<aside><section id="recommended"><h3>Suggested for you</h3><div><a href="/recommended/"><img></a><button>Follow</button></div></section><section id="following"><h3>Following</h3><div><a href="/ordinary/"><img></a><button>Follow</button></div></section></aside>'});
+ await p.evaluate(()=>session.start());assert.equal(await p.locator('#recommended').evaluate(e=>!!e.closest('[inert]')),true);assert.equal(await p.locator('#following').evaluate(e=>!!e.closest('[inert]')),false);assert.equal((await p.evaluate(()=>session.release())).restored,true);
+});
+for(const nested of ['<section><header><span>Suggested posts</span></header><a href="/suggestion/">suggestion</a></section>','<div><section><header><span>Suggested posts</span></header><img></section></div>'])test(`review: nested recommendation header does not own outer post ${nested.startsWith('<section>')?'section':'widget'}`,async t=>{
+ const p=await fixture(t,{url:'https://www.instagram.com/',body:'<main><article id="ordinary"><header><a href="/author/">author</a></header><img id="photo"><span id="caption">ordinary caption</span><button id="like">Like</button>'+nested+'</article></main>'});await p.evaluate(()=>session.start());
+ for(const id of ['#ordinary','#photo','#caption','#like'])assert.equal(await p.locator(id).evaluate(e=>!!e.closest('[inert]')),false,id);assert.equal((await p.evaluate(()=>session.release())).restored,true);
+});
 async function fixture(t,{url='https://www.instagram.com/p/sample/',body=html,adapter=false}={}){
   const context=await browser.newContext();t.after(()=>context.close());
   await context.route('**/*',async route=>{const path=new URL(route.request().url()).pathname;
