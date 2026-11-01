@@ -51,6 +51,9 @@ export class NavigationSurfaceSession {
     this.#invalidateCallback({local_only:true,reason,cleanup_pending:this.#targets.size>0,...(details?{navigation_check:details}:{})});
   }
   stop(){this.#invalidate('AUTHORITY_REVOKED');}
+  // Feature-local closing is not a document/authority invalidation. Keep all
+  // claims and pending restore targets until an explicit release retry.
+  close(){this.#open=false;this.#disconnect();}
   #canApply(){
     if(!this.#open)return false;
     let current=false;try{current=this.#canObserve()===true;}catch{}

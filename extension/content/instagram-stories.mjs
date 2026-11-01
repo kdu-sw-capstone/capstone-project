@@ -104,9 +104,12 @@ export class InstagramStoriesSession {
   }
   scan(){const r=this.#surface.scan();return r?this.#last:null;}
   release(){
-    if(this.#busy){this.stop();return {local_only:true,restored:false,remaining_targets:null,error_count:0,cleanup_pending:true,scan_pending:true};}
+    // Close media immediately, even when the surface scan cannot restore yet.
+    // Do not signal global authority revocation for an intentional feature OFF.
+    this.#stop();
+    if(this.#busy){this.#surface.close();return {local_only:true,restored:false,remaining_targets:null,error_count:0,cleanup_pending:true,scan_pending:true};}
     const result=this.#surface.release();
-    // Retain replay protection for unresolved owned changes in this document.
+    // Retain unresolved DOM claims for cleanup retry; no new media effects.
     // Do not auto-play on release: the user retains manual playback control.
     if(result.restored)this.#stop();
     return result;
