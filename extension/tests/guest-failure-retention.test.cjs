@@ -14,9 +14,13 @@ async function fixture(t,operation){
 function renderGuest(f,status='RUNNING'){
  const source=fs.readFileSync(path.join(__dirname,'../popup/popup-ui.js'),'utf8');
  const render=source.slice(source.indexOf(' function renderFocus(){'),source.indexOf(' window.FocurvePopupUI='));
+ // The presentation now refreshes its duration projection while rendering state.
+ // Load the actual helper rather than replacing the END/uncertainty renderer.
+ const durationStart=source.indexOf(' function syncDuration(){'),duration=source.slice(durationStart,source.indexOf(" for(const button of $('focus-presets')",durationStart));
  for(const [,id] of render.matchAll(/\$\('([^']+)'\)/g))if(!f.w.document.getElementById(id)){const node=f.w.document.createElement('div');node.id=id;f.w.document.getElementById('focus-page').append(node);}
+ const minutes=f.w.document.createElement('input');minutes.value='25';f.w.focusMinutes=minutes;f.w.customDuration=false;
  Object.assign(f.w,{focusSession:{status,planned_end_at:new Date(Date.now()+60000).toISOString()},focusVerified:true,focusBusy:false,focusActionError:'',focusStates:{},page:'focus',preparing:false,previousStatus:null});
- f.w.eval("const $=id=>document.getElementById(id);const terminal=s=>['ENDED','INTERRUPTED','START_FAILED'].includes(s);function summary(){}"+render+';renderFocus();');
+ f.w.eval("const $=id=>document.getElementById(id);const terminal=s=>['ENDED','INTERRUPTED','START_FAILED'].includes(s);function summary(){}"+duration+render+';renderFocus();');
 }
 
 test('guest visible END is restored after readiness disabled it, without sending END',async t=>{

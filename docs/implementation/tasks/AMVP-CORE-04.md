@@ -1,5 +1,26 @@
 # AMVP-CORE-04 — Core DNR 소유권·복원
 
+## 2026-11-01 PR59 최신 통합 최소 동기화
+
+- 동기화 후 검증: owner/잠금/cleanup + #70 CAS 관련 189/189, 전체 Extension 906/906, 계약6/6, Chromium 실제 IndexedDB/Web Lock 3/3, bundle 원본 일치·syntax/diff PASS. DNR·권한/문맥은 모의이며 제품 MV3/Server 수용은 미검증 유지. 집합 중복 합산 금지.
+
+- 기준 통합 `4e6ff6ced95b96f362f2fbf088aa192e17278529`(#70 승인·병합), 기존 검토 HEAD `e64c140ebf8effedd9358f037a86cc8240ae96f4`를 부모로 보존하는 merge 동기화다.
+- 충돌한 CI·본 작업카드·통합현황 3파일을 양쪽 경로/시험/기록이 남도록 정리했다. 기존 제품·시험 blob과 #70 통합 제품·시험 blob 동일성을 검사하며 구현/검사 조건을 바꾸지 않는다.
+- 원래 owner/잠금/cleanup 및 #70 journal CAS의 영향 회귀·최신 CI 후 새 HEAD로 재리뷰한다. 실제 MV3·Server 제품 수용/신규 공유 정책 활성화·PR 병합은 수행하지 않는다. 결과·blob 대조는 해당 PR에 기록한다. 아래 날짜별 기록은 원문을 보존한 이력이다.
+
+## 2026-10-31 Guest A1 DNR writer 연결 착수
+
+- 담당 윤종민, 브랜치 `feature/additional-mvp-guest-dnr-fence`, 시작 기준 `24327d1bd8615a2274a6dead43f23b71cc06b64e`(#55 수정본 승인·병합). 별도 worktree에서 기존 다른 Core 작업/리뷰/미커밋 변경을 보존한다.
+- 범위: Guest A1의 초기 add·UNKNOWN 복구 add·suspend remove·finish remove를 기존 공통 DNR gate/Root 원장에 연결한다. 현재 Guest owner/executor·인증 guest 허용 상태·AuthStore token·최종 DB fence/END/NR·DOM 기한을 대조하고 자기 cleanup은 보존한다.
+- 회원 경로는 재작성하지 않는다. 구 GuestSession/SiteController·전체 writer coverage true·SITE_TIME 발급/Report/Server/Content/공용 계약 변경은 제외한다. Guest START가 이미 Auth.serial을 보유하므로 잠금 안에서 status/guardGuestStart를 중첩하지 않는 로컬 auth.load 경계를 검증한다.
+- 상태: 구현·검증 진행 중. 끝나면 영향 자동 회귀·제품 미검증·새 HEAD/PR 및 담당 리뷰 요청을 기록한다. 실제 MV3 확장 로드는 현재 환경의 관리 정책으로 미검증이며 이를 우회하지 않는다.
+
+### 이번 Guest actor 단위 구현·검증 종료
+
+- 기존 Member gate와 정확히 같은 객체/Root 원장을 쓰는 `FocurveDnrWriter` 별칭을 추가하고 Guest보다 먼저 로드했다. 현재 Guest 네 쓰기 경로는 입력 동결·current owner/Guest auth·Root idle·AuthStore token·최종 DB fence/END/NR/DOM 검사 후 동기 dispatch한다. `auth.load()`만 사용해 이미 보유한 MemberAuth serial을 중첩하지 않는다.
+- 신규19/19, DNR97/97, 전체 Extension883/883, 계약6/6 PASS(fail/skip0). Chromium151 실제 IDB/Web Lock의 Guest/Member END 비차단2/2, 생성 bundle 일치·syntax/diff PASS. 시험 집합은 겹치며 합산하지 않는다. DNR/identity/Content는 모의이고 실제 제품 수용은 미검증이다.
+- fixture GENERAL+BLOCK/VM fetch 미주입의 준비 오류를 바로잡고 실패 기록을 보존했다. 제품 Snapshot·인증·복원 조건을 완화하지 않았다. 상세 [Guest writer 연결](../evidence/AMVP-CORE-04-guest-dnr-writer.md).
+- 이번 단위 코드/검증 완료, PR 게시·다훈/지민 최신 HEAD 리뷰 필요. Core 전체는 부분 구현이다. 기존 다른 worktree·Member 소스/공용 계약/Server·Content는 보존했다. 구 GuestSession/SiteController 등 남은 writer, 실제 issued binding/SITE_TIME/Report/ACK·제품 수용은 후속이다.
 ## 2026-11-01 SiteController DNR guard 착수
 
 - 담당 윤종민, `feature/additional-mvp-site-controller-dnr`, 시작 `10ab6026f1cf7d244a75ee529830afb8bcf6b8c8`. PR59/68은 OPEN/리뷰 대기로 보존하고 독립 worktree에서 병합55 gate에만 의존한다.
