@@ -111,8 +111,10 @@ export class NavigationSurfaceSession {
       }
     }catch{errors++;}
     if(this.#open)this.#observer.observe(this.#document.documentElement,{subtree:true,childList:true,attributes:true,
+      characterData:this.#profile.feature_id==='IG-03',
       attributeFilter:['href','page-subtype','browse-id','video-id','id','class','style','inert','hidden','data-focurve-restriction','data-focurve-ui',
-        ...(this.#profile.feature_id.startsWith('IG-')?['aria-label','role','alt','draggable','contenteditable']:[])]});
+        ...(this.#profile.feature_id.startsWith('IG-')?['aria-label','role','alt','draggable','contenteditable']:[]),
+        ...(this.#profile.feature_id==='IG-03'?['title','aria-labelledby']:[])]});
     const result={feature_id:this.#profile.feature_id,local_only:true,native_verified:false,status:errors?'FAILED':eligible?'OBSERVED':'NO_TARGET',
       eligible_target_count:eligible,restricted_target_count:restricted,error_count:errors,remaining_targets:this.#targets.size};
     if(!this.#open)return null;

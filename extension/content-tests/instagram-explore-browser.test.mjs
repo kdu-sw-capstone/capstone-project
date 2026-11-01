@@ -47,6 +47,33 @@ test('shared /explore/ URL does not authorize hiding Search or an unlabeled entr
   await p.evaluate(()=>document.querySelector('#menu').setAttribute('aria-label','Search'));
   await p.waitForFunction(()=>!document.querySelector('#menu').inert,null,{timeout:2000});
 });
+for(const identity of ['title','aria-labelledby','text-node','svg-title','external-label-text']){
+  test(`P2 identity ${identity}: automatic Explore/Search transitions restore own claim and preserve another owner`,async t=>{
+    const p=await fixture(t,{url:'https://www.instagram.com/'});
+    await p.evaluate(identity=>{
+      const link=document.createElement('a');link.id='identity-entry';link.href='/explore/';link.style.setProperty('opacity','0.65','important');
+      const label=document.createElement('span'),search=document.createElement('span');label.id='explore-label';label.textContent='Explore';search.id='search-label';search.textContent='Search';
+      document.body.append(label,search);
+      if(identity==='title'){link.title='Explore';window.flipIdentity=explore=>link.title=explore?'Explore':'Search';}
+      if(identity==='aria-labelledby'){link.setAttribute('aria-labelledby',label.id);window.flipIdentity=explore=>link.setAttribute('aria-labelledby',explore?label.id:search.id);}
+      if(identity==='text-node'){link.append(document.createTextNode('Explore'));window.flipIdentity=explore=>link.firstChild.data=explore?'Explore':'Search';}
+      if(identity==='svg-title'){link.innerHTML='<svg><title>Explore</title></svg>';window.flipIdentity=explore=>link.querySelector('title').firstChild.data=explore?'Explore':'Search';}
+      if(identity==='external-label-text'){link.setAttribute('aria-labelledby',label.id);window.flipIdentity=explore=>label.firstChild.data=explore?'Explore':'Search';}
+      document.querySelector('nav').append(link);session.start();
+    },identity);
+    assert.equal(await p.locator('#identity-entry').evaluate(e=>e.inert),true);
+    await p.evaluate(()=>flipIdentity(false));
+    await p.waitForFunction(()=>!document.querySelector('#identity-entry').inert,null,{timeout:2000});
+    assert.deepEqual(await p.locator('#identity-entry').evaluate(e=>[e.style.opacity,e.style.getPropertyPriority('opacity')]),['0.65','important']);
+    await p.evaluate(()=>flipIdentity(true));await p.waitForFunction(()=>document.querySelector('#identity-entry').inert,null,{timeout:2000});
+    await p.evaluate(()=>{ledger.conceal('other-owner',document.querySelector('#identity-entry'));flipIdentity(false);});
+    await p.waitForFunction(()=>observations.at(-1).remaining_targets===1,null,{timeout:2000});
+    assert.equal(await p.locator('#identity-entry').evaluate(e=>e.style.opacity),'0');
+    assert.equal((await p.evaluate(()=>ledger.release('other-owner'))).restored,true);
+    assert.deepEqual(await p.locator('#identity-entry').evaluate(e=>[e.style.opacity,e.style.getPropertyPriority('opacity'),e.inert]),['0.65','important',false]);
+    assert.equal((await p.evaluate(()=>session.release())).restored,true);
+  });
+}
 test('concealed grid keeps scroll geometry and hides only list progress while restoring both',async t=>{
   const p=await fixture(t);
   await p.evaluate(()=>{document.querySelector('main').insertAdjacentHTML('beforeend','<div id="loader" role="progressbar" style="height:24px;opacity:1!important">loading</div>');document.querySelector('[role="search"]').insertAdjacentHTML('beforeend','<div id="search-loader" role="progressbar">search loading</div>');});

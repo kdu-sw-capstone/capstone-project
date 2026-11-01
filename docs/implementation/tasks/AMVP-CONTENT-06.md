@@ -1,5 +1,15 @@
 # AMVP-CONTENT-06 · 추가 Content 연결
 
+## 2026-11-01 PR #65 동적 탐색 identity P2
+
+- 담당 채지민, codex/content-instagram-explore. 시작6d4a5e2b057d0f7e22f6aefe97b52232331368ad, 원격 #65 HEAD/base 일치·clean 확인. review discussion4434086347 범위만 수정한다. 기존 #58/#64 미디어 P2 수정은 그대로 보존하고 재개발/타 브랜치 변경하지 않는다.
+- 원인: confirmedExploreEntry가 읽는 title/aria-labelledby/textContent/svg title·외부 참조 label text를 기존 observer가 모두 감시하지 않았다. 분류 함수는 수동 scan 시 맞지만 자동 claim 회수가 누락됐다.
+- 정확한 시작 소스에서 신규 설치 Chrome 합성5건(title/aria-labelledby pointer/기존 Text.data/svg title Text.data/외부 label Text.data) **0PASS/5FAIL** 재현. 모두 Explore→Search 뒤 자동 opacity/inert 복원 timeout(2초), pr65-identity-before.log. 사용자 실제 DOM 전체 재현이나 제품 수용으로 확대하지 않는다.
+- 최소 수정: navigation-surface observer의 IG-03에만 title/aria-labelledby 추가 및 characterData=true. 새 observer/강제 표시/claim 직접 삭제 없음. 기존 microtask 배치·동적 재분류·자기 claim 회수 경로 재사용, 다른 기능은 characterData=false로 기존 동작 유지. characterDataOldValue/본문 수집·전송·추가 로그 없음.
+- 신규5건은 각 입력의 Explore→Search 자동 복원, Search→Explore 자동 재적용, 다른 owner와 겹친 후 Search 전환 시 자기 claim만 회수, 마지막 owner 해제 시 원래 opacity0.65!important/inert=false 복원을 수동 scan 없이 검증한다. 수정 후 전체 Content **255/255 PASS**, fail/skip0(125.5초), 신규5 포함. 동일5반례 **0PASS/5FAIL→5PASS**, pr65-identity-after.log. 계약6/6·build/변경JS구문/diff PASS, source/build navigation hash BA1F283286AE62041C637DA0191B6BAEC75685825119479557DEFB1D1A27F6D8 일치. 미디어/Stories/adapter/ledger/Reels/Explore source blob이 시작HEAD와 동일함을 대조했다. 새 원격CI는 게시 후 별도 확인하며 이전250을 새 소스 근거로 소급하지 않는다.
+- 변경3파일 예정: navigation-surface.mjs, instagram-explore-browser.test.mjs, 작업카드. RC2 05_Content_Event_UI/feature-registry IG03 AC-IG-03-01~03의 검색 보존·동적 OFF·다른 owner 보존 기준. Core/Server/Wire/제품Manifest 및 #58/#64 소스 수정 없음. 실제 Core/MV3/Native/Server 제품 수용 NOT_RUN, MVP_FINAL_COMPLETE=false.
+
+
 ## 2026-11-01 #65 후속 브랜치 P2 상속
 
 - 시작bb88f7e878a466491fd6f5293e9775e0866a3f6b, codex/content-instagram-explore. 수정된 #64 HEAD98bca66a0a5ceb92c13fe334586fea314577ce45를 이력 보존 로컬 merge로 반영했다. 생산 코드 자동 결합, 작업카드 prepend 충돌은 양쪽 기록 모두 보존. #65 고유 selector/search 보존·conceal/로딩/버튼은 변경하지 않는다. 전체 Content **250/250 PASS**(127.6초, fail/skip0)·계약6/6·build/구문/diff PASS, pr65-inherit-regression.log. #64 CI41263964006/job124722761125 원본239/239+계약6 SUCCESS 확인. #61 고유 Stories 시험/#64 Stories wrapper와 #65 탐색/ledger/bootstrap/popup의 기존 blob을 대조해 보존 확인했다. #65 새 원격 CI는 게시 후 별도 확인한다. 이를 확인 후 게시하며 PR Merge/Approve/Resolve/force push 없음.
