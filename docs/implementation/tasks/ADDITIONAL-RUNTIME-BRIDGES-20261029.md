@@ -517,3 +517,41 @@ PR #25의 `AdditionalConfigContract`, `AdditionalConfigStore.Admission`, `Member
 > LOG-01 원격 영향 확인: 후보 **23721d9181b2198456ba545cc9ac19aaad91806a**의 CI에서 `MemberApp.test.tsx:418`이 기록 행 표시 직후 보조 PARTIAL 문구까지 동기적으로 있다고 가정해 **392 PASS/1 FAIL**했다. 주/보조 읽기 분리의 직접 영향이다. assertion을 삭제/완화하지 않고 `findByText`로 실제 보조 응답 후 동일 문구를 검증하도록 최소 수정한다. 최초 [실패 원본](https://github.com/kdu-sw-capstone/capstone-project/actions/runs/41280253536/job/124770557986)을 보존하고 조건 변화 없는 재실행은 하지 않는다. 수정 후 담당 전체 MemberApp22와 기록18을 다시 확인하며 최종 HEAD/CI/숫자는 PR74 본문과 ignored result를 따른다.
 
 > 후속 통합 CI 이력: 타 트랙의 #59/#75 병합으로 기준이3569911로 이동해 같은 자체5파일 blob을 유지하는 clean merge(a47f411)를 반영했다. a47f411의 [주 Web job124786283727](https://github.com/kdu-sw-capstone/capstone-project/actions/runs/41285650060/job/124786283727)은415 PASS/1 FAIL: 상속된 RecordPrimaryLifetime의 afterEach가 cleanup 전에 request.mockReset을 실행해 pending effect가 undefined.then을 호출했다. #74의 BehaviorRecords 제품 코드와 모든 기존 assertion은 그대로 두고 해당 시험에서 cleanup 후 mockReset을 명시하는2줄만 보완한다. 기존 글로벌 setup/인증을 바꾸거나 실패를 skip하지 않는다. 최초 로그는 `.local/import-owner-20261101/`에 보존하고 바뀐 시험 조건의 새 HEAD로 검증한다. 새 후보는 자체 시험 정리1파일이 추가되며 그 외 incoming Core/popup/Server/DB/계약은 그대로다.
+
+## RPT-01 실제 HTTP·Receipt 재전송 경계 점검 — 2026-11-01
+
+- 담당 김다훈, 기존 managed Worktree 재사용. 독립 `codex/amvp-report-http-receipt-boundary`, 시작/확인 통합 **831069805eb0f86fc526b1f0f92e0b4a01656172**. #73/#77 병합 코드·#79 HEAD5e033f8·#81 HEAD120f6fcb 및 팀원 Core76/78/80 브랜치·다른 Worktree/index·공유 staged 삭제1,036개를 보존한다. #79/#81 기능에 의존하거나 재개발하지 않는다. 동일 보고 수신기·DB schema·producer를 새로 만들지 않는다.
+
+### 기존 구현과 실제 제품 연결을 구분
+
+| 경계 | 실제 코드/기존 검증·Git 상태 | 실제 연결에 필요한 입력/담당 |
+|---|---|---|
+| RPT-01 인증 HTTP | `AmvpReportApi.batch` → E principal/normalChannel → `AmvpReportReceiver.batch`, 기존 통합·단위/격리 시험. Web principal·폐기 토큰 거절. 기본 capability/effect 제공자 없으면503 | Core의 E 인증 transport·Worker 호출/재시도·원본 ACK 검증. 요청은 ReportBatch/RuntimeReport, 응답은 기존 BatchAck. 새 인증 방식 없음 |
+| capability | `AmvpBridgeSupport.CapabilitySource.verifiedSelection/verifyContentProfiles` → ACTIVE binding·owner_epoch·capability receipt/artifact/expiry/selected 결속. `AmvpRuntimeBridgeConfiguration`에 성공 기본 bean 없음 | 윤종민: 실제 registry/issued scope 검증 제공자와 원본 receipt 등록·조회. LINKED·국소 snapshot hash/MATCH만으로 수락 불가 |
+| 효과 verifier | `AmvpReportReceiver.EvidenceVerifier.verify(principal,binding,report,issuedPackage,predecessor)` → `VerifiedReport(affectedPolicies)` | 윤종민: issued operation/package/revision·현재 epoch/generation·원본 evidence hash/관측 시각·법적 전이 검증. generation은 RuntimeReport에 임의 필드를 추가하지 말고 issued operation의 권위 있는 원본에서 결속해야 함 |
+| 원장·Receipt·부분 ACK | item별 REQUIRES_NEW, `amvp_reports` + `amvp_operations` 원자 저장. owner_binding_id/report_epoch/report_seq 순번과 report_id/hash 멱등. gap은 PENDING_DEPENDENCY, 불일치는 REJECTED | 기존 생산 경로 구현·통합됨. 전달 ACK는 효과/cleanup 성공이 아님. 아래 새 TCP 시험으로 조합 경계 추가 검증 |
+| UNKNOWN·Web 투영 | `RPT_STATE`는 immutable report/Receipt를 참조, 현재 SITE_TIME ID/version/내용/coverage 일치 시만 반영. FAILED/UNKNOWN을 UNKNOWN으로, 수정된 설정을 구 ACK로 확정하지 않음 | 실제 proof 없으면 PENDING/UNKNOWN 유지. 기존 Web CFG/삭제·해제 조회 재사용. 보고 수신만으로 행동 기록·사용량을 발명하지 않음 |
+| 적용/해제·cleanup | `AmvpDeletedPolicyRelease`는 이전 claim/version/footprint와 검증된 affectedPolicies 결속. 기존 삭제/해제 TCP·SQL 시험 재사용 | Core 및 DOM 기능일 때 Content의 실제 이전 scope/ClaimLedger·다른 owner claim·복원/미해소 의무 증거. Content local_only/OBSERVED/restored는 Server APPLIED/RELEASED 증거가 아님 |
+| 이용시간·통계 | `AmvpUsageReceiver.ClockProof`/RegisteredClockProof·별도 usage/clock/day 원장·기존 통계 구현 | 윤종민: collector/ClockedUsageSegment·trusted anchor/boot/mono/day carry. RuntimeReport ACK를 사용량/확인 집중량으로 전환하지 않음 |
+
+### 이번에 새로 완료한 범위 — 제품 코드 추가가 아닌 독립 실제 HTTP·SQL 검증
+
+기존 `AmvpRuntimeReceiptMysqlTest`에 **3건**만 추가했다. 기존 `AmvpLoopbackHttp`·실제 controller/auth/transaction/SQL·기존 synthetic source/proof를 재사용하고 새 모의 producer는 만들지 않았다. 기존 삭제 suite의 정상 적용/해제 TCP 흐름을 중복 작성하지 않고 다음 조합 경계만 검증했다.
+
+1. 실제 loopback POST 혼합 배치: ACCEPTED/HASH_MISMATCH REJECTED/ACCEPTED 부분 ACK의 ID/hash/순서 결속, 이후 동일 batch ID/원문 재전송은 DUPLICATE/REJECTED/DUPLICATE. UNKNOWN 유지·applied revision null, 원본 보고/Receipt 내용·기존 이벤트/집중/사용량 원장 건수 불변. HTTP context와 SQL connection/MemberAuth를 새로 만든 뒤에도 같은 상태를 읽는다.
+2. 뒤 항목의 Receipt 저장만 fresh DB CHECK로 실패 주입: HTTP503 STORE_UNCONFIRMED, 앞 항목 commit 보존·뒤 raw/Receipt rollback·거짓 APPLIED 금지. CHECK 해제 후 동일 원문 재전송은 앞 DUPLICATE/뒤 ACCEPTED, 앞 immutable Receipt 응답은 그대로다. 실패 HTTP를 batch 전체 미접수로 추정하지 않는다.
+3. 실제 E bearer/다른 회원·executor/미인증과 effect verifier 미제공 거절. local_only/restored 필드를 넣은 비계약 보고는 거절되고 raw report/실제 적용 투영이 생기지 않는다. UUID/hash/HTTP200이 효과 증거를 대체하지 않는다.
+
+- 로컬 Java21/Maven: 새3 + 기존 receipt13 = **16/16**, 기존 ReportApi4 = **20/20 PASS**, 실패/오류/skip0. API 단위4는 DB 실행에도 포함되므로 중복 합산하지 않는다. fresh MySQL8.4.8/port33461, 실제 TCP, 정확한 datadir/PID 확인 후 정상 종료. 근거 `verify/.local/amvp-mysql-c1db9f84d9a7/` tests.log/ownership.json/server.stderr 및 별도 보관 surefire XML. 최초 이번 실행에 제품 결함 FAIL 없음. 저장 실패503은 의도한 격리 주입 결과다.
+- provider/capability/effect/원본 입력은 **SYNTHETIC fixture**다. 응답 유실은 이전 ACK를 사용하지 않는 동일 요청 replay로 모델링했으며 실제 network packet drop/Chrome/MV3/Core Worker 종료 시험이 아니다. 재기동은 HTTP context·receiver·SQL 연결 재생성이고 MySQL 프로세스 재기동을 뜻하지 않는다.
+- 변경은 기존 시험1·이 카드1뿐이다. 생산 Web/Server·Core/Content·기존/신규 DDL·schema/migration·API·인증·Receipt 의미·RC2/legacy-lock/의존성 불변. 기존 같은 소스의 Web/타입·빌드·계약/삭제해제/usage 검증을 재사용하고 새 HEAD CI는 별도 기록한다. 실제 서비스 bootstrap·메일·집중 START/END·운영 DB·AI 외부 전송 없음. 제품 연결 완료/새 기능 구현으로 표시하지 않는다.
+
+### 실제 미구현: RPT-02 상태 조회와 필요한 좁은 공동 결정
+
+- 기존 RC2 `api.json` RPT-02는 **POST /api/v1/amvp/reports/status**, E, StatusRequest `{item_ids:[uuid...]}` → StatusResponse/ItemAck이다. 생산 controller/reader가 아직 없다. OP-01은 현재 삭제 의무용이므로 보고 Receipt 조회로 임의 확장하지 않는다.
+- **의미 충돌:** StatusRequest는 ID만 보내지만 ItemAck는 NOT_RECEIVED에도 필수64hex `payload_sha256`를 요구한다. 실제 미수신/다른 owner ID의 hash는 Server가 알 수 없다. 예시의 고정 hash를 복사하거나 0 hash/null·타 owner hash 노출·미수신 항목 생략/성공·임의404를 정답으로 구현하지 않는다. 이는 USG-02와 같은 해시 부재 경계이며 RPT-02에도 적용됨을 확인했다.
+- 필요한 담당 합의는 김다훈(Server/API)·윤종민(Core 재확인/ACK) 및 공유 ItemAck 영향 시 관련 Content 계약 담당이다. 선택지는 요청에 caller-known ID/hash를 결속할지, NOT_RECEIVED 응답 hash 형상을 명시할지, 기존 형상을 보존하는 별도 오류 경로를 승인할지다. 어느 것도 이번에 채택/계약 변경하지 않는다. known Receipt만 임의 성공시키는 불완전 status API도 만들지 않는다.
+- 첫 실제 vertical slice는 RPT-02 결정만을 기다릴 필요는 없다. 기존 **RPT-01 동일 report/batch ID·원문 재전송**으로 Receipt/중복 ACK를 재확인하는 경계를 이미 검증했다. 먼저 실제 CapabilitySource/EvidenceVerifier·Core 인증 transport/ACK·issued 원본을 결속한 뒤 별도 승인된 제품 수용에서 한 SITE_TIME의 적용→보고→UNKNOWN/재확인→삭제/실제 해제·복원까지 확인한다.
+- 확인한 공개 Core PR76 **cc9d108d4cd8377f8985e113b1e7805a5b4c9b89**, PR78 **4a2065a7f65c403307d9b17e6fd8a4ceae260f5d**, PR80 **44fc5f3596b3b995260348fba4d0677ec4c88017**은 모두 미병합, 실제 source/effect/epoch authority·인증 HTTP/Worker는 여전히 후속이다. 새로운 제공물 없이 이 adapter를 다시 조사/재작성하지 않는다. ONCE actor·CADENCE 단계·USG-02/RPT-02 hash의 공동 결정은 별도로 남긴다.
+
+**판정: Server RPT-01/DB 수신·부분 ACK·재전송의 격리 연결 검증 PASS, 신규 제품 연결 구현 없음. 실제 Core/Content/Chrome/Native/Server 제품 수용 NOT_RUN, producer 및 RPT-02 미정 의미 BLOCKED, MVP_FINAL_COMPLETE=false.**
