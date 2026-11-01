@@ -1,3 +1,4 @@
+importScripts(chrome.runtime.getURL('member-ui/sites-runtime.js'));
 importScripts(chrome.runtime.getURL('integration/member-import.bundle.js'));
 // Independent UI adapter; original Guest Popup and all Content channels retain their contracts.
 chrome.alarms.create('focurve-member-server-poll',{periodInMinutes:0.5});
