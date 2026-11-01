@@ -106,3 +106,45 @@ test('feature-local adapter release preserves a separately active IG-03 claim',a
  await p.evaluate(async()=>{const{ContentSessionAdapter}=await import('/content/session-adapter.mjs');window.combo=new ContentSessionAdapter(document,{...opts,features:[{feature_id:'IG-05',enabled:true,required:true},{feature_id:'IG-03',enabled:true,required:true}]});combo.start();combo.releaseFeature('IG-05');});
  assert.equal(await p.locator('#suggestions').evaluate(e=>e.inert),false);assert.equal(await p.locator('#explore').evaluate(e=>e.inert),true);assert.equal((await p.evaluate(()=>combo.release())).cleanup_pending,false);
 });
+
+const accountRow=id=>`<div id="${id}"><a href="/${id}/"><img></a><button>Follow</button></div>`;
+test('P2 ownership: DIV suggested group cannot include plain-span Following sibling',async t=>{
+ const p=await fixture(t,{url:'https://www.instagram.com/',body:'<aside id="mixed"><div id="recommended" style="display:grid!important"><h3>Suggested for you</h3>'+accountRow('rec')+'</div><div id="following"><span>Following</span>'+accountRow('ordinary')+'</div></aside>'});
+ await p.evaluate(()=>session.start());assert.equal(await p.locator('#rec').evaluate(e=>!!e.closest('[inert]')),true);
+ for(const id of ['#mixed','#following','#ordinary'])assert.equal(await p.locator(id).evaluate(e=>!!e.closest('[inert]')),false,id);
+ await p.evaluate(()=>ledger.hide('other',document.querySelector('#recommended')));assert.equal((await p.evaluate(()=>session.release())).restored,true);
+ assert.equal(await p.locator('#recommended').evaluate(e=>e.inert),true);await p.evaluate(()=>ledger.release('other'));
+ assert.deepEqual(await p.locator('#recommended').evaluate(e=>[e.style.display,e.style.getPropertyPriority('display'),e.inert]),['grid','important',false]);
+});
+for(const author of ['header','div'])test(`P2 ownership: nested DIV widget header cannot own an ordinary post with ${author} author`,async t=>{
+ const p=await fixture(t,{url:'https://www.instagram.com/',body:`<main><article id="ordinary"><${author}><a href="/author/">Author</a></${author}><img id="photo"><span id="caption">normal caption</span><button id="like">Like</button><div id="widget"><header><span>Suggested posts</span></header>${accountRow('widget-account')}</div></article></main>`});
+ await p.evaluate(()=>session.start());for(const id of ['#ordinary','#photo','#caption','#like'])assert.equal(await p.locator(id).evaluate(e=>!!e.closest('[inert]')),false,id);
+ assert.equal((await p.evaluate(()=>session.release())).restored,true);
+});
+
+test('suggestion cleanup retains a failed display restore and retries the original important baseline',async t=>{
+ const p=await fixture(t,{url:'https://www.instagram.com/',body:accounts});
+ await p.evaluate(()=>{session.start();const e=document.querySelector('#suggestions');window.write=e.style.setProperty.bind(e.style);window.fail=true;e.style.setProperty=(n,v,p)=>{if(fail&&n==='display'&&v==='grid')throw Error('restore failure');write(n,v,p);};});
+ const failed=await p.evaluate(()=>session.release());assert.equal(failed.restored,false);assert.equal(failed.remaining_targets,1);assert.ok(failed.error_count>0);
+ assert.equal(await p.evaluate(()=>ledger.inspect().remaining_targets),1);
+ const retry=await p.evaluate(()=>{fail=false;return session.release();});assert.equal(retry.restored,true);
+ assert.deepEqual(await p.locator('#suggestions').evaluate(e=>[e.style.display,e.style.getPropertyPriority('display'),e.inert]),['grid','important',false]);
+ assert.equal(await p.evaluate(()=>ledger.inspect().remaining_targets),0);
+});
+test('suggestion document adoption retains cleanup debt without foreign writes until the original document regains its node',async t=>{
+ const p=await fixture(t,{url:'https://www.instagram.com/',body:accounts});
+ const r=await p.evaluate(()=>{session.start();window.held=document.querySelector('#suggestions');window.foreign=document.implementation.createHTMLDocument();foreign.adoptNode(held);held.style.display='flex';return{result:session.release(),display:held.style.display};});
+ assert.equal(r.result.restored,false);assert.equal(r.result.remaining_targets,1);assert.equal(r.display,'flex');
+ assert.equal((await p.evaluate(()=>{document.body.append(document.adoptNode(held));return session.release();})).restored,true);
+ assert.equal(await p.locator('#suggestions').evaluate(e=>e.style.display),'flex');
+});
+test('suggestion authority generation revocation fences late callbacks and still allows own cleanup',async t=>{
+ const p=await fixture(t,{url:'https://www.instagram.com/',body:accounts});
+ await p.evaluate(()=>{session.start();current=false;document.body.insertAdjacentHTML('beforeend','<section id="late"><h3>Suggested accounts</h3><a href="/late/"><img></a><button>Follow</button></section>');});
+ await p.waitForFunction(()=>invalidations.length>0);
+ assert.equal(await p.locator('#late').evaluate(e=>!!e.closest('[inert]')),false);
+ await p.evaluate(()=>{current=true;window.dispatchEvent(new Event('pageshow'));session.scan();});
+ assert.equal(await p.locator('#late').evaluate(e=>!!e.closest('[inert]')),false);
+ assert.equal((await p.evaluate(()=>session.release())).restored,true);
+ assert.equal(await p.locator('#suggestions').evaluate(e=>e.inert),false);
+});
