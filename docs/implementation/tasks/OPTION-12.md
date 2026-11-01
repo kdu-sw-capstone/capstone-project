@@ -399,3 +399,30 @@ provider 미설정은 안전한 비활성/거절이며 SUCCEEDED 결과·가짜 
 - `AnalysisConsentLifetime.test.tsx` 신규10건 및 기존 Goal/Consent14건 포함 관련6파일62/62 PASS·실패/skip0(`.local/goal-consent-review-final.log`). 반환2건 PASS, 순차 revision 역행·동일 notice/멱등 재확인·현재 GET/PUT401·old owner·StrictMode·새 GET 중 유효 쓰기·더 최신 Server 행 보존을 확인했다. TypeScript/Vite build PASS(`goal-consent-review-build.log`). SDK/request 모의 응답 시험이며 실제 제품 AI/Server 동의 수용이 아니다.
 - Goal 제품/기존14시험, Settings/MemberApp 연결, CONFIRMED RUN·zone/DST/자정/union/UNKNOWN, 공통 api/auth, Server/DDL/계약 및 기존 HTTP/MySQL16건의 관련 소스는 ff8d2de와 동일하다. 해당 격리 검증을 재사용하며 로컬 DB/제품 서비스/Chrome/Native를 다시 기동하지 않았다. 최신 게시 HEAD의 CI는 별도 확인하며 기존 승인/422 PASS를 소급하지 않는다.
 - 후속 변경은 동의 제품1·신규시험1·이 카드1에 한정한다. #73/#77/#79·Core/Content PR·다른 Worktree/index·공유 staged 삭제1,036개 보존. 리뷰 스레드는 수정 근거를 반환한 뒤 독립 재검토 대상이며 작성자가 자기 APPROVE/스레드 해결/병합을 대신하지 않는다. Draft·미병합, 기존 legacy FAIL 및 실제 Core/Chrome/Content/Native·AI provider 수용 NOT_RUN, `MVP_FINAL_COMPLETE=false`.
+
+### 실제 제품 연결 잔여 점검 — 목표 저장 후 조회 대기 해소 (2026-11-01)
+
+- 현재 담당 김다훈, 기존 PR81/브랜치 `feature/additional-mvp-daily-goal`/Worktree 재사용. 시작 HEAD `6e4da9834848f99a000c30c432616d1eddfc9475`, 실제 원격 통합 `9ebec52dc533dd497e454815b53b654ab42ef4fa`. #73 bad3533/#77 0892895/#79 e9f4261 Draft·미병합, 해당 HEAD와 다른 Worktree/index·공유 staged 삭제1,036개를 보존한다. PR81 기존 동의 P2는 독립 재검증30/30과 스레드4435727159 해결 기록이 확인됐으며 그 수정을 재작성하지 않는다. Core 담당 최신 승인은 별도다.
+- **새로 재현한 Web 결함:** 목표 편집 전/중 GET이 대기하면 `reading` 잠금 때문에 PUT 성공 뒤 최종 조회가 생략된다. 요청이 끝나지 않는 동안 저장 전 목표·확인 집중량만 남는다. 같은 화면의 대기 요청뿐 아니라 다른 목표 화면의 `goal-changed` 재조회도 막힌다. 최초 반례2 FAIL/현재401 회귀1 PASS(`.local/goal-read-handoff-before.log`); 화면간 save 이벤트 반례1 FAIL(`goal-read-event-before.log`). 선택에서 제외한14/17건은 PASS로 합산하지 않는다.
+- **최소 수정:** DailyFocusGoal.tsx에서 GET마다 AbortController를 만들고 저장 시작·저장 변경 이벤트·언마운트에 이전 GET 수명/잠금을 폐기한다. callback과 finally 모두 현재 epoch에서만 상태·잠금을 변경한다. 취소를 무시하는 transport도 기존 응답/401로 새 요청·인증 상태를 바꾸지 못한다. 새 GET은 Server 실제 자원을 다시 읽으며 UI ACK/타이머로 confirmed_ms를 생성하지 않는다. 쓰기 version/key/body·현재401·편집 CAS 및 동의 기능은 유지한다.
+- 신규4시험(위3실패 반례 및 유효401 회귀) + 기존 직접 영향: Goal/Consent18, 동의수명10, Settings/MemberApp29 = **57/57 PASS**(`goal-read-handoff-final.log`). SDK 모의 응답/React 시험이며 실제 HTTP·제품 효과 시험이 아니다. 타입/Vite build는 `goal-read-handoff-build-final.log`에 기록한다. API/Server/DB/계약·AI/Settings/MemberApp 및 의존성/Fixture 소스는 시작 HEAD와 동일하다. 기존 CI의 전용 실제 격리 MySQL/TCP16/16 및 주 Server113실행/141조건부skip을 재사용한다. 새 HEAD CI와 승인은 별도이며 기존 검증을 소급하지 않는다.
+
+#### 기능별 현재 연결 단계와 실제 차단
+
+| 기능 | 구현·시험·Git/통합 상태 | 실제 제품 수용/남은 경계 |
+|---|---|---|
+| 가입·로그인·W/E 인증/계정 연결·회원/비회원 소유권 | 기존 구현/시험·통합 코드 재사용. 이번 메일·실제 가입/연결 실행 없음 | 과거 회원 연결 성공 기록과 최신 제품 E2E는 다름. 최신 후보 전체 NOT_RUN |
+| 사이트 CRUD·기록·통계·대시보드 | 기존 API/DB/UI 및 병합 코드 재사용; #73/#77/#79는 별도 검토·승인 대기 | 실제 collector/Event/정상 END와의 누적 제품 수용 NOT_RUN |
+| SITE_TIME·일일 한도·예약·CADENCE/Receipt | 기존 저장·수신·조회/해제 경계와 격리 시험 재사용 | CapabilitySource/EvidenceVerifier·collector/ClockProof·Actor/Authority·실제 효과/복원 미결속. APPLIED/RELEASED를 발명하지 않음 |
+| START/END UI·계정 전환·불확실 상태 | 기존 구현, #79 후속은 별도 HEAD 보존 | Core/Native ACK·실제 해제·잠금/cleanup·재기동 수용 NOT_RUN |
+| 하루 목표/실시간 확인량 | PR81 구현·자동/HTTP/DB 검증·Push, Draft 미병합; 이번 조회 대기 결함 수정 | 현재 Server 수락 CONFIRMED RUN만 표시. Core→기존 인증 보고→interval 저장의 최신성/실제 E2E NOT_RUN |
+| AI 동의/철회·provider 비활성 | PR81 구현·검증·Push, 독립 P2 해결 확인. 이번 변경0 | provider/고지/전송·보존/dispatch 경합 미합의. jobs worker/외부 전송 활성화 금지 |
+
+#### 실제 producer가 전달해야 할 정확한 연결 입력 — 신규 성공 adapter 없음
+
+- **윤종민/Core capability:** `AmvpBridgeSupport.CapabilitySource.verifiedSelection(principal,binding,stream)`/`verifyContentProfiles`의 실제 검증 제공자와 등록된 receipt/artifact/verification_ref/selected/expires_at, executor·owner_binding_id·owner_epoch. `AmvpRuntimeBridgeConfiguration`은 기본 성공 bean을 제공하지 않는다. 없으면 기존 API의503 유지.
+- **윤종민/Core 효과·보고·인증 HTTP:** `AmvpReportReceiver.EvidenceVerifier.verify(principal,binding,report,issuedPackage,predecessor)`에서 issued operation/package/runtime_revision·generation/epoch·실제 적용/해제 원본 hash와 affectedPolicies를 검증해야 한다. 기존 `POST /api/v1/amvp/reports/batch`는 E principal과 제공자를 요구하고 Receipt/원본을 저장한다. 원본→Core outbox→인증 E HTTP→BatchAck의 실제 호출·재시도/조회 결속이 필요하다. 공개 PR76 `cc9d108d4cd8377f8985e113b1e7805a5b4c9b89`와 PR78 `4a2065a7f65c403307d9b17e6fd8a4ceae260f5d`는 미병합이며 설명에도 실제 source/verifier·인증 transport/Worker 결속이 미연결임을 명시한다. 해당 팀원 코드/PR은 변경하지 않는다.
+- **윤종민/Core collector/clock:** `AmvpUsageReceiver.ClockProof.verify(principal,binding,segment,predecessorHash)`에 실제 ClockedUsageSegment, anchor/boot/clock_epoch·단조시계·timezone/day allocation/carry 증거가 필요하다. 기존 `/api/v1/amvp/usage/batch`·RegisteredClockProof를 재사용한다. 관측시간/국소 MATCH를 COUNTED로 바꾸지 않는다.
+- **예약/CADENCE:** 기존 `AmvpScheduleBridge.Actor` 및 `AmvpCadenceControl.Authority`에 owner/operation/generation/frozen Snapshot·Attachment/Receipt를 결속한다. ONCE actor 매핑·휴식 단계/주기·USG-02 NOT_RECEIVED hash는 공동 결정 대기 유지.
+- **채지민/Content:** DOM 기능만 scope/document/navigation generation·ClaimLedger/다른 owner claim·실제 효과·복원·cleanup 원본을 Core verifier에 제공해야 한다. SITE_TIME DNR에 불필요한 Content 작업을 추가하지 않는다.
+- 이번 변경은 Web1·시험1·이 카드1이다. api.ts/잠금 해시/인증/Receipt/기존·신규 DDL 변경0, 실제 서비스·메일·집중 START/END·Chrome/Native/AI 외부 호출0. 11월11일 시연은 승인된 격리 환경의 목표 저장→대기 조회 폐기→새 확인량 조회/충돌·AI 거절/철회까지 후보로 제공하며, 실제 정책 효과·정상 END/복원까지의 수용은 별도다. 신규 중복 PR을 만들지 않고 기존 PR81에 후속 Commit/Push, 최신 HEAD 영향 재검토·Core 승인·통합 대기. **MVP_FINAL_COMPLETE=false**.

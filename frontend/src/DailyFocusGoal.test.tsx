@@ -61,6 +61,46 @@ describe("daily goal actual confirmed projection",()=>{
   fireEvent.change(screen.getByLabelText("목표 시간"),{target:{value:"1"}});await act(async()=>vi.advanceTimersByTimeAsync(5000));fireEvent.click(screen.getByRole("button",{name:"목표 저장"}));
   await waitFor(()=>expect(get).toHaveBeenCalledWith("/daily-focus-goal","PUT",expect.anything(),expect.objectContaining({version:1})));
  });
+ it("a saved goal refreshes without waiting for a retired pre-write read",async()=>{
+  let finish!:(value:Goal)=>void,reads=0;const old=new Promise<Goal>(resolve=>{finish=resolve;});
+  get.mockImplementation(async(_path,method,body)=>method==="PUT"?row({...body as Partial<Goal>,version:2}):++reads===2?old:row({goal_minutes:reads===1?180:65,version:reads===1?1:2}));
+  render(<DailyFocusGoal owner="A" editor/>);fireEvent.click(await screen.findByRole("button",{name:"목표 수정"}));
+  fireEvent.change(screen.getByLabelText("목표 시간"),{target:{value:"1"}});fireEvent.change(screen.getByLabelText("목표 분"),{target:{value:"5"}});
+  fireEvent.click(screen.getByRole("button",{name:"목표 상태 재조회"}));await waitFor(()=>expect(reads).toBe(2));
+  const retiredSignal=get.mock.calls.filter(c=>c[1]==="GET")[1][3]?.signal;
+  fireEvent.click(screen.getByRole("button",{name:"목표 저장"}));
+  await screen.findByText(/현재 목표 1시간 5분/);expect(reads).toBe(3);expect(retiredSignal?.aborted).toBe(true);
+  await act(async()=>finish(row()));expect(screen.getByText(/현재 목표 1시간 5분/)).toBeInTheDocument();
+ });
+ it("a retired read cannot unlock its successor or expire authentication after save",async()=>{
+  let rejectOld!:(e:unknown)=>void,finishNew!:(value:Goal)=>void,reads=0;
+  const old=new Promise<Goal>((_,reject)=>{rejectOld=reject;}),fresh=new Promise<Goal>(resolve=>{finishNew=resolve;});
+  get.mockImplementation(async(_path,method,body)=>method==="PUT"?row({...body as Partial<Goal>,version:2}):++reads===1?row():reads===2?old:fresh);
+  const expired=vi.fn();window.addEventListener("focurve:authentication-expired",expired);
+  try{render(<DailyFocusGoal owner="A" editor/>);fireEvent.click(await screen.findByRole("button",{name:"목표 수정"}));
+   fireEvent.click(screen.getByRole("button",{name:"목표 상태 재조회"}));await waitFor(()=>expect(reads).toBe(2));fireEvent.click(screen.getByRole("button",{name:"목표 저장"}));
+   await waitFor(()=>expect(reads).toBe(3));await act(async()=>rejectOld(new ApiError("UNAUTHENTICATED",401)));
+   fireEvent.click(screen.getByRole("button",{name:"목표 상태 재조회"}));expect(reads).toBe(3);expect(expired).not.toHaveBeenCalled();
+   await act(async()=>finishNew(row({version:2})));expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+  }finally{window.removeEventListener("focurve:authentication-expired",expired);}
+ });
+ it("the fresh post-write read still expires authentication on a current 401",async()=>{
+  let reads=0;get.mockImplementation(async(_path,method,body)=>{if(method==="PUT")return row({...body as Partial<Goal>,version:2});if(++reads===1)return row();throw new ApiError("UNAUTHENTICATED",401);});
+  const expired=vi.fn();window.addEventListener("focurve:authentication-expired",expired);
+  try{render(<DailyFocusGoal owner="A" editor/>);fireEvent.click(await screen.findByRole("button",{name:"목표 수정"}));fireEvent.click(screen.getByRole("button",{name:"목표 저장"}));
+   await waitFor(()=>expect(expired).toHaveBeenCalledTimes(1));expect(screen.getByRole("alert")).toBeInTheDocument();
+  }finally{window.removeEventListener("focurve:authentication-expired",expired);}
+ });
+ it("another goal view refreshes from the save event while its old read is pending",async()=>{
+  let rejectOld!:(e:unknown)=>void,reads=0;const old=new Promise<Goal>((_,reject)=>{rejectOld=reject;});
+  get.mockImplementation(async()=>++reads===1?row():reads===2?old:row({goal_minutes:65,version:2,confirmed_ms:7560000}));
+  const expired=vi.fn();window.addEventListener("focurve:authentication-expired",expired);
+  try{render(<DailyFocusGoal owner="A"/>);await screen.findByText("2시간 5분");
+   fireEvent.click(screen.getByRole("button",{name:"목표 상태 재조회"}));await waitFor(()=>expect(reads).toBe(2));
+   act(()=>window.dispatchEvent(new Event("focurve:goal-changed")));await screen.findByText("2시간 6분");expect(screen.getByText(/목표 1시간 5분/)).toBeInTheDocument();
+   await act(async()=>rejectOld(new ApiError("UNAUTHENTICATED",401)));expect(expired).not.toHaveBeenCalled();
+  }finally{window.removeEventListener("focurve:authentication-expired",expired);}
+ });
 });
 describe("AI consent is safe without an approved notice/provider",()=>{
  it("reads the actual refusal and never sends accepted=true or an analysis job",async()=>{
