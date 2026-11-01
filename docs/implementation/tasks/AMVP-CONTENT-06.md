@@ -6,6 +6,7 @@
 
 - 최종 전체Content307/307 PASS(IG-05 15포함), fail/skip0. Windows Node24/설치Chrome headless/Playwright 합성DOM, 기존환경 node --test --test-concurrency=2 extension/content-tests/*.test.mjs, 로그ig-suggestions-p2-full.log. 계약6/6·build/구문/diff 별도PASS. 제공원문 로컬재현도 계정5/5 및게시물1/1 숨김/복원PASS(실제서비스수용과구분). 새사용자화면 확인은 아직없으며 과거0.1.12 정상보고를 새후보로 승격하지 않는다. 새HEAD 원격CI는Push후확인, 독립재리뷰필요.
 
+- 수정코드20d5c26a33f859e8c68c6a9d432a64b43260a726 기존#82 Push완료. 사용자0.1.14 추천시험판만 켠 상태에서 재시험 후 'ㅇㅇ 문제 없네' 정상보고. 추천계정/추천게시물·일반게시물보존·해제복원 사용자확인으로 기록하며 별도Following목록의 실제존재/개별확인 여부는 미확인이다(해당특수경계는 합성반례PASS). 에이전트제품수용으로 승격하지 않음. 이번추가기록은 문서만 변경하며 제품코드/시험동일성을 근거로307/307 재사용, 기능시험재실행없음. IG-06미커밋작업과 #71 선행 보존, 독립재리뷰/새HEAD CI 확인필요.
 ## 2026-11-01 IG-05 추천 계정·게시물 독립 구현 시작
 - 담당 채지민 / codex/content-instagram-suggestions / 시작 c9393d5901150e77b96999eefbef14f071436c7a(#71 보존). 선행 #65/#71 누적 코드를 재구현하지 않는다. 기준 contracts/additional-mvp/rc1/feature-registry.json IG-05, AC-IG-05-01~03 및 docs/design/additional-mvp-contracts/05_Content_Event_UI.md. 계약 대상은 추천 게시물·계정, 팔로잉 피드 보존·광고 자동 포함 금지다.
 - instagram-suggestions.mjs: HOME/SUGGESTED(/explore/people)에서 명시 추천 계정 label+profile/follow로 확인한 좁은 그룹, 게시물 own header의 명시 추천 표시만 제한. 전환 버튼/일반 이미지/미디어/본문·feed root·DM/프로필/다른 route·보호 UI를 추천 계정 근거로 쓰지 않는다. 광고 표시는 추천 게시물 대상에서 제외. shared ClaimLedger·NavigationSurfaceSession 재사용; IG-05에만 profile등록/SPA 재승인/문자변경 감시 추가, adapter factory 등록. 제품 Core listener/issued/native/영속증거를 만들지 않는다.
