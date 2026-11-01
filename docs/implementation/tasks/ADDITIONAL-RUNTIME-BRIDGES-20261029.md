@@ -1,5 +1,32 @@
 # 추가 MVP · 정책 발행·이용시간 수신 경계
 
+> 2026-11-01 PR52 통합 동기화: PR51 병합 Commit **c44c87215fddee49114151aaf22caa8b3a679b21**을 기존 PR52에 이력 보존 merge로 반영한다. 아래 PR49~52의 Draft/미병합/검증 수치는 각 개발 당시 기록이며 현재 병합 상태·제품 수용 완료를 뜻하지 않는다. 수동 충돌 해결은 이 작업카드 1파일이고 Settings 제품·시험은 원래 PR52 blob을 유지한다. #62/#63·Content PR·다른 Worktree는 변경하지 않는다.
+
+- 동기화 검증: 원래 PR52 **c2aa82f7319286db643550230abb5bcf6a08c9d2**의 `Settings.tsx` blob **b256087913f116e4587d40efedf5d1bad00e9928**, `Settings.test.tsx` blob **87175ce472dd5b67376d199ecf0e78587bfc64a9**와 정확히 일치한다. 양측 작업카드의 전체 원문이 병합 결과에서 순서대로 보존됨을 확인했고, 이 카드와 Settings2파일 외의 모든 파일은 incoming c44c872의 blob과 같다. 최신 base 대비 자체 diff는 기존3파일뿐이다.
+- Settings/AdditionalSettings/SiteTimeStatus/SDK/RuntimeDelivery 직접 영향5파일 **28 PASS**, TypeScript/Vite build PASS. 최초 로딩·실패·실제 빈 목록 구분, 편집 입력/DOM 보존, 실패 뒤 재조회 대기·성공, SITE_TIME 정책/설치·version·날짜·지연 응답을 확인했다. Web은 jsdom/모의 HTTP이며 실제 제품 수용은 아니다. 로컬 전체 Web/Server·MySQL을 불필요하게 재실행하지 않고, incoming과 동일한 관련 소스/계약/의존성의 유효 검증을 재사용한다. 새 HEAD CI는 PR52 본문과 `.local/pr52-sync-20261101/` 원본 기록으로 확인한다.
+- 원래 검토의 Settings2파일 내용과 기존 시험 근거는 재사용할 수 있으나 과거 승인을 새 merge SHA 승인으로 소급하지 않는다. 기존 통합의 Core4파일 legacy-lock FAIL은 해결된 것으로 표시하지 않으며 이번 동기화에서 잠금 해시/검사를 변경하지 않는다. 실제 Core/Content/Chrome/Native 제품 수용 NOT_RUN, `MVP_FINAL_COMPLETE=false`. Draft 해제·Approve·PR Merge는 하지 않는다.
+
+## 11월11일 시연 경계 점검·설치 조회 상태 수정 — Web 독립 수정 (2026-10-31)
+
+- 시작 기준 integration **467fe18b176ccd571813d04229e8ee69f19a00d2**. 기존 clean Web Worktree를 재사용하고 `fix/additional-mvp-connection-status`로 분리했다. 리뷰 중 PR49 **037e0498ff648409a677c8d2900951bc33ca1e8d**, PR50 **075e9b12ff30c0610a280dac47149cc651765275**, PR51 **74c151a45817c061c237ac8adb965e0b620fc1dc**의 HEAD/파일/리뷰를 보존한다. 이 후속은 세 PR에 의존하지 않는다. 새 Worktree·설치·자동화·producer는 없다.
+- 확인된 독립 결함: Settings는 설치 목록/현재 세션 조회가 끝나기 전에도 빈 배열로 AdditionalSettings를 렌더링하여 **조회 중/실패를 "연결된 회원 설치가 없습니다"로 오인**시켰다. 이전 조회가 성공한 뒤 재조회에 실패해도 과거 추가 설정 편집 화면이 계속 노출됐다. 네트워크/서버 실패를 실제 빈 목록으로 처리하지 않는다.
+- 최소 수정은 Settings의 표시 경계뿐이다. 최초 조회 완료 전 로딩/실패를 표시하고, 이후 실패 시 기존 편집 화면을 hidden/inert 상태로 유지한다. 재조회 시작 때 오류 문자열이 지워져도 성공 응답 전까지 다시 노출하지 않는다. 첫 성공 이후 자식을 unmount하지 않으므로 입력·기존 멱등 요청 참조를 버리지 않는다. 동일 설치 재확인 후 입력이 유지되는 반례로 검증한다. 새 화면/디자인/인증/API/DB/기능 활성화 조건 변경은 없다.
+- 신규 반례 **수정 전3 FAIL → 수정 후3 PASS**, 기존 Settings4를 포함한 **7 PASS**. 실제 SDK/fetch 모의 HTTP로 초기 응답 대기→실제 빈 목록, non-retryable503, 기존 편집값→조회 실패→재조회 대기→성공/입력 유지(GET-only)를 확인했다. 초안 시험의 단순 network throw는 기존 SDK의 정상 backoff 때문에 1초 assertion timeout이 났으므로, API 의미에 맞는 non-retryable503으로 조건을 고정한 최종 수정 전 로그를 사용한다. SDK retry/보안 계약을 바꾸지 않았다.
+- 추가 읽기 전용 동작 점검 **3 PASS**: PUT 성공 후 확인 GET 유실 시 같은 key/본문/ID 재사용, 412 version 충돌에서 자동 재저장 없이 현재 revision 재조회, 페이지 재진입 UNKNOWN 보존·조회 실패 시 과거 APPLIED 표시 제거. 기존 AdditionalSettings/SDK를 실제로 통과하는 jsdom 시험이며 제품 코드를 수정할 결함은 없었다. 이 점검 파일/로그는 ignored `.local`에만 보존하며 새 모의 Core producer가 아니다.
+- 전체 Web **301 PASS = 통합 기준298 + 신규3**, TypeScript/Vite build PASS. 결과는 `.local/demo-flow-20261031/web-all.log`, `build.log`; 반례 `settings-before-final.log`, `settings-after.log`; 보조 점검 `write-reentry-audit.log`. 물리 브라우저 렌더·키보드/시각 수용·새로고침은 NOT_RUN. Server/RC2/api.ts/legacy-lock/의존성과 Core·Content·Shorts가 동일하므로 기존 유효한 Server/MySQL/계약 증거를 재사용하고 서비스/DB를 불필요하게 다시 기동하지 않는다.
+
+### 시연 범위와 실제 연결 조건
+
+| 흐름 | 확인된 범위 / 11월11일 전 남은 조건 |
+|---|---|
+| Light/Dark·설정 진입·설치 로딩/빈 상태·오류/재조회 | UI 구현·자동 시험. 실제 시연 브라우저에서 화면/탐색/키보드 확인은 별도 필요 |
+| CONTENT 16옵션/키워드·성인·블러, SITE_TIME 한도/시간창, WEEKLY/CADENCE 설정 저장·조회 | 기존 Web/격리 HTTP·DB 증거 재사용. 제품 CFG API는 config-api.enabled와 유효 Admission/capability를 요구한다. 공개 통합본에는 실제 CapabilitySource가 없어 **실제 제품 CRUD 시연 BLOCKED**. 플래그만 켜거나 성공 fixture를 주입해 실제 저장/적용 시연으로 표시하지 않음 |
+| 저장/적용 대기·UNKNOWN·삭제/해제·재진입 | 기존 원장/Receipt/조회 UI·자동/격리 시험. 실제 APPLIED/RELEASED는 실제 EvidenceVerifier와 원본 보고가 필요. PR49/50/51의 조회 개선은 리뷰 중이며 병합/제품 수용 완료로 처리하지 않음 |
+| 일일 이용시간·한도·과거 기록 | API/집계/표시 구현. 실제 collector/ClockedUsageSegment·trusted anchor/day allocation/carry가 없으면 404/503/QUARANTINED/UNKNOWN 유지. 가짜0/잔여량/실제 차단 성공을 만들지 않음 |
+| 예약 실행·CADENCE 단계·정상 END/복원/재기동 | 실제 Actor/Authority·ACK/해제/복원 증거와 별도 승인된 Chrome/Native 수용 필요. 저장된 예약/반복 설정을 실제 실행으로 표시하지 않음 |
+
+- 인터페이스 수신 후 첫 연결은 기존 `CapabilitySource.verifiedSelection/verifyContentProfiles` → SITE_TIME PKG-01 → `EvidenceVerifier.verify`/RPT-01 → CFG02 → `ClockProof.verify`/USG-01/DAY-01 → 실제 release/CFG02 순서다. 원본 증거의 owner/executor/epoch·issued operation/package/revision·현재 generation/footprint·clock/boot/day-chain 등록/검증 경로를 받아 기존 adapter에만 결속한다. DOM 기능은 Content가 문서/탐색 세대별 적용·복원/영속 Receipt를 Core에 제공해야 하며 SITE_TIME DNR만을 위해 Content 작업을 추가하지 않는다.
+- ONCE actor 매핑, CADENCE 휴식/주기 표현, USG-02 NOT_RECEIVED hash는 공동 결정 대기를 유지한다. 기존 UNKNOWN·HOLD·실패 증거/운영 DB/프로필·Credential을 변경하지 않는다. 실제 제품 기능 시연·Core/Content/Chrome/Native 수용은 **NOT_RUN/BLOCKED**이며 `MVP_FINAL_COMPLETE=false`.
 > 2026-10-31 PR51 통합 동기화: **c56ccf7039b0e23f132650d9e51347ed1d607cc2**의 PR49·PR50 기록과 아래 PR51 원래 개발 기록을 모두 보존했다. 아래 Draft/미병합/기준 SHA는 각 개발 당시의 이력이다. 수동 충돌 해결은 이 작업카드 한 파일이며, 기존 PR51 기능 코드와 통합된 Core53 코드는 수정하지 않았다.
 
 - 동기화 영향 검증: #51 집중3파일 **16 PASS**, 누적 전체 Web **319 PASS**(#49·#50·#51 포함), TypeScript/Vite build PASS. 원래 #51 소스/시험6파일의 Git blob과 통합에서 가져온 나머지 파일의 blob 동일성을 확인했다. 최신 통합 대비 Server·DB schema·RC2·legacy-lock/api.ts·Core/Content/Shorts·의존성 변경은 없으므로 기존 유효한 관련 검증을 재사용한다. 별도 Server/MySQL/제품 서비스를 기동하지 않았다. 로컬 근거 `.local/pr51-sync-20261031/`. 실제 Core/Content/Chrome/Native 수용은 NOT_RUN이며 Draft 해제/Approve/Merge는 하지 않는다.
