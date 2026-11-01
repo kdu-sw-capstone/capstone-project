@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ApiError, message, request } from "./api";
 import { selectSitePolicy } from "./sitePolicy";
 import { allPages, clockTime, dateTime, DateFields, Kpi, label, resultClass, resultLabel,blockingReasonLabel, seoulDay, SiteMark, targetName, useWork, type Access, type Page, type Session } from "./FocusShared";
@@ -10,26 +10,29 @@ export default function BehaviorRecords({initialHost,initialRange,initialSession
   const [quality,setQuality]=useState<string>(""),[dateOpen,setDateOpen]=useState(false);
   const queryKey=JSON.stringify({from,to,host,sessionId,eventType}); const dirty=loaded&&queryKey!==applied;
   const [auxiliaryQuery,setAuxiliaryQuery]=useState<{from:string;to:string}|null>(null);
+  const auxiliaryOwner=useRef<typeof auxiliaryQuery>(null);
   const [qualityPending,setQualityPending]=useState(false),[auxiliaryErrors,setAuxiliaryErrors]=useState({quality:"",sessions:""});
   async function load(next:string|null=null){
     const params=new URLSearchParams({...(from?{from_date:from}:{}),...(to?{to_date:to}:{}),...(host?{host}:{}),...(sessionId?{session_id:sessionId}:{}),...(eventType?{event_type:eventType}:{}),...(next?{cursor:next}:{})});
     const page=await request<Page<Access>>("/access-events?"+params);
     setItems(old=>next?[...old,...page.items]:page.items);setCursor(page.next_cursor);setApplied(queryKey);setLoaded(true);
-    if(!next){setDetail(null);setQuality("UNKNOWN");setQualityPending(true);setSessions([]);setAuxiliaryErrors({quality:"",sessions:""});setAuxiliaryQuery({from,to});}
+    if(!next){setDetail(null);setQuality("UNKNOWN");setQualityPending(true);setSessions([]);setAuxiliaryErrors({quality:"",sessions:""});const query={from,to};auxiliaryOwner.current=query;setAuxiliaryQuery(query);}
   }
   useEffect(()=>{
     if(!auxiliaryQuery)return;let disposed=false,authenticationExpired=false;const abort=new AbortController();
+    const current=()=>!disposed&&!abort.signal.aborted&&auxiliaryOwner.current===auxiliaryQuery;
     const range=new URLSearchParams({...(auxiliaryQuery.from?{from_date:auxiliaryQuery.from}:{}),...(auxiliaryQuery.to?{to_date:auxiliaryQuery.to}:{})});
     function failed(field:"quality"|"sessions",error:unknown){
-      if(disposed||abort.signal.aborted)return;
+      if(!current())return;
+      if(field==="quality")setQuality("UNKNOWN");else setSessions([]);
       setAuxiliaryErrors(old=>({...old,[field]:message(error)}));
       if(error instanceof ApiError&&error.status===401&&!authenticationExpired){authenticationExpired=true;window.dispatchEvent(new Event("focurve:authentication-expired"));}
     }
     // Auxiliary reads never own the record list or its interaction lock.
     void request<{quality:string}>("/statistics/summary?"+range,"GET",undefined,{signal:abort.signal})
-      .then(stats=>{if(!disposed)setQuality(stats.quality);}).catch(error=>failed("quality",error)).finally(()=>{if(!disposed)setQualityPending(false);});
+      .then(stats=>{if(current())setQuality(stats.quality);}).catch(error=>failed("quality",error)).finally(()=>{if(current())setQualityPending(false);});
     void allPages<Session>("/sessions?"+range,abort.signal)
-      .then(rows=>{if(!disposed)setSessions(rows);}).catch(error=>failed("sessions",error));
+      .then(rows=>{if(current())setSessions(rows);}).catch(error=>failed("sessions",error));
     return()=>{disposed=true;abort.abort();};
   },[auxiliaryQuery]);
   useEffect(()=>{void work.run(()=>load());},[]);
