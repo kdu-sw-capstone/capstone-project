@@ -1,5 +1,15 @@
 # AMVP-CONTENT-06 · 추가 Content 연결
 
+## 2026-11-01 PR #58 IG 기능별 release P2 수정
+
+- 담당 채지민, feature/content-session-adapter, 시작62a4233aab9a45ade36b4ec308dbe5b1f8290306. 원격 #58/#61/#64/#65 HEAD/base와 일치, 기존 clean 브랜치에서 진행. 기존 scan/invalidate·claim 누락 P2는 해결된 상태로 재사용하며 새 releaseFeature 경계만 수정한다.
+- 수정 전 새 Chrome 합성 반례3건 중1PASS/2FAIL: IG01 첫 pause 콜백의 releaseFeature 이후 다음 pause1회, play guard 재진입 release가 adapter.closed=true로 전파. 부분 cleanup/후속 retry 반례는 원래 PASS. 로그 pr58-feature-release-before.log. media.pause/paused와 권한은 모의이며 실제 오디오/MV3 수용 아님.
+- InstagramStoriesSession.release는 surface 복원 결과를 기다리기 전 로컬 media open을 닫고 replay listener를 제거한다. 바깥 pause 이후 #canApply/open 확인에서 다음 pause와 성공 관찰을 차단한다. busy release는 권한 회수 stop 대신 NavigationSurfaceSession.close(새 효과·observer/event만 닫음, invalidation 콜백 없음)를 호출해 feature-local pending을 반환한다. claim/복원 목표/LIVE 의무는 explicit release retry까지 유지한다. adapter 전체 invalidate·다른 owner ledger를 닫지 않는다.
+- 기능 해제 중 replay guard 유지라는 과거 주석/의도보다 새 효과0이라는 이번 수정 기준을 우선한다. 이미 남은 DOM/inert claim과 실패 복원 의무는 삭제하지 않으며 cleanup 미완료를 RELEASED로 승격하지 않는다. 실제 전체 revoke/pagehide의 stop/invalidate는 그대로 유지한다.
+- 변경: instagram-stories.mjs, navigation-surface.mjs, 신규 instagram-feature-release-browser.test.mjs, 이 작업카드. #58 공통 수정을 #61에 반영한 뒤 #64의 추출된 instagram-media.mjs로 동일하게 이관한다. #65는 새 #64를 상속하도록 순차 반영하며 force push/PR 병합하지 않는다.
+- 수정 후 전체 Content **218/218 PASS**, fail/skip0(107.6초), 신규3 포함. 계약6/6·build/diff PASS. 변경JS구문 확인 후 게시한다. 로그 pr58-feature-release-after.log. 수정 전1PASS/2FAIL→수정 후 신규3PASS이며 기존215/230 CI를 수정 후 PASS로 재사용하지 않는다. 원격 CI는 게시 후 별도로 확인한다. 제품 Core/MV3/Native/Server 수용 NOT_RUN, MVP_FINAL_COMPLETE=false.
+
+
 ## 2026-10-31 PR #58 P2 · scan 중 취소와 재진입 cleanup
 
 - 수정 기준 `a257ce15118c29e8226a53273a5a7eaae29546cc`, 기존 `feature/content-session-adapter` Worktree clean/원격 HEAD 일치 확인 후 같은 브랜치에서 작업. 리뷰4431697837의 P2 범위만 수정한다. #54/#56/#57 원본 SHA 및 다른 Worktree를 보존하고 Draft 해제/Approve/Resolve/Merge하지 않는다.
