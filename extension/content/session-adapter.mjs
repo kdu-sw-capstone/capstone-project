@@ -1,4 +1,5 @@
 import {ClaimLedger} from './claim-ledger.mjs';
+import {freezeCopy} from './local-evidence.mjs';
 import {HomeSession} from './home.mjs';
 import {SubscriptionsSession} from './subscriptions.mjs';
 import {ExploreSession} from './explore.mjs';
@@ -47,7 +48,8 @@ export class ContentSessionAdapter {
     this.#document=document;this.#options=Object.freeze({owner_binding_id,binding_id});
     this.#scope=JSON.stringify([owner_binding_id,binding_id]);this.#isCurrent=isCurrent;
     this.#authorizeNavigation=authorizeNavigation;this.#onObservation=onObservation;this.#onInvalidated=onInvalidated;
-    this.#ig04Reservation=ig04Reservation;
+    this.#ig04Reservation=ig04Reservation&&typeof ig04Reservation==='object'
+      ?{...ig04Reservation,...(ig04Reservation.context!==undefined?{context:freezeCopy(ig04Reservation.context)}:{})}:ig04Reservation;
     this.pagehide=()=>this.invalidate('PAGEHIDE');
   }
   #current(){
@@ -114,5 +116,17 @@ export class ContentSessionAdapter {
       // its verified release result can clear this conservative obligation.
       cleanup_pending:pending.length>0,pending_features:pending,
       features:[...this.#entries].map(([feature_id,e])=>({feature_id,active:!this.#closed&&!e.released&&!e.closing,observation:e.observation??null,cleanup:e.cleanup??null}))});
+  }
+  async evidenceSnapshot(feature_id='IG-04'){
+    const e=this.#entries.get(feature_id);
+    if(feature_id!=='IG-04'||!e)throw Error('UNOWNED_EVIDENCE_FEATURE');
+    return e.session.evidenceSnapshot();
+  }
+  async completeReservation(identity,proof){
+    const e=this.#entries.get('IG-04');
+    if(!e)return {local_only:true,accepted:false,reason:'UNOWNED_RESERVATION_FEATURE'};
+    const result=await e.session.completeReservation(identity,proof);
+    if(result.accepted){this.releaseFeature('IG-04');if(this.#closed)this.release();}
+    return {...result,state:this.inspect()};
   }
 }

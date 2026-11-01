@@ -13,6 +13,8 @@ export class NavigationSurfaceSession {
   #open=false;#started=false;#scheduled=false;#observer;#observe;#invalidateCallback;
   #profile;#authorizeNavigation;#canObserve;#busy=false;
   #reservation;
+  #observing=false;#scanSequence=0;#scanComplete=false;#lastObservation=null;#lastCleanup=null;
+  #claimEpoch='';
   constructor(document,{ledger,owner_binding_id,binding_id,onObservation=()=>{},onInvalidated=()=>{},authorizeNavigation=null,canObserve=()=>true,ig04Reservation},profile){
     // Profiles are module-owned selectors, not page/Wire policy or capability.
     if(!profile||!['YT-01','YT-05','YT-06','YT-07','YT-08','YT-09','IG-01','IG-02','IG-03','IG-04','IG-05','IG-06'].includes(profile.feature_id)||typeof profile.collect!=='function'||typeof profile.routeAllowed!=='function')throw Error('INVALID_NAVIGATION_PROFILE');
@@ -28,7 +30,9 @@ export class NavigationSurfaceSession {
       queueMicrotask(()=>{this.#scheduled=false;if(this.#open)this.scan();});
     };
     this.pagehide=()=>this.#invalidate('PAGEHIDE');
-    if(profile.feature_id==='IG-04'&&ig04Reservation!==undefined)this.#reservation=new HideReservationGate(ledger,ig04Reservation,this.refresh);
+    if(profile.feature_id==='IG-04'&&ig04Reservation!==undefined){
+      this.#reservation=new HideReservationGate(ledger,ig04Reservation,this.refresh,{owner_binding_id,binding_id});this.#claimEpoch=':'+crypto.randomUUID();
+    }
   }
   start(){
     if(this.#started)throw Error(this.#profile.prefix+'_ALREADY_STARTED');
@@ -45,6 +49,7 @@ export class NavigationSurfaceSession {
     return this.scan();
   }
   #disconnect(){
+    this.#observing=false;
     this.#observer?.disconnect();const win=this.#document.defaultView;
     for(const name of ['popstate','hashchange','yt-navigate-finish'])win.removeEventListener(name,this.refresh);
     win.navigation?.removeEventListener('currententrychange',this.refresh);win.removeEventListener('pagehide',this.pagehide);
@@ -70,6 +75,7 @@ export class NavigationSurfaceSession {
   scan(){
     if(!this.#open||this.#busy)return null;
     this.#busy=true;
+    this.#scanSequence++;this.#scanComplete=false;
     try{
     let current=false;try{current=this.#canObserve()===true;}catch{}
     if(!current||!this.#open){this.#invalidate('AUTHORITY_REVOKED');return null;}
@@ -87,7 +93,7 @@ export class NavigationSurfaceSession {
         routeAllowed=originAllowed&&this.#profile.routeAllowed(next);
         if(routeAllowed){authorized=this.#authorizeNavigation?.({previous_url:this.#url,next_url:next.href})===true;reauthorization=authorized?'GRANTED':'DENIED';}
       }catch{reauthorization='THREW';}
-      this.#observer.disconnect();let pending=false;
+      this.#observer.disconnect();this.#observing=false;let pending=false;
       for(const[element,claim]of this.#targets){
         if(this.#ledger.release(claim).restored)this.#targets.delete(element);else pending=true;
       }
@@ -100,7 +106,7 @@ export class NavigationSurfaceSession {
       }
       this.#url=next.href;
     }
-    this.#observer.disconnect();let eligible=0,restricted=0,errors=0;
+    this.#observer.disconnect();this.#observing=false;let eligible=0,restricted=0,errors=0;
     try{
       const current=this.#profile.collect(this.#document);eligible=current.size;
       for(const [element,claim]of this.#targets)if(!current.has(element)){
@@ -116,7 +122,7 @@ export class NavigationSurfaceSession {
         let claim=this.#targets.get(element);
         if(!claim){
           if(this.#next===Number.MAX_SAFE_INTEGER)throw Error(this.#profile.prefix+'_TARGET_LIMIT');
-          claim=`${this.#scope}:${++this.#next}`;this.#targets.set(element,claim);
+          claim=`${this.#scope}${this.#claimEpoch}:${++this.#next}`;this.#targets.set(element,claim);
         }
         const apply=['YT-09','IG-06'].includes(this.#profile.feature_id)?'grayscale':this.#profile.preserveLayout?'conceal':'hide';
         const verified=this.#reservation?this.#reservation.hide(claim,element,()=>this.#canApply()
@@ -132,19 +138,21 @@ export class NavigationSurfaceSession {
         ...(this.#profile.feature_id==='IG-03'?['title','aria-labelledby']:[]),
         ...(this.#profile.feature_id==='IG-04'?['placeholder','dir','datetime']:[]),
         ...(this.#profile.feature_id==='IG-06'?['type','action']:[])]});
+    this.#observing=this.#open;this.#scanComplete=this.#open;
     const reservation=this.#reservation?.inspect();
     const result={feature_id:this.#profile.feature_id,local_only:true,native_verified:false,status:errors?'FAILED':reservation?.pending_reservations?'OBSERVING':eligible?'OBSERVED':'NO_TARGET',
       eligible_target_count:eligible,restricted_target_count:restricted,error_count:errors,remaining_targets:this.#targets.size};
     if(reservation)Object.assign(result,reservation);
     if(!this.#open)return null;
+    this.#lastObservation=structuredClone(result);
     this.#observe(result);return result;
     }finally{this.#busy=false;}
   }
   release(){
     this.#open=false;this.#disconnect();
     this.#reservation?.close();
-    if(this.#busy)return {local_only:true,restored:false,remaining_targets:this.#targets.size,error_count:0,cleanup_pending:true,scan_pending:true,
-      ...(this.#reservation?.inspect()??{})};
+    if(this.#busy){this.#lastCleanup={local_only:true,restored:false,remaining_targets:this.#targets.size,error_count:0,cleanup_pending:true,scan_pending:true,
+      ...(this.#reservation?.inspect()??{})};return structuredClone(this.#lastCleanup);}
     this.#busy=true;
     try{let errors=0;
     for(const [element,claim]of this.#targets){
@@ -154,8 +162,26 @@ export class NavigationSurfaceSession {
     const restored=errors===0&&this.#targets.size===0;
     const reservation=this.#reservation?.inspect();
     const live=LIVE.get(this.#ledger);if(restored&&!reservation?.reservation_obligations.length&&live?.get(this.#scope)===this)live.delete(this.#scope);
-    return {local_only:true,restored,remaining_targets:this.#targets.size,error_count:errors,
+    this.#lastCleanup={local_only:true,restored,remaining_targets:this.#targets.size,error_count:errors,
       ...(reservation?{...reservation,dom_restored:restored,cleanup_pending:!restored||reservation.reservation_obligations.length>0}: {})};
+    return structuredClone(this.#lastCleanup);
     }finally{this.#busy=false;}
+  }
+  #ownClaims(){return [...new Set([...this.#targets.values(),...(this.#reservation?.claims()??[])])];}
+  #restored(){return !this.#open&&!this.#busy&&!this.#observing&&this.#targets.size===0&&this.#lastCleanup?.restored===true
+    &&this.#ledger.snapshotClaims(this.#ownClaims()).remaining_targets===0;}
+  async evidenceSnapshot(){
+    if(this.#profile.feature_id!=='IG-04')throw Error('UNSUPPORTED_EVIDENCE_FEATURE');
+    const gate=await this.#reservation?.snapshot();
+    return structuredClone({local_only:true,native_verified:false,feature_id:'IG-04',
+      observer_active:this.#observing,scan_in_progress:this.#busy,scan_scheduled:this.#scheduled,
+      scan_sequence:this.#scanSequence,scan_complete:this.#scanComplete,observation:this.#lastObservation,
+      cleanup:this.#lastCleanup,dom_cleanup_confirmed:this.#restored(),ledger:this.#ledger.snapshotClaims(this.#ownClaims()),gate:gate??null});
+  }
+  async completeReservation(identity,proof){
+    if(!this.#reservation)return {local_only:true,accepted:false,reason:'RESERVATION_GATE_REQUIRED'};
+    const result=await this.#reservation.completeReservation(identity,proof,()=>this.#restored());
+    if(result.accepted)this.release();
+    return {...result,cleanup:structuredClone(this.#lastCleanup)};
   }
 }

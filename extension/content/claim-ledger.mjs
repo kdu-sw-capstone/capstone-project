@@ -195,4 +195,18 @@ export class ClaimLedger {
     // No DOM references, text, URL, or native/whole-session success assertion.
     return { remaining_targets: remaining, remaining_properties: properties };
   }
+  // The Session supplies its private claim set. Never enumerate another
+  // owner's IDs, DOM text/attributes, original styles or Element references.
+  snapshotClaims(claims) {
+    const selected=new Set(claims),rows=[];
+    for(const [element,entries]of this.#entries)for(const claim of selected){
+      const properties=[];
+      for(const [property,entry]of entries)if(entry.claims.has(claim)){
+        let matches=null;try{if(element.ownerDocument===this.#document)matches=!!entry.written&&this.#equal(this.#read(element,property),entry.written);}catch{}
+        properties.push({property,pending:entry.pending?.kind??null,matches_owned:matches});
+      }
+      if(properties.length)rows.push({claim,foreign_document:element.ownerDocument!==this.#document,connected:element.isConnected===true,properties});
+    }
+    return structuredClone({remaining_targets:new Set(rows.map(r=>r.claim)).size,claims:rows});
+  }
 }
