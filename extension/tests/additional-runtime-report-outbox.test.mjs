@@ -114,3 +114,50 @@ test('even a multi-owner trusted adapter cannot mix binding scopes in one batch'
  assert.ok(one.reports.every(r=>r.owner_binding_id===f.owner.owner_binding_id));assert.ok(two.reports.every(r=>r.owner_binding_id===other.owner_binding_id));
  assert.notEqual(one.batch_id,two.batch_id);
 });
+
+test('RPT-01 rejects reused binding/epoch/seq when execution changes',async()=>{
+ const f=await fixture();await f.outbox.enqueue(await f.report());const before=await f.outbox.recover();
+ await assert.rejects(f.outbox.enqueue(await f.report(1,{runtime_execution_id:crypto.randomUUID()})),/REPORT_SEQUENCE_GAP/);
+ assert.deepEqual(await f.outbox.recover(),before);
+});
+test('RPT-01 accepts next binding/epoch sequence across executions and reopens unchanged',async()=>{
+ const f=await fixture();const first=await f.report(),second=await f.report(2,{runtime_execution_id:crypto.randomUUID()});
+ await f.outbox.enqueue(first);await f.outbox.enqueue(second);
+ const batch=await f.outbox.batch(f.owner),again=new RuntimeReportOutbox(f.db,f.config);
+ assert.deepEqual(await again.batch(f.owner),batch);assert.deepEqual(batch.reports,[first,second]);
+ await again.acknowledge(f.owner,f.ack(batch));assert.equal(await again.batch(f.owner),null);
+});
+test('executor changes cannot reuse a binding/epoch position but batches stay executor-isolated',async()=>{
+ const f=await fixture({authorizeScope:async()=>true}),other={...f.owner,executor_id:crypto.randomUUID()};
+ await f.outbox.enqueue(await f.report());await assert.rejects(f.outbox.enqueue(await f.report(1,other)),/REPORT_SEQUENCE_GAP/);
+ await f.outbox.enqueue(await f.report(2,other));
+ const first=await f.outbox.batch(f.owner),second=await f.outbox.batch(other);
+ assert.equal(first.reports.length,1);assert.equal(second.reports.length,1);assert.equal(second.reports[0].report_seq,2);
+ await assert.rejects(f.outbox.acknowledge(other,f.ack(first)),/REPORT_BATCH_SCOPE_MISMATCH/);
+});
+test('different bindings with the same epoch independently start at sequence one',async()=>{
+ const f=await fixture({authorizeScope:async()=>true}),first=await f.report(),other={...f.owner,owner_binding_id:crypto.randomUUID()};
+ await f.outbox.enqueue(first);await f.outbox.enqueue(await f.report(1,{...other,report_epoch:first.report_epoch}));
+ assert.equal((await f.outbox.recover()).rows.length,2);
+});
+test('new epoch starts at one and a prior epoch ACK only updates its original row',async()=>{
+ const f=await fixture(),first=await f.report();await f.outbox.enqueue(first);const oldBatch=await f.outbox.batch(f.owner);
+ const next=await f.report(1,{report_epoch:crypto.randomUUID(),runtime_execution_id:crypto.randomUUID()});await f.outbox.enqueue(next);
+ await f.outbox.acknowledge(f.owner,f.ack(oldBatch));const state=await f.outbox.recover();
+ assert.equal(state.rows[0].delivery,'ACKED');assert.equal(state.rows[1].delivery,'PENDING');assert.deepEqual(state.rows[1].report,next);
+ const batch=await f.outbox.batch(f.owner);assert.deepEqual(batch.reports,[next]);assert.notEqual(batch.batch_id,oldBatch.batch_id);
+});
+test('recovery refuses legacy duplicate sequence positions without deleting or renumbering originals',async()=>{
+ const f=await fixture(),first=await f.report(),second=await f.report(1,{runtime_execution_id:crypto.randomUUID()}),key='amvp_journal_v1:runtime-report-outbox';
+ const original={key,version:1,rows:[first,second].map(report=>({report,delivery:'PENDING',ack:null})),batches:[]};
+ await f.db.transaction('readwrite',(tx,done)=>{tx.objectStore('metadata').put(original);done(null);});
+ const reopened=new RuntimeReportOutbox(f.db,f.config);await assert.rejects(reopened.recover(),/REPORT_SEQUENCE_GAP/);
+ await assert.rejects(reopened.batch(f.owner),/REPORT_SEQUENCE_GAP/);
+ const actual=await f.db.transaction('readonly',(tx,done)=>{const q=tx.objectStore('metadata').get(key);q.onsuccess=()=>done(q.result);});assert.deepEqual(actual,original);
+});
+test('recovery accepts a persisted execution change with continuous binding/epoch positions',async()=>{
+ const f=await fixture(),first=await f.report(),second=await f.report(2,{runtime_execution_id:crypto.randomUUID()}),key='amvp_journal_v1:runtime-report-outbox';
+ const original={key,version:1,rows:[first,second].map(report=>({report,delivery:'PENDING',ack:null})),batches:[]};
+ await f.db.transaction('readwrite',(tx,done)=>{tx.objectStore('metadata').put(original);done(null);});
+ assert.deepEqual(await new RuntimeReportOutbox(f.db,f.config).recover(),original);
+});

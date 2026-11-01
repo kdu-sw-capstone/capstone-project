@@ -8,7 +8,9 @@ const same = (a, b) => canonical(a) === canonical(b);
 const exact = (v, keys) => v && typeof v === 'object' && !Array.isArray(v)
   && Object.keys(v).length === keys.length && keys.every(k => Object.hasOwn(v, k));
 const scopeOf = report => ({ owner_binding_id: report.owner_binding_id, executor_id: report.executor_id });
-const streamOf = r => canonical([r.owner_binding_id, r.executor_id, r.runtime_execution_id, r.report_epoch]);
+// RPT-01 route/position/last and uq_amvp_report_seq use binding + epoch.
+// Executor/execution remain authority/evidence fields, not sequence namespaces.
+const streamOf = r => canonical([r.owner_binding_id, r.report_epoch]);
 const fresh = () => ({ key: KEY, version: 1, rows: [], batches: [] });
 const terminal = row => row.delivery !== 'PENDING';
 const keywords = new Set(['$ref', 'type', 'properties', 'required', 'additionalProperties', 'items', 'minItems', 'maxItems', 'minimum', 'maximum', 'minLength', 'maxLength', 'pattern', 'format', 'const', 'enum', 'anyOf']);

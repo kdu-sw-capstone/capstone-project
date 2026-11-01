@@ -415,7 +415,7 @@ describe("필수 MVP 조회 연결 회귀 (HTTP 모의)", () => {
     await screen.findByRole("cell",{name:/after.example.org/});
     expect(screen.queryByText("기록 상세·당시 정책")).not.toBeInTheDocument();
     const urls=fetch.mock.calls.map(c=>c[0]);expect(urls.some(u=>u.includes("host=after.example.org")&&u.includes("event_type=RECORDED_ACCESS")&&!u.includes("cursor="))).toBe(true);
-    expect(screen.getByText(/미수집·전송 대기 구간/)).toBeInTheDocument();
+    expect(await screen.findByText(/미수집·전송 대기 구간/)).toBeInTheDocument();
   });
   it("통계에서 대상 기록으로 조회 기간을 전달한다",async()=>{
     const fetch=fixture(url=>{

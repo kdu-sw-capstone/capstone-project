@@ -21,11 +21,15 @@ test('real IndexedDB preserves immutable report/batch across reopen and ACK with
    const config={authorizeScope:async s=>s.owner_binding_id===owner.owner_binding_id&&s.executor_id===owner.executor_id,verifyReport:async()=>true,verifyAck:async()=>true};
    const body={report_id:crypto.randomUUID(),...owner,runtime_execution_id:crypto.randomUUID(),report_epoch:crypto.randomUUID(),report_seq:1,operation_id:crypto.randomUUID(),package_id:crypto.randomUUID(),runtime_revision:1,state:'UNKNOWN',reason:'ERROR',evidence_sha256:'a'.repeat(64),observed_at:'2026-11-01T00:00:00.000Z'},report={...body,payload_sha256:await digest(body)};
    await db.transaction('readwrite',(tx,done)=>{tx.objectStore('metadata').put({key:'unrelated:cleanup',pending:true});done(null);});
-   const first=new RuntimeReportOutbox(db,config);await first.enqueue(report);const batch=await first.batch(owner);
+   const first=new RuntimeReportOutbox(db,config);await first.enqueue(report);
+   const changed={...body,report_id:crypto.randomUUID(),runtime_execution_id:crypto.randomUUID()};let duplicateDenied=false;
+   try{await first.enqueue({...changed,payload_sha256:await digest(changed)});}catch(e){if(e.message!=='REPORT_SEQUENCE_GAP')throw e;duplicateDenied=true;}
+   const nextBody={...changed,report_seq:2},next={...nextBody,payload_sha256:await digest(nextBody)};await first.enqueue(next);
+   const batch=await first.batch(owner);
    const reopened=new RuntimeReportOutbox(createMemberDB(indexedDB,'report-test'),config),retry=await reopened.batch(owner);
-   await reopened.acknowledge(owner,{batch_id:batch.batch_id,items:[{item_id:report.report_id,payload_sha256:report.payload_sha256,status:'DUPLICATE',error_code:null}]});
+   await reopened.acknowledge(owner,{batch_id:batch.batch_id,items:batch.reports.map(r=>({item_id:r.report_id,payload_sha256:r.payload_sha256,status:'DUPLICATE',error_code:null}))});
    const state=await reopened.recover(),cleanup=await db.transaction('readonly',(tx,done)=>{const q=tx.objectStore('metadata').get('unrelated:cleanup');q.onsuccess=()=>done(q.result);});
-   return {same:JSON.stringify(batch)===JSON.stringify(retry),delivery:state.rows[0].delivery,reportSame:JSON.stringify(state.rows[0].report)===JSON.stringify(report),empty:await reopened.batch(owner)===null,cleanup};
-  });assert.deepEqual(result,{same:true,delivery:'ACKED',reportSame:true,empty:true,cleanup:{key:'unrelated:cleanup',pending:true}});
+   return {same:JSON.stringify(batch)===JSON.stringify(retry),delivery:state.rows[0].delivery,reportSame:JSON.stringify(state.rows[0].report)===JSON.stringify(report),empty:await reopened.batch(owner)===null,duplicateDenied,sequences:state.rows.map(r=>r.report.report_seq),cleanup};
+  });assert.deepEqual(result,{same:true,delivery:'ACKED',reportSame:true,empty:true,duplicateDenied:true,sequences:[1,2],cleanup:{key:'unrelated:cleanup',pending:true}});
  }finally{await browser.close();}
 });
