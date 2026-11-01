@@ -1,5 +1,34 @@
 # AMVP-CORE-04 — Core DNR 소유권·복원
 
+## 2026-11-01 PR68 — PR59 병합 후 3공유파일 충돌 해결
+
+- 새 결합 workflow 로컬 검증: DNR138/138·SiteController/loop69/69·인증33/33·계약6/6, syntax·수동3파일 whitespace PASS. 기존 #68 제품/시험4/4 및 최신 통합+원래 #68의 Extension 전체325/325 blob 동일성 확인. 각 시험 집합을 중복 합산하지 않으며 전체/실제 Chrome 시험을 새로 실행했다고 보고하지 않는다.
+
+- 담당 윤종민. 기존 검토 HEAD `cd92cc11e81c53598ba7a80ee41ceeea2c3a2dad`와 최신 통합 `3569911dde9ec71d86c3b1e36f631c34e2411d53`를 부모로 보존하는 merge 동기화다. 선행 PR59의 merge `3f31f75e8be65996af3b1fb94a846b0df2d7c085`를 포함한다.
+- 수동 해결은 CI·본 카드·통합현황 3파일만이다. #59/#68 trigger·시험과 #70 SiteController/CAS·인증·계약·syntax 명령을 모두 유지한다. 문서 양측 원문의 줄별 중복 횟수까지 보존했으며 아래 기록은 당시 이력이다.
+- 제품·시험은 승인 통합 원본과 기존 #68 blob을 보존한다. 합성 후보 workflow를 검증하고 새 HEAD·checkout SHA·CI를 PR에 남긴 뒤 다훈·지민 재확인을 받는다. 이전 Approve를 새 HEAD로 소급하지 않으며 실제 MV3/Server 수용·자동 병합은 하지 않는다.
+
+## 2026-11-01 PR68 최신 통합 최소 동기화
+
+- 동기화 후 검증: owner/잠금/cleanup + #70 CAS 관련 188/188, 전체 Extension 905/905, 계약6/6, Chromium 실제 IndexedDB/Web Lock 2/2, bundle 원본 일치·syntax/diff PASS. DNR·권한/문맥은 모의이며 제품 MV3/Server 수용은 미검증 유지. 집합 중복 합산 금지.
+
+- 기준 통합 `4e6ff6ced95b96f362f2fbf088aa192e17278529`(#70 승인·병합), 기존 검토 HEAD `38eae392bffbd966ef146dcf07017a40cc08de74`를 부모로 보존하는 merge 동기화다.
+- 충돌한 CI·본 작업카드·통합현황 3파일을 양쪽 경로/시험/기록이 남도록 정리했다. 기존 제품·시험 blob과 #70 통합 제품·시험 blob 동일성을 검사하며 구현/검사 조건을 바꾸지 않는다.
+- 원래 owner/잠금/cleanup 및 #70 journal CAS의 영향 회귀·최신 CI 후 새 HEAD로 재리뷰한다. 실제 MV3·Server 제품 수용/신규 공유 정책 활성화·PR 병합은 수행하지 않는다. 결과·blob 대조는 해당 PR에 기록한다. 아래 날짜별 기록은 원문을 보존한 이력이다.
+
+## 2026-11-01 구형 GuestSession DNR 연결 착수
+
+- 담당 윤종민, `feature/additional-mvp-legacy-guest-dnr`, 시작 `10ab6026f1cf7d244a75ee529830afb8bcf6b8c8`. PR59는 OPEN/리뷰 없음으로 보존하고, 기존 병합55 gate에만 의존하는 별도 worktree에서 진행한다.
+- 기존 계획의 남은 legacy writer 중 GuestSession의 add/remove만 공통 gate에 연결한다. SiteController·PR59 소스/HEAD·공용 계약·Member/Content/Server는 변경하지 않는다. 신규 공유 정책/전체 coverage는 활성화하지 않는다.
+- 현재 owner/executor/Guest auth·Root idle·AuthStore token, 실제 규칙 및 동일 DB snapshot을 검사한다. 잠금 대기 중 대상 변경 후 복구가 새 세션을 덮어쓰지 않도록 legacy SessionDB.save에 내부 scope precondition을 추가한다. 저장 schema/버전은 불변이다.
+- 상태: 구현·검증 진행 중. 저장 실패 cleanup·권한 변경·기한·다른 owner/실행 규칙 보존과 기존 회귀를 자동 검증하고 별도 PR/담당 리뷰를 요청한다.
+
+### 구형 GuestSession 단위 구현·검증 종료
+
+- classic add/remove를 기존55 gate에 결속했다. 신규 add의 현재 인증/owner/기한/token·final DB route/snapshot/rules 검사, removal-only의 exact footprint 검증을 분리해 기존 정당한 cleanup을 유지했다. SessionDB.save의 내부 scope/create precondition으로 대기 중 current handoff 후 old recovery가 새 세션을 덮지 못한다. 저장 schema/DB version/공용 계약은 불변이다.
+- 신규18/18·기존 session-core19/19·DNR96/96·전체 Extension882/882·계약6/6 PASS(fail/skip0). Chromium151 실제 IDB/Web Lock scope handoff1/1·syntax/diff PASS. 중복 합산 금지. PR59 미병합19시험 대신 본18시험을 포함한 별도 기반이므로883과 직접 증감 비교하지 않는다.
+- 모의 DNR/owner/auth·fake-IDB 모델과 실제 Chromium 저장/잠금의 범위를 구분한다. 초기 fixture/저장 실패 주입 위치를 바로잡고 실패 로그를 보존했다. [구형 Guest writer 설명](../evidence/AMVP-CORE-04-legacy-guest-dnr.md).
+- 구현·로컬 검증 완료, 별도 PR/최신 CI·담당 리뷰 대기. 원래59/다른 worktree·Member/A1/Content/Server 소스를 보존했다. SiteController 및 전체 writer coverage·SITE_TIME 실제 실행·Report/ACK·제품 수용은 후속이다.
 ## 2026-11-01 PR59 최신 통합 최소 동기화
 
 - 동기화 후 검증: owner/잠금/cleanup + #70 CAS 관련 189/189, 전체 Extension 906/906, 계약6/6, Chromium 실제 IndexedDB/Web Lock 3/3, bundle 원본 일치·syntax/diff PASS. DNR·권한/문맥은 모의이며 제품 MV3/Server 수용은 미검증 유지. 집합 중복 합산 금지.
