@@ -1,5 +1,8 @@
 # 추가 MVP · 정책 발행·이용시간 수신 경계
 
+> PR73 동기화 — 2026-11-01: PR72/74 병합 후 실제 통합 **d386f170f79368907b2f5263a299c3e0d7c65ce8**를 기존b0b44a5에 이력 보존 merge한다. 수동 충돌은 이 카드1파일이며 양측 전체 원문을 순서 보존했다. SiteTimeStatus/SDK 제품2 및 시험3의 기존 blob과 계약/DB 의미는 그대로다. 과거 Draft/검증/실패/승인은 당시 기록이며 새 HEAD에 소급하지 않는다. #72/#74/#71/#75 및 타 Worktree/index는 변경하지 않는다. 새 CI/후보 tree는 PR73 본문 및 `.local/pr73-sync-20261101/`. 실제 제품 수용 NOT_RUN, MVP_FINAL_COMPLETE=false.
+
+
 
 ## 후속 SITE_TIME 현재 선택 버전·조회 결과 결속 — 2026-11-01
 
@@ -9,6 +12,51 @@
 - **검증:** 신규 UI4/SDK 입력 경계1 및 기존 상태/SDK/RuntimeDelivery/삭제·해제/일일Panel 포함 **38 PASS**, TypeScript/Vite build PASS. 기존 parent 선택 시험은 현재 선택 버전의 내부 인수 전달을 검증하도록 갱신했다. 초기 parent mock의 4인수 기대 불일치는 수정·원본 로그 보존. 모의 HTTP/jsdom이며 TCP/DB나 실제 producer 수용이 아니다. 변경 없는 Server·DB schema·계약·의존성의 기존 유효 검증은 재사용하고 실제 DB/서비스를 새로 기동하지 않는다. 로컬 `.local/site-time-status-version-20261101/` before/final/build/result, 최종 게시 HEAD/CI는 PR 본문에 기록한다.
 - **남은 경계:** A~J의 저장/조회/Receipt 구현을 다시 만들지 않았다. 실제 capability/effect/release/collector/trusted clock/day allocation과 ONCE actor 매핑/CADENCE 단계/USG-02 hash는 기존 producer·공동 결정 대기다. PR60 UTC 수정·#63 시간대/#66 기간/#72 집중 요약을 재작성하지 않는다. 11월11일 반영 가능한 새 범위는 검증 환경에서의 구 버전 응답 거절·명시 재조회·실제 적용과 과거량의 분리 표시이며 실제 측정/차단 시연 완료가 아니다.
 - #63/#72·병합 완료 PR·다른 Worktree/공유 index staged 삭제1,036개·Core/Content/Shorts·RC2/legacy-lock·DB schema/원장/Receipt 의미 보존. Approve/Draft 해제/Merge 없음. 실제 Core·Content·Chrome·Native·Server 제품 수용 **NOT_RUN**, `MVP_FINAL_COMPLETE=false`. 다음 독립 검토는 선택한 버전 하한, 구 적용/해제 표시 거절, 동일/새 버전 허용 및 기존 UNKNOWN/오류/재조회 보존이다.
+
+## PR74 독립 리뷰 P2 대응 — 2026-11-01
+
+- 구172012c의 보조 수명 검증만으로는 언마운트된 주 목록 GET401 전파를 막지 못했다. 리뷰 원본5를 **4 PASS/1 FAIL**로 재현 후, 초기/재조회/커서의 주 요청 generation·AbortSignal·성공/catch 폐기 검사를 보완했다. 현재401·목록/필터/페이지·실패 후 마지막 성공 보존은 유지한다. 원본5 + 추가4 **9 PASS**, 기존 관련 포함 **49 PASS**, 타입/Vite PASS. 상세 [LOG-01](LOG-01.md) 최신 절 및 `.local/pr74-primary-fix-20261101/`.
+- 선행#72 병합 **79409240e65ec6b92fa12f3422c3e67bea0308f0** 반영은 별도 merge Commit으로 추적했고 공유 카드 양측 전체 원문을 순서 보존했다. 새 HEAD·원격 CI·후보 tree 및 승인 범위는 PR74 본문을 따른다. 기존 리뷰 요청 유지/새 HEAD 재리뷰 대기이며 과거 승인을 소급하지 않는다. 실제 producer/공동 계약 대기는 그대로다. 실제 제품 수용 NOT_RUN, MVP_FINAL_COMPLETE=false.
+
+> PR74 후속 리뷰 동기화: PR72 병합 후 통합 **79409240e65ec6b92fa12f3422c3e67bea0308f0**를 기존172012c에 이력 보존 merge로 반영한다. 수동 충돌은 이 카드1파일이며 양측 전체 원문/완료/검증/실패/HOLD/후속 기록을 순서 보존한다. 아래 기존 PASS는 당시 후보 근거다. 독립 리뷰5726831315의 폐기 주 GET401 P2는 초기/재조회/커서 수명·성공/catch·취소 경계의 별도 수정/시험으로 추적한다. 기존 승인을 새 HEAD로 소급하지 않는다. 실제 제품 수용 NOT_RUN, MVP_FINAL_COMPLETE=false.
+
+
+
+## 후속 LOG-01 부분 실패 독립 구현 — 2026-11-01
+
+- 현재 A~J에서 저장·수신·일일/기간/시간대·상태 조회 구현은 재사용한다. #54/#62/#63/#66/#67/#69/#70은 병합 완료, #72/#73은 별도 Draft이며 원격 HEAD/다른 Worktree/index를 보존한다. 실제 actor/clock/day/Content 효과·ONCE/CADENCE/USG-02 결정 대기는 유지한다. 통합 **32eb975952d24159af0d070cc9e0f1a10733aa4f**에서 `fix/additional-mvp-record-partial-reads`로 새 독립 반례를 처리했다.
+- **실제 수정:** 성공한 접근 기록까지 보조 통계·세션 필터 GET의 503/무응답으로 표시하지 못하던 경계를 분리했다. 신규3 반례 FAIL→PASS, 확장 신규9·기존9 = **18 PASS**, 기록 상세 왕복 영향1·타입/Vite·자체 diff PASS. 기존 조회/필터/커서/오류 UI를 재사용하고 확인된 목록과 보조 UNKNOWN/실패를 구분한다. 이전 보조 응답/401 폐기, 현재 인증 실패 전파, 조회 실패와 빈 목록·수집 완료의 구분을 검증했다. Server/DB/계약/producer를 추가하지 않았다.
+- 상세 소유권·설계/검증·지연/인증/재조회/페이지 경계·미완료는 [LOG-01](LOG-01.md) 최신 절 및 `.local/record-partial-read-20261101/`, 새 Draft PR의 HEAD/CI를 따른다. 합성 UI PASS를 실제 제품 수용으로 올리지 않는다. 실제 Core·Content·Chrome·Native·Server 제품 수용 NOT_RUN, `MVP_FINAL_COMPLETE=false`. 다음 독립 검토 범위는 주/보조 읽기의 실패 격리와 기존 인증/필터/페이지 보존이다.
+
+> 2026-11-01 PR72 통합 동기화: PR63/66 병합 후 실제 최신 통합 **32eb975952d24159af0d070cc9e0f1a10733aa4f**를 기존 **263af275e575f20ca5b68e92c3adef765e1d1c3d**에 이력 보존 merge로 반영한다. 수동 충돌 해결은 이 작업카드1파일이다. 양측 전체 원문을 순서 보존하고 FocusSessions/FocusScreens 시험/FocusSummaryScope 시험3파일은 기존 blob 그대로 유지한다. 아래 과거 Draft/미병합/검증/실패/HOLD/후속/승인 기록은 당시 이력이며 새 HEAD 승인으로 소급하지 않는다. 기존 독립4/4·FocusScreens19/19·Web362/362·CI14/14는 해당 후보 근거로 재사용하고, 새 후보의 CI/시험 merge tree는 PR72 본문 및 `.local/pr72-sync-20261101/`에 기록한다. 기존 Core 리뷰 요청 유지, #63/#66·Core/Content·#73·다른 Worktree/공유 index staged 삭제1,036개는 변경하지 않는다. Approve/Draft 해제/Merge 없음. 실제 제품 수용 NOT_RUN, `MVP_FINAL_COMPLETE=false`.
+
+
+
+## 후속 집중 화면 fixture·종료 기록 조회 수명 — 2026-11-01
+
+- 담당 김다훈 Web, 브랜치 `fix/additional-mvp-focus-state-fixtures`, 기존 managed Worktree `C:/Users/dahun/.codex/worktrees/site-usage-period-20261101/04 · 추가 MVP 구현` 재사용. 시작 기준 **b2dc6ffed6593197ef4de6cb0ee8915cc98453bf**에서 진행 중 통합 **4e6ff6ced95b96f362f2fbf088aa192e17278529**를 fast-forward 반영했다. 유입 PR70은 Core 소유의 기존 통합 변경이며 자체 수정이 아니다. 두 기준의 Web/Server/계약/의존성이 같아 기존 검증을 재사용한다. #54/#62/#67/#69 완료를 다시 개발하지 않는다. 아래 과거 Draft·SHA·검증 숫자는 당시 이력이다.
+- **독립 재현:** FocusScreens의 정상 집중 상태 fixture가 CFG-01 필수 `has_more`를 누락했다. 정상 요약을 기다리는 결정적 반례 **1 FAIL → PASS**. 기존 복수 alert CI 변동을 단순 재실행/단일 alert 무시로 숨기지 않고 정확한 `/amvp/configs?` 정상 응답을 제공했다. 의도적으로 불완전한 CFG-01과 세션 조회422가 함께 오면 **두 alert 표시·START 차단**을 별도 검증한다. `contracts/additional-mvp/rc1/schema.json` ConfigList의 required와 SDK `listConfigs` 검증은 변경하지 않았다.
+- **실제 제품 코드 결함:** 종료 기록 A→B에서 `EndedAccess`가 컴포넌트/상태/조회 lock을 공유해 A 요약 잔존, 대기 A로 B 조회 누락, 늦은 A 응답 혼입 가능. 완료 기록 소유권을 session_id에 결속해 remount하고 읽기 AbortSignal/수명 세대로 폐기 응답·401을 소비한다. **변경 전3 FAIL → 변경 후5 PASS**(늦은 성공/401, 기존 요약 제거·현재 실패/성공 재조회, 현재401 전파, StrictMode). 현재 유효한 오류·전역 인증 만료/세션 실행·Core 상태/0건의 의미는 유지한다. PR69의 Note 코드/API는 재수정하지 않았다.
+- **검증:** FocusSummaryScope5 + FocusScreens19 + 기존 NoteScope11/CadenceSummary2 = **37 PASS**, TypeScript/Vite build PASS. 해당 시험은 jsdom/모의 HTTP이며 제품 Server·DB나 실제 producer 수용이 아니다. 정상 Server/DB/계약/의존성은 변경 없어 기존 검증을 재사용하며 불필요한 MySQL/서비스·전체 로컬 회귀는 반복하지 않는다. 추가 CADENCE 영향 시험·게시 HEAD/CI는 PR 본문 및 `.local/focus-fixture-20261101/` 원본/result에 기록한다. 최초 실패 로그와 fixture 보완 중 시험 준비 오류도 그대로 남긴다.
+- **범위/재개:** 자체 diff는 FocusSessions 제품1·FocusScreens/FocusSummaryScope 시험2·이 카드1뿐이다. #63/#66 원격 HEAD, 다른 Worktree/index·공유 루트 staged 삭제1,036개·인증/api.ts·DB schema·RC2/legacy-lock·Core/Content/Shorts를 변경하지 않는다. ONCE actor 매핑/CADENCE 단계/USG-02 hash 공동 결정과 capability/effect/release/collector/clock producer는 기존 차단으로 유지한다. 새 공유 계약/모의 producer/추가 조회 화면은 만들지 않는다. 추가 독립 결함 근거 없이 새 PR을 늘리지 않는다.
+- Approve·Draft 해제·Merge 없음. 실제 Core·Content·Chrome·Native·Server 제품 수용 **NOT_RUN**, `MVP_FINAL_COMPLETE=false`. 검토 범위는 정상/불완전 CFG fixture 분리, 종료 기록 A→B의 요청·오류 수명과 기존 상태/메모/CADENCE 회귀다.
+
+
+> 2026-11-01 PR66 통합 동기화: 최신 통합 **4e6ff6ced95b96f362f2fbf088aa192e17278529**를 기존 **650eddd5a38a5406775ce614b1ae2474879fa0b4**에 이력 보존 merge로 반영한다. 수동 충돌 해결은 이 작업카드1파일뿐이며 양측 전체 원문을 순서 보존한다. 기간 이용시간 제품·시험6파일은 기존 blob과 동일하다. DAY-01/KST/confirmed_ms/UNKNOWN·RC2/legacy-lock·Server 생산·DB schema·Core/Content·#63/#72·다른 Worktree/공유 index는 변경하지 않는다. 아래 과거 미병합/수정 금지/검증/실패/승인 기록은 해당 시점 이력이다. 원본 검증은 내용 동일한 근거로만 재사용하며 새 HEAD의 승인으로 소급하지 않는다. 새 HEAD/시험 merge tree/CI는 PR66 본문과 `.local/pr66-sync-20261101/`에 기록한다. Approve/Draft 해제/Merge·실제 제품 수용은 수행하지 않는다. `MVP_FINAL_COMPLETE=false`.
+
+
+## 선택한 사이트 정책의 기간 기록 — 기존 DAY-01 재사용, 제품 수용 NOT_RUN (2026-11-01)
+
+- 김다훈 Web·Server·DB·UI 후속. 시작 통합 **10ab6026f1cf7d244a75ee529830afb8bcf6b8c8**에서 관리형 Worktree `site-usage-period-20261101`, 브랜치 `feature/additional-mvp-site-usage-period`로 분리했다. 원래 수동 Worktree를 앱이 관리형 원본으로 인식하지 못해 비어 있던 현재 프로젝트 폴더에 소스 전용 shared clone을 만든 후 정식 Worktree 생성 경로를 사용했다. #62 **b3a8d13415827442d468a7109786cac3914481c2**, #63 **3f069ed43bf54c95e9ecc2e3ad850638209759c5**와 기존 Worktree/index·Content/Shorts를 보존한다. 두 PR에 의존하거나 미병합 코드를 복사하지 않는다. #29/#49~#52 병합 사실은 실행 전 원격에서 확인했다.
+- 기존 `DailyUsagePanel`의 선택 정책/삭제 목록과 `dailyUsageApi.dailyUsage` → DAY-01 → `AmvpDailyUsage`/원본 segment·budget·소유권·admission 경계를 재사용한다. 같은 패널 안에서 오늘/7일/30일/사용자 지정 기간, 날짜별 표, 확인된 날짜의 확정량 부분 합계를 연결했다. 새 페이지·메뉴·Server endpoint/DTO·schema/migration·producer는 없다. 기존 브라우저 전체 STA-01 기간 조회는 그대로 유지한다.
+- 빠른 선택의 오늘은 기기 시간대가 아닌 KST 기준이다. 기존 DAY-01 요청 날짜는 **원장에 저장된 시간대의 날짜**라는 계약을 변경하지 않는다. 양 끝 날짜 포함, 한 정책 최대31일의 순차 GET으로 부하를 제한하고 변경/취소 후 추가 요청을 멈춘다. KST `Asia/Seoul` 정상일의 정확한 UTC 경계 및 비중첩 구간만 부분 합계로 계산한다. 다른 시간대·전환일은 날짜별 원본만 보이고 KST 기간 합계를 만들지 않는다. confirmed_ms만 더하고 carry·불확실 시간·remaining은 더하지 않는다. 자료 있는 0과 null/404/503/UNKNOWN을 구분하며 모든 날짜가 조회돼도 수집 완료라고 하지 않는다.
+- 조회 중 날짜 입력은 유지한다. 날짜·정책 ID·설치·version·saved_runtime_revision·삭제/정책 값 변경은 이전 요청을 취소하고 결과를 숨긴다. 이전 선택으로 돌아와도 낡은 성공 결과를 되살리지 않으며 명시 재조회가 필요하다. 인증/소유권/응답 식별 불일치/provider 부재는 전체 결과를 거절한다. 일별 RESOURCE_NOT_FOUND/저장 미확정은 날짜별 미확인으로 남긴다. 현재 등록 버전과 과거 측정 버전을 동일시하지 않는다.
+- **새 검증:** 기간/달력/합계/취소14 + UI10 = 신규24, 기존 일일 Panel8/SDK3 포함 집중 **35 PASS**, 누적 Web **346 PASS**. TypeScript/Vite build PASS. 기존 Server 날짜 API2+설정 계약6 **8 PASS**. 기존 DAY MySQL10에 KST 연말 TCP/읽기 불변·새 JDBC 연결 시험1을 추가하여 DB11+API2 **13 PASS**, 실패/오류/스킵0. 실제 loopback TCP는 실제 controller/auth/JDBC를 사용하지만 admission·capability·seeded clock/day 증거는 **SYNTHETIC**이다. 중복/역순·격리·소유권·삭제/재등록·DST/전환일 거절은 기존 원장/조회 시험과 그대로 연결한다.
+- 로컬 원본 `.local/site-usage-period-20261101/`. 첫 MySQL은 Windows 실행기의 한글/공백 datadir 인수 해석 실패로 시험 시작 전에 종료됐다. 실패 `.local/amvp-mysql-5a6ef5a2682e`를 보존하고 관리형 Worktree 부모의 영문 `verify` 경로에서 동일 소스를 가리키는 junction으로 재실행했다. 시험 DB **529faa3912af**, port33419, datadir/PID 확인 후 정상 종료. 기존 설치 DB/SMTP/Native는 사용하지 않았다. 계약 Python 시험은 현 Python의 jsonschema 부재로 수집 전 중단되어 PASS로 집계하지 않는다. 계약·legacy-lock/API·Server 생산·의존성 blob 동일성과 위 Server 계약 검증을 재사용하며 기준 Core4파일 legacy-lock FAIL을 유지한다. 초기 신규 시험의 mock hook 반환/Windows 대소문자 모듈 경로 문제도 수정 후 재검증했으며 최초 로그를 보존한다.
+- **명시적 PARTIAL/BLOCKED:** 실제 방문 호스트(actual_host/target_key)별 범위·사이트 등록 ID·과거 policy_version·matched_policy_host를 반환하는 기간 DTO는 DAY-01에 없다. 정책 호스트를 실제 방문 호스트로 바꾸거나 서로 겹치는 정책·설치 합계를 전체 이용시간으로 만들지 않는다. 해당 분리 조회와 비KST 날짜의 KST 구간 재배분/시간대 변경은 승인된 조회 계약이 필요하다. DAY-01의 budget/day 증거가 없는 무제한 정책의 방문시간·collector/anchor/day allocation·USG-02는 기존 BLOCKED/공동 결정 대기를 유지한다. 실제 Core/Content/Chrome/Native·제품 서비스 수용, Light/Dark 실물·반응형/키보드 시각 수용은 NOT_RUN. 독립 시연 범위는 검증된 격리 자료의 정책 선택·기간 조회·부분/미확인 표시이며 실제 측정 시연이 아니다. `MVP_FINAL_COMPLETE=false`.
+- 검증 후 Commit/Push/Draft PR로 게시하고 새 HEAD/원격 CI는 PR 본문 및 로컬 result에 기록한다. Approve·Draft 해제·Merge는 수행하지 않는다. 다음 최소 공동 결정은 기존 raw에 있는 actual_host와 원본 policy attribution/version을 노출할 승인된 read DTO/기간·시간대 의미이며, 실제 producer의 발행/원본 증거/clock 제공물 없이 성공 활성화하지 않는다.
+
+
 
 > 2026-11-01 PR69 후속 동기화: PR67 병합 **005b90134a436fd651cd07baff1be1fc934173e4**를 기존 #69에 이력 보존 merge로 반영한다. 수동 충돌은 이 작업카드1파일이며 아래 양측 전체 기록을 보존한다. `SessionNote.tsx`, `SessionNoteScope.test.tsx`, `SESSION-06.md`는 기존 **b043737102422c4618f655e99c882c56e8cadc50**의 blob과 동일하다. 그 외 변경은 통합 기준에서 가져온 #67의 기존 구현이며 재구현하지 않는다. 기존 검증/승인은 내용 동일한 근거로만 재사용하고 새 HEAD 승인으로 소급하지 않는다. 새 HEAD·CI·후보 tree 근거는 PR69 본문 및 `.local/pr69-pr67-sync-20261101/`. #63/#66·Core/Content·다른 Worktree·공유 루트 index는 변경하지 않으며 Approve/Draft 해제/Merge·실제 제품 수용은 수행하지 않는다. `MVP_FINAL_COMPLETE=false`.
 
@@ -77,6 +125,7 @@
 
 - **다음 우선순위:** 검증된 독립 결함 수정의 리뷰/통합, #51 이후 #52 동기화. 별도 기능 작업은 시간대별 분석의 기존 Metrics/날짜/coverage 경계와 AI의 schema/동의/provider 경계를 확인한 뒤 착수한다. 실제 SITE_TIME adapter는 Core의 발행 capability/원본 effect·release 증거/clock/day 제공물을 받아 기존 Server 인터페이스에 결속한다. 미제공 정보를 만들거나 기능을 다시 구현하지 않는다.
 - **11월11일 시연 판정:** 설정·조회·오류/UNKNOWN·과거 데이터 표시 흐름은 자동/격리 검증 범위에서 준비됐다. 실제 제품은 admission/capability 및 producer·별도 실제 수용 없이는 설정 저장부터 BLOCKED일 수 있다. 한도 집행/예약/CADENCE/Content 효과·정상 END/복원·재기동·확장 분석·AI 시연 완료는 선언할 수 없다. Core 잠금4파일의 기준 legacy-lock FAIL은 이번 수정과 독립적으로 보존하며 hash 갱신으로 통과시키지 않는다. 실제 Core/Content/Chrome/Native 수용 NOT_RUN, `MVP_FINAL_COMPLETE=false`.
+
 
 > 2026-11-01 PR52 통합 동기화: PR51 병합 Commit **c44c87215fddee49114151aaf22caa8b3a679b21**을 기존 PR52에 이력 보존 merge로 반영한다. 아래 PR49~52의 Draft/미병합/검증 수치는 각 개발 당시 기록이며 현재 병합 상태·제품 수용 완료를 뜻하지 않는다. 수동 충돌 해결은 이 작업카드 1파일이고 Settings 제품·시험은 원래 PR52 blob을 유지한다. #62/#63·Content PR·다른 Worktree는 변경하지 않는다.
 
@@ -419,3 +468,17 @@ PR #25의 `AdditionalConfigContract`, `AdditionalConfigStore.Admission`, `Member
 - 새 suite는 `$env:FOCURVE_AMVP_RECEIPT_TESTS='1'`와 기존 격리 스크립트의 `-Tests 'AmvpRuntimeReceiptMysqlTest,AmvpReportApiTest'`로 실행한다. suite별 DB를 따로 만들며 기존 두 초기화 suite와 섞지 않는다. 단위 실행에서는 세 `*MysqlTest` 초기화 클래스를 제외한다. 원격 후속 workflow도 별도 서비스 DB를 사용한다.
 - 증거 `.local/receipt-verification/`, `.local/amvp-mysql-3f0fcff8c63b/`; 실패 시험 로그도 유지한다. 실제 설치·Chrome·Native·Core producer·운영 DB·END/복원/재기동 수용은 NOT_RUN. 사용자 데이터·이전 UNKNOWN/HOLD·Credential 변경 없음.
 - 다음: Core 담당의 실제 EvidenceVerifier/clock restart/day carry 등록 연결 → 동일 RC2 계약 HTTP 수용 → Content 효과/복원 proof 연결. 미수신 hash status 합의·예약/반복/frozen 실행 보고·삭제 release 증명은 분리해서 처리한다. 이번 후속 PR은 #27 위에만 쌓고 #27 병합 후 integration으로 기준을 갱신한다. `MVP_FINAL_COMPLETE=false` 유지.
+
+## OPTION-08 / API-STAT-03 시간대별 접근 경로 구현 — 2026-11-01
+
+- 담당 김다훈. 기존 clean Worktree에서 `feature/additional-mvp-hourly-access`, 기준 integration **24327d1bd8615a2274a6dead43f23b71cc06b64e**. #51/#52는 실제 미병합 HEAD11f50b7/c2aa82f 그대로 보존했다. #60 UTC 정밀도 수정과 별도 #62 Statistics as_of 거절 HEAD8ceaf5c2f37a6e9823f5e587d0b2d129fb8f26fd도 보존했으며 이 기능의 선행 의존성은 아니다. #62의 기능별 현황 표는 그 개발 시점의 이력이고, 아래 시간대별 분석은 후속으로 실제 구현한 범위다.
+- 구현 전 확인: `MemberApp.AccessPattern`은 추가 MVP 예정 안내만 있었고 `/api/v1/statistics/hourly` controller가 없었다. 기존 `docs/design/02_시스템_테크설계/04_API_연동.md` **API-STAT-03**의 24개 시간대 Metrics와 기존 통계의 **Asia/Seoul 날짜 기준**, OPTION-08의 접근·반복 분포를 사용하면 Core producer 없이 **이미 ACCEPTED된 회원 접근 기록**을 조회할 수 있다. 새 API·DB 의미를 만드는 대신 기존 선언 API를 구현했다. 시간대별 이용시간/활성 시간의 측정·완전 수집 증거를 생성하는 작업은 아니다.
+- Server `MemberHourlyStatisticsApi`: 기존 MemberAuth/MemberReadModel.range/accesses를 호출해 Web 회원과 Extension executor 소유권·기존 반복 플래그를 그대로 재사용한다. 기본 최근7일/명시적 최대366일, KST 00~23시 순서의 Metrics **배열24개**, 시작 포함/종료 제외, 실제 accepted 행만 집계한다. 기간 밖 선행 이벤트 때문에 이미 반복인 항목을 첫 접근으로 재분류하지 않는다. 현재 회차에서는 수집 watermark가 없어 positive 값도 PARTIAL(의심 FEATURE는 REVIEW_REQUIRED), 빈 구간은 null/NOT_COLLECTED이다. active_duration_ms는 null로 유지하고 COUNTED 시간·한도·APPLIED·해제 증거를 발명하지 않는다. 50000행 상한 초과/잘못된 원문/중복 원장은 정상 부분 결과가 아니라 거절한다.
+- 새 controller만 추가하며 잠금 대상 `MemberReadApi`/`MemberMetrics`는 변경하지 않았다. 인증의 FOR UPDATE fence를 그대로 실행하므로 일반 REPEATABLE_READ transaction을 사용한다. controller/집계는 DB 쓰기를 하지 않고 no-store 응답을 제공한다. auth 실패401·지원하지 않는 query/date422, 관측 불가409를 성공으로 바꾸지 않는다.
+- Web `HourlyAccessPattern`: 기존 MemberApp의 대시보드/통계 카드 위치와 기간 필터에 연결했다. 새 메뉴·조회 화면·Figma 재설계가 아니라 원래 시간대별 카드의 예정 안내를 실제 GET 결과 표로 바꾼 것이다. 24구간/시간/비율·카운트 결속 검증, 로딩·오류·명시적 재조회, 기간 변경 시 이전 결과 제거와 늦은 응답 거절을 구현했다. 기존 metricPercentage를 재사용한다. 수치가 없는 시간대는 미확인/미수집, 실제 효과·이용시간과 별개임을 표시한다.
+- 새/영향 Web **26 PASS**(Hourly4 + MemberApp22), TypeScript/Vite build PASS. 최초 전체 실행은 기존 '미구현 안내 유지' 시험1 FAIL/나머지311 PASS였고 해당 시험을 삭제하지 않고 실제 API의 미수집24구간·가짜0/차트 금지 검증으로 갱신했다. 이후 관련26건을 재실행했다. 원격 누적 전체 결과는 해당 PR 원본 로그로 확인한다. 단위26과 전체 수를 합산하지 않는다.
+- fresh 격리 MySQL8.4.8 **27 PASS** = 기존 ConfigMysql16 + 새 SQL/HTTP1 + 새 집계4 + 기존 ConfigContract6, fail/error/skip0. 실제 controller/auth/read model/SQL을 MockMvc와 기존 AmvpLoopbackHttp의 **실제 loopback TCP**로 확인했다. 회원/다른 회원·동일 회원의 다른 executor 분리, E token 범위, 401/잘못된 query/date422, KST 자정/종료 경계·과거 반복 플래그, PENDING receipt 제외, no-store, 조회 전후 Receipt/command 개수 보존을 확인했다. Core/Content/effect/clock provider는 호출하지 않는다. accepted 이벤트는 격리 시험에서 넣은 SYNTHETIC 원문이며 실제 Chrome 수집 시험은 아니다.
+- 최종 DB `.local/amvp-mysql-063f799a4df2`, port33425/datadir 소유권 확인·정상 종료. 앞선 컴파일 import 누락(501e79a71f3d), fixture source/origin 누락(e02fb86b05b1), MySQL READ ONLY와 기존 인증 FOR UPDATE 충돌(030289c93f37)의 로그도 보존했으며 각 DB는 정상 종료했다. 인증 잠금 검사를 제거하지 않고 route transaction 설정을 기존 인증 계약과 맞췄다. 근거 `.local/hourly-access-20261101/` 및 위 DB tests.log. 운영 DB·기존 설치·Credential은 사용하지 않았다.
+- 남은 범위: RC2 owner/day 새 event producer와 collector/clock·시간대별 실제 **이용시간**·한도·정상 END/복원은 별도다. ONCE actor·CADENCE 단계·USG-02 hash 공동 결정, AI 동의/provider/저장 도입도 대기한다. 이미 구현된 RuntimeReport/Receipt·사용량 수신·삭제 상태를 재구현하지 않았다. 기존 legacy-lock Core4파일 FAIL/원본 해시 보존, Core/Content/Shorts·기존 다른 PR/index 보존. 실제 Core/Content/Chrome/Native 제품 수용 NOT_RUN, `MVP_FINAL_COMPLETE=false`.
+
+> LOG-01 원격 영향 확인: 후보 **23721d9181b2198456ba545cc9ac19aaad91806a**의 CI에서 `MemberApp.test.tsx:418`이 기록 행 표시 직후 보조 PARTIAL 문구까지 동기적으로 있다고 가정해 **392 PASS/1 FAIL**했다. 주/보조 읽기 분리의 직접 영향이다. assertion을 삭제/완화하지 않고 `findByText`로 실제 보조 응답 후 동일 문구를 검증하도록 최소 수정한다. 최초 [실패 원본](https://github.com/kdu-sw-capstone/capstone-project/actions/runs/41280253536/job/124770557986)을 보존하고 조건 변화 없는 재실행은 하지 않는다. 수정 후 담당 전체 MemberApp22와 기록18을 다시 확인하며 최종 HEAD/CI/숫자는 PR74 본문과 ignored result를 따른다.

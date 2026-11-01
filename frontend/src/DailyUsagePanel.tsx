@@ -3,14 +3,15 @@ import {ApiError,message} from "./api";
 import {Panel} from "./AdditionalUi";
 import {listSiteTimeDeletions,type ConfigRecord} from "./additionalConfigApi";
 import {dailyUsage,type DailyUsage} from "./dailyUsageApi";
+import SiteUsagePeriod from "./SiteUsagePeriod";
+import {kstToday} from "./siteUsagePeriodApi";
 
 const duration=(ms:number|null)=>ms===null?"미확인":`${Math.floor(ms/60000)}분 ${Math.floor(ms%60000/1000)}초`;
-const localDate=()=>{const d=new Date();return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;};
 /** Actual DAY-01 read; server history is not a fresh observation of remaining Core quota. */
 export default function DailyUsagePanel({executor,records}:{executor:string;records:ConfigRecord[]}){
  const [includeDeleted,setIncludeDeleted]=useState(false);
  const [history,setHistory]=useState<{key:string;rows:ConfigRecord[];error:string}>({key:"",rows:[],error:""});
- const [selected,setSelected]=useState(""),[date,setDate]=useState(localDate),[reload,setReload]=useState(0);
+ const [selected,setSelected]=useState(""),[date,setDate]=useState(kstToday),[reload,setReload]=useState(0);
  const historyKey=executor+"/"+reload;
  useEffect(()=>{
   if(!includeDeleted)return;let disposed=false;const abort=new AbortController();setHistory({key:"",rows:[],error:""});
@@ -46,5 +47,6 @@ export default function DailyUsagePanel({executor,records}:{executor:string;reco
    </>}
   </>}
   <button type="button" disabled={!date} onClick={()=>setReload(n=>n+1)}>일일 기록 다시 조회</button>
+  <SiteUsagePeriod executor={executor} policy={saved}/>
  </Panel>;
 }
