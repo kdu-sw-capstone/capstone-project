@@ -1,4 +1,10 @@
 # AMVP-CONTENT-06 · 추가 Content 연결
+## 2026-11-01 PR57 승인 수정의 PR56 반영
+- 담당 채지민 / codex/content-instagram-stories / 시작08730c86d91d0b1d3790bc5fafc7a7ca9195ece8. discussion4434864434 요청대로 #57의02a653fb(alt/draggable 관찰·회귀2건·기록)와984b396f(CI·기록)를 fast-forward로 이력 그대로 로컬#56에 반영했다. 시작worktree clean, 타작업/PR71·82·83 보존. integration/develop/다른담당브랜치 병합은하지않는다.
+- 제품수정은 IG-01 attributeFilter의alt/draggable 추가1줄뿐. 추가2시험은 수동scan없이 적격전환·이탈/재진입·다른owner보존·display!important복원을 검사한다. 승인#57 HEAD984b396 대비 extension/content·content-tests·content-tools·ui 및CI 전체diff0. CIblob44bb30d93878bd8916b034b625a82c7007adc9dc 동일. 승인된수정을재개발하거나새포맷/권한을추가하지않았다.
+- 반영후직접 Windows Node24/설치Chrome headless/Playwright 합성DOM Content183/183 PASS(스토리23·추가2포함), fail/skip0. 기존환경 node --test --test-concurrency=2 extension/content-tests/*.test.mjs, 로그stories-57-into-56-full.log. 계약6/6·build·변경JS구문·공백PASS. 수정전반례0/2FAIL→#57수정후2/2 근거는기존기록이며 이번에는반영후전체183을재실행했다.
+- 이번추가commit은본작업기록만변경. 새#56 HEAD 원격CI/최신통합후보·담당승인은Push후별도확인, #57과거CI/승인을자동승격하지않는다. 실제Chrome/MV3/Core/Native/Server제품수용NOT_RUN, MVP_FINAL_COMPLETE=false. 통합기록충돌/병합순서는다훈관리, 리뷰Resolve·Draft해제·Merge버튼조작없음.
+
 
 ## 2026-10-31 IG-01 · PR #56 P2 속성 관찰 수정
 
