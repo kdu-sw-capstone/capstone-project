@@ -198,3 +198,42 @@ test('standalone Korean count reply toggles hide dynamically and restore without
  assert.equal(await p.locator('#like').evaluate(e=>e.inert),false);
  assert.equal((await p.evaluate(()=>session.release())).restored,true);
 });
+
+test('empty Reels comment still hides its complete avatar/time/like/reply row and restores',async t=>{
+ const empty=reelRow.replace('<span dir="auto">sample comment</span>','');
+ const p=await fixture(t,{url:'https://www.instagram.com/reels/sample/',body:'<video id="video"></video><h2 id="caption">caption</h2><button id="like">Like</button>'+empty});
+ await p.evaluate(()=>session.start());assert.equal(await p.locator('#reel-row').evaluate(e=>e.inert),true);
+ for(const id of ['#video','#caption','#like'])assert.equal(await p.locator(id).evaluate(e=>!!e.closest('[inert]')),false);
+ assert.equal((await p.evaluate(()=>session.release())).restored,true);
+ assert.equal(await p.locator('#reel-row').evaluate(e=>e.style.display),'flex');
+});
+
+for(const tag of ['li','div role="listitem"']){
+ const end=tag.startsWith('li')?'li':'div';
+ test(`mixed post ${tag} is not a comment row when its permalink lacks narrower evidence`,async t=>{
+  const p=await fixture(t,{body:`<main><${tag} id="post" style="display:grid!important"><img id="photo"><a href="/post-author/" id="author">author</a><p id="caption">post caption</p><button id="like">Like</button><div><a href="/p/sample/c/1/">time</a><span>comment</span></div></${end}></main>`});
+  assert.equal((await p.evaluate(()=>session.start())).status,'NO_TARGET');
+  for(const id of ['#post','#photo','#author','#caption','#like'])assert.equal(await p.locator(id).evaluate(e=>!!e.closest('[inert]')),false,id);
+  assert.equal((await p.evaluate(()=>session.release())).restored,true);
+  assert.equal(await p.locator('#post').evaluate(e=>e.style.display),'grid');
+ });
+ test(`mixed post ${tag} restricts only a verified nested comment and restores it`,async t=>{
+  const p=await fixture(t,{body:`<main><${tag} id="post"><a href="/post-author/" role="link"><img id="post-avatar"></a><h2 id="author">post author</h2><img id="photo"><p id="caption">post caption</p><button id="like">Like</button>${modern}</${end}></main>`});
+  await p.evaluate(()=>session.start());assert.equal(await p.locator('#modern').evaluate(e=>e.inert),true);
+  for(const id of ['#post','#photo','#post-avatar','#author','#caption','#like'])assert.equal(await p.locator(id).evaluate(e=>!!e.closest('[inert]')),false,id);
+  assert.equal((await p.evaluate(()=>session.release())).restored,true);
+  assert.deepEqual(await p.locator('#modern').evaluate(e=>[e.style.display,e.inert]),['flex',false]);
+ });
+}
+
+for(const mode of ['text','hashtag','empty'])test(`preserve baseline structured LI ${mode} comments inside a mixed post`,async t=>{
+ let row=modern.replace('<div id="modern"','<li id="modern"').replace(/<\/div>$/,'</li>');
+ if(mode==='hashtag')row=row.replace('sample comment','<a href="/explore/tags/sample/">#sample</a>');
+ if(mode==='empty')row=row.replace('<span dir="auto">sample comment</span>','');
+ const p=await fixture(t,{body:'<main><div role="listitem" id="post"><img id="photo"><h2 id="author">author</h2><p id="caption">caption</p><button id="like">Like</button><ul>'+row+'</ul></div></main>'});
+ await p.evaluate(()=>session.start());assert.equal(await p.locator('#modern').evaluate(e=>e.inert),true);
+ for(const id of ['#post','#photo','#author','#caption','#like'])assert.equal(await p.locator(id).evaluate(e=>!!e.closest('[inert]')),false);
+ await p.evaluate(()=>ledger.hide('other',document.querySelector('#modern')));assert.equal((await p.evaluate(()=>session.release())).restored,true);
+ assert.equal(await p.locator('#modern').evaluate(e=>e.inert),true);await p.evaluate(()=>ledger.release('other'));
+ assert.deepEqual(await p.locator('#modern').evaluate(e=>[e.style.display,e.style.getPropertyPriority('display'),e.inert]),['flex','important',false]);
+});

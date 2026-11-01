@@ -56,21 +56,42 @@ function bodyContent(node,url){
 const controlName=node=>(node.getAttribute('aria-label')??node.textContent).normalize('NFKC').trim().replace(/\s+/g,' ').toLowerCase();
 const replyAction=node=>/^(?:reply|답글\s*달기)$/.test(controlName(node));
 const replyToggle=node=>/^(?:답글(?:\s*\d+\s*개)?\s*(?:모두\s*)?(?:보기|숨기기)(?:\s*\(\s*\d+\s*개\s*\))?|view(?: all)?(?: \d+)? replies|hide(?: all)? replies)$/.test(controlName(node));
+function emptyCommentRow(node,url){
+  if(node.querySelector('p, h1, h2, video, audio, picture, input, textarea, [role="textbox"]'))return false;
+  const content=node.cloneNode(true);
+  content.querySelectorAll('a, button, [role="button"], time, h3, svg, canvas').forEach(control=>control.remove());
+  if(content.textContent.trim())return false;
+  const profiles=[...node.querySelectorAll('a[href]')].filter(a=>isProfile(a,url));
+  const avatar=profiles.find(a=>a.querySelector('img'));
+  return !!avatar&&profiles.some(a=>a!==avatar&&localPath(a,url)===localPath(avatar,url))
+    &&[...node.querySelectorAll('img')].every(img=>isProfile(img.closest('a[href]'),url))
+    &&[...node.querySelectorAll('button, [role="button"]')].some(replyAction);
+}
 function commentRow(link,url){
   const row=link.closest('li, [role="listitem"]');
-  if(row)return row;
+  if(row&&safeContainer(row)&&oneComment(row,link,url)&&row.querySelectorAll('h3').length<=1
+    &&!row.querySelector('p, picture, input, textarea, [role="textbox"], li, [role="listitem"]')
+    &&[...row.querySelectorAll('img')].every(img=>isProfile(img.closest('a[href]'),url)||!!img.closest('[role="link"]'))){
+    // Preserve simple inline rows and structured comment rows, including link-
+    // only/empty bodies. The permalink alone never authorizes a whole post.
+    if(link.parentElement===row&&[...row.children].every(child=>child===link||child.tagName==='SPAN'))return row;
+    if(link.querySelector('time[datetime]')&&profileLink(row,url)
+      &&[...row.querySelectorAll('button, [role="button"]')].some(replyAction))return row;
+  }
   if(!link.querySelector('time[datetime]'))return null;
   // Supplied post/Reels layouts use DIV rows: a profile link, exact comment
   // time, separate body and reply controls. H3 is optional; H2 captions alone
   // cannot establish a comment. No class/account ID is used.
   for(let node=link.parentElement;node;node=node.parentElement){
+    if(node===row)break;
     if(node.matches('article, main, [role="dialog"], [role="main"]'))break;
     if(node.tagName!=='DIV'||!safeContainer(node)||node.querySelectorAll('h3').length>1||!oneComment(node,link,url)||!profileLink(node,url)
-      ||!node.querySelector('button, [role="button"]')||!bodyContent(node,url))continue;
+      ||!node.querySelector('button, [role="button"]')||!(bodyContent(node,url)||emptyCommentRow(node,url)))continue;
     // The text column can be nested several levels below its avatar/heart.
     // Expand only through wrappers belonging to this single comment identity.
     let whole=node;
     for(let parent=node.parentElement;parent?.tagName==='DIV';parent=parent.parentElement){
+      if(parent===row)break;
       if(!safeContainer(parent)&&[...parent.querySelectorAll('[role="link"] img')].some(img=>!whole.contains(img)))return null;
       if(!safeContainer(parent)||parent.querySelectorAll('h3').length>1||!oneComment(parent,link,url))break;
       const siblings=[...parent.children].filter(child=>!child.contains(whole));
