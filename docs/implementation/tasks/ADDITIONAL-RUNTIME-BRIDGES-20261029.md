@@ -1,5 +1,11 @@
 # 추가 MVP · 정책 발행·이용시간 수신 경계
 
+> 2026-11-01 PR52 통합 동기화: PR51 병합 Commit **c44c87215fddee49114151aaf22caa8b3a679b21**을 기존 PR52에 이력 보존 merge로 반영한다. 아래 PR49~52의 Draft/미병합/검증 수치는 각 개발 당시 기록이며 현재 병합 상태·제품 수용 완료를 뜻하지 않는다. 수동 충돌 해결은 이 작업카드 1파일이고 Settings 제품·시험은 원래 PR52 blob을 유지한다. #62/#63·Content PR·다른 Worktree는 변경하지 않는다.
+
+- 동기화 검증: 원래 PR52 **c2aa82f7319286db643550230abb5bcf6a08c9d2**의 `Settings.tsx` blob **b256087913f116e4587d40efedf5d1bad00e9928**, `Settings.test.tsx` blob **87175ce472dd5b67376d199ecf0e78587bfc64a9**와 정확히 일치한다. 양측 작업카드의 전체 원문이 병합 결과에서 순서대로 보존됨을 확인했고, 이 카드와 Settings2파일 외의 모든 파일은 incoming c44c872의 blob과 같다. 최신 base 대비 자체 diff는 기존3파일뿐이다.
+- Settings/AdditionalSettings/SiteTimeStatus/SDK/RuntimeDelivery 직접 영향5파일 **28 PASS**, TypeScript/Vite build PASS. 최초 로딩·실패·실제 빈 목록 구분, 편집 입력/DOM 보존, 실패 뒤 재조회 대기·성공, SITE_TIME 정책/설치·version·날짜·지연 응답을 확인했다. Web은 jsdom/모의 HTTP이며 실제 제품 수용은 아니다. 로컬 전체 Web/Server·MySQL을 불필요하게 재실행하지 않고, incoming과 동일한 관련 소스/계약/의존성의 유효 검증을 재사용한다. 새 HEAD CI는 PR52 본문과 `.local/pr52-sync-20261101/` 원본 기록으로 확인한다.
+- 원래 검토의 Settings2파일 내용과 기존 시험 근거는 재사용할 수 있으나 과거 승인을 새 merge SHA 승인으로 소급하지 않는다. 기존 통합의 Core4파일 legacy-lock FAIL은 해결된 것으로 표시하지 않으며 이번 동기화에서 잠금 해시/검사를 변경하지 않는다. 실제 Core/Content/Chrome/Native 제품 수용 NOT_RUN, `MVP_FINAL_COMPLETE=false`. Draft 해제·Approve·PR Merge는 하지 않는다.
+
 ## 11월11일 시연 경계 점검·설치 조회 상태 수정 — Web 독립 수정 (2026-10-31)
 
 - 시작 기준 integration **467fe18b176ccd571813d04229e8ee69f19a00d2**. 기존 clean Web Worktree를 재사용하고 `fix/additional-mvp-connection-status`로 분리했다. 리뷰 중 PR49 **037e0498ff648409a677c8d2900951bc33ca1e8d**, PR50 **075e9b12ff30c0610a280dac47149cc651765275**, PR51 **74c151a45817c061c237ac8adb965e0b620fc1dc**의 HEAD/파일/리뷰를 보존한다. 이 후속은 세 PR에 의존하지 않는다. 새 Worktree·설치·자동화·producer는 없다.
@@ -21,6 +27,80 @@
 
 - 인터페이스 수신 후 첫 연결은 기존 `CapabilitySource.verifiedSelection/verifyContentProfiles` → SITE_TIME PKG-01 → `EvidenceVerifier.verify`/RPT-01 → CFG02 → `ClockProof.verify`/USG-01/DAY-01 → 실제 release/CFG02 순서다. 원본 증거의 owner/executor/epoch·issued operation/package/revision·현재 generation/footprint·clock/boot/day-chain 등록/검증 경로를 받아 기존 adapter에만 결속한다. DOM 기능은 Content가 문서/탐색 세대별 적용·복원/영속 Receipt를 Core에 제공해야 하며 SITE_TIME DNR만을 위해 Content 작업을 추가하지 않는다.
 - ONCE actor 매핑, CADENCE 휴식/주기 표현, USG-02 NOT_RECEIVED hash는 공동 결정 대기를 유지한다. 기존 UNKNOWN·HOLD·실패 증거/운영 DB/프로필·Credential을 변경하지 않는다. 실제 제품 기능 시연·Core/Content/Chrome/Native 수용은 **NOT_RUN/BLOCKED**이며 `MVP_FINAL_COMPLETE=false`.
+> 2026-10-31 PR51 통합 동기화: **c56ccf7039b0e23f132650d9e51347ed1d607cc2**의 PR49·PR50 기록과 아래 PR51 원래 개발 기록을 모두 보존했다. 아래 Draft/미병합/기준 SHA는 각 개발 당시의 이력이다. 수동 충돌 해결은 이 작업카드 한 파일이며, 기존 PR51 기능 코드와 통합된 Core53 코드는 수정하지 않았다.
+
+- 동기화 영향 검증: #51 집중3파일 **16 PASS**, 누적 전체 Web **319 PASS**(#49·#50·#51 포함), TypeScript/Vite build PASS. 원래 #51 소스/시험6파일의 Git blob과 통합에서 가져온 나머지 파일의 blob 동일성을 확인했다. 최신 통합 대비 Server·DB schema·RC2·legacy-lock/api.ts·Core/Content/Shorts·의존성 변경은 없으므로 기존 유효한 관련 검증을 재사용한다. 별도 Server/MySQL/제품 서비스를 기동하지 않았다. 로컬 근거 `.local/pr51-sync-20261031/`. 실제 Core/Content/Chrome/Native 수용은 NOT_RUN이며 Draft 해제/Approve/Merge는 하지 않는다.
+
+## SITE_TIME 단일 정책 조회 연결 — Web 구현·합성 검증, 실제 producer BLOCKED (2026-10-31)
+
+- 김다훈 후속 개발. 시작 통합 `467fe18b176ccd571813d04229e8ee69f19a00d2`, 브랜치 `feature/additional-mvp-site-time-status`. clean 기존 Web Worktree를 재사용해 새 기능 브랜치로 분리했다. PR49 `037e0498ff648409a677c8d2900951bc33ca1e8d`와 PR50 `075e9b12ff30c0610a280dac47149cc651765275` 및 PR50 작업 공간은 그대로 보존한다. 두 PR의 미병합 코드를 가져오지 않는다.
+- 기존 설정 적용 상태 목록에서 SITE_TIME 한 정책을 명시적으로 선택하면 CFG02 GET → DAY-01 GET → CFG02 GET을 연결한다. 현재 서버 적용/해제 projection, 해당 policy_id의 과거 사용량/당시 한도를 함께 보되 서로의 성공 증거로 사용하지 않는다. 현재 실행·최신 잔여 한도·원본 effect를 Web에서 만들지 않는다. 기존 Panel/버튼/날짜 입력과 UI 계층을 재사용하며 새 화면·계약·API·DB schema는 없다.
+- 조회 중 version/saved_runtime_revision/deleted_at이 바뀌면 결과를 버리고 명시 재조회를 요구한다. config ID/executor/정규 SITE_TIME value의 policy_id/version 및 DAY-01의 기존 날짜/owner 식별 검증을 재사용한다. 이후 package가 동일 config version을 운반한 경우의 실제 적용 projection은 최신 CFG02 결과를 쓰며 과거 usage의 revision으로 전용하지 않는다. 조회 시점이 서로 다르므로 원자 Server snapshot 또는 최신 실제 효과라고 주장하지 않는다.
+- 이미 알고 있는 정책이 첫 CFG02부터 tombstone이면 기존 서버 해제 projection을 표시할 수 있다. DAY-01 404/503은 검증 자료 없음으로 보존하며 0·이용 가능·해제 성공으로 바꾸지 않는다. 인증/다른 신원/불일치/통신 실패는 전체 결과를 숨기고 오류·재시도를 제공한다. 설치/정책/설정 version/날짜/재조회 key와 abort/disposed로 지연 응답과 이전 성공을 제거한다.
+- PR49의 삭제 목록 재발견/예약 재진입과 PR50의 OP-01 Receipt/CADENCE 기한 UI는 수정·중복 구현하지 않는다. 이번 연결은 알려진 SITE_TIME ID의 현재 CFG02/DAY-01 재조회에 한정한다. 정책 저장/삭제, START/END/APPLY/RELEASE, collector/clock 발급 호출은 하지 않는다.
+
+### 실행 검증과 보존
+
+- Windows Node24.19.0/Vitest5.0.3/jsdom: 직접 영향 3파일16/16 PASS(신규11+기존 상태 패널5), 전체 Web309/309 PASS(기준298+신규11), TypeScript/Vite build PASS. getter 실제 SDK를 통과하는 모의 HTTP에서 GET3회/본문 없음, 중간 version/revision/삭제 변경 거절, 다른 policy/설치/잘못된 value version 거절, 인증 만료, 404/503, 사용량→적용 오판정 방지, 명시 선택·설치 전환/지연 응답·재조회 실패·재시도를 확인했다. 테스트 건수를 제품 완료율로 환산하지 않는다.
+- 로컬 근거 `.local/site-time-status-20261031/`의 focused-final.log/web-all.log/build.log. 첫 focused.log는 `--root frontend`와 중복 config 경로를 함께 준 실행기 오류(frontend/frontend)이며 수정 후 같은 소스에서 위 검증을 실행했다. 최초 로그도 보존했다. Server 생산·계약·api.ts/legacy-lock·package/lock·Core/Content/Shorts 변경 없음. 따라서 기존 Server/RC2 PASS를 재사용하고 새 MySQL/HTTP 서비스나 전체 Server 회귀는 시작하지 않았다. 원격 CI/PR은 게시 결과를 기준으로 기록한다.
+- 실제 Chrome/Native·Core 효과/collector·정상 END/복원/재기동·Light/Dark 브라우저 시각 수용은 NOT_RUN. Figma 새 레이아웃을 만들지 않았다. 운영 DB/기존 실패 환경/자동화와 타 Worktree/index를 변경하지 않는다. `MVP_FINAL_COMPLETE=false`.
+
+### 실제 SITE_TIME 하나를 연결하기 위해 필요한 외부 제공물 — 기존 인터페이스 요청 규격
+
+이 표는 기존 Java/RC2 경계에 결속할 제공물을 요청하는 것이며 새 Wire/공용 API를 확정하지 않는다. 담당자의 원본 근거 없이 성공 bean·등록 자료·동등성을 생성하지 않는다. 전달은 별도 팀 공유 시 수행하며 이번 작업에서 메시지를 대신 발송하지 않는다.
+
+| 담당/경계 | 받아야 할 정확한 제공물 | 소비 경로·거절 조건 |
+|---|---|---|
+| 윤종민 / capability | 실제 producer 기준 SHA, 구현 파일·symbol·조회/검증 signature, `CapabilitySource.verifiedSelection(Identity, Binding, stream)` 및 `verifyContentProfiles(Binding, JsonNode, selection)`에 결속 가능한 검증 경로. 현재 executor/owner_binding/owner_epoch와 capability_receipt_id·artifact hash/verification_ref·selected·expires_at의 원본 등록 근거 | 기존 PKG-01/publisher/receipt. stored LINKED나 UUID·최신 소스 존재만으로 유효 capability로 간주하지 않음. 실제 provider/등록 writer 미제공으로 BLOCKED |
+| 윤종민 (+DOM 효과 필요 시 채지민) / 적용·해제 | `EvidenceVerifier.verify(Identity, Binding, report, issuedPackage, predecessor)`의 실제 구현 또는 결속 가능한 원본 조회/검증 경로. RuntimeReport의 report_id/report_epoch/report_seq, runtime_execution_id, operation_id, package_id/runtime_revision, state/reason, evidence_sha256/observed_at/payload_sha256를 정확한 owner·issued operation·generation/현재 document와 결속해야 함. 제거 정책은 이전 policy/version/footprint·다른 owner claim 유지·실제 마지막 해제/미해소 의무 근거를 함께 제공 | 기존 RPT-01 `/api/v1/amvp/reports/batch` → immutable report/Receipt → CFG02 projection. ACK/국소 OBSERVED·해제 요청/패키지에서 사라짐만으로 APPLIED/RELEASED를 만들지 않음. runtimeReport 및 proof lookup/검증 미제공으로 BLOCKED |
+| 윤종민 / collector·clock | 실제 collector/outbox 기준 SHA·호출 위치, RC2 ClockedUsageSegment 및 ClockMetadata의 원본 생성/재시도 자료. owner/executor·collector_epoch/local_usage_seq/previous_segment_sha256, package/revision·policy_attributions, start/end/confirmed/uncertain, timezone/version·day boundaries/chain, focus_ref·payload hash. clock_epoch/boot_id/anchor_id/anchor_utc/anchor_mono_ms/mono start·end/quality/observed wall 시작·끝, 그리고 trusted anchor 등록 writer·재시작·day carry 검증 경로와 승인 skew profile 제공 필요 | 기존 USG-01 `/api/v1/amvp/usage/batch`, `ClockProof.verify(Identity, Binding, segment, predecessorHash)` 및 AmvpRegisteredClockProof. anchor 원본 등록·부팅/시계 변경/day allocation/carry 미확인은 QUARANTINED/UNKNOWN 유지. HTTP 수신으로 COUNTED를 만들지 않음. 실제 producer 미제공으로 BLOCKED |
+
+- 최소 연결 순서: 승인된 capability/owner 기준 확정 → 같은 SITE_TIME package의 실제 적용 보고/CFG02 확인 → 같은 policy/clock에 결속된 segment 수신·DAY-01 확인 → 동일 이전 footprint의 해제 보고/CFG02 확인 → 기존 원장/Receipt/사용량 보존 확인. 설치·세션·서비스 활성화/실제 Chrome 재시도는 별도 승인 범위에서만 진행한다.
+- ONCE legacy actor 매핑, CADENCE 휴식/현재 단계·주기 표현, USG-02 NOT_RECEIVED hash는 공동 결정 필요를 유지한다. 이번 Web 조회를 위한 임의 fallback·새 필드·hash sentinel·REST 상태나 시간 계산을 추가하지 않았다. 나머지 독립 Web 개발 전체를 이 BLOCKED에 묶지 않는다.
+
+> 2026-10-31 PR50 통합 동기화: PR49가 병합된 **df2e3927eced366ddb8a9bf007acff4f40acb32e**를 반영하고 양쪽 개발·검증 기록을 보존했다. 아래 Draft/기준 SHA 표기는 각 원래 개발 시점의 이력이다. 이번 수동 충돌 해결은 시험 API 두 등록 유지와 이 기록 병합에 한정한다.
+
+- 동기화 검증: 실제 loopback HTTP/격리 MySQL8.4.8 삭제·해제/OP **38 PASS**(삭제37+API1), 일일 기록 **12 PASS**(DB10+API2), 실패/오류/스킵0. 두 고유 시험 DB는 소유권 확인 후 정상 종료했다. Web **308 PASS**(#49·#50 기능 합산 기준), 타입/Vite·Server package 빌드 PASS. Server package 단계는 테스트를 생략했으며 위 50건은 앞선 별도 실행 결과다. 소스 동일한 CADENCE19·Server 단위82·RC2/legacy-lock266·독립 리뷰5/5를 재사용한다. 로컬 근거 `.local/pr50-sync-20261031/`, DB `bed47ee9d539`/`54b4ee2a356a`. 실제 Chrome/Native/Core/Content 수용은 NOT_RUN이며 Draft 해제/PR Merge는 하지 않는다.
+
+## 삭제 OP-01 조회·CADENCE 종료 기한 연결 — 자동/격리 PASS, 실제 producer BLOCKED (2026-10-31)
+
+- 실제 통합 HEAD **dfa787f07d02b54366a69f107c1edfa058cb8b2a**(PR41/43 포함)를 확인했다. 기존 clean Worktree에서 `feature/additional-mvp-operation-status`로 분리했다. PR49는 Draft·HEAD **037e0498ff648409a677c8d2900951bc33ca1e8d** 그대로이며 삭제 정책 이용시간/예약 재진입 구현을 가져오거나 수정하지 않았다. 이번 후속은 PR49에 의존하지 않는다.
+- 기존 코드의 두 미연결 경계만 구현했다. 새 계약·DB migration·producer·진단기·설치/Worktree를 만들지 않았다. Core/Content/Shorts·제품 api.ts/legacy-lock·기존 실패 환경·Credential·다른 작업 index는 보존한다. Merge/Approve·실제 Chrome/Native·제품 활성화는 하지 않는다.
+
+### SITE_TIME 해제 작업과 기존 원장 연결
+
+- RC2 `api.json`의 **OP-01 GET /api/v1/amvp/operations/{operation_id}**를 기존 config DELETE 의무에 한정해 구현했다. 본문/query 없음, W/E 인증·정상 채널·현재 설치/ACTIVE owner binding·기존 admission 확인, no-store. 다른 소유자/폐기 binding은404, 다른 stream/미지원 작업은 `UNSUPPORTED_CONTRACT`, proof provider 부재는503을 유지한다. PUT/USG-02의 OP 조회 지원을 주장하지 않는다.
+- `amvp_operations`·기존 `deletionReceipt`·불변 tombstone/hash·`AmvpReportReceiver.projection`을 재사용한다. DB의 저장 접수 `CONFIRMED`와 응답의 실제 효과 확인을 구분한다. SITE_TIME 현재 해제 투영이 검증된 경우에만 OP `CONFIRMED`/true, 미확정은 `IN_DOUBT`/false, 나머지는 `RELEASE_PENDING`/false. RC2 reference model의 `actual_effect_confirmed == (state == CONFIRMED)`를 유지한다.
+- 조회는 기존 DELETE ACK/response cache/설정/outbox를 쓰지 않는다. 원본 ACK는 이후에도 RELEASE_PENDING으로 보존하고 만료 cache를 소급 생성하지 않는다. Web은 삭제 응답의 operation_id를 보존하고 OP와 기존 CFG02를 모두 읽는다. 불일치/조회 실패는 성공·빈 의무로 바꾸지 않고, 기존 서버 삭제 목록 기반 새로고침 복원도 유지한다. Content/CADENCE 의무를 SITE_TIME 해제로 해소하지 않는다.
+
+### CADENCE 기존 deadline_at UI 연결
+
+- 확정된 nullable UTC `deadline_at`이 Server/Schema에 있지만 편집·요약 UI에는 없었다. 기존 설정 편집기에 선택적 종료 기한 입력/지우기와 요약 표시만 추가했다. 밀리초와 명시적 null을 보존하며 예약 actor/휴식 단계/주기 계산을 만들지 않는다.
+- 기존 Server 저장/조회·frozen 정의 경계를 그대로 사용한다. 설정의 종료 기한을 변경해도 현재 실행의 Snapshot/Attachment/반복 정의는 바뀌지 않으며 PAUSE/RESUME도 최초 값을 유지한다. RuntimePackage에 CADENCE를 추가하지 않았다.
+
+### 검증과 한계
+
+- Web **304 PASS = 통합 기준298 + OP SDK3/해제 패널2/기한 설정1**, TypeScript/Vite build PASS. OP의 잘못된 ID·상태/효과 불일치·조회 실패, 기존 해제 기록·설치 변경/지연 응답 회귀, 기한 UTC 저장/지우기를 확인했다. jsdom/모의 API이며 물리 브라우저 수용은 아니다.
+- Server 단위 **82 PASS = 기존81 + OP API1**, JAR verify/build PASS. RC2/legacy-lock **266 PASS**를 이번에 새로 실행했다. 기존 공유 계약·api.ts·원본 잠금 해시는 변경하지 않았다.
+- 격리 MySQL8.4.8 삭제/해제 **37 PASS = 기존34 + OP3**. 기존 실제 loopback TCP 시험에도 OP 대기→UNKNOWN→검증된 해제 조회/no-store를 연결했다. owner/다른 stream/잘못된 hash·원본 ACK·읽기 무변경·cache 만료도 확인했다. 최초 시험에서 폐기 owner가 후속 admission까지 도달해 거절 분류가 달랐으므로 조회의 ACTIVE/nonclosed binding 필터를 보강했고 동일 시험을 통과했다.
+- 격리 CADENCE **19 PASS = 기존18 + 기한 변경/frozen 보존1**. 저장된 기한 변경 후 PAUSE/RESUME에서 원본 frozen 정의가 동일함을 확인했다. capability/effect/clock/actor 제공자는 **SYNTHETIC**이며 실제 Core 실행 성공으로 승격하지 않는다.
+- 로컬 증거 `.local/operation-status-20261031/` 및 `.local/amvp-mysql-5c3829bbd317`(삭제/OP), `.local/amvp-mysql-1a92174d7a24`(CADENCE). 초기 실패 `.local/amvp-mysql-7f2d33fc78cc`도 보존했다. loopback33405/33407·정확한 datadir/PID 확인 후 두 시험 DB 정상 종료. 비밀을 포함할 수 있는 원본 시험 DB/로그는 게시하지 않는다.
+- 현재 Core43은 순수 시각 helper이며 생산 capability/effect/release 검증·collector/clock anchor/day allocation·actor/Receipt 전송은 여전히 **BLOCKED**. Content의 session/document/generation별 실제 효과·복원 producer도 대기다. 원시 관측을 COUNTED/APPLIED/RELEASED로 바꾸지 않는다.
+- 남은 독립 경계 점검: 무제한 SITE_TIME의 예산 없는 사용량 조회는 현재 DAY-01의 확정 budget/day-carry 모델만으로 보장되지 않는다. 0 한도·가짜 carry를 만들지 않는다. ONCE actor 매핑, CADENCE 휴식/주기 표현, USG-02 NOT_RECEIVED hash, 추가 설정 guest→member 매핑은 공동 결정 대기다. 반복 CRUD/진단 개발 대신, 실제 producer 기준 SHA와 원본 효과·해제/clock 증거 조회·검증·전송 인터페이스가 전달되면 기존 adapter에 결속하는 것이 다음 최소 작업이다.
+- 11월11일 시연용 **저장/삭제 접수·대기/미확정/검증된 해제 조회와 반복 기한 설정 흐름**은 확장됐다. 실제 측정·차단·예약/CADENCE 실행·END/복원/재기동은 별도 생산 연결과 승인된 실제 수용 전까지 **NOT_RUN**. `MVP_FINAL_COMPLETE=false`.
+
+## 사이트 시간·예약 기록의 실제 조회 연결 — UI/API PASS, 생산 효과 대기 (2026-10-31)
+
+- 시작: clean 기존 Worktree, PR41 HEAD 보존. 최신 원격 integration **dfa787f07d02b54366a69f107c1edfa058cb8b2a**(PR41 및 Core43 병합 포함)에서 `feature/additional-mvp-usage-history` 분리. Core43은 순수 주간 예약 시각 helper이며 실제 actor/명령 전송 완료가 아니다. 승인 범위의 Web·Server 시험만 변경, 다른 담당 코드·실패 환경·운영 DB·Chrome/Native는 보존했다.
+- **미구현 연결부1:** Server DAY-01은 삭제된 SITE_TIME의 과거 사용량을 읽지만 DailyUsagePanel은 활성 설정만 선택해 삭제 후 경로가 끊겼다. 기존 `listSiteTimeDeletions`와 `dailyUsage` API를 연결해 사용자가 삭제 정책 포함을 선택하면 서버에서 재발견·선택·일일 조회한다. 신규 API·schema·브라우저 영속 저장은 없다. 삭제 표식/버전과 과거 기록 안내, 당시 기록에 결속된 한도·부분 측정·현재 집행 미확인을 구분한다. 현재 설정이나 새 정책의 사용량으로 옮기지 않는다.
+- 삭제 목록/이용시간 조회의 실패·재시도·설치 변경 지연 응답 폐기를 연결하고 실패를 0/빈 목록/이용 가능으로 바꾸지 않는다. 다른 정책을 선택할 수 있으며 목록을 새로 읽을 때 해당 정책을 찾지 못하면 과거 수치가 남지 않는다. 기존 Panel/Light/Dark·명시적 설치 선택·조회 날짜 UI를 재사용한다.
+- **미구현 연결부2:** ScheduleExecutionPanel은 최초 진입에 활성 config만 조회하고 삭제된 예약은 버튼을 눌러야 발견했다. 이제 기존 owner-bound `scheduleHistoryIds`를 마운트/재진입에 읽고 현재 설정의 ID와 합쳐 중복 없이 occurrences를 조회한다. 설정 변경/삭제 후에도 최초 예약 버전·고정 종료·원래 세션 결과를 보존해 보여준다. 실패 시 이전 성공/빈 이력을 남기지 않는다. 예약 claim/START/END를 발행하지 않으며 ONCE나 CADENCE 상태를 발명하지 않는다.
+- **Web 검증:** 변경된 DailyUsagePanel8+SDK3, ScheduleExecutionPanel7+SDK5 PASS; 전체 **302 PASS**, TypeScript/Vite build PASS. 삭제 정책 참조 없는 재마운트·선택·조회 실패/재시도·설치별 지연 응답, 예약 재마운트/삭제·이전 버전·UNKNOWN을 확인했다. jsdom/모의 API이며 실제 Chrome 제품 수용이 아니다.
+- **격리 검증:** 기존 fresh MySQL runner와 PR41 loopback fixture 재사용, `AmvpDailyUsageMysqlTest10 + AmvpDailyUsageApiTest2 = 12 PASS`, 실패/오류/스킵0. 추가 TCP 시험은 실제 controller/auth/service/SQL로 삭제 목록 재발견→과거 일일 사용량을 읽고, 같은 host에 새 config ID를 등록해도 새 정책은404/원래5초·당시60초 한도 유지, 삭제 ID 재사용 거절, 다른 executor 거절, 조회 후 budget/Receipt 무변경을 검증한다. capability·clock 제공자는 SYNTHETIC이고 효과를 실제로 발생시키지 않았다.
+- 최종 DB `.local/amvp-mysql-cf6158ca3d16`, loopback33401·소유 datadir 대조 후 정상 종료. 처음 runner 실행의 comma 인자 오류는 shell 호출 오류이며 DB 생성 전 거절되어 수정 후 실행했다. 로컬 근거 `.local/usage-history-20261031/`에 보존한다. 생산 DB/설치 Credential 복사는 없다.
+- Server 단위81/JAR verify PASS. RC2 266 및 기존 주간 예약·CADENCE·Receipt 회귀의 유효 결과는 **변경 없는 Server 생산 소스/공통 계약/의존성**과 대조해 재사용한다. 이번에 모두 재실행한 것으로 집계하지 않는다. PR/CI/최종 SHA는 로컬 result와 후속 PR이 원본이다.
+- **남은 범위:** 실제 collector→ClockedUsageSegment/anchor/day-carry 및 runtime 적용·해제 provider, 예약/CADENCE 실제 actor·명령/Receipt 전달, Content frozen/native/문서별 효과·복원이 미연결이다. 일일 조회는 검증된 자료/예산이 없으면404/503이며 0이나 최신 차단 상태를 만들지 않는다. ONCE 매핑·CADENCE 휴식/주기·USG-02 hash는 공동 결정 대기다. UI에서 설정 저장·과거 기록을 실제 정책 효과로 표시하지 않는다.
+- **11월11일 영향/다음 최소 작업:** 삭제·재등록·재진입을 포함한 자료 조회 시연의 UI/API 흐름이 연결됐다. 실제 측정·한도 차단·예약/CADENCE·END/복원 시연은 producer 연결과 별도 실제 수용 전까지 완료가 아니다. 다음은 검증된 producer의 원본 증거 조회/전송 인터페이스로 SITE_TIME 한 정책을 연결하고 실제 효과·해제·재기동을 별도 승인 환경에서 검증하는 것. `MVP_FINAL_COMPLETE=false`.
 
 ## 야간 담당 경계 보완 — Web 수정·격리 TCP/DB PASS, 생산 producer BLOCKED (2026-10-30)
 

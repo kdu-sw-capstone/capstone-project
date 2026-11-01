@@ -138,7 +138,7 @@ chrome.webNavigation.onErrorOccurred.addListener(details => {
 // A1 isolated trial runtime; disabled until a trusted Worker enables its private trial marker.
 importScripts("a1-core.bundle.js");
 
-importScripts('../integration/member-adapter.bundle.js','member-a1-core.bundle.js','../integration/member-a1-adapter.bundle.js','../integration/member-a1-authority.bundle.js','../integration/member-a1-bootstrap.js','../integration/member-auth-bridge.js','../integration/same-owner-recovery.js','../integration/recovery-runtime.js','../member-ui/runtime.js','../member-ui/access-runtime.js');
+importScripts('additional-dnr-writer.bundle.js','../integration/member-adapter.bundle.js','member-a1-core.bundle.js','../integration/member-a1-adapter.bundle.js','../integration/member-a1-authority.bundle.js','../integration/member-a1-bootstrap.js','../integration/member-auth-bridge.js','../integration/same-owner-recovery.js','../integration/recovery-runtime.js','../member-ui/runtime.js','../member-ui/access-runtime.js');
 
 importScripts(chrome.runtime.getURL('integration/member-web-bridge.js'));
 

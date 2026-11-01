@@ -1,5 +1,35 @@
 # AMVP-CORE-04 — Core DNR 소유권·복원
 
+## 2026-10-31 PR55 P2 수정·재리뷰 준비
+
+- 시작 `b11dcc582de625152039ad42d3baabe5dc5f52dc`, 같은 `feature/additional-mvp-legacy-dnr-fence`/PR55에서 독립 리뷰 `5722433929`의 current owner 반례만 수정한다. 기존 로컬 변경 없음과 원격 HEAD 일치를 확인했다.
+- 실제 잠금 queue + Member tick에서 owner/executor/identity 실패 3가지 모두 수정 전 무권한 dispatch가 발생함을 재현했다. 잠금 안에서 신규 add의 현재 owner/executor를 다시 검증하고, AuthStore 저장 시작/완료 token을 최종 동기 dispatch에 결속했다. removal-only는 기존 자기 journal·물리 rule·DB fence 검사를 유지해 정당한 이전 owner cleanup을 보존한다.
+- 새 반례/보존 7/7, writer29/29, DNR78/78, DNR+인증/재인증111/111, Member/Core/인증 영향24파일287/287, 계약6/6 PASS(중복 포함, 합산 금지). Chromium 실제 IDB/Web Lock END 비차단1/1, 생성 bundle 일치·syntax/whitespace PASS. 전체 Extension857은 수정 전 결과로 이번 전수 회귀 결과가 아니다.
+- 시험의 DNR/identity/Content는 모의다. 실제 MV3·Windows Chrome·전체 writer/제품 적용·Report/ACK는 미검증 유지. 재현·코드/영향/로그/내부 token의 한계는 [Member writer 설명의 P2 수정 절](../evidence/AMVP-CORE-04-member-dnr-writer.md)에 기록했다.
+- 상태: 수정·영향 검증 완료, 같은 PR55에 게시 후 최신 HEAD 재리뷰 필요. 기존 Content Approve를 새 HEAD로 승격하지 않고 다훈·지민의 변경 범위 확인을 요청한다. 병합/후속 actor 개발은 이번 수정에 섞지 않는다.
+
+## 2026-10-31 Member A1 실제 DNR writer 연결 단위
+
+- PR53 f29532c는 다훈·지민 승인 후9e37b37로 통합됐음을 확인했다. 최신 통합 `9e37b37fefb2238f259c6a1bba400eee6955d085`에서 별도 `feature/additional-mvp-legacy-dnr-fence`를 시작했다. 기존 focurve-core 미커밋 변경·PR46/48·승인된 증거 조회 소스를 보존한다.
+- 호출 지점을 조사해 Member A1/Guest A1/구 GuestSession/SiteController로 나뉨을 확인했다. 이번 첫 PR은 현재 제품 Member A1 네 쓰기 경로만 연결하며, 전부 한 번에 수정하거나 전체 guard를 true로 바꾸지 않는다.
+- `additional-dnr-legacy-writer.js`와 생성 Worker bundle, service-worker/Member bootstrap 주입. Member Core의 초기 적용·UNKNOWN 복구·suspend·finish가 동일 DNR Web Lock에서 기존 runtime claim을 보호한다. 현재 실행 DB의 동일 snapshot에서 마지막 owner/END/fence/기한을 확인하고 Native dispatch한다. Chrome 응답이 DB transaction을 붙잡지 않는다.
+- 기존 RootAuthority DB의 metadata 원장을 재사용하며 새 DB version/migration·공용 Wire/Report·Server/Content·관측 모듈은 변경하지 않는다. 다른 DB coordinator나 Guest/이전 writer의 보호/제품 활성화를 자동 승인하지 않는다.
+- 신규22건에서 원장 보호/잠금 대기/실제 Member 네 경로/배포 flags/Native 대기 중 END intent/입력 동결/RootAuthority metadata 보존을 검증했다. 초기 6건은 DNR 없는 fixture 선택 오류였으며 DNR 생성 fixture로 바로잡았다. 자세한 API·잠금 순서·범위: [Member writer 연결](../evidence/AMVP-CORE-04-member-dnr-writer.md).
+- 최종 로컬 검증: 신규22/22·DNR71/71·전체 Extension857/857(fail0/skip0), 계약6/6·syntax/whitespace PASS. 실제 Chromium151 IndexedDB/Web Lock 기반 Chrome 응답 대기 중 END commit 시험1/1 PASS. DNR/실행 신원은 모의다. 생성 Member/guard bundle 일치 검증을 포함한다.
+- 상태: 이번 Member actor 연결 단위 구현·로컬 검증 완료, PR 제출/최신 원격 CI·다훈·지민 리뷰 후 다음 actor로 진행한다. 실제 MV3 DNR·전체 legacy writer 결속·issued binding/RuntimeReport 생산·전송은 미완료다. 원래 미커밋 변경과 다른 PR은 보존한다.
+
+## 2026-10-31 SITE_TIME 증거 결속·조회 단위
+
+- 담당 윤종민, `feature/additional-mvp-site-time-evidence`, 시작 기준 `467fe18b176ccd571813d04229e8ee69f19a00d2`. 원래 focurve-core의 미커밋 변경과 PR46/48을 보존하고 별도 작업 공간을 사용했다. 현재 열린 Core PR/통합 코드를 조회하여 정책/version/operation→DNR claim 원본 조회가 없음을 확인했다.
+- 사용자 최신 요청: 기존 DNR·관측 코드를 재사용하고 SITE_TIME 한 정책의 원본 증거부터 구현. Server 수신·검증·Receipt·DB·Web은 다훈 담당, 전송/collector/clock을 이번 단위에 섞지 않는다.
+- 구현 `extension/src/additional-dnr-site-time-evidence.js`: `SiteTimeDnrEvidence.register({context,policy,claims})`, `read(context)`. 기존 coordinator Lock/store/inventory를 사용하며 DNR 설치·삭제·자동 채택/새 Receipt·RuntimeReport 발행은 하지 않는다. 기존 DNR/관측 생산 파일 수정 없음.
+- 원문 context와 정책/version/hash·claim store+id/owner/generation/epoch/hash를 영속 결속, 최초 등록 관측과 현재 관측/미해결 cleanup·관련 실제 RELEASE Receipt를 조회한다. 잘못된 semantic hash의 RELEASED 표시는 해제 증거로 사용하지 않는다. 다른 owner 공유 규칙과 자기 의무 해제를 구분한다.
+- 주입할 실제 issued binding verifier 및 전체 writer guard가 없으면 기본 거절한다. true 시험 provider는 SYNTHETIC이고 현재 제품 provider 구현/연결 완료가 아니다. 단일 operation/정책 범위이며 새 공용 메시지 계약을 만들지 않는다.
+- API·입출력·불변 조건·다훈 연결 시 주의사항: [원본 증거 설명](../evidence/AMVP-CORE-04-site-time-evidence.md). 등록 원문 정책 버전과 실제 RELEASE operation을 Server 삭제 버전/Receipt로 임의 바꾸지 않는다.
+- 로컬 검증: 신규25/25, 기존 DNR 포함49/49, 전체 Extension835/835(fail0/skip0), 계약6/6 PASS. 통합 기반과 미병합 PR46/48 기반의 시험 수는 다르며 합산하지 않는다. Chromium151 실제 IndexedDB/Web Lock 재열기 시험1/1 PASS, DNR/발급 source는 모의다.
+- 실제 MV3 DNR은 임의 확장 로드 관리 정책으로 worker timeout; 정책 변경 없이 미검증으로 남겼다. 실제 Windows/제품 Worker·네트워크 차단·강제 종료/원본 권한 전환·전체 정책 수용은 미검증이다.
+- 상태: 이 내부 모듈 단위 구현/로컬 검증 완료, 제출 전 syntax/whitespace·최신 원격 CI와 담당 재리뷰 필요. Core 전체는 부분 구현이다. 다음은 실제 issued binding/writer 연결 검증이며 그 뒤 Report 생산/전달 계약을 맞춘다. Server 연동이나 제품 활성화·자동 병합은 하지 않는다.
+
 - 담당: 윤종민 / 브랜치: feature/additional-mvp-core
 - 시작 기준: da1c70b2b2052dece581353f81cd5eb6c604e4b1 (PR24 병합 및 Web/Server 통합 포함)
 - 계약: AMVP-CONTRACT-20261029-RC2, PR24 승인 a10fcb02927eec49561c62417b6a0d7a63e64cde
