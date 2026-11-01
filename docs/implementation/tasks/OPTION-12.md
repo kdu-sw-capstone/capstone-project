@@ -386,3 +386,16 @@ provider 미설정은 안전한 비활성/거절이며 SUCCEEDED 결과·가짜 
 ### PR81 게시 후 편집 revision 반례 수정
 
 첫 게시 HEAD `fe0df35d14b120dcd7b683d47d48ece305f546ed` 후 독립 확인에서, 편집 중5초 조회가 다른 writer의 version을 반영하면 기존 초안을 새 version으로 조용히 저장할 수 있음을 재현했다. 신규 반례1 FAIL/기존13 PASS → 편집 시작 version 고정 후14/14 PASS. 명시 재조회 뒤에는 초안을 유지한 채 최신 version으로 저장할 수 있음을 기존412 시험에 추가했다. 백그라운드 조회는 편집 기준을 갱신하지 않는다. 서버/API/DB/AI/소유권 의미는 그대로다. 실패 로그 `.local/goal-draft-version-before.log`, 수정 후 `goal-draft-version-final.log`, 타입/빌드 `goal-build-final3.log`. 첫 SHA의 승인/CI를 후속 SHA로 소급하지 않으며 후속 Commit/Push 뒤 최신 CI를 별도 확인한다.
+
+
+### PR81 독립 리뷰 P2 — 동의 GET 수명·철회 경합 최소 수정
+
+반환 리뷰 [5727735230](https://github.com/kdu-sw-capstone/capstone-project/pull/81#pullrequestreview-5727735230), 인라인4435343830. 검토/수정 전 HEAD `ff8d2de20534928f133dc67628652bb04a04207b`, 실제 원격 통합은 `9ebec52dc533dd497e454815b53b654ab42ef4fa`로 이동했다. 기존 PR81 브랜치/준비/구현/실패 근거를 그대로 이어가며 신규 PR/통합 병합은 하지 않는다.
+
+- 원인: AnalysisConsent의 active 플래그가 owner/unmount만 구분하여 같은 화면의 GET끼리와 GET/철회 PUT의 전후관계를 구분하지 못했다. (A) 철회 false/v2 ACK 뒤 선행 GET true/v1이 동의를 되살림. (B) 최신 GET 성공 뒤 과거 GET401이 전역 인증 만료를 전파함. 개발 checkout에서 동일 두 반례 수정 전2 FAIL을 재현했다(`.local/goal-consent-review-before.log`; 나머지6개는 선택 실행에서 미실행, PASS로 합산하지 않음).
+- 최소 제품 변경은 `frontend/src/AnalysisConsent.tsx` 한 파일이다. GET별 generation/AbortController와 시작 시 write epoch를 결속하고 성공/catch 모두 현재 수명에서만 처리한다. 새 GET/철회 시작/성공 ACK/언마운트는 이전 읽기를 무효화한다. 실제 취소를 무시하는 transport도 callback 검증으로 막는다.
+- 확정 revision보다 낮은 조회와 같은 revision의 서로 다른 accepted/notice를 거절한다. 쓰기 epoch는 GET generation과 독립이므로 새 GET이 시작됐다는 이유로 유효한 PUT 결과를 버리지 않는다. 정상적인 과거 멱등 ACK가 더 최신 Server 확인 행보다 오래됐다면 해당 intent 확인은 끝내되 최신 Server 상태를 그 ACK로 덮어쓰지 않는다. UI 캐시를 Server 권한이나 새 동의 저장으로 사용하지 않는다.
+- 현재 유효 GET/PUT401은 그대로 인증 만료를 전파한다. 미확정 철회의 같은 key/body/notice/If-Match intent는 유지한다. 동시 PUT은 ref lock으로 중복 진입을 막는다. 읽기 전용 동의 재조회는 철회 대기 중에도 가능하며 상태/ACK는 각자의 수명으로 판정한다. 새 accepted=true/provider/worker/dispatch/외부 전송 활성화 없음.
+- `AnalysisConsentLifetime.test.tsx` 신규10건 및 기존 Goal/Consent14건 포함 관련6파일62/62 PASS·실패/skip0(`.local/goal-consent-review-final.log`). 반환2건 PASS, 순차 revision 역행·동일 notice/멱등 재확인·현재 GET/PUT401·old owner·StrictMode·새 GET 중 유효 쓰기·더 최신 Server 행 보존을 확인했다. TypeScript/Vite build PASS(`goal-consent-review-build.log`). SDK/request 모의 응답 시험이며 실제 제품 AI/Server 동의 수용이 아니다.
+- Goal 제품/기존14시험, Settings/MemberApp 연결, CONFIRMED RUN·zone/DST/자정/union/UNKNOWN, 공통 api/auth, Server/DDL/계약 및 기존 HTTP/MySQL16건의 관련 소스는 ff8d2de와 동일하다. 해당 격리 검증을 재사용하며 로컬 DB/제품 서비스/Chrome/Native를 다시 기동하지 않았다. 최신 게시 HEAD의 CI는 별도 확인하며 기존 승인/422 PASS를 소급하지 않는다.
+- 후속 변경은 동의 제품1·신규시험1·이 카드1에 한정한다. #73/#77/#79·Core/Content PR·다른 Worktree/index·공유 staged 삭제1,036개 보존. 리뷰 스레드는 수정 근거를 반환한 뒤 독립 재검토 대상이며 작성자가 자기 APPROVE/스레드 해결/병합을 대신하지 않는다. Draft·미병합, 기존 legacy FAIL 및 실제 Core/Chrome/Content/Native·AI provider 수용 NOT_RUN, `MVP_FINAL_COMPLETE=false`.
