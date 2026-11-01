@@ -226,6 +226,15 @@ for(const tag of ['li','div role="listitem"']){
  });
 }
 
+for(const tag of ['li','div role="listitem"'])test(`review: span-caption mixed ${tag} never borrows the post author for nested comment evidence`,async t=>{
+ const end=tag==='li'?'li':'div';
+ const p=await fixture(t,{body:`<main><${tag} id="post" style="display:grid!important"><a href="/post-author/"><img id="avatar"></a><span id="caption">post caption</span><img id="photo"><button id="like">Like</button><div><a href="/p/sample/c/1/"><time datetime="2026-01-01">time</time></a><span dir="auto">comment</span><button>Reply</button></div></${end}></main>`});
+ await p.evaluate(()=>session.start());
+ for(const id of ['#post','#avatar','#caption','#photo','#like'])assert.equal(await p.locator(id).evaluate(e=>!!e.closest('[inert]')),false,id);
+ assert.equal((await p.evaluate(()=>session.release())).restored,true);
+ assert.deepEqual(await p.locator('#post').evaluate(e=>[e.style.display,e.style.getPropertyPriority('display'),e.inert]),['grid','important',false]);
+});
+
 for(const mode of ['text','hashtag','empty'])test(`preserve baseline structured LI ${mode} comments inside a mixed post`,async t=>{
  let row=modern.replace('<div id="modern"','<li id="modern"').replace(/<\/div>$/,'</li>');
  if(mode==='hashtag')row=row.replace('sample comment','<a href="/explore/tags/sample/">#sample</a>');

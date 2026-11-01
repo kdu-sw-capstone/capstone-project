@@ -69,6 +69,25 @@ function emptyCommentRow(node,url){
     &&[...node.querySelectorAll('img')].every(img=>isProfile(img.closest('a[href]'),url))
     &&[...node.querySelectorAll('button, [role="button"]')].some(replyAction);
 }
+function nestedIdentityBoundary(row,link,url){
+  let branch=link;
+  while(branch.parentElement!==row)branch=branch.parentElement;
+  if(branch===link)return true; // Flat GIF rows keep their existing evidence.
+  // Evidence inside a nested column cannot authorize unrelated post content
+  // outside that column. Avatar/author and row controls are the only extras.
+  for(const sibling of row.childNodes){
+    if(sibling===branch)continue;
+    const copy=sibling.cloneNode(true);
+    if(copy.nodeType===3){if(copy.textContent.trim())return false;continue;}
+    if(copy.nodeType!==1)continue;
+    for(const a of [...copy.querySelectorAll('a[href]')])if(isProfile(a,url))a.remove();
+    if(copy.matches('a[href]')&&isProfile(copy,url))continue;
+    copy.querySelectorAll('button, [role="button"], [role="link"], svg, canvas').forEach(e=>e.remove());
+    if(copy.matches('button, [role="button"], [role="link"], svg, canvas'))continue;
+    if(copy.textContent.trim()||copy.matches('img, picture')||copy.querySelector('img, picture'))return false;
+  }
+  return true;
+}
 function commentRow(link,url){
   const row=link.closest('li, [role="listitem"]');
   if(row&&safeContainer(row)&&oneComment(row,link,url)&&row.querySelectorAll('h3').length<=1
@@ -77,7 +96,7 @@ function commentRow(link,url){
     // only/empty bodies. The permalink alone never authorizes a whole post.
     if(link.parentElement===row&&[...row.children].every(child=>child===link||child.tagName==='SPAN')
       &&[...row.querySelectorAll('img')].every(img=>isProfile(img.closest('a[href]'),url)||!!img.closest('[role="link"]')))return row;
-    if(link.querySelector('time[datetime]')&&profileLink(row,url)
+    if(link.querySelector('time[datetime]')&&profileLink(row,url)&&nestedIdentityBoundary(row,link,url)
       &&[...row.querySelectorAll('button, [role="button"]')].some(replyAction))return row;
   }
   if(!link.querySelector('time[datetime]'))return null;

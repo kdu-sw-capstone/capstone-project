@@ -627,6 +627,15 @@
 - 최신시험판0.1.9.2 / ig-comments-baseline-p2-2. 전체 회귀 실행 중, 계약6/6·빌드 PASS. 사용자 새 후보 재시험·원격CI 미실행, Commit/Push/Merge 없음. 제품Core/MV3/Native/Server NOT_RUN, MVP_FINAL_COMPLETE=false.
 - 최종 전체 Content287/287 PASS(댓글32 포함), fail/skip0. Node24/설치Windows Chrome headless/Playwright 합성DOM·모의권한. 명령 기존환경 node --test --test-concurrency=2 extension/content-tests/*.test.mjs, 로그 ig-comments-baseline-p2-full.log. 별도계약6/6/build/구문/diff검사 PASS. 실제 unpacked module/source hash동일 확인. 이전0.1.14의287과 다른 후보이며 혼합하지 않는다. 다음 사용자0.1.9.2 홈·릴스·빈댓글 정상과 게시물보존/복원 확인→게시승인→같은PR71 새HEAD/CI/다훈 독립재검토.
 
+## 2026-11-01 PR71 중첩 댓글 근거와 게시물 경계 재수정
+- 담당 채지민 / codex/content-instagram-comments / 시작 9a6ce8542efe054f40f087baff8059b803d406a1. review5727088612의 span 본문+중첩 exact time/Reply 구조를 LI/role=listitem 각각 설치 Windows Chrome 합성 DOM에서 재현: 수정 전 0/2 PASS, 게시물 전체 숨김 FAIL.
+- rich semantic 행의 중첩 permalink column 바깥에 독립 본문/비프로필 이미지가 있으면 전체 행을 선택하지 않는다. avatar/author/행 control은 허용하고 기존 좁은 DIV 탐색은 유지한다. flat GIF 댓글의 이미지 허용을 되돌리지 않는다. 기존 GIF LI/hashtag DIV/외부 ancestor 누락 수정과 빈 댓글, owner·cleanup·복원 구현은 유지한다. 공용 계약·ClaimLedger·NavigationSurface·Core는 수정하지 않는다.
+- AC-IG-04-01~03 기준: 댓글 제한과 게시물/좋아요 보존을 동시에 검사. 댓글 Chrome 합성 시험37/37(기존35+새2), 계약6/6 PASS. 전체 Content 회귀는 실행 중이며 최종 결과를 아래에 기록한다. 시험판0.1.9.4 / ig-comments-nested-boundary-4 빌드·구문·공백 검사 PASS. 이번 사용자 재시험/원격CI/실제Core·MV3·Native·Server 수용 NOT_RUN. Commit/Push 전 사용자 시험 대기, #56과 통합 충돌은 이번 수정에 포함하지 않음. MVP_FINAL_COMPLETE=false.
+
+- 최종 전체 Content292/292 PASS(댓글37 포함), fail/skip0. 기존 Node24/Playwright/설치Chrome headless 환경에서 node --test --test-concurrency=2 extension/content-tests/*.test.mjs 실행, ig-comments-nested-boundary-full.log 보존. 계약6/6은 별도 실행. 사용자 실제 Instagram 정상 보고와 원격CI는 이 새 후보에서 아직 없으며 과거 결과를 승격하지 않는다.
+
+- 사용자 시험판0.1.9.4에서 안내한 홈/릴스 댓글 제한·게시물 사진/영상/본문/게시자/게시물 좋아요 보존·해제 복원을 확인 후 'ㅇㅇ 문제없어' 보고. 사용자 실행 결과이며 에이전트 독립 실제 제품 검증으로 승격하지 않는다. 사용자 게시 동의 후 이번6파일만 Commit/Push 진행. 새HEAD 원격CI는 게시 후 별도 확인하며 #56 수정·통합 충돌 해결·병합은 포함하지 않는다.
+
 ## 2026-11-01 PR71 정상 댓글 누락 3건 재수정
 - 담당 채지민, codex/content-instagram-comments, 시작4ebc72fb0da5a9fbbc8ab46bac3825808a6550fd. review5726885645의 GIF LI/hashtag-only DIV/외부 post ancestor3반례를 별도 익명Chrome 시험으로 추가하여 수정 전0PASS/3FAIL 확인. 기존 사용자정상0.1.9.1/0.1.9.2 및 P2 mixed-post 안전수정은 유지한다. #65선행 및 통합충돌은 다훈관리, 임의 merge/다른PR 수정 없음.
 - GIF LI: 기존 단일comment identity/row안전/post신호 거절·exacttime/profile/명시Reply 근거를 유지하면서 rich semantic 행의 body image를 허용. simple inline shortcut은 기존 avatar-only 기준 유지. 본문이 비어 있는 정상 semantic행도 기존 지원 그대로다.
