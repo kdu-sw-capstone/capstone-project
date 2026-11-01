@@ -1,5 +1,19 @@
 # AMVP-CORE-04 — Core DNR 소유권·복원
 
+## 2026-11-01 구형 GuestSession DNR 연결 착수
+
+- 담당 윤종민, `feature/additional-mvp-legacy-guest-dnr`, 시작 `10ab6026f1cf7d244a75ee529830afb8bcf6b8c8`. PR59는 OPEN/리뷰 없음으로 보존하고, 기존 병합55 gate에만 의존하는 별도 worktree에서 진행한다.
+- 기존 계획의 남은 legacy writer 중 GuestSession의 add/remove만 공통 gate에 연결한다. SiteController·PR59 소스/HEAD·공용 계약·Member/Content/Server는 변경하지 않는다. 신규 공유 정책/전체 coverage는 활성화하지 않는다.
+- 현재 owner/executor/Guest auth·Root idle·AuthStore token, 실제 규칙 및 동일 DB snapshot을 검사한다. 잠금 대기 중 대상 변경 후 복구가 새 세션을 덮어쓰지 않도록 legacy SessionDB.save에 내부 scope precondition을 추가한다. 저장 schema/버전은 불변이다.
+- 상태: 구현·검증 진행 중. 저장 실패 cleanup·권한 변경·기한·다른 owner/실행 규칙 보존과 기존 회귀를 자동 검증하고 별도 PR/담당 리뷰를 요청한다.
+
+### 구형 GuestSession 단위 구현·검증 종료
+
+- classic add/remove를 기존55 gate에 결속했다. 신규 add의 현재 인증/owner/기한/token·final DB route/snapshot/rules 검사, removal-only의 exact footprint 검증을 분리해 기존 정당한 cleanup을 유지했다. SessionDB.save의 내부 scope/create precondition으로 대기 중 current handoff 후 old recovery가 새 세션을 덮지 못한다. 저장 schema/DB version/공용 계약은 불변이다.
+- 신규18/18·기존 session-core19/19·DNR96/96·전체 Extension882/882·계약6/6 PASS(fail/skip0). Chromium151 실제 IDB/Web Lock scope handoff1/1·syntax/diff PASS. 중복 합산 금지. PR59 미병합19시험 대신 본18시험을 포함한 별도 기반이므로883과 직접 증감 비교하지 않는다.
+- 모의 DNR/owner/auth·fake-IDB 모델과 실제 Chromium 저장/잠금의 범위를 구분한다. 초기 fixture/저장 실패 주입 위치를 바로잡고 실패 로그를 보존했다. [구형 Guest writer 설명](../evidence/AMVP-CORE-04-legacy-guest-dnr.md).
+- 구현·로컬 검증 완료, 별도 PR/최신 CI·담당 리뷰 대기. 원래59/다른 worktree·Member/A1/Content/Server 소스를 보존했다. SiteController 및 전체 writer coverage·SITE_TIME 실제 실행·Report/ACK·제품 수용은 후속이다.
+
 ## 2026-10-31 PR55 P2 수정·재리뷰 준비
 
 - 시작 `b11dcc582de625152039ad42d3baabe5dc5f52dc`, 같은 `feature/additional-mvp-legacy-dnr-fence`/PR55에서 독립 리뷰 `5722433929`의 current owner 반례만 수정한다. 기존 로컬 변경 없음과 원격 HEAD 일치를 확인했다.
