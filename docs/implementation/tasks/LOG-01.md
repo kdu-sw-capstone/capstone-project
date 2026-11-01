@@ -92,3 +92,13 @@
 - 검증 주체는 Codex 자동·HTTP·실제 임시 DB/메일 수신·합성 설치/실행 보고다. 시간 제한 경계는 격리 DB 시각을 조절한 재현이며 실제 한 시간 대기가 아니다. 실제 Chrome·Edge·외부 OAuth·외부 SMTP·회원 Core/Content 통합은 이번 검증 NOT RUN이다.
 - 과거 기간 미전달 BLOCKED는 당시 Server 상태이며 PR #19로 Server 전달은 해결됐다. Core의 소수점9자리 시각 파싱·기간 검증/영속 결속 및 실제 회원 실행은 후속 통합 대기다. D-01·D-05 자동복구 전체는 미구현, Snapshot1.2 신규 발급 기본 OFF를 유지한다.
 - 상태: 검증된 결함 수정본 Draft PR 게시 준비/팀 리뷰·통합 대기. 전체 작업카드·93개 수용 기준·필수 MVP를 완료로 변경하지 않는다. 실행 로그와 게시 결과는 `FOCURVE_1단계_F1_F4_게시검증보고서.md`에 남긴다. develop 병합은 수행하지 않는다.
+
+
+## 보조 조회 부분 실패와 기록 목록 분리 — 2026-11-01
+
+- 김다훈 Web, 브랜치 `fix/additional-mvp-record-partial-reads`, 기존 관리형 `site-usage-period-20261101` 재사용. 시작 통합 **32eb975952d24159af0d070cc9e0f1a10733aa4f**. PR72 **4bea2a4e9f9661d93ebb8ef41a1b6174557da528**, PR73 **b0b44a5ed6cb25fed2f538bf34069c31189df24f**는 별도 Draft로 보존하며 두 PR에 의존/복사/수정하지 않는다.
+- 기준: 현행 IA의 목록 로딩/오류/부분 수집 분리 및 AC-LOG-01-01/02, 기존 API-LOG-01 접근 목록·통계 summary·세션 목록 GET을 재사용한다. 기존 `BehaviorRecords.load`가 접근 GET 성공 뒤 보조 통계/세션 GET을 모두 기다려, 보조 실패/무응답 하나가 성공한 목록과 조작을 막았다. 모의 HTTP 반례 **통계503/세션503/보조 대기3 FAIL → PASS**.
+- 구현: 접근 GET 성공 시 해당 목록/커서/적용 필터만 갱신한다. 수집 상태·세션 필터 목록은 해당 조회 수명/AbortSignal에 결속해 별도 읽고 로딩·오류·UNKNOWN을 표시한다. 보조 실패를 0건/수집 완료로 만들지 않고 기존 조회 버튼으로 명시 재확인한다. 이전 수명의 성공/401은 폐기하며 현재401은 기존 인증 만료 이벤트를 한 번 전달한다. 주 목록 실패는 마지막 성공 목록을 유지한다. 다음 페이지는 같은 적용 필터의 기록만 이어 붙이고 보조 원본을 매 페이지 반복 조회하지 않는다. 목록과 보조 정보는 원자 Snapshot/실제 효과 증거가 아니다.
+- 신규9 + 기존 snapshot1/차단 사유8 = **18 PASS**. 기존 FocusScreens의 기록 상세 왕복 영향1 PASS, TypeScript/Vite build·자체 diff check PASS. 초기 신규 시험의 ByRole `exact` 타입 오류는 정리했으며 원본 build.log 보존. jsdom/모의 fetch와 실제 SDK를 사용한 UI 검증이며 실제 Server/TCP/DB/Core 수용이 아니다. 새 Server endpoint·DB schema·RC2/legacy-lock·인증/API/원장/Receipt 의미·의존성·Core/Content/Shorts 변경 없음. 변경 없는 Server/DB 검증은 재사용한다.
+- 근거: `.local/record-partial-read-20261101/` before.log, expanded.log, focus-record-impact.log, build-final.log, result/CI. 새 HEAD/누적 원격 CI는 후속 Draft PR 본문을 따른다. 기존 다른 Worktree/공유 root staged 삭제1,036개를 건드리지 않는다. Approve/Draft 해제/Merge 없음.
+- **미완료/다음:** 실제 collector/clock/day·한도 집행·예약/CADENCE actor·Content 효과/복원은 기존 producer/공동 계약 대기다. 11월11일의 독립 시연 후보는 격리 자료를 이용한 목록 조회·보조503/대기·필터 보존·명시 재조회·UNKNOWN 처리이며 실제 측정/차단/END/복원 성공 시연이 아니다. 실제 제품 수용 NOT_RUN, `MVP_FINAL_COMPLETE=false`.

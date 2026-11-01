@@ -1,5 +1,12 @@
 # 추가 MVP · 정책 발행·이용시간 수신 경계
 
+
+## 후속 LOG-01 부분 실패 독립 구현 — 2026-11-01
+
+- 현재 A~J에서 저장·수신·일일/기간/시간대·상태 조회 구현은 재사용한다. #54/#62/#63/#66/#67/#69/#70은 병합 완료, #72/#73은 별도 Draft이며 원격 HEAD/다른 Worktree/index를 보존한다. 실제 actor/clock/day/Content 효과·ONCE/CADENCE/USG-02 결정 대기는 유지한다. 통합 **32eb975952d24159af0d070cc9e0f1a10733aa4f**에서 `fix/additional-mvp-record-partial-reads`로 새 독립 반례를 처리했다.
+- **실제 수정:** 성공한 접근 기록까지 보조 통계·세션 필터 GET의 503/무응답으로 표시하지 못하던 경계를 분리했다. 신규3 반례 FAIL→PASS, 확장 신규9·기존9 = **18 PASS**, 기록 상세 왕복 영향1·타입/Vite·자체 diff PASS. 기존 조회/필터/커서/오류 UI를 재사용하고 확인된 목록과 보조 UNKNOWN/실패를 구분한다. 이전 보조 응답/401 폐기, 현재 인증 실패 전파, 조회 실패와 빈 목록·수집 완료의 구분을 검증했다. Server/DB/계약/producer를 추가하지 않았다.
+- 상세 소유권·설계/검증·지연/인증/재조회/페이지 경계·미완료는 [LOG-01](LOG-01.md) 최신 절 및 `.local/record-partial-read-20261101/`, 새 Draft PR의 HEAD/CI를 따른다. 합성 UI PASS를 실제 제품 수용으로 올리지 않는다. 실제 Core·Content·Chrome·Native·Server 제품 수용 NOT_RUN, `MVP_FINAL_COMPLETE=false`. 다음 독립 검토 범위는 주/보조 읽기의 실패 격리와 기존 인증/필터/페이지 보존이다.
+
 > 2026-11-01 PR66 통합 동기화: 최신 통합 **4e6ff6ced95b96f362f2fbf088aa192e17278529**를 기존 **650eddd5a38a5406775ce614b1ae2474879fa0b4**에 이력 보존 merge로 반영한다. 수동 충돌 해결은 이 작업카드1파일뿐이며 양측 전체 원문을 순서 보존한다. 기간 이용시간 제품·시험6파일은 기존 blob과 동일하다. DAY-01/KST/confirmed_ms/UNKNOWN·RC2/legacy-lock·Server 생산·DB schema·Core/Content·#63/#72·다른 Worktree/공유 index는 변경하지 않는다. 아래 과거 미병합/수정 금지/검증/실패/승인 기록은 해당 시점 이력이다. 원본 검증은 내용 동일한 근거로만 재사용하며 새 HEAD의 승인으로 소급하지 않는다. 새 HEAD/시험 merge tree/CI는 PR66 본문과 `.local/pr66-sync-20261101/`에 기록한다. Approve/Draft 해제/Merge·실제 제품 수용은 수행하지 않는다. `MVP_FINAL_COMPLETE=false`.
 
 

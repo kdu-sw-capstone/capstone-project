@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { request } from "./api";
+import { ApiError, message, request } from "./api";
 import { selectSitePolicy } from "./sitePolicy";
 import { allPages, clockTime, dateTime, DateFields, Kpi, label, resultClass, resultLabel,blockingReasonLabel, seoulDay, SiteMark, targetName, useWork, type Access, type Page, type Session } from "./FocusShared";
 
@@ -9,7 +9,29 @@ export default function BehaviorRecords({initialHost,initialRange,initialSession
   const [repeat,setRepeat]=useState(false),[sessions,setSessions]=useState<Session[]>([]),[detail,setDetail]=useState<Access|null>(null),[applied,setApplied]=useState("");
   const [quality,setQuality]=useState<string>(""),[dateOpen,setDateOpen]=useState(false);
   const queryKey=JSON.stringify({from,to,host,sessionId,eventType}); const dirty=loaded&&queryKey!==applied;
-  async function load(next:string|null=null){const params=new URLSearchParams({...(from?{from_date:from}:{}),...(to?{to_date:to}:{}),...(host?{host}:{}),...(sessionId?{session_id:sessionId}:{}),...(eventType?{event_type:eventType}:{}),...(next?{cursor:next}:{})});const page=await request<Page<Access>>("/access-events?"+params);const stats=await request<{quality:string}>("/statistics/summary?"+new URLSearchParams({...(from?{from_date:from}:{}),...(to?{to_date:to}:{})}));if(!next)setSessions(await allPages<Session>("/sessions?"+new URLSearchParams({...(from?{from_date:from}:{}),...(to?{to_date:to}:{})})));setItems(old=>next?[...old,...page.items]:page.items);setCursor(page.next_cursor);setQuality(stats.quality);setApplied(queryKey);setLoaded(true);if(!next)setDetail(null);}
+  const [auxiliaryQuery,setAuxiliaryQuery]=useState<{from:string;to:string}|null>(null);
+  const [qualityPending,setQualityPending]=useState(false),[auxiliaryErrors,setAuxiliaryErrors]=useState({quality:"",sessions:""});
+  async function load(next:string|null=null){
+    const params=new URLSearchParams({...(from?{from_date:from}:{}),...(to?{to_date:to}:{}),...(host?{host}:{}),...(sessionId?{session_id:sessionId}:{}),...(eventType?{event_type:eventType}:{}),...(next?{cursor:next}:{})});
+    const page=await request<Page<Access>>("/access-events?"+params);
+    setItems(old=>next?[...old,...page.items]:page.items);setCursor(page.next_cursor);setApplied(queryKey);setLoaded(true);
+    if(!next){setDetail(null);setQuality("UNKNOWN");setQualityPending(true);setSessions([]);setAuxiliaryErrors({quality:"",sessions:""});setAuxiliaryQuery({from,to});}
+  }
+  useEffect(()=>{
+    if(!auxiliaryQuery)return;let disposed=false,authenticationExpired=false;const abort=new AbortController();
+    const range=new URLSearchParams({...(auxiliaryQuery.from?{from_date:auxiliaryQuery.from}:{}),...(auxiliaryQuery.to?{to_date:auxiliaryQuery.to}:{})});
+    function failed(field:"quality"|"sessions",error:unknown){
+      if(disposed||abort.signal.aborted)return;
+      setAuxiliaryErrors(old=>({...old,[field]:message(error)}));
+      if(error instanceof ApiError&&error.status===401&&!authenticationExpired){authenticationExpired=true;window.dispatchEvent(new Event("focurve:authentication-expired"));}
+    }
+    // Auxiliary reads never own the record list or its interaction lock.
+    void request<{quality:string}>("/statistics/summary?"+range,"GET",undefined,{signal:abort.signal})
+      .then(stats=>{if(!disposed)setQuality(stats.quality);}).catch(error=>failed("quality",error)).finally(()=>{if(!disposed)setQualityPending(false);});
+    void allPages<Session>("/sessions?"+range,abort.signal)
+      .then(rows=>{if(!disposed)setSessions(rows);}).catch(error=>failed("sessions",error));
+    return()=>{disposed=true;abort.abort();};
+  },[auxiliaryQuery]);
   useEffect(()=>{void work.run(()=>load());},[]);
   const visible=repeat?items.filter(i=>i.is_repeat):items;
   const counts=[items.length,items.filter(i=>i.event_type==="BLOCKED_SITE_ACCESS").length,items.filter(i=>i.event_type==="RECORDED_ACCESS").length,items.filter(i=>i.event_type==="BLOCKED_FEATURE_ACCESS").length];
@@ -21,6 +43,8 @@ export default function BehaviorRecords({initialHost,initialRange,initialSession
       <div className="search-line"><label>대상 도메인<input value={host} placeholder="사이트 도메인 검색 · 예: youtube.com" onChange={e=>setHost(e.target.value)}/></label><button className="primary" disabled={work.busy}>조회</button></div>
       <details className="filter-advanced"><summary>세션 ID로 직접 조회</summary><label>세션 ID<input value={sessionId} onChange={e=>setSessionId(e.target.value)}/></label></details>
     </form>
+    {auxiliaryErrors.quality&&<p role="alert">수집 상태를 확인하지 못했습니다: {auxiliaryErrors.quality} · 확인된 접근 기록은 유지합니다. 조회를 눌러 다시 확인하세요.</p>}
+    {auxiliaryErrors.sessions&&<p role="alert">세션 필터 목록을 확인하지 못했습니다: {auxiliaryErrors.sessions} · 현재 세션 ID와 접근 기록은 유지합니다. 조회를 눌러 다시 확인하세요.</p>}
     {dirty&&<p role="status">필터가 변경되었습니다. 조회를 눌러 새 조건을 적용하세요. 아래는 이전 조회 결과입니다.</p>}
     {work.busy&&<p role="status">기록을 확인하고 있습니다. 이전 결과와 입력을 유지합니다.</p>}{work.error&&<><p role="alert">{work.error}</p>{loaded&&<p>조회에 실패해 마지막 성공 결과를 유지합니다.</p>}</>}
     <div className="focus-kpis four">{["전체 접근","사이트 차단","허용하고 기록","내부 기능 제한"].map((title,i)=><Kpi key={title} title={title} value={!loaded?"—":`${counts[i]}회`} hint={["불러온 기록 · 세 유형의 합계","전체 차단 처리","접근을 허용하고 기록","YouTube Shorts"][i]}/>)}</div>
@@ -28,7 +52,7 @@ export default function BehaviorRecords({initialHost,initialRange,initialSession
       {loaded&&!visible.length&&<div className="empty-state"><h4>조회된 접근 기록이 없습니다.</h4><p>{repeat?"불러온 기록에 반복 접근이 없습니다. 이전 기록이나 다른 조건을 확인하세요.":"기간과 검색 조건을 확인하세요. 미수집 상태는 접근 없음과 다릅니다."}</p></div>}
       {cursor&&!dirty&&<button className="load-more" disabled={work.busy} onClick={()=>{void work.run(()=>load(cursor));}}>이전 기록 더 보기</button>}
     </section>
-    <p className="collection-status">선택 기간 전체 수집 상태: {label(quality)}. {quality==="PARTIAL"?"미수집·전송 대기 구간이 있어 0건을 접근 없음으로 확정할 수 없습니다.":quality==="NO_DATA"?"확인된 수집 자료가 없습니다. 확장 프로그램 연결·수집 상태를 확인하세요.":"늦게 도착한 기록은 실제 발생 시각에 반영됩니다."}</p>
+    {qualityPending?<p className="collection-status" role="status">선택 기간 전체 수집 상태를 확인 중입니다. 확인된 접근 기록과 별도로 조회합니다.</p>:<p className="collection-status">선택 기간 전체 수집 상태: {label(quality)}. {quality==="PARTIAL"?"미수집·전송 대기 구간이 있어 0건을 접근 없음으로 확정할 수 없습니다.":quality==="NO_DATA"?"확인된 수집 자료가 없습니다. 확장 프로그램 연결·수집 상태를 확인하세요.":"늦게 도착한 기록은 실제 발생 시각에 반영됩니다."}</p>}
 
   </section>;
 }
