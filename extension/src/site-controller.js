@@ -10,9 +10,11 @@ const timestamp = value => Number.isFinite(parseServerTime(value));
 // command payload alone. The reconciled flag is internal, not a Server wire.
 // journal.save resolves only when the durable transaction has committed.
 export class SiteController {
-  constructor({ dnr, tabs, journal, getContext, blockedPageUrl, now = Date.now,
+  constructor({ dnr, tabs, journal, getContext, getDnrContext = null, blockedPageUrl, now = Date.now,
+    dnrWriter = globalThis.FocurveMemberDnrWriter?.write,
+    dnrAuthorityState = () => globalThis.FocurveMemberAuth?.AuthStore.writeState(),
     wait = ms => new Promise(resolve => setTimeout(resolve, ms)) }) {
-    Object.assign(this, { dnr, tabs, journal, getContext, blockedPageUrl, now, wait });
+    Object.assign(this, { dnr, tabs, journal, getContext, getDnrContext, blockedPageUrl, now, wait, dnrWriter, dnrAuthorityState });
     this.queue = Promise.resolve();
   }
 
@@ -22,8 +24,8 @@ export class SiteController {
     return result;
   }
 
-  async guard(command, desired) {
-    const context = await this.getContext();
+  async guard(command, desired, provider = this.getContext) {
+    const context = await provider();
     if (!context || context.reconciled !== true) throw new Error('RECONCILE_REQUIRED');
     if (!UUID.test(command?.command_id) || !UUID.test(command.session_id)
       || !UUID.test(command.executor_id) || !Number.isSafeInteger(command.desired_revision)
@@ -65,9 +67,41 @@ export class SiteController {
 
   async removeOwned(entry) {
     await this.checkOwned(entry);
-    if (entry.rules.length) await this.dnr.updateSessionRules({ removeRuleIds: entry.rules.map(rule => rule.id) });
+    if (entry.rules.length) await this.writeOwned(entry, { removeRuleIds: entry.rules.map(rule => rule.id) });
     const actual = await this.dnr.getSessionRules();
     if (actual.some(rule => entry.rules.some(owned => owned.id === rule.id))) throw new Error('RELEASE_UNCONFIRMED');
+  }
+
+  async writeOwned(supplied, suppliedRequest, command = null, context = null) {
+    const entry = structuredClone(supplied), request = structuredClone(suppliedRequest);
+    const input = command && structuredClone(command), expectedContext = context && structuredClone(context);
+    // Source-only adapters keep their previous behavior. The shipped classic
+    // Worker installs the immutable gate before constructing execution loops.
+    if (typeof this.dnrWriter !== 'function') return this.dnr.updateSessionRules(request);
+    if (typeof this.journal.withFootprint !== 'function') throw new Error('JOURNAL_GUARD_UNAVAILABLE');
+    if ((request.addRules ?? []).some(rule => !entry.rules.some(owned => sameRule(owned, rule)))
+      || (request.removeRuleIds ?? []).some(id => !entry.rules.some(rule => rule.id === id))) throw new Error('JOURNAL_SCOPE_MISMATCH');
+    return this.dnrWriter(request, async send => {
+      const applying = !!request.addRules?.length;
+      const authority = applying ? this.dnrAuthorityState() : null;
+      if (applying) {
+        if (!authority || authority.pending !== false) throw new Error('DNR_AUTHORITY_UNAVAILABLE');
+        if (typeof this.getDnrContext !== 'function') throw new Error('LOCAL_DNR_CONTEXT_UNAVAILABLE');
+        // The ordinary Server/auth check happened before queuing. This provider
+        // must only read local auth/current command: never nest Auth.serial/HTTP
+        // inside the shared DNR lock (Guest START may already hold Auth.serial).
+        const fresh = await this.guard(input, 'APPLIED', this.getDnrContext);
+        if (fresh.command_id !== input.command_id) throw new Error('STALE_COMMAND');
+        if (fresh.owner_key !== expectedContext?.owner_key) throw new Error('OWNER_CHANGED');
+      }
+      const actual = await this.checkOwned(entry);
+      if (applying && actual.some(rule => request.addRules.some(r => r.id === rule.id))) throw new Error('RULE_OWNERSHIP_CONFLICT');
+      return this.journal.withFootprint(entry, () => {
+        if (applying && (authority !== this.dnrAuthorityState() || authority.pending !== false)) throw new Error('OWNER_CHANGED');
+        if (applying && parseServerTime(input.execute_before) <= this.now()) throw new Error('APPLY_EXPIRED_OR_INVALID');
+        return send();
+      }, { applying });
+    });
   }
 
   async divert(command, context, sites) {
@@ -124,13 +158,14 @@ export class SiteController {
         if (!result.isSupported) throw new Error('RULE_UNSUPPORTED');
       }
       await this.recheck(input, context, 'APPLIED');
-      await this.journal.save(entry);
+      await this.journal.save(entry, { expected: null });
+      const pendingEntry = structuredClone(entry);
       try {
         await this.recheck(input, context, 'APPLIED');
         // Re-read before adding: ID ownership can change across an await.
         const actual = await this.dnr.getSessionRules();
         if (actual.some(rule => rules.some(candidate => candidate.id === rule.id))) throw new Error('RULE_OWNERSHIP_CONFLICT');
-        if (rules.length) await this.dnr.updateSessionRules({ addRules: rules });
+        if (rules.length) await this.writeOwned(entry, { addRules: rules }, input, context);
         const after = await this.dnr.getSessionRules();
         if (!rules.every(rule => after.some(item => sameRule(item, rule)))) throw new Error('APPLY_UNCONFIRMED');
         await this.divert(input, context, input.snapshot.sites);
@@ -139,18 +174,18 @@ export class SiteController {
         const appliedMs = this.now();
         entry.applied_at = new Date(appliedMs).toISOString();
         entry.planned_end_at = new Date(appliedMs + entry.duration_minutes * 60000).toISOString();
-        await this.journal.save(entry);
+        await this.journal.save(entry, { expected: pendingEntry });
         return { observed: 'APPLIED', duplicate: false };
       } catch (error) {
         entry.desired = 'RELEASED'; entry.observed = 'UNCONFIRMED'; entry.action_seq++;
         try {
           await this.removeOwned(entry);
           entry.observed = 'RELEASED';
-          await this.journal.save(entry);
+          await this.journal.save(entry, { expected: pendingEntry });
         } catch {
           entry.observed = 'UNCONFIRMED';
           // If storage also fails, the original pre-apply journal still exists.
-          try { await this.journal.save(entry); } catch { /* report failure below */ }
+          try { await this.journal.save(entry, { expected: pendingEntry }); } catch { /* report failure below */ }
           throw new Error('ROLLBACK_UNCONFIRMED', { cause: error });
         }
         throw error;
@@ -165,13 +200,15 @@ export class SiteController {
       const entry = await this.journal.load(context.owner_key, input.session_id);
       if (!entry || entry.owner_key !== context.owner_key || entry.executor_id !== context.executor_id
         || entry.session_id !== input.session_id || entry.revision > input.desired_revision) throw new Error('JOURNAL_SCOPE_MISMATCH');
+      const previous = structuredClone(entry);
       entry.desired = 'RELEASED'; entry.observed = 'UNCONFIRMED';
       entry.revision = input.desired_revision; entry.action_seq++;
-      await this.journal.save(entry);
+      await this.journal.save(entry, { expected: previous });
+      const pendingEntry = structuredClone(entry);
       await this.recheck(input, context, 'RELEASED');
       await this.removeOwned(entry);
       entry.observed = 'RELEASED';
-      await this.journal.save(entry);
+      await this.journal.save(entry, { expected: pendingEntry });
       return { observed: 'RELEASED' };
     });
   }

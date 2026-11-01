@@ -1,5 +1,18 @@
 # AMVP-CORE-04 — Core DNR 소유권·복원
 
+## 2026-11-01 SiteController DNR guard 착수
+
+- 담당 윤종민, `feature/additional-mvp-site-controller-dnr`, 시작 `10ab6026f1cf7d244a75ee529830afb8bcf6b8c8`. PR59/68은 OPEN/리뷰 대기로 보존하고 독립 worktree에서 병합55 gate에만 의존한다.
+- 기존 계획의 SiteController add/remove/rollback·MemberExecutionLoop cleanup을 공통 gate/영속 footprint 검증에 연결한다. MemberJournalStore에 내부 CAS 저장·readonly footprint callback을 추가하며 DB version/schema/공용 계약은 바꾸지 않는다. auth 토큰·현재 명령/owner·기한을 마지막 dispatch에 결속한다.
+- Scope는 기존 source와 생성 classic Member bundle·시험/CI/기록이다. A1/Member Core·Content/Server·미병합59/68 source·신규 공유 정책/전체 writer coverage 활성화는 제외한다. 상태: 구현·검증 진행 중.
+
+### SiteController 단위 구현·검증 종료
+
+- add/remove/rollback/loop cleanup에 기존55 gate와 readonly 영속 footprint 검증을 연결했다. 신규 add는 auth token·현재 로컬 owner/private command/기한을 final snapshot에 결속한다. 기존 Server 검사는 유지하며 잠금 안에서는 auth.load만 사용해 Auth.serial/HTTP 중첩을 피한다.
+- MemberJournalStore 내부 CAS로 초기 생성·APPLIED·rollback·RELEASE pending/final의 원래 journal을 확인하고, 늦은 old actor가 새 operation을 덮지 못하게 한다. 저장 schema/DB version/공용 Wire·기존 control namespace 의미는 불변이다. 기존 생성기에서 classic Member bundle만 재생성했다.
+- 신규23/23·DNR101/101·기존 SiteController/loop/runtime69/69·전체887/887·계약6/6 PASS(fail/skip0). Chromium151 실제 IDB/Web Lock CAS 보존1/1·bundle 일치·syntax/diff PASS. 집합 중복 합산 금지. 인증 큐 보유 중 생성 Member APPLY 완료, native/저장 실패 cleanup, invalid Snapshot RELEASE 등 포함. 실제 DNR/Server 권한/Content는 모의이며 제품 수용은 미검증이다.
+- 구현·로컬 검증 완료, 별도 PR/최신 CI·담당 리뷰 필요. [SiteController 설명](../evidence/AMVP-CORE-04-site-controller-dnr.md). PR59/68/다른 worktree 보존. 통합 coverage·issued binding/SITE_TIME/Report·제품 수용은 후속이며 전체 guard/정책을 활성화하지 않았다.
+
 ## 2026-10-31 PR55 P2 수정·재리뷰 준비
 
 - 시작 `b11dcc582de625152039ad42d3baabe5dc5f52dc`, 같은 `feature/additional-mvp-legacy-dnr-fence`/PR55에서 독립 리뷰 `5722433929`의 current owner 반례만 수정한다. 기존 로컬 변경 없음과 원격 HEAD 일치를 확인했다.
