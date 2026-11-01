@@ -104,3 +104,11 @@
 - **미완료/다음:** 실제 collector/clock/day·한도 집행·예약/CADENCE actor·Content 효과/복원은 기존 producer/공동 계약 대기다. 11월11일의 독립 시연 후보는 격리 자료를 이용한 목록 조회·보조503/대기·필터 보존·명시 재조회·UNKNOWN 처리이며 실제 측정/차단/END/복원 성공 시연이 아니다. 실제 제품 수용 NOT_RUN, `MVP_FINAL_COMPLETE=false`.
 
 > LOG-01 원격 영향 확인: 후보 **23721d9181b2198456ba545cc9ac19aaad91806a**의 CI에서 `MemberApp.test.tsx:418`이 기록 행 표시 직후 보조 PARTIAL 문구까지 동기적으로 있다고 가정해 **392 PASS/1 FAIL**했다. 주/보조 읽기 분리의 직접 영향이다. assertion을 삭제/완화하지 않고 `findByText`로 실제 보조 응답 후 동일 문구를 검증하도록 최소 수정한다. 최초 [실패 원본](https://github.com/kdu-sw-capstone/capstone-project/actions/runs/41280253536/job/124770557986)을 보존하고 조건 변화 없는 재실행은 하지 않는다. 수정 후 담당 전체 MemberApp22와 기록18을 다시 확인하며 최종 HEAD/CI/숫자는 PR74 본문과 ignored result를 따른다.
+
+
+## PR74 P2 · 폐기된 주 목록 응답/401 수명 격리 — 2026-11-01
+
+- 리뷰 [5726831315](https://github.com/kdu-sw-capstone/capstone-project/pull/74#pullrequestreview-5726831315), 기존172012c 대상. 리뷰어 원본5를 현재 소스에서 재현해 **4 PASS/1 FAIL**(폐기 주 GET401→B 인증 만료)을 확인했다. 원본 review log/test는 `.local/pr74-primary-fix-20261101/`에 복사 보존하고 리뷰어 Worktree는 수정하지 않았다.
+- 주 목록 `load`의 초기/명시 재조회/커서를 요청 generation·AbortController에 결속했다. 언마운트 시 무효화/취소하고 성공 및 catch 양쪽에서 폐기 응답을 소비한다. 현재 오류·401은 기존 useWork로 전달하며 마지막 성공 목록 보존은 그대로다. StrictMode의 폐기 setup에서 초기 읽기를 시작하지 않는다. api.ts/FocusShared/인증 계약을 바꾸지 않는다.
+- 기존 독립 리뷰5를 재사용하고 재조회/커서의 구401·구성공/취소·StrictMode4를 추가해 **9 PASS**. 기존 부분 조회/상세/사유/MemberApp 포함 직접 영향 **49 PASS**, TypeScript/Vite PASS. 합성 SDK/UI 검증이며 실제 제품 수용이 아니다. 최초5의 실패,49의 원본 로그/build·수정 파일 SHA는 로컬 result에 보존한다. 기존 Server/DB/계약의 유효 검증은 변경 없어 재사용한다.
+- #72 병합 통합 **79409240e65ec6b92fa12f3422c3e67bea0308f0**를 문서 병합 Commit으로 먼저 반영하고 양측 전체 카드 원문을 순서 보존했다. P2 코드는 별도 Commit으로 추적한다. 그 외 incoming 제품/시험/계약은 그대로이며 Core·Content·#75·다른 Worktree/index·공유 staged 삭제1,036개 변경 없음. 새 HEAD/CI/후보 tree는 PR74 본문/result, 최신 Core/독립 재리뷰는 별도 대기다. Approve/Draft 해제/Merge 없음. 실제 제품 수용 NOT_RUN, MVP_FINAL_COMPLETE=false.

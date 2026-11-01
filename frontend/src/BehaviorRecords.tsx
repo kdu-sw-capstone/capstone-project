@@ -12,11 +12,17 @@ export default function BehaviorRecords({initialHost,initialRange,initialSession
   const [auxiliaryQuery,setAuxiliaryQuery]=useState<{from:string;to:string}|null>(null);
   const auxiliaryOwner=useRef<typeof auxiliaryQuery>(null);
   const [qualityPending,setQualityPending]=useState(false),[auxiliaryErrors,setAuxiliaryErrors]=useState({quality:"",sessions:""});
+  const primaryGeneration=useRef(0),primaryAbort=useRef<AbortController|null>(null);
   async function load(next:string|null=null){
+    const generation=++primaryGeneration.current,abort=new AbortController();primaryAbort.current?.abort();primaryAbort.current=abort;
+    const current=()=>generation===primaryGeneration.current&&!abort.signal.aborted;
     const params=new URLSearchParams({...(from?{from_date:from}:{}),...(to?{to_date:to}:{}),...(host?{host}:{}),...(sessionId?{session_id:sessionId}:{}),...(eventType?{event_type:eventType}:{}),...(next?{cursor:next}:{})});
-    const page=await request<Page<Access>>("/access-events?"+params);
-    setItems(old=>next?[...old,...page.items]:page.items);setCursor(page.next_cursor);setApplied(queryKey);setLoaded(true);
-    if(!next){setDetail(null);setQuality("UNKNOWN");setQualityPending(true);setSessions([]);setAuxiliaryErrors({quality:"",sessions:""});const query={from,to};auxiliaryOwner.current=query;setAuxiliaryQuery(query);}
+    try{
+      const page=await request<Page<Access>>("/access-events?"+params,"GET",undefined,{signal:abort.signal});
+      if(!current())return;
+      setItems(old=>next?[...old,...page.items]:page.items);setCursor(page.next_cursor);setApplied(queryKey);setLoaded(true);
+      if(!next){setDetail(null);setQuality("UNKNOWN");setQualityPending(true);setSessions([]);setAuxiliaryErrors({quality:"",sessions:""});const query={from,to};auxiliaryOwner.current=query;setAuxiliaryQuery(query);}
+    }catch(error){if(!current())return;throw error;}finally{if(primaryAbort.current===abort)primaryAbort.current=null;}
   }
   useEffect(()=>{
     if(!auxiliaryQuery)return;let disposed=false,authenticationExpired=false;const abort=new AbortController();
@@ -35,7 +41,11 @@ export default function BehaviorRecords({initialHost,initialRange,initialSession
       .then(rows=>{if(current())setSessions(rows);}).catch(error=>failed("sessions",error));
     return()=>{disposed=true;abort.abort();};
   },[auxiliaryQuery]);
-  useEffect(()=>{void work.run(()=>load());},[]);
+  useEffect(()=>{
+    let disposed=false;
+    void Promise.resolve().then(()=>{if(!disposed)void work.run(()=>load());});
+    return()=>{disposed=true;++primaryGeneration.current;primaryAbort.current?.abort();};
+  },[]);
   const visible=repeat?items.filter(i=>i.is_repeat):items;
   const counts=[items.length,items.filter(i=>i.event_type==="BLOCKED_SITE_ACCESS").length,items.filter(i=>i.event_type==="RECORDED_ACCESS").length,items.filter(i=>i.event_type==="BLOCKED_FEATURE_ACCESS").length];
   if(detail)return <RecordDetail event={detail} back={()=>{setDetail(null);work.setError("");}} settings={settings}/>;
