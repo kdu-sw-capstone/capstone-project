@@ -1,11 +1,43 @@
 # 추가 MVP · 정책 발행·이용시간 수신 경계
 
+> 2026-11-01 PR69 리뷰 보완·통합 동기화: 독립 리뷰의 폐기 GET401 전역 인증 만료 P2를 초기 load/PUT412 후속 GET 양쪽에서 재현·수정했다. 폐기2 FAIL·현재401 대조군2 PASS → 관련33 PASS. 원래 오류 수명 경계만 보완했으며 api.ts/인증/useWork 계약은 유지한다. PR62 병합 **624c99c7846f514b683ecaaa2eac8deb48ec72f4**를 반영하면서 아래 양측 기록 전체와 Note 제품/시험 및 SESSION-06 카드 blob을 보존한다. 과거 리뷰/승인을 새 HEAD로 소급하지 않는다. #66은 기존 수정 금지 범위로 남겨 HEAD를 변경하지 않는다. 새 HEAD/CI는 PR69 본문과 `.local/pr69-review-fix-20261101/`에 기록한다.
+
 ## 후속 SESSION-06 화면 이동·입력 보존 — 2026-11-01
 
 - 통합 **10ab6026f1cf7d244a75ee529830afb8bcf6b8c8**에서 `fix/additional-mvp-note-session-scope`로 독립 개발했다. 앞선 설정 충돌 PR67 **8f0ccf752d322a11f23cd9e6f084a0c1608bf2b4**는 원격 CI8/8 workflow·16/16 job SUCCESS, Web336/336과 bridge MySQL15/기존 config 계약6 PASS를 확보했고 HEAD/파일/리뷰를 변경하지 않는다. #62/#63/#66도 보존한다. 이 후속은 PR67을 포함하거나 의존하지 않는다.
 - A~J 기능별 구현/미통합/실제 producer/공동 결정 분류는 PR67 작업카드 변경에 정리했다. 그 기록을 다시 쓰지 않고 다음 독립 결함인 SESSION-06을 기존 UI·Note API로 수정했다. 이전 세션의 대기 GET과 `useWork` lock이 새 세션 조회를 막고 늦은 이전 응답을 표시하는 반례 및 조회 중 입력을 덮는 반례2 FAIL → 최종 PASS. 세션별 수명/응답 세대를 결속하고 이전 PUT·412·부모 draft callback을 폐기한다. 현재 편집의 저장 여부와 서버 ACK 스냅샷도 구분한다. 중간 StrictMode 초안 실패는 게시 전 차단·수정했다.
 - 신규7 + 기존 FocusScreens18/CADENCE4 = **29 PASS**, 타입/Vite·추가 시험 타입 검사 PASS. 모의 HTTP/JS DOM이며 실제 제품 수용이 아니다. Server/DB/Note API·RC2/legacy-lock·owner/Receipt/Core/Content/Shorts/의존성 변경 없음. 상세 원문/경계는 기존 [SESSION-06](SESSION-06.md) 카드, 로컬 `.local/note-scope-20261101/`, 새 HEAD/원격 CI는 PR 본문/result를 따른다. 불필요한 DB/설치/전체 로컬 회귀는 반복하지 않는다.
 - 다음 경계: 실제 host/과거 version 기간 DTO, ONCE actor 매핑·CADENCE 단계·USG-02 hash는 공동 결정/제공물 대기다. 공개 Core e903aff/Content a6468b6·통합10ab602에서 새로운 승인된 RuntimeReport/capability/effect/release/collector/clock 제공물은 확인되지 않았다. TimeRule UTC 정밀도는 기존 PR60을 재구현하지 않는다. AI 저장 schema/동의/provider는 승인 없이 도입하지 않는다. 새 독립 결함이 확인되기 전 의미 없는 조회 화면·PR을 추가하지 않는다. 실제 Core/Content/Chrome/Native·정상 END/복원/재기동 NOT_RUN, `MVP_FINAL_COMPLETE=false`.
+
+> 2026-11-01 PR62 통합 동기화: PR52가 병합된 **10ab6026f1cf7d244a75ee529830afb8bcf6b8c8**을 기존 PR62에 이력 보존 merge로 반영한다. 아래 #49~#52 및 #62의 기준 SHA·Draft/미병합·시험 수치는 각 개발 당시 기록이며 현재 상태나 실제 제품 수용 완료를 뜻하지 않는다. 수동 충돌 해결은 이 작업카드 1파일이다. #62 제품1·시험2파일은 원래 **8ceaf5c2f37a6e9823f5e587d0b2d129fb8f26fd**의 blob을 유지하고 #63·Content·다른 Worktree는 변경하지 않는다.
+
+- 통합 영향 검증: Statistics/AdditionalSettings/DailyUsagePanel/RuntimeDeliveryPanel/Settings/SiteTimeStatus/SDK 7파일 **48 PASS**、TypeScript/Vite build PASS。Web은 jsdom/모의 HTTP이며 제품 수용이 아니다. 기존 #62 제품1·시험2 blob 동일성과 나머지 경로의 incoming 통합본 동일성을 확인했다. 변경 없는 Server 생산·계약·DB schema/의존성에 근거해 기존 격리 MySQL24 결과를 재사용하고 서비스/DB·전체 회귀를 불필요하게 재기동하지 않는다. 로컬 근거 `.local/pr62-sync-20261101/`, 새 HEAD의 원격 CI는 PR62 본문/로컬 result에 기록한다.
+- 과거 독립 리뷰3/3·승인은 내용이 동일한 영역의 근거로만 재사용하며 새 SHA 승인으로 소급하지 않는다. 기존 Core4파일 legacy-lock FAIL과 실제 producer BLOCKED 조건을 보존한다. 실제 Core/Content/Chrome/Native 수용 NOT_RUN, `MVP_FINAL_COMPLETE=false`. Approve·Draft 해제·PR Merge는 하지 않는다.
+
+## 야간 후속 실질 재점검 · Statistics 조회 근거 거절 — 2026-11-01
+
+- 담당 김다훈 Web·Server·DB·UI, 기존 Worktree 재사용. 브랜치 `fix/additional-mvp-statistics-provenance`, 기준 integration **24327d1bd8615a2274a6dead43f23b71cc06b64e**. PR51 HEAD11f50b7984f045bae2c95dee4d3c1609c3053467·PR52 HEADc2aa82f7319286db643550230abb5bcf6a08c9d2는 실제 Draft·미병합이므로 #52의 선행 반영을 하지 않았다. 기존 UTC 수정 PR60 HEAD59395aaf571a10106d6b7cb77b9c0fbcb569d0ea도 보존했고 이 후속은 #51/#52/#60에 의존하지 않는다. 새 Worktree/설치/producer/예약은 만들지 않았다.
+- 확인된 독립 결함: 기존 `BrowserUsageStatistics.parseUsage`는 RC2 Statistics의 필수 `as_of`를 확인하지 않았다. 시각 누락/숫자/null/잘못된 날짜/UTC 밀리초 형식 불일치 응답도 확정량과 함께 표시됐다. **신규9 반례 수정 전 FAIL(기존3 PASS) → 수정 후 PASS**. 기존 응답 소비자에서 유효한 UTC 밀리초 형식과 실제 날짜의 round-trip을 확인한다. 이전 결과를 지우고 오류를 표시하며, 유효한 명시적 GET 재조회에서만 결과를 다시 표시한다. 새 API·조회 화면·시계/효과 authority·가짜 producer는 없다.
+- 기준 문서: RC2 `contracts/additional-mvp/rc1/schema.json#/$defs/Statistics`(as_of 필수·UTC), `docs/design/additional-mvp-contracts/05_Content_Event_UI.md`(quality/as_of·미확인0 금지), 기존 STA-01과 `BrowserUsageStatistics`/`AdditionalUsageStatistics`/`AdditionalStatisticsApi`를 재사용한다. 이 UI 검사는 응답 형식 확인일 뿐 실제 clock 신뢰·수집 완료 증거를 부여하지 않는다.
+- 새 검증: BrowserUsageStatistics12 + AdditionalSettings5 + DailyUsagePanel8 + RuntimeDeliveryPanel5 = **30 PASS**, TypeScript/Vite build PASS. Web은 jsdom/모의 SDK이다. 기존 Server `AdditionalConfigMysqlTest`16 + ConfigContract6 + 신규 StatisticsContract2 = **24 PASS**, 실패/오류/스킵0. fresh MySQL8.4.8 port33417 / `.local/amvp-mysql-1a46563ec09b` 정상 종료. 기존 인증/소유권/통계·격리/중복·재시작/HTTP 시험을 재사용 실행했으며 이번 UI와 결합된 실제 Chrome/TCP 전체 시연은 아니다. admission/usage fixture는 합성이며 생산 capability를 발급하지 않는다. 로그 `.local/statistics-provenance-20261101/` 및 해당 fresh DB tests.log. Server 생산·RC2/api.ts/legacy-lock·DB schema·Core/Content/Shorts·의존성은 기준과 동일하게 보존한다.
+
+### 확정 기능별 실제 남은 범위 — 파일 존재/초기 작업카드의 미착수 문구만으로 판정하지 않음
+
+| 기능 | 실제 코드/현재 상태 | 재개 경계 |
+|---|---|---|
+| SITE_TIME 저장·조회·version·삭제/해제 상태 | `AdditionalConfigStore`, `AmvpPolicyPublisher`, `AmvpDeletedPolicyRelease`, `AmvpOperationApi`, `AdditionalSettings`/삭제 패널: 구현·자동/격리 검증. #51 단일 정책 상태 화면은 미병합 | 제품 config-api flag와 실제 CapabilitySource/issued binding·effect/release verifier 없이 제품 CRUD·효과 시연 BLOCKED. 접수/PENDING을 해제로 바꾸지 않음 |
+| 이용시간·일일 한도·과거 삭제 정책 | `AmvpUsageReceiver`, `AmvpRegisteredClockProof`, `AmvpDailyUsage`, `AdditionalUsageStatistics`, DailyUsagePanel: 수신/격리/집계/조회 구현·검증 | Core collector·신뢰 anchor·ClockedUsageSegment/day allocation/day-carry·한도 집행 필요. 확인된 양/미확인·quota·실제 집행을 분리 |
+| 예약 WEEKLY/occurrence·과거 버전 | `AmvpScheduleBridge/Api`, ScheduleExecutionPanel: 설정과 기존 actor/Receipt 수신·고정 종료 조회 경계 구현·검증 | 실제 Core actor/claim·효과/복원 proof 공급 필요. ONCE actor 매핑은 공동 결정 대기이며 SITE_TIME의 ONCE 시간창 저장과 다름 |
+| CADENCE·PAUSE/RESUME | `AmvpCadenceControl/Admission/Api`, useCadenceControl/CadenceSettingsSummary: 설정·frozen Snapshot/Attachment·상태 경계 구현·검증 | 실제 Authority/CADENCE producer·정당한 END/복원 필요. 휴식 단계/주기 표현 공동 결정 대기. PAUSED를 휴식으로 추정하지 않음 |
+| YouTube10/Instagram6·keyword/adult/blur 설정 | AdditionalSettings/HostScopeEditor·기존 ContentConfig 계약에 저장/조회 구현·검증 | Core·Content 기능별 실제 producer/issued scope·artifact/model·효과/복원 공급 대기. 16 설정 저장이 16 효과 완료는 아님 |
+| 과거 접근·반복·기본 통계·메모 | 기존 MemberReadModel/MemberMetrics/MemberSessionNotes·MemberApp/SessionNote 구현 재사용. 추가 브라우저 총량 STA-01도 구현됨 | 새 AMVP event issuer·실제 collector 자료가 필요. 기존 회원 기본 통계 성공을 추가 측정/기능 전체 수용으로 확대하지 않음 |
+| 시간대별 패턴·확장 분석(OPTION-08) | **Web·Server 실제 미구현**: MemberApp의 AccessPattern은 안내 문구, `/statistics/hourly`/`statistics/usage` 생산 controller 없음 | API-STAT-03의 '24개 Metrics'와 기존 잠금 MemberMetrics/MemberReadApi 경계, KST/원장 시간대·구간 coverage·미수집 시간대 null의 구체 형상을 통합/설계 담당과 확인 후 별도 구현. 기존 STA-01 총량/DAY-01로 대체 완료 처리 금지 |
+| AI 피드백/동의(OPTION-12) | **Web·Server 실제 미구현**: `/analysis-jobs`, `/analysis-consent` 생산 경로·analysis_jobs/results/consents migration/화면 없음 | 기존 API-AI-01~04·AnalysisJob 상세 설계는 있으나 현재 DB schema 보존 범위 밖의 저장 도입과 동의/provider·입력집계/보존 경계 확정 필요. 원문 URL 내보내기·provider·가짜 성공/결과를 임의 추가하지 않음 |
+| RuntimeReport/Receipt·실제 효과·삭제/복원 | AmvpReportReceiver/Api·RuntimeDeliveryPanel·DeletedConfigReleasePanel 구현·검증, 저장 접수/실제 효과 분리 | Core53 국소 snapshot 및 Content58/61 local_only 관찰을 APPLIED/RELEASED로 승격하지 않음. Core issued provenance/원본 증거 조회·전송 필요 |
+| 로딩·실패·UNKNOWN·재진입 | 기존 #35/#37/#41/#49/#50 구현·검증, #52 Settings 구분은 미병합. 이번 수정은 별도 Statistics 응답 근거 결함 | 실제 Chrome 시각/키보드·Core/Native END/복원·재기동 수용은 NOT_RUN. #51 병합 확인 때만 #52 동기화 |
+
+- **다음 우선순위:** 검증된 독립 결함 수정의 리뷰/통합, #51 이후 #52 동기화. 별도 기능 작업은 시간대별 분석의 기존 Metrics/날짜/coverage 경계와 AI의 schema/동의/provider 경계를 확인한 뒤 착수한다. 실제 SITE_TIME adapter는 Core의 발행 capability/원본 effect·release 증거/clock/day 제공물을 받아 기존 Server 인터페이스에 결속한다. 미제공 정보를 만들거나 기능을 다시 구현하지 않는다.
+- **11월11일 시연 판정:** 설정·조회·오류/UNKNOWN·과거 데이터 표시 흐름은 자동/격리 검증 범위에서 준비됐다. 실제 제품은 admission/capability 및 producer·별도 실제 수용 없이는 설정 저장부터 BLOCKED일 수 있다. 한도 집행/예약/CADENCE/Content 효과·정상 END/복원·재기동·확장 분석·AI 시연 완료는 선언할 수 없다. Core 잠금4파일의 기준 legacy-lock FAIL은 이번 수정과 독립적으로 보존하며 hash 갱신으로 통과시키지 않는다. 실제 Core/Content/Chrome/Native 수용 NOT_RUN, `MVP_FINAL_COMPLETE=false`.
 
 > 2026-11-01 PR52 통합 동기화: PR51 병합 Commit **c44c87215fddee49114151aaf22caa8b3a679b21**을 기존 PR52에 이력 보존 merge로 반영한다. 아래 PR49~52의 Draft/미병합/검증 수치는 각 개발 당시 기록이며 현재 병합 상태·제품 수용 완료를 뜻하지 않는다. 수동 충돌 해결은 이 작업카드 1파일이고 Settings 제품·시험은 원래 PR52 blob을 유지한다. #62/#63·Content PR·다른 Worktree는 변경하지 않는다.
 
