@@ -1,5 +1,17 @@
 # 추가 MVP · 정책 발행·이용시간 수신 경계
 
+> PR73 동기화 — 2026-11-01: PR72/74 병합 후 실제 통합 **d386f170f79368907b2f5263a299c3e0d7c65ce8**를 기존b0b44a5에 이력 보존 merge한다. 수동 충돌은 이 카드1파일이며 양측 전체 원문을 순서 보존했다. SiteTimeStatus/SDK 제품2 및 시험3의 기존 blob과 계약/DB 의미는 그대로다. 과거 Draft/검증/실패/승인은 당시 기록이며 새 HEAD에 소급하지 않는다. #72/#74/#71/#75 및 타 Worktree/index는 변경하지 않는다. 새 CI/후보 tree는 PR73 본문 및 `.local/pr73-sync-20261101/`. 실제 제품 수용 NOT_RUN, MVP_FINAL_COMPLETE=false.
+
+
+
+## 후속 SITE_TIME 현재 선택 버전·조회 결과 결속 — 2026-11-01
+
+- 김다훈 Web, 기존 관리형 Worktree `site-usage-period-20261101` 재사용, 브랜치 `fix/additional-mvp-site-time-status-version`, 시작 통합 **4e6ff6ced95b96f362f2fbf088aa192e17278529**. 선행 PR66은 **8a94211d1f86bec93fff96768db96484c0973cb8**로 공유 작업카드 충돌만 해결·Push했다. 양측 전체 원문/기간 제품·시험6 blob 유지, 관련35·타입/빌드·원격8/8 workflow16/16 jobs PASS, Web380/380, 시험 merge **32d9c6bb98fce3629a425da6d39f288dace3f6c1**와 HEAD tree **d3ea0ee0530e898b072fec2b4db630504029e703** 동일, 충돌 없음·Draft/승인 대기다. 새 HEAD 승인으로 구 리뷰를 소급하지 않는다. 상세 `.local/pr66-sync-20261101/` 및 PR66 본문. 이 후속은 미병합 #66/#63/#72를 포함하거나 수정하지 않으며 의존하지 않는다.
+- **독립 반례:** 현재 화면은 설정 version3을 이미 알고 있는데 새 CFG02 조회가 version2로 일관되게 응답하면, 기존 before/DAY01/after 일치 검사만으로 구 APPLIED·해제 projection과 사용량을 표시했다. 실제 SDK/CFG02/DAY01 parser를 사용하는 모의 HTTP UI 시험에서 **구 APPLIED/구 해제/재조회 경계3 FAIL + 더 최신 버전 허용 대조군1 PASS → 수정 후4 PASS**. 실제 Chrome 사건이나 Server가 구 응답을 만들었다는 증거로 확대하지 않는다.
+- **최소 구현:** `SiteTimeStatus`가 선택 시 이미 확인된 configurationVersion을 기존 Web 내부 `siteTimeStatus` 읽기 함수의 하한으로 전달한다. 양의 safe version을 확인하고 첫 CFG02가 하한 미만이면 DAY01 추가 조회/성공 상태 표시 전에 거절한다. 더 최신 버전은 기존 before/after 안정성 검사를 통과한 경우 허용한다. 오류 뒤 사용자가 명시 재조회하며 적용·해제/현재 잔여와 과거 사용량을 분리한다. HTTP URL·요청/응답 필드·인증·Server/DB·공통 계약을 변경하지 않는다. default 하한1로 기존 독립 SDK 호출도 유지한다.
+- **검증:** 신규 UI4/SDK 입력 경계1 및 기존 상태/SDK/RuntimeDelivery/삭제·해제/일일Panel 포함 **38 PASS**, TypeScript/Vite build PASS. 기존 parent 선택 시험은 현재 선택 버전의 내부 인수 전달을 검증하도록 갱신했다. 초기 parent mock의 4인수 기대 불일치는 수정·원본 로그 보존. 모의 HTTP/jsdom이며 TCP/DB나 실제 producer 수용이 아니다. 변경 없는 Server·DB schema·계약·의존성의 기존 유효 검증은 재사용하고 실제 DB/서비스를 새로 기동하지 않는다. 로컬 `.local/site-time-status-version-20261101/` before/final/build/result, 최종 게시 HEAD/CI는 PR 본문에 기록한다.
+- **남은 경계:** A~J의 저장/조회/Receipt 구현을 다시 만들지 않았다. 실제 capability/effect/release/collector/trusted clock/day allocation과 ONCE actor 매핑/CADENCE 단계/USG-02 hash는 기존 producer·공동 결정 대기다. PR60 UTC 수정·#63 시간대/#66 기간/#72 집중 요약을 재작성하지 않는다. 11월11일 반영 가능한 새 범위는 검증 환경에서의 구 버전 응답 거절·명시 재조회·실제 적용과 과거량의 분리 표시이며 실제 측정/차단 시연 완료가 아니다.
+- #63/#72·병합 완료 PR·다른 Worktree/공유 index staged 삭제1,036개·Core/Content/Shorts·RC2/legacy-lock·DB schema/원장/Receipt 의미 보존. Approve/Draft 해제/Merge 없음. 실제 Core·Content·Chrome·Native·Server 제품 수용 **NOT_RUN**, `MVP_FINAL_COMPLETE=false`. 다음 독립 검토는 선택한 버전 하한, 구 적용/해제 표시 거절, 동일/새 버전 허용 및 기존 UNKNOWN/오류/재조회 보존이다.
 
 ## PR74 독립 리뷰 P2 대응 — 2026-11-01
 
@@ -43,6 +55,7 @@
 - 로컬 원본 `.local/site-usage-period-20261101/`. 첫 MySQL은 Windows 실행기의 한글/공백 datadir 인수 해석 실패로 시험 시작 전에 종료됐다. 실패 `.local/amvp-mysql-5a6ef5a2682e`를 보존하고 관리형 Worktree 부모의 영문 `verify` 경로에서 동일 소스를 가리키는 junction으로 재실행했다. 시험 DB **529faa3912af**, port33419, datadir/PID 확인 후 정상 종료. 기존 설치 DB/SMTP/Native는 사용하지 않았다. 계약 Python 시험은 현 Python의 jsonschema 부재로 수집 전 중단되어 PASS로 집계하지 않는다. 계약·legacy-lock/API·Server 생산·의존성 blob 동일성과 위 Server 계약 검증을 재사용하며 기준 Core4파일 legacy-lock FAIL을 유지한다. 초기 신규 시험의 mock hook 반환/Windows 대소문자 모듈 경로 문제도 수정 후 재검증했으며 최초 로그를 보존한다.
 - **명시적 PARTIAL/BLOCKED:** 실제 방문 호스트(actual_host/target_key)별 범위·사이트 등록 ID·과거 policy_version·matched_policy_host를 반환하는 기간 DTO는 DAY-01에 없다. 정책 호스트를 실제 방문 호스트로 바꾸거나 서로 겹치는 정책·설치 합계를 전체 이용시간으로 만들지 않는다. 해당 분리 조회와 비KST 날짜의 KST 구간 재배분/시간대 변경은 승인된 조회 계약이 필요하다. DAY-01의 budget/day 증거가 없는 무제한 정책의 방문시간·collector/anchor/day allocation·USG-02는 기존 BLOCKED/공동 결정 대기를 유지한다. 실제 Core/Content/Chrome/Native·제품 서비스 수용, Light/Dark 실물·반응형/키보드 시각 수용은 NOT_RUN. 독립 시연 범위는 검증된 격리 자료의 정책 선택·기간 조회·부분/미확인 표시이며 실제 측정 시연이 아니다. `MVP_FINAL_COMPLETE=false`.
 - 검증 후 Commit/Push/Draft PR로 게시하고 새 HEAD/원격 CI는 PR 본문 및 로컬 result에 기록한다. Approve·Draft 해제·Merge는 수행하지 않는다. 다음 최소 공동 결정은 기존 raw에 있는 actual_host와 원본 policy attribution/version을 노출할 승인된 read DTO/기간·시간대 의미이며, 실제 producer의 발행/원본 증거/clock 제공물 없이 성공 활성화하지 않는다.
+
 
 
 > 2026-11-01 PR69 후속 동기화: PR67 병합 **005b90134a436fd651cd07baff1be1fc934173e4**를 기존 #69에 이력 보존 merge로 반영한다. 수동 충돌은 이 작업카드1파일이며 아래 양측 전체 기록을 보존한다. `SessionNote.tsx`, `SessionNoteScope.test.tsx`, `SESSION-06.md`는 기존 **b043737102422c4618f655e99c882c56e8cadc50**의 blob과 동일하다. 그 외 변경은 통합 기준에서 가져온 #67의 기존 구현이며 재구현하지 않는다. 기존 검증/승인은 내용 동일한 근거로만 재사용하고 새 HEAD 승인으로 소급하지 않는다. 새 HEAD·CI·후보 tree 근거는 PR69 본문 및 `.local/pr69-pr67-sync-20261101/`. #63/#66·Core/Content·다른 Worktree·공유 루트 index는 변경하지 않으며 Approve/Draft 해제/Merge·실제 제품 수용은 수행하지 않는다. `MVP_FINAL_COMPLETE=false`.

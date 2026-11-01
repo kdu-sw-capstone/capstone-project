@@ -14,7 +14,7 @@ it("opens one SITE_TIME policy with existing reads only after explicit selection
  vi.mocked(siteTimeStatus).mockReset().mockResolvedValue({config:policy,usage:null,usageUnavailable:true});
  const view=render(<RuntimeDeliveryPanel executor={executor} records={[policy]}/>);expect(siteTimeStatus).not.toHaveBeenCalled();
  fireEvent.click(screen.getByText("이 정책의 적용·일일 기록 확인"));await screen.findByText(/사용량 0·이용 가능·해제 완료를 뜻하지/);
- expect(siteTimeStatus).toHaveBeenCalledWith(executor,row.config_id,expect.any(String),expect.any(AbortSignal));
+ expect(siteTimeStatus).toHaveBeenCalledWith(executor,row.config_id,expect.any(String),expect.any(AbortSignal),policy.version);
  view.rerender(<RuntimeDeliveryPanel executor="00000000-0000-4000-8000-000000000002" records={[]}/>);expect(screen.queryByText("선택한 사이트의 상태")).not.toBeInTheDocument();
 });
 it("keeps storage pending, rejects older ACKs and accepts server-verified superseding packages",()=>{
