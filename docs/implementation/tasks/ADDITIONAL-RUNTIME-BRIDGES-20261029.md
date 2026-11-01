@@ -1,5 +1,16 @@
 # 추가 MVP · 정책 발행·이용시간 수신 경계
 
+> 2026-11-01 PR69 후속 동기화: PR67 병합 **005b90134a436fd651cd07baff1be1fc934173e4**를 기존 #69에 이력 보존 merge로 반영한다. 수동 충돌은 이 작업카드1파일이며 아래 양측 전체 기록을 보존한다. `SessionNote.tsx`, `SessionNoteScope.test.tsx`, `SESSION-06.md`는 기존 **b043737102422c4618f655e99c882c56e8cadc50**의 blob과 동일하다. 그 외 변경은 통합 기준에서 가져온 #67의 기존 구현이며 재구현하지 않는다. 기존 검증/승인은 내용 동일한 근거로만 재사용하고 새 HEAD 승인으로 소급하지 않는다. 새 HEAD·CI·후보 tree 근거는 PR69 본문 및 `.local/pr69-pr67-sync-20261101/`. #63/#66·Core/Content·다른 Worktree·공유 루트 index는 변경하지 않으며 Approve/Draft 해제/Merge·실제 제품 수용은 수행하지 않는다. `MVP_FINAL_COMPLETE=false`.
+
+> 2026-11-01 PR69 리뷰 보완·통합 동기화: 독립 리뷰의 폐기 GET401 전역 인증 만료 P2를 초기 load/PUT412 후속 GET 양쪽에서 재현·수정했다. 폐기2 FAIL·현재401 대조군2 PASS → 관련33 PASS. 원래 오류 수명 경계만 보완했으며 api.ts/인증/useWork 계약은 유지한다. PR62 병합 **624c99c7846f514b683ecaaa2eac8deb48ec72f4**를 반영하면서 아래 양측 기록 전체와 Note 제품/시험 및 SESSION-06 카드 blob을 보존한다. 과거 리뷰/승인을 새 HEAD로 소급하지 않는다. #66은 기존 수정 금지 범위로 남겨 HEAD를 변경하지 않는다. 새 HEAD/CI는 PR69 본문과 `.local/pr69-review-fix-20261101/`에 기록한다.
+
+## 후속 SESSION-06 화면 이동·입력 보존 — 2026-11-01
+
+- 통합 **10ab6026f1cf7d244a75ee529830afb8bcf6b8c8**에서 `fix/additional-mvp-note-session-scope`로 독립 개발했다. 앞선 설정 충돌 PR67 **8f0ccf752d322a11f23cd9e6f084a0c1608bf2b4**는 원격 CI8/8 workflow·16/16 job SUCCESS, Web336/336과 bridge MySQL15/기존 config 계약6 PASS를 확보했고 HEAD/파일/리뷰를 변경하지 않는다. #62/#63/#66도 보존한다. 이 후속은 PR67을 포함하거나 의존하지 않는다.
+- A~J 기능별 구현/미통합/실제 producer/공동 결정 분류는 PR67 작업카드 변경에 정리했다. 그 기록을 다시 쓰지 않고 다음 독립 결함인 SESSION-06을 기존 UI·Note API로 수정했다. 이전 세션의 대기 GET과 `useWork` lock이 새 세션 조회를 막고 늦은 이전 응답을 표시하는 반례 및 조회 중 입력을 덮는 반례2 FAIL → 최종 PASS. 세션별 수명/응답 세대를 결속하고 이전 PUT·412·부모 draft callback을 폐기한다. 현재 편집의 저장 여부와 서버 ACK 스냅샷도 구분한다. 중간 StrictMode 초안 실패는 게시 전 차단·수정했다.
+- 신규7 + 기존 FocusScreens18/CADENCE4 = **29 PASS**, 타입/Vite·추가 시험 타입 검사 PASS. 모의 HTTP/JS DOM이며 실제 제품 수용이 아니다. Server/DB/Note API·RC2/legacy-lock·owner/Receipt/Core/Content/Shorts/의존성 변경 없음. 상세 원문/경계는 기존 [SESSION-06](SESSION-06.md) 카드, 로컬 `.local/note-scope-20261101/`, 새 HEAD/원격 CI는 PR 본문/result를 따른다. 불필요한 DB/설치/전체 로컬 회귀는 반복하지 않는다.
+- 다음 경계: 실제 host/과거 version 기간 DTO, ONCE actor 매핑·CADENCE 단계·USG-02 hash는 공동 결정/제공물 대기다. 공개 Core e903aff/Content a6468b6·통합10ab602에서 새로운 승인된 RuntimeReport/capability/effect/release/collector/clock 제공물은 확인되지 않았다. TimeRule UTC 정밀도는 기존 PR60을 재구현하지 않는다. AI 저장 schema/동의/provider는 승인 없이 도입하지 않는다. 새 독립 결함이 확인되기 전 의미 없는 조회 화면·PR을 추가하지 않는다. 실제 Core/Content/Chrome/Native·정상 END/복원/재기동 NOT_RUN, `MVP_FINAL_COMPLETE=false`.
+
 > 2026-11-01 PR67 통합 동기화: PR62 병합 **624c99c7846f514b683ecaaa2eac8deb48ec72f4**를 기존 PR67에 이력 보존 merge로 반영했다. 수동 충돌은 이 작업카드 한 파일뿐이며 양측 전체 원문과 기존 PR67 제품/시험5파일 blob을 보존한다. 독립 리뷰의 기존35 PASS 및 Web336/격리21/CI8개 근거는 같은 내용에 한해 재사용하고 새 HEAD 승인으로 소급하지 않는다. 새 HEAD/CI는 PR67 본문 및 `.local/pr67-sync-20261101/`에 기록한다. #66 HEAD는 기존 수정 금지 조건에 따라 보존하고 #69 리뷰 수정은 별도 PR에서 처리한다. RC2/legacy-lock·생산 효과/UNKNOWN/복원 조건은 그대로다.
 
 ## 설정 편집·저장 충돌의 사용자 복구 연결 — 2026-11-01
