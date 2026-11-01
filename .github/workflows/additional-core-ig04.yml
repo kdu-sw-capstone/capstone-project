@@ -1,0 +1,35 @@
+name: Additional Core IG04 admission
+on:
+  pull_request:
+    branches: [integration/additional-mvp-20261029]
+    paths:
+      - 'extension/src/additional-ig04-admission.js'
+      - 'extension/src/document-control-registry.js'
+      - 'extension/tests/additional-ig04-admission.test.mjs'
+      - 'extension/tests/document-control-registry.test.mjs'
+      - 'extension/a1/contract.mjs'
+      - 'extension/a1/schema.json'
+      - 'extension/package*.json'
+      - 'contracts/additional-mvp/**'
+      - '.github/workflows/additional-core-ig04.yml'
+permissions:
+  contents: read
+jobs:
+  admission:
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        working-directory: extension
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24.19.0
+          cache: npm
+          cache-dependency-path: extension/package-lock.json
+      - run: npm ci --no-audit --no-fund
+      - run: node --test tests/additional-ig04-admission.test.mjs tests/document-control-registry.test.mjs
+      - run: node --test ../contracts/additional-mvp/rc1/tests/legacy-boundary.test.mjs

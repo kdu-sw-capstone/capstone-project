@@ -1,5 +1,13 @@
 # AMVP-CORE-04 — Core DNR 소유권·복원
 
+## 2026-11-02 IG04 — 발급 문맥/plan 사전 검증 단위
+
+- 담당 윤종민, branch `feature/additional-mvp-ig04-admission`, 시작 integration `831069805eb0f86fc526b1f0f92e0b4a01656172`. Content `8f454c93`/gate3abe4504/#83 계보를 읽기 기준으로 보존한다.
+- 내부 IG04PlanAdmission은 기존 A1 digest·DocumentControlRegistry 조회와 RC2 BindingScope/FocusRef를 재사용한다. context/plan 복사·동결·hash 검사, strict issued/native provider와 동기 current/deadline, await 이후 권한/문서 epoch·gate instance 검사를 구현했다. source 신규1/시험 신규1/선택 browser probe1/CI1/기록이다.
+- 이번 범위는 영속 예약 전 admission이며 저장·Content용 ACK·CleanupGrant·DOM 효과·Report·scoped RELEASE/terminal 증거를 발급하지 않는다. 기존 stage를 per-target ACK로 대용하지 않고 실제 listener/START를 활성화하지 않는다. #76/78/80/84·기존 다른 worktree/제품 소스를 보존한다.
+- 신규32+Registry15=47/47, 전체Extension1011/1011·계약6/6 PASS(fail/skip0). actual Content8f454c93 + Chromium151 실제IDB 호환1/1에서 예약ACK 없음→DOM효과0·의무보존 확인. 발급/native는 모의이며 제품 MV3/Server 수용 NOT_RUN. 겹치는 집합 합산 금지. 최초 fixture 실패1건과 수정도 근거 문서에 보존했다.
+- 상태: 로컬 구현·검증 완료, PR/담당 리뷰 대기. 새 CI 결과는 별도 확인한다. 다음은 공동 ACK/증거 매핑 합의 후 실제 예약 원자 저장/조회 caller 연결. 상세 API·명령·미완료는 [IG04 사전 검증](../evidence/AMVP-CORE-04-ig04-admission.md).
+
 ## 2026-11-01 PR68 — PR59 병합 후 3공유파일 충돌 해결
 
 - 새 결합 workflow 로컬 검증: DNR138/138·SiteController/loop69/69·인증33/33·계약6/6, syntax·수동3파일 whitespace PASS. 기존 #68 제품/시험4/4 및 최신 통합+원래 #68의 Extension 전체325/325 blob 동일성 확인. 각 시험 집합을 중복 합산하지 않으며 전체/실제 Chrome 시험을 새로 실행했다고 보고하지 않는다.
