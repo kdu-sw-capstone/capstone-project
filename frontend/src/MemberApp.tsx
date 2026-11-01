@@ -10,6 +10,7 @@ import Sessions from "./FocusSessions";
 import Records from "./BehaviorRecords";
 import QueryTimestamp from "./QueryTimestamp";
 import BrowserUsageStatistics from "./BrowserUsageStatistics";
+import AccessPattern from "./HourlyAccessPattern";
 import "./focus-screens.css";
 import { useEffect, useState, useRef, type FormEvent } from "react";
 import Settings from "./Settings";
@@ -788,9 +789,6 @@ function SiteClassification({open}:{open:()=>void}) {
   return <section className="card site-classification"><div className="panel-heading"><h4>사이트 분류 현황</h4><button onClick={open}>관리 →</button></div><p className="muted">현재 등록한 사이트 · 이용 목적 기준</p>
     {error?<p role="alert">{error}</p>:counts===null?<p role="status">사이트 분류를 확인하고 있습니다.</p>:total===0?<p>등록된 사이트가 없습니다.</p>:<div className="distribution"><div className="donut" role="img" aria-label={"등록 사이트 "+total+"개"} style={{background:"conic-gradient(#579fff 0% "+first+"%, #7dd3e8 "+first+"% "+second+"%, #bdd6ef "+second+"% 100%)"}}><div><strong>{total}</strong><small>등록 사이트</small></div></div><ul>{counts.map((count,i)=><li key={i}><span>{["집중 대상","방해 대상","일반 이용"][i]}</span><strong>{count}개</strong><small>{(count/total*100).toFixed(1)}%</small></li>)}</ul></div>}
   </section>;
-}
-function AccessPattern(_props: { from?: string; to?: string }) {
-  return <section className="card access-pattern"><div className="panel-heading"><h4>시간대별 접근 패턴</h4><span className="badge">추가 MVP 예정</span></div><div className="unavailable-feature"><p>시간대별 분석은 아직 제공하지 않습니다.</p><p className="muted">시간대별 분석은 추가 MVP 범위입니다. 현재는 행동 기록과 기본 통계를 확인할 수 있습니다.</p></div></section>;
 }
 function Dashboard({ sessions, records, sites }: { sessions: () => void; records: () => void; sites: () => void }) {
   const state = useAction();
