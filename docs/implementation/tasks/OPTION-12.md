@@ -7,7 +7,7 @@
 - 상태: PARTIAL — 하루 목표 저장·확인량 조회·Web 연결 및 AI 조회/철회/안전 거절 구현. 제품 수용 NOT_RUN
 - 실제 담당자: 김다훈 (Web·Server·DB·UI)
 - 브랜치 / 시작 기준 커밋: feature/additional-mvp-daily-goal / 3569911dde9ec71d86c3b1e36f631c34e2411d53
-- PR: 본 브랜치의 Draft PR. 최종 번호·게시 HEAD·CI는 PR 본문과 로컬 .local/goal-implementation-20261101/result.json에 기록. Approve/해제/Merge 제외.
+- PR: [Draft #81](https://github.com/kdu-sw-capstone/capstone-project/pull/81). 게시 HEAD/CI는 PR 본문과 .local/goal-implementation-20261101/result.json. Approve/해제/Merge 제외.
 - 선행 작업 / 차단 조건:
 
 | 영역 | 담당 | 구현 상태 | 검증 상태 |
@@ -369,7 +369,7 @@ provider 미설정은 안전한 비활성/거절이며 SUCCEEDED 결과·가짜 
 
 ### 실제 실행 검증·근거
 
-- Web 전체64파일419 PASS(`.local/goal-web-regression.log`): 마지막 ACK/동의 응답 검증 보강 전의 전체 근거. 이후 직접 영향 최신13/13 PASS(`goal-web-final2.log`)·TypeScript/Vite build PASS(`goal-build-final2.log`). 중복 합산하지 않는다. 원격 CI는 게시 HEAD/시험 merge tree를 별도 확인한다.
+- Web 전체64파일419 PASS(`.local/goal-web-regression.log`): 마지막 ACK/동의 응답 검증 보강 전의 전체 근거. 이후 직접 영향 최신14/14 PASS(`goal-draft-version-final.log`)·TypeScript/Vite build PASS(`goal-build-final3.log`). 중복 합산하지 않는다. 원격 CI는 게시 HEAD/시험 merge tree를 별도 확인한다.
 - 신규 Server 순수8/8 및 fresh MySQL/TCP8/8 =16/16 PASS. `verify/.local/amvp-mysql-e2605f2e35d5/`의 tests.log/ownership/shutdown와 surefire XML. 계정/null/범위/멱등/동시성/rollback·UNKNOWN prefix·중첩·자정/DST·zone 변경/원본 보존·철회/version·불변 Snapshot/DB 재연결·실제 TCP cookie/CSRF/API를 검증했다. 회원/집중 원본/기존 RUNNING 분석 행은 SYNTHETIC fixture이며 Core 효과·실제 AI 실행 성공이 아니다.
 - 이전 설정 영향 fresh MySQL17/17·계약6/6 PASS: `verify/.local/amvp-mysql-783201dd0b26/`. 시험 DB는 각각 정상 종료를 확인했다. 먼저 실패한 fixture 삽입/JSON roundtrip 비교와 UI412 안내 로그 및 실패 DB도 정상 종료·보존했다. 제품 실패 기록을 삭제/소급 생성하지 않는다.
 - Figma 참조3053:30096/30100/10925의 코드·이미지를 재사용했다. 목표 카드/진행 표시는 실제 원본 확보, 숨김 편집 이미지 자체는 여전히 시각 근거 부족이다. 기존 테마/디자인 요소를 사용하고 격리 headless Chromium Light/Dark·편집/저장 렌더3개를 확인했다(`.local/goal-preview-*.png`, 합성 fetch). 정적 자산 추가0·페이지 오류0·수평 overflow 없음. 전체 Figma/실제 제품 시각 수용으로 승격하지 않는다.
@@ -381,3 +381,8 @@ provider 미설정은 안전한 비활성/거절이며 SUCCEEDED 결과·가짜 
 - AI는 현재 동의/철회/미설정 거절 및 불변 입력 저장 기반까지다. 승인 고지/provider·전송 입력 형상·철회 대 dispatch 선형화와 이미 전송한 결과/보존/캐시 제공 의미가 없으므로 실제 provider/worker/새 동의 수락·분석 완료는 BLOCKED다. queued/retry/RUNNING 행을 삭제/임의 상태 전환해 경합을 숨기지 않는다.
 - 기존 Core10파일 legacy 불일치 조정은 담당/통합 트랙의 별도 결정이다. 해당 파일/해시를 이 PR에서 수정하지 않는다. 독립 리뷰·승인·통합 전이며 Draft 해제/Approve/Merge 없음.
 - 11월11일에는 승인된 격리 환경의 목표 편집·저장·재진입·확인량 표시·UNKNOWN/충돌·AI 비활성/철회 흐름을 시연 후보로 제공한다. 실제 Chrome 정책 수용/AI 분석 완료는 별도다. 기존 HOLD·Credential·다른 Worktree/PR·공유 staged 삭제1,036개 보존. `MVP_FINAL_COMPLETE=false`.
+
+
+### PR81 게시 후 편집 revision 반례 수정
+
+첫 게시 HEAD `fe0df35d14b120dcd7b683d47d48ece305f546ed` 후 독립 확인에서, 편집 중5초 조회가 다른 writer의 version을 반영하면 기존 초안을 새 version으로 조용히 저장할 수 있음을 재현했다. 신규 반례1 FAIL/기존13 PASS → 편집 시작 version 고정 후14/14 PASS. 명시 재조회 뒤에는 초안을 유지한 채 최신 version으로 저장할 수 있음을 기존412 시험에 추가했다. 백그라운드 조회는 편집 기준을 갱신하지 않는다. 서버/API/DB/AI/소유권 의미는 그대로다. 실패 로그 `.local/goal-draft-version-before.log`, 수정 후 `goal-draft-version-final.log`, 타입/빌드 `goal-build-final3.log`. 첫 SHA의 승인/CI를 후속 SHA로 소급하지 않으며 후속 Commit/Push 뒤 최신 CI를 별도 확인한다.

@@ -37,6 +37,7 @@ describe("daily goal actual confirmed projection",()=>{
   get.mockImplementation(async(path,method)=>{if(method==="PUT")throw new ApiError("VERSION_CONFLICT",412);return row({version:2});});render(<DailyFocusGoal owner="A" editor/>);
   fireEvent.click(await screen.findByRole("button",{name:"목표 수정"}));fireEvent.change(screen.getByLabelText("목표 분"),{target:{value:"7"}});fireEvent.click(screen.getByRole("button",{name:"목표 저장"}));
   await screen.findByText(/다른 화면에서 목표를 변경/);fireEvent.click(screen.getByRole("button",{name:"목표 상태 재조회"}));await waitFor(()=>expect(get).toHaveBeenCalledTimes(4));expect(screen.getByLabelText("목표 분")).toHaveValue(7);
+  get.mockImplementation(async(_path,method,body)=>method==="PUT"?row({...body as Partial<Goal>,version:3}):row({version:2}));fireEvent.click(screen.getByRole("button",{name:"목표 저장"}));await waitFor(()=>expect(get).toHaveBeenLastCalledWith("/daily-focus-goal/today","GET",undefined,expect.anything()));expect(get.mock.calls.filter(c=>c[1]==="PUT").at(-1)?.[3]?.version).toBe(2);
  });
  it("reuses the exact write key/version/payload when its response is lost",async()=>{
   let writes=0;get.mockImplementation(async(path,method)=>{if(method==="PUT"&&++writes===1)throw Error("lost");return row({version:method==="PUT"?2:1});});render(<DailyFocusGoal owner="A" editor/>);fireEvent.click(await screen.findByRole("button",{name:"목표 수정"}));
@@ -53,6 +54,12 @@ describe("daily goal actual confirmed projection",()=>{
  it("keeps a mismatched write ACK unconfirmed instead of closing the editor",async()=>{
   get.mockResolvedValue(row());render(<DailyFocusGoal owner="A" editor/>);fireEvent.click(await screen.findByRole("button",{name:"목표 수정"}));fireEvent.click(screen.getByRole("button",{name:"목표 저장"}));
   await screen.findByRole("button",{name:"같은 저장 요청 재확인"});expect(screen.getByLabelText("목표 시간")).toBeInTheDocument();expect(screen.getByRole("alert")).toHaveTextContent("저장 결과를 확인하지 못했습니다");
+ });
+ it("does not silently rebase an open draft when a background refresh sees another writer",async()=>{
+  let reads=0;get.mockImplementation(async(_path,method,body,options)=>method==="PUT"?row({...body as Partial<Goal>,version:(options?.version??0)+1}):row({version:++reads===1?1:2}));
+  vi.useFakeTimers({toFake:["setInterval","clearInterval"]});render(<DailyFocusGoal owner="A" editor/>);fireEvent.click(await screen.findByRole("button",{name:"목표 수정"}));
+  fireEvent.change(screen.getByLabelText("목표 시간"),{target:{value:"1"}});await act(async()=>vi.advanceTimersByTimeAsync(5000));fireEvent.click(screen.getByRole("button",{name:"목표 저장"}));
+  await waitFor(()=>expect(get).toHaveBeenCalledWith("/daily-focus-goal","PUT",expect.anything(),expect.objectContaining({version:1})));
  });
 });
 describe("AI consent is safe without an approved notice/provider",()=>{

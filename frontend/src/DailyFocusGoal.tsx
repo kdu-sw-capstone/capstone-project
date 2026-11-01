@@ -20,21 +20,22 @@ export default function DailyFocusGoal({owner,editor=false}:{owner:string;editor
 function GoalView({editor}:{editor:boolean}){
  const [value,setValue]=useState<Goal|null>(null),[error,setError]=useState(""),[writeError,setWriteError]=useState(""),[busy,setBusy]=useState(false),[editing,setEditing]=useState(false);
  const [hours,setHours]=useState("0"),[minutes,setMinutes]=useState("0"),[timezone,setTimezone]=useState(""),[pending,setPending]=useState<Write|null>(null);
- const scope=useRef({current:false}),reading=useRef(false),writing=useRef(false),readEpoch=useRef(0),loadRef=useRef<()=>Promise<void>>(async()=>{});
+ const scope=useRef({current:false}),reading=useRef(false),writing=useRef(false),readEpoch=useRef(0),editRevision=useRef<number|null>(null),loadRef=useRef<()=>Promise<Goal|undefined>>(async()=>undefined);
  useEffect(()=>{
   const life={current:true},abort=new AbortController();scope.current=life;
   const fail=(e:unknown)=>{if(!life.current)return;setError(e instanceof Error?e.message:"결과를 확인하지 못했습니다.");if(e instanceof ApiError&&e.status===401)window.dispatchEvent(new Event("focurve:authentication-expired"));};
   const load=async()=>{if(!life.current||reading.current||writing.current)return;reading.current=true;const epoch=readEpoch.current;try{
-   const row=valid(await request<Goal>("/daily-focus-goal/today","GET",undefined,{signal:abort.signal}));if(!life.current||epoch!==readEpoch.current)return;setValue(row);setError("");
+   const row=valid(await request<Goal>("/daily-focus-goal/today","GET",undefined,{signal:abort.signal}));if(!life.current||epoch!==readEpoch.current)return;setValue(row);setError("");return row;
   }catch(e){if(epoch===readEpoch.current)fail(e);}finally{if(life.current)reading.current=false;}};
   loadRef.current=load;void load();const timer=setInterval(()=>void load(),5000);
   const changed=()=>void load();window.addEventListener("focurve:goal-changed",changed);
   return()=>{life.current=false;abort.abort();clearInterval(timer);window.removeEventListener("focurve:goal-changed",changed);reading.current=false;};
  },[]);
- function edit(){if(!value)return;const n=value.goal_minutes??0;setHours(String(Math.floor(n/60)));setMinutes(String(n%60));setTimezone(value.timezone??"");setEditing(true);}
+ function edit(){if(!value)return;editRevision.current=value.version;const n=value.goal_minutes??0;setHours(String(Math.floor(n/60)));setMinutes(String(n%60));setTimezone(value.timezone??"");setEditing(true);}
+ async function refresh(){const life=scope.current;const row=await loadRef.current();if(life.current&&row&&editing&&!pending)editRevision.current=row.version;}
  async function save(unset=false){
   if(!value||writing.current)return;const life=scope.current;let intent=pending;
-  try{if(!intent)intent={body:{goal_minutes:unset?null:goalMinutes(hours,minutes),timezone:timezone||null},version:value.version,key:crypto.randomUUID()};}
+  try{if(!intent)intent={body:{goal_minutes:unset?null:goalMinutes(hours,minutes),timezone:timezone||null},version:editRevision.current??value.version,key:crypto.randomUUID()};}
   catch(e){setWriteError((e as Error).message);return;}
   setPending(intent);readEpoch.current++;writing.current=true;setBusy(true);setWriteError("");
   try{const ack=await request<Goal>("/daily-focus-goal","PUT",intent.body,{version:intent.version,key:intent.key});if(!life.current)return;
@@ -67,6 +68,6 @@ function GoalView({editor}:{editor:boolean}){
    <div className="settings-actions"><button type="submit" disabled={busy}>{pending?"같은 저장 요청 재확인":"목표 저장"}</button><button type="button" disabled={busy||!!pending} onClick={()=>setEditing(false)}>취소</button><button type="button" disabled={busy||!!pending} onClick={()=>void save(true)}>목표 미설정으로 변경</button></div>
   </form>}
   {(error||writeError)&&<p role="alert">{writeError||error}</p>}
-  <button disabled={busy} onClick={()=>void loadRef.current()}>목표 상태 재조회</button>
+  <button disabled={busy} onClick={()=>void refresh()}>목표 상태 재조회</button>
  </section>;
 }
