@@ -1,5 +1,5 @@
 import {StrictMode} from "react";
-import {act,render,screen,fireEvent,waitFor} from '@testing-library/react';
+import {act,render,screen,fireEvent,waitFor,cleanup} from '@testing-library/react';
 import {it,expect,vi,afterEach} from 'vitest';
 import Records from './BehaviorRecords';
 import {request,ApiError} from './api';
@@ -7,7 +7,7 @@ vi.mock('./api',async original=>({...await original<typeof import('./api')>(),re
 const item={event_id:'e1',session_id:'s1',occurred_at:'2026-11-01T01:00:00.000Z',target_host:'valid.example',target_key:'SITE:valid.example',event_type:'RECORDED_ACCESS',target_access_index:1,is_repeat:false,quality:'PARTIAL'};
 const show=()=>render(<Records initialHost='' initialRange={{from:'',to:''}} settings={()=>{}}/>);
 function defer(){let resolve!:(v:any)=>void,reject!:(e:any)=>void;const promise=new Promise<any>((r,j)=>{resolve=r;reject=j;});return {resolve,reject,promise};}
-afterEach(()=>vi.mocked(request).mockReset());
+afterEach(()=>{cleanup();vi.mocked(request).mockReset();});
 it('independent obsolete primary GET401 after navigation must not expire the new view',async()=>{
  const pending=defer(),expired=vi.fn();window.addEventListener('focurve:authentication-expired',expired);
  try{vi.mocked(request).mockImplementation(()=>pending.promise);const view=show();await waitFor(()=>expect(request).toHaveBeenCalled());view.unmount();vi.mocked(request).mockImplementation(async path=>path.startsWith('/access-events?')?{items:[item],next_cursor:null}:path.startsWith('/statistics')?{quality:'PARTIAL'}:{items:[],next_cursor:null});show();await screen.findByRole('button',{name:/valid.example.*상세/});await act(async()=>pending.reject(new ApiError('UNAUTHENTICATED',401)));expect(expired).not.toHaveBeenCalled();}finally{window.removeEventListener('focurve:authentication-expired',expired);}
