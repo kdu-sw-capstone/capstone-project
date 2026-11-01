@@ -25,8 +25,9 @@ const UUID=/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
 export class ContentSessionAdapter {
   #document;#options;#features;#ledger;#scope;#entries=new Map();#started=false;#closed=false;
   #isCurrent;#authorizeNavigation;#onObservation;#onInvalidated;#callbackErrors=0;#startupError=null;#invalidated=null;
+  #ig04Reservation;
   constructor(document,{owner_binding_id,binding_id,features,isCurrent,authorizeNavigation=null,
-    ledger,onObservation=()=>{},onInvalidated=()=>{}}){
+    ledger,onObservation=()=>{},onInvalidated=()=>{},ig04Reservation}){
     if(![owner_binding_id,binding_id].every(v=>typeof v==='string'&&UUID.test(v)))throw Error('INVALID_CLAIM_SCOPE');
     if(typeof isCurrent!=='function')throw Error('CURRENT_AUTHORITY_CHECK_REQUIRED');
     if(!Array.isArray(features)||!features.length)throw Error('EMPTY_CONTENT_FEATURES');
@@ -46,6 +47,7 @@ export class ContentSessionAdapter {
     this.#document=document;this.#options=Object.freeze({owner_binding_id,binding_id});
     this.#scope=JSON.stringify([owner_binding_id,binding_id]);this.#isCurrent=isCurrent;
     this.#authorizeNavigation=authorizeNavigation;this.#onObservation=onObservation;this.#onInvalidated=onInvalidated;
+    this.#ig04Reservation=ig04Reservation;
     this.pagehide=()=>this.invalidate('PAGEHIDE');
   }
   #current(){
@@ -65,7 +67,7 @@ export class ContentSessionAdapter {
     let live=LIVE.get(this.#ledger);if(!live){live=new Map();LIVE.set(this.#ledger,live);}
     if(live.has(this.#scope))throw Error('CONTENT_SCOPE_CLEANUP_REQUIRED');
     live.set(this.#scope,this);this.#started=true;this.#document.defaultView.addEventListener('pagehide',this.pagehide);
-    const options={...this.#options,ledger:this.#ledger,canObserve:()=>this.#current(),
+    const options={...this.#options,ledger:this.#ledger,canObserve:()=>this.#current(),ig04Reservation:this.#ig04Reservation,
       authorizeNavigation:change=>{if(!this.#current())return false;const result=this.#authorizeNavigation?.(change);if(result&&typeof result.then==='function')Promise.resolve(result).catch(()=>{});return result===true&&this.#current();},
       onObservation:r=>this.#observe(r),onInvalidated:r=>this.invalidate(r.reason)};
     try{
