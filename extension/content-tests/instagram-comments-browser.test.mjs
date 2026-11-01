@@ -237,3 +237,24 @@ for(const mode of ['text','hashtag','empty'])test(`preserve baseline structured 
  assert.equal(await p.locator('#modern').evaluate(e=>e.inert),true);await p.evaluate(()=>ledger.release('other'));
  assert.deepEqual(await p.locator('#modern').evaluate(e=>[e.style.display,e.style.getPropertyPriority('display'),e.inert]),['flex','important',false]);
 });
+
+test('review: a verified LI GIF comment hides the full row without hiding the post image',async t=>{
+ const row='<li id="gif-li" style="display:flex!important"><a href="/sample-user/" role="link"><img id="avatar"></a><a href="/sample-user/">author</a><img id="gif-body"><a href="/p/sample/c/901/"><time datetime="2026-01-01">time</time></a><button>Reply</button><button aria-label="Like">Like</button></li>';
+ const p=await fixture(t,{body:'<main><div role="listitem" id="post"><h2 id="author">post author</h2><img id="photo"><p id="caption">caption</p><button id="like">Like</button><ul>'+row+'</ul></div></main>'});
+ await p.evaluate(()=>session.start());assert.equal(await p.locator('#gif-li').evaluate(e=>e.inert),true);
+ for(const id of ['#post','#author','#photo','#caption','#like'])assert.equal(await p.locator(id).evaluate(e=>!!e.closest('[inert]')),false);
+ assert.equal((await p.evaluate(()=>session.release())).restored,true);assert.equal(await p.locator('#gif-li').evaluate(e=>e.style.display),'flex');
+});
+test('review: hashtag-only DIV comments retain exact row ownership and restore',async t=>{
+ const row=modern.replace('sample comment','<a href="/explore/tags/sample/">#sample</a>');
+ const p=await fixture(t,{body:'<main><article><h2 id="caption">post caption</h2><img id="photo">'+row+'</article></main>'});
+ await p.evaluate(()=>session.start());assert.equal(await p.locator('#modern').evaluate(e=>e.inert),true);
+ for(const id of ['#caption','#photo'])assert.equal(await p.locator(id).evaluate(e=>!!e.closest('[inert]')),false);
+ assert.equal((await p.evaluate(()=>session.release())).restored,true);assert.equal(await p.locator('#modern').evaluate(e=>e.style.display),'flex');
+});
+test('review: unsafe external post ancestor stops expansion without discarding the verified comment',async t=>{
+ const p=await fixture(t,{body:'<main><div id="outer"><a role="link" href="/post-user/"><img id="post-avatar"></a><h2 id="caption">post caption</h2><img id="photo"><button id="like">Like</button>'+modern+'</div></main>'});
+ await p.evaluate(()=>session.start());assert.equal(await p.locator('#modern').evaluate(e=>e.inert),true);
+ for(const id of ['#outer','#post-avatar','#caption','#photo','#like'])assert.equal(await p.locator(id).evaluate(e=>!!e.closest('[inert]')),false);
+ assert.equal((await p.evaluate(()=>session.release())).restored,true);assert.equal(await p.locator('#modern').evaluate(e=>e.style.display),'flex');
+});

@@ -48,6 +48,8 @@ function bodyContent(node,url){
   return [...node.querySelectorAll('span[dir="auto"]')].some(body=>{
     if(body.closest('a, [role="button"], h1, h2, h3')||body.querySelector('time'))return false;
     if([...body.querySelectorAll('a[href]')].some(a=>a.textContent.trim().startsWith('@')))return true;
+    if([...body.querySelectorAll('a[href]')].some(a=>a.textContent.trim().startsWith('#')
+      &&/^\/explore\/tags\/[^/]+\/?$/.test(localPath(a,url)??'')))return true;
     const walker=body.ownerDocument.createTreeWalker(body,4);let text;
     while((text=walker.nextNode()))if(text.nodeValue.trim()&&!text.parentElement.closest('a, time, [role="button"]'))return true;
     return false;
@@ -70,11 +72,11 @@ function emptyCommentRow(node,url){
 function commentRow(link,url){
   const row=link.closest('li, [role="listitem"]');
   if(row&&safeContainer(row)&&oneComment(row,link,url)&&row.querySelectorAll('h3').length<=1
-    &&!row.querySelector('p, picture, input, textarea, [role="textbox"], li, [role="listitem"]')
-    &&[...row.querySelectorAll('img')].every(img=>isProfile(img.closest('a[href]'),url)||!!img.closest('[role="link"]'))){
+    &&!row.querySelector('p, picture, input, textarea, [role="textbox"], li, [role="listitem"]')){
     // Preserve simple inline rows and structured comment rows, including link-
     // only/empty bodies. The permalink alone never authorizes a whole post.
-    if(link.parentElement===row&&[...row.children].every(child=>child===link||child.tagName==='SPAN'))return row;
+    if(link.parentElement===row&&[...row.children].every(child=>child===link||child.tagName==='SPAN')
+      &&[...row.querySelectorAll('img')].every(img=>isProfile(img.closest('a[href]'),url)||!!img.closest('[role="link"]')))return row;
     if(link.querySelector('time[datetime]')&&profileLink(row,url)
       &&[...row.querySelectorAll('button, [role="button"]')].some(replyAction))return row;
   }
@@ -92,7 +94,10 @@ function commentRow(link,url){
     let whole=node;
     for(let parent=node.parentElement;parent?.tagName==='DIV';parent=parent.parentElement){
       if(parent===row)break;
-      if(!safeContainer(parent)&&[...parent.querySelectorAll('[role="link"] img')].some(img=>!whole.contains(img)))return null;
+      // Stop at an external post without discarding the verified full row.
+      // A partial column with protected UI in its own avatar wrapper stays denied.
+      if(!safeContainer(parent)&&!whole.querySelector('[role="link"] img')&&oneComment(parent,link,url)
+        &&[...parent.querySelectorAll('[role="link"] img')].some(img=>!whole.contains(img)))return null;
       if(!safeContainer(parent)||parent.querySelectorAll('h3').length>1||!oneComment(parent,link,url))break;
       const siblings=[...parent.children].filter(child=>!child.contains(whole));
       if(siblings.some(child=>{const copy=child.cloneNode(true);copy.querySelectorAll('svg').forEach(svg=>svg.remove());return !!copy.textContent.trim();}))break;
