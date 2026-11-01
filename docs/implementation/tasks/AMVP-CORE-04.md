@@ -1,5 +1,17 @@
 # AMVP-CORE-04 — Core DNR 소유권·복원
 
+## 2026-11-01 RuntimeReport 생산 원장 착수
+
+- 담당 윤종민, 브랜치 `feature/additional-mvp-runtime-report-producer`, 시작 통합 `3f31f75e8be65996af3b1fb94a846b0df2d7c085`. PR76 발신함은 수정하지 않고 리뷰 대기로 보존한다. PR59는 통합됐고 PR68은 별도 리뷰 대상이다.
+- RuntimeReport의 durable source report_id·고정 epoch·연속 seq·원문을 원자 보존한다. 실제 issued/effect verifier가 없으면 생성 거절, 기존 policy state/cleanup 성공을 추정하지 않는다. Wire/Server/제품 Worker/전송·발신함 활성화는 이번 단위에 포함하지 않는다.
+- 상태: 구현·검증 진행 중. 실제 source observation의 영속 ID와 현재 owner/issued generation/관측 시각·상태 전이 검증은 trusted adapter 책임이며 기본 거절한다.
+
+### RuntimeReport 생산 원장 단위 종료
+
+- `RuntimeReportProducer.produce/recover`: source report_id 보존, runtime stream별 고정 epoch/연속 seq와 immutable report·generation hash를 동일 metadata transaction에 저장. 재시도는 같은 원문을 반환하며 변경 ID 충돌·producer snapshot CAS·quota 실패·원장 변조에서 성공을 만들지 않는다.
+- 신규19/19·전체925/925·기존 계약6/6·Chromium 실제 IDB1/1 PASS(fail/skip0, 신규는 전체에 포함). browser의 owner/effect verifier는 모의이며 강제 종료/제품 MV3·Server 수용이 아니다.
+- 단위 구현·로컬 검증 완료, 리뷰/통합 대기. [함수·저장 형식·미연결 경계](../evidence/AMVP-CORE-04-runtime-report-producer.md). 실제 source/issued effect verifier·현재 epoch 등록·발신함 replay/checkpoint·인증 HTTP/Worker·장시간 검증은 후속이다. PR76을 수정/활성화하지 않으며 전체 Core 완료율은 변경하지 않는다.
+
 ## 2026-11-01 PR59 최신 통합 최소 동기화
 
 - 동기화 후 검증: owner/잠금/cleanup + #70 CAS 관련 189/189, 전체 Extension 906/906, 계약6/6, Chromium 실제 IndexedDB/Web Lock 3/3, bundle 원본 일치·syntax/diff PASS. DNR·권한/문맥은 모의이며 제품 MV3/Server 수용은 미검증 유지. 집합 중복 합산 금지.
