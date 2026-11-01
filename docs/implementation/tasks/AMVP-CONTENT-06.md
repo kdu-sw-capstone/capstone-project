@@ -1,5 +1,28 @@
 # AMVP-CONTENT-06 · 추가 Content 연결
 
+## 2026-11-01 PR #64 공유 media P2 2건 수정
+
+- 시작7e271c87ed89f62c9bb4f65796b439524a8d5954, codex/content-instagram-reels. #58 수정21654f0을 상속한 #61의1386e1865f50ce17a1acab8c572c3d919fdbf71d를 로컬 merge했다. 예상 충돌은 작업카드 prepend와 Stories→shared media 추출 경계였다. Stories wrapper/selector는 원래 #64 그대로 보존하고 #58의 release 수정만 instagram-media.mjs로 옮겼다. NavigationSurface.close는 선행 수정 그대로 상속한다. 별도 중복 구현이나 기존 scan/invalidate P2 재개발 없음.
+- 정확한 수정 전 #64 archive에 새 반례9건: **3PASS/6FAIL**. IG01/IG02 해제 후 두 번째 pause1회, play guard release의 adapter 전체닫힘, 양쪽 feature 독립 유지 실패를 재현했다. 부분 복원/후속 retry 및 실제 권한 회수의 전체닫힘은 원래 PASS. 로그 pr64-feature-release-before.log, 합성 Chrome/모의 pause·권한이다.
+- shared media release 즉시 #stop(local)으로 media open/play listener를 닫는다. surface 또는 media busy일 때 restored:false/pending을 유지하되 전역 invalidation을 부르지 않는다. 후속 release는 원래 claim/목표/다른 owner를 보존해 실제로 정리한다. 전체 authority/pagehide의 stop/invalidate는 유지.
+- 신규 공통 반례파일은 #58의3건을 상속해 IG02 같은3건과 양방향 다른 feature 보존2건·실제 권한 회수/외부 owner 보존1건을 추가했다. #64 동일 새 반례 **9/9 PASS**, 전체 Content **239/239 PASS**(113.6초), 계약6/6·build/구문/diff PASS. 로그 pr64-feature-release-focused.log/pr64-feature-release-regression.log. #58 CI41263596433/job124721658844 원본218/218+계약6, #61 CI41263744789/job124722101375 원본220/220+계약6 성공 확인. #64 수정 후 원격 CI는 별도 확인한다. 독립 재리뷰/원격CI는 별도이며 제품Core/MV3/Native/Server 수용 NOT_RUN, MVP_FINAL_COMPLETE=false.
+
+
+## 2026-11-01 #61 선행 P2 반영
+
+- #58 수정21654f086b081067b01b9d2982620f0a56f71000을 #61의 기존2e7fe758 위에 이력 보존 로컬 merge로 반영. 제품 소스는 자동 결합됐고 작업카드 충돌만 양측 기록을 모두 보존해 정리했다. #61 고유 contenteditable 감시와 양방향 반례2건은 변경하지 않았다. PR 병합/force push/별도 기능 구현 없음. IG·adapter·새 release 반례 **59/59 PASS**, fail/skip0, pr61-inherit-focused.log. build/diff PASS. #58 CI run41263596433 SUCCESS 확인(직접 전체218과 별도). #61 전체 전수는 원격 CI에서 별도로 확인하며 로컬59를220으로 합산하지 않는다.
+
+
+## 2026-11-01 PR #58 IG 기능별 release P2 수정
+
+- 담당 채지민, feature/content-session-adapter, 시작62a4233aab9a45ade36b4ec308dbe5b1f8290306. 원격 #58/#61/#64/#65 HEAD/base와 일치, 기존 clean 브랜치에서 진행. 기존 scan/invalidate·claim 누락 P2는 해결된 상태로 재사용하며 새 releaseFeature 경계만 수정한다.
+- 수정 전 새 Chrome 합성 반례3건 중1PASS/2FAIL: IG01 첫 pause 콜백의 releaseFeature 이후 다음 pause1회, play guard 재진입 release가 adapter.closed=true로 전파. 부분 cleanup/후속 retry 반례는 원래 PASS. 로그 pr58-feature-release-before.log. media.pause/paused와 권한은 모의이며 실제 오디오/MV3 수용 아님.
+- InstagramStoriesSession.release는 surface 복원 결과를 기다리기 전 로컬 media open을 닫고 replay listener를 제거한다. 바깥 pause 이후 #canApply/open 확인에서 다음 pause와 성공 관찰을 차단한다. busy release는 권한 회수 stop 대신 NavigationSurfaceSession.close(새 효과·observer/event만 닫음, invalidation 콜백 없음)를 호출해 feature-local pending을 반환한다. claim/복원 목표/LIVE 의무는 explicit release retry까지 유지한다. adapter 전체 invalidate·다른 owner ledger를 닫지 않는다.
+- 기능 해제 중 replay guard 유지라는 과거 주석/의도보다 새 효과0이라는 이번 수정 기준을 우선한다. 이미 남은 DOM/inert claim과 실패 복원 의무는 삭제하지 않으며 cleanup 미완료를 RELEASED로 승격하지 않는다. 실제 전체 revoke/pagehide의 stop/invalidate는 그대로 유지한다.
+- 변경: instagram-stories.mjs, navigation-surface.mjs, 신규 instagram-feature-release-browser.test.mjs, 이 작업카드. #58 공통 수정을 #61에 반영한 뒤 #64의 추출된 instagram-media.mjs로 동일하게 이관한다. #65는 새 #64를 상속하도록 순차 반영하며 force push/PR 병합하지 않는다.
+- 수정 후 전체 Content **218/218 PASS**, fail/skip0(107.6초), 신규3 포함. 계약6/6·build/diff PASS. 변경JS구문 확인 후 게시한다. 로그 pr58-feature-release-after.log. 수정 전1PASS/2FAIL→수정 후 신규3PASS이며 기존215/230 CI를 수정 후 PASS로 재사용하지 않는다. 원격 CI는 게시 후 별도로 확인한다. 제품 Core/MV3/Native/Server 수용 NOT_RUN, MVP_FINAL_COMPLETE=false.
+
+
 ## 2026-11-01 IG-02 Reels 첫 독립 구현 · 사용자 시험 정상 / 게시 준비
 
 - 사용자 상태 확인 개선: 시험 확장 이름/버전을 FOCURVE 릴스 시험판 0.1.2로 구분하고 릴스 버튼을 최상단으로 옮겼다. popup.js는 누른 명령 버튼 바로 아래 결과 패널/상태 복사를 표시하고 action·checked_at·원본 response 또는 연결 error/hint를 JSON으로 제공한다. 최신 요청만 표시하며 URL/본문을 추가 수집하지 않는다. clipboard 실패 시 선택+Ctrl+C 안내, 별도 권한 추가 없음. 설치 Chrome 합성 popup에서 위치/실패 응답 JSON 복사/연결 오류 표시 검증 PASS, 구문/build PASS. 이전230은 DOM 기능 소스 근거이며 이 UI 변경 후 전체 재실행으로 주장하지 않는다.
