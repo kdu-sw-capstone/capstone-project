@@ -267,3 +267,22 @@ test('review: unsafe external post ancestor stops expansion without discarding t
  for(const id of ['#outer','#post-avatar','#caption','#photo','#like'])assert.equal(await p.locator(id).evaluate(e=>!!e.closest('[inert]')),false);
  assert.equal((await p.evaluate(()=>session.release())).restored,true);assert.equal(await p.locator('#modern').evaluate(e=>e.style.display),'flex');
 });
+
+for(const tag of ['li','div role="listitem"'])test(`P2 ownership: linked post media in ${tag} cannot borrow a nested comment identity`,async t=>{
+ const end=tag==='li'?'li':'div';
+ const body=`<main><${tag} id="post" style="display:grid!important"><a href="/post-author/"><img id="avatar"></a><a href="/p/sample/" role="link"><img id="photo"><span id="caption">post caption</span></a><button id="like">Like</button><div><a href="/p/sample/c/1/"><time datetime="2026-01-01">time</time></a><span dir="auto">comment</span><button>Reply</button></div></${end}></main>`;
+ const p=await fixture(t,{body});await p.evaluate(()=>session.start());
+ for(const id of ['#post','#avatar','#photo','#caption','#like'])assert.equal(await p.locator(id).evaluate(e=>!!e.closest('[inert]')),false,id);
+ assert.equal((await p.evaluate(()=>session.release())).restored,true);
+ assert.deepEqual(await p.locator('#post').evaluate(e=>[e.style.display,e.style.getPropertyPriority('display'),e.inert]),['grid','important',false]);
+});
+for(const wrap of ['span','div'])test(`P2 ownership: transparent ${wrap} time wrapper preserves a complete GIF LI comment`,async t=>{
+ const row=`<li id="gif-li" style="display:flex!important"><a href="/sample-user/"><img></a><a href="/sample-user/">author</a><img id="gif-body"><${wrap}><a href="/p/sample/c/1/"><time datetime="2026-01-01">time</time></a></${wrap}><button>Reply</button><button aria-label="Like">Like</button></li>`;
+ const p=await fixture(t,{body:'<main><article><img id="photo"><span id="caption">post caption</span><button id="like">Like</button><ul>'+row+'</ul></article></main>'});
+ await p.evaluate(()=>session.start());assert.equal(await p.locator('#gif-li').evaluate(e=>e.inert),true);
+ for(const id of ['#photo','#caption','#like'])assert.equal(await p.locator(id).evaluate(e=>!!e.closest('[inert]')),false,id);
+ await p.evaluate(()=>ledger.hide('other',document.querySelector('#gif-li')));
+ assert.equal((await p.evaluate(()=>session.release())).restored,true);assert.equal(await p.locator('#gif-li').evaluate(e=>e.inert),true);
+ await p.evaluate(()=>ledger.release('other'));
+ assert.deepEqual(await p.locator('#gif-li').evaluate(e=>[e.style.display,e.style.getPropertyPriority('display'),e.inert]),['flex','important',false]);
+});

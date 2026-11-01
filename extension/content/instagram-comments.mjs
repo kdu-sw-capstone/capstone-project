@@ -70,9 +70,15 @@ function emptyCommentRow(node,url){
     &&[...node.querySelectorAll('button, [role="button"]')].some(replyAction);
 }
 function nestedIdentityBoundary(row,link,url){
+  // A post/media link is never a comment control, regardless of ARIA role.
+  if([...row.querySelectorAll('a[href]')].some(a=>/^\/(?:p|reel)\/[^/]+\/?$/.test(localPath(a,url)??'')))return false;
   let branch=link;
   while(branch.parentElement!==row)branch=branch.parentElement;
-  if(branch===link)return true; // Flat GIF rows keep their existing evidence.
+  // Wrapper depth is not ownership evidence. A column containing only the
+  // timestamp is equivalent to the flat timestamp in a complete GIF row.
+  const remainder=branch.cloneNode(true);
+  remainder.querySelectorAll('a[href]').forEach(a=>{if(localPath(a,url)===localPath(link,url))a.remove();});
+  if(branch===link||(!remainder.textContent.trim()&&!remainder.querySelector('img, picture, button, [role="button"], input, textarea')))return true;
   // Evidence inside a nested column cannot authorize unrelated post content
   // outside that column. Avatar/author and row controls are the only extras.
   for(const sibling of row.childNodes){
@@ -82,8 +88,15 @@ function nestedIdentityBoundary(row,link,url){
     if(copy.nodeType!==1)continue;
     for(const a of [...copy.querySelectorAll('a[href]')])if(isProfile(a,url))a.remove();
     if(copy.matches('a[href]')&&isProfile(copy,url))continue;
-    copy.querySelectorAll('button, [role="button"], [role="link"], svg, canvas').forEach(e=>e.remove());
-    if(copy.matches('button, [role="button"], [role="link"], svg, canvas'))continue;
+    const avatar=e=>e.matches('[role="link"]:not(a[href])')&&!e.textContent.trim()
+      &&!!e.querySelector('img')&&!e.querySelector('a[href], picture, button, [role="button"]');
+    copy.querySelectorAll('[role="link"]').forEach(e=>{if(avatar(e))e.remove();});
+    if(avatar(copy))continue;
+    const rowControl=e=>!e.querySelector('img, picture')&&(replyAction(e)||/^(?:like|likes|좋아요|comment options)$/.test(controlName(e)));
+    copy.querySelectorAll('button, [role="button"]').forEach(e=>{if(rowControl(e))e.remove();});
+    if(copy.matches('button, [role="button"]')&&rowControl(copy))continue;
+    copy.querySelectorAll('svg, canvas').forEach(e=>e.remove());
+    if(copy.matches('svg, canvas'))continue;
     if(copy.textContent.trim()||copy.matches('img, picture')||copy.querySelector('img, picture'))return false;
   }
   return true;
