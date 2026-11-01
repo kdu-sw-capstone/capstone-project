@@ -1,5 +1,30 @@
 # 추가 MVP · 정책 발행·이용시간 수신 경계
 
+## 설정 편집·저장 충돌의 사용자 복구 연결 — 2026-11-01
+
+- 담당 김다훈. 통합 **10ab6026f1cf7d244a75ee529830afb8bcf6b8c8**에서 `feature/additional-mvp-settings-conflict`로 분리하고 clean 관리형 Worktree를 재사용했다. #62 **b3a8d13415827442d468a7109786cac3914481c2**, #63 **3f069ed43bf54c95e9ecc2e3ad850638209759c5**, #66 **650eddd5a38a5406775ce614b1ae2474879fa0b4**는 실제 Draft·미병합으로 확인했고 해당 브랜치·HEAD를 보존한다. 새 Worktree/설치/계약/producer는 만들지 않는다.
+- 재현한 결함: 같은 설치의 전체 재조회가 편집값과 미확인 저장 요청을 버렸고, 412 후 기존 버전 편집을 해소할 제품 조작이 없었다. 최초 반례2건 수정 전 FAIL → 수정 후 PASS. 같은 설치 재조회는 편집/불변 요청을 보존하고 실패 중 저장을 막는다. CFG02로 최신 종류·소유권·ID·버전을 확인한 뒤 사용자가 서버 값으로 바꾸거나 내 편집 전체를 최신 expected version으로 이어갈 수 있다. 자동 저장/병합은 없고 최종 저장도 기존 If-Match가 다시 경합을 검사한다. SITE_TIME body.version도 같은 expected version으로 결속한다. 삭제된 설정은 재생성하지 않으며 실제 해제로 표시하지 않는다.
+- 추가 확인: PUT 성공 후 확인 GET의 401/404/412를 저장 거절·변경 충돌로 오분류해 원래 요청을 버리는 신규3 반례가 수정 전 FAIL이었다. 확인 GET 실패를 UiError/cause로 분리하고 원래 오류를 보존한다. 같은 저장 요청/key/본문/If-Match로만 명시 재확인하며 GET 오류를 PUT412처럼 처리하지 않는다. PUT 자체의 412 및 인증 거절은 기존 의미를 유지한다.
+- 직접 영향 Settings/SDK/삭제/상태6파일 **54 PASS**, 별도 최초 cause 보존 SDK **1 PASS**, 누적 전체 Web **336 PASS**(신규14 포함, 중복 합산하지 않음). TypeScript/Vite PASS. 기존 fixture 기반 fresh MySQL8.4.8 **21 PASS = runtime bridge15 + config contract6**, 실패/오류/skip0. 실제 loopback TCP에서 stale PUT412 → CFG02 version2 → 명시 If-Match2/body.version2 PUT → version3와 동일 key Receipt replay, 과거 config version·사용량/예산 불변을 확인했다. capability/clock은 SYNTHETIC이며 Core 실행이 아니다. 시험 DB **c6bd7eb865c0**/port33421, 소유권 확인 후 정상 종료. `.local/settings-conflict-20261101/`, `../verify/.local/amvp-mysql-c6bd7eb865c0/`에 원본 보존.
+- RC2·legacy-lock·Server 생산·DB schema·인증/API/RuntimeReport·Receipt의 의미·Core/Content/Shorts·의존성은 기준과 같다. 변경 없는 원장의 기존 검증을 재사용한다. 기준 Core4파일 legacy-lock FAIL, 기존 FocusScreens 복수 alert CI 변동 이슈는 별개로 보존한다. Approve·Draft 해제·Merge·실제 Chrome/Native/제품 서비스 수용 NOT_RUN. `MVP_FINAL_COMPLETE=false`.
+
+### 확정 추가 MVP A~J의 실제 경계 (현재 실행에서 바뀐 경계 중심)
+
+| 영역 | 구현/검증 상태 | 남은 연결·결정 |
+|---|---|---|
+| A 사이트·기간 이용시간 | DAY-01 IMPLEMENTED_AND_TESTED; #66 IMPLEMENTED_NOT_INTEGRATED | actual_host/target_key와 정책 host/version 기간 DTO는 CONTRACT_DECISION_REQUIRED, collector/day proof는 CORE_CONTENT_DEPENDENT |
+| B 한도 설정·조회 | 기존 CRUD 및 이번 충돌/편집 복구 IMPLEMENTED_AND_TESTED | 실제 한도 도달/집행·잔여는 CORE_CONTENT_DEPENDENT; 저장/부분량을 집행 성공으로 바꾸지 않음 |
+| C 예약 ONCE·WEEKLY | 저장·occurrence/Receipt 조회 IMPLEMENTED_AND_TESTED | ONCE actor 매핑 CONTRACT_DECISION_REQUIRED; 실제 예약/복원 CORE_CONTENT_DEPENDENT |
+| D CADENCE | 저장·frozen 설정/기한·수신 조회 IMPLEMENTED_AND_TESTED | 휴식/주기 표현 CONTRACT_DECISION_REQUIRED; 실제 actor 전환 CORE_CONTENT_DEPENDENT |
+| E YouTube·Instagram16 | 설정 CRUD IMPLEMENTED_AND_TESTED | 기능별 효과/해제/ClaimLedger·발행 provenance는 CORE_CONTENT_DEPENDENT |
+| F 시간대 통계 | #63 IMPLEMENTED_NOT_INTEGRATED | 접근·반복·차단 분포이며 이용시간으로 대체하지 않음. 새 원본 event issuer는 CORE_CONTENT_DEPENDENT |
+| G 기록·필터·메모 | 기존 조회 구현 재사용; 세션 이동·지연 응답은 INDEPENDENTLY_IMPLEMENTABLE 검증 후보 | 동일 기록/필터를 새로 만들지 않으며 SESSION-06의 이전 세션 응답 혼입 반례부터 확인 |
+| H 삭제·해제·복원 | 접수/OP/CFG/Receipt 조회 IMPLEMENTED_AND_TESTED | 실제 해제·복원은 CORE_CONTENT_DEPENDENT, UNKNOWN 의무 유지 |
+| I 오류·UNKNOWN·재진입 | 기존 표시 및 이번 저장/확인 단계 구분 IMPLEMENTED_AND_TESTED | 실제 제품 수용은 별도이며 모의 성공을 실제 적용으로 승격하지 않음 |
+| J Web·Server·DB 시나리오 | 기존 API·격리 TCP/DB 경계 IMPLEMENTED_AND_TESTED | 실제 Admission/capability/effect/clock adapter 부재는 CORE_CONTENT_DEPENDENT |
+
+- 공개 feature Core **e903aff5df3b44895a101efc39af868e543e574f**, Content **a6468b67d97ca32a1ab1ad1af66344f0a45e148e**, 통합10ab602는 이전 제공 기준과 같다. 같은 미제공 producer를 다시 구현/전면 조사하지 않는다. snapshot hash/MATCH/local_only를 Server 효과로 승격하지 않는다. 실제 새 발행·원본 effect/release/collector·clock 제공물이 올 때 adapter를 재개한다. 시간창 UTC 정밀도는 기존 PR60 구현을 재작성하지 않는다. AI/동의는 확정 추가 범위에 남지만 승인되지 않은 저장 schema/provider·동의/보존 경계를 임의 도입하지 않는다. 범위를 새로 축소하거나 기능을 추가하지 않는다.
+
 > 2026-11-01 PR52 통합 동기화: PR51 병합 Commit **c44c87215fddee49114151aaf22caa8b3a679b21**을 기존 PR52에 이력 보존 merge로 반영한다. 아래 PR49~52의 Draft/미병합/검증 수치는 각 개발 당시 기록이며 현재 병합 상태·제품 수용 완료를 뜻하지 않는다. 수동 충돌 해결은 이 작업카드 1파일이고 Settings 제품·시험은 원래 PR52 blob을 유지한다. #62/#63·Content PR·다른 Worktree는 변경하지 않는다.
 
 - 동기화 검증: 원래 PR52 **c2aa82f7319286db643550230abb5bcf6a08c9d2**의 `Settings.tsx` blob **b256087913f116e4587d40efedf5d1bad00e9928**, `Settings.test.tsx` blob **87175ce472dd5b67376d199ecf0e78587bfc64a9**와 정확히 일치한다. 양측 작업카드의 전체 원문이 병합 결과에서 순서대로 보존됨을 확인했고, 이 카드와 Settings2파일 외의 모든 파일은 incoming c44c872의 blob과 같다. 최신 base 대비 자체 diff는 기존3파일뿐이다.
