@@ -1,5 +1,37 @@
 # AMVP-CONTENT-06 · 추가 Content 연결
 
+## 2026-11-01 IG-04 댓글 첫 독립 구현 · 사용자 제공 DOM 반영 / 시험 대기
+
+### 릴스 그림 댓글·답글 프로필 잔여 보완
+
+- 사용자0.1.7 실제: 대상13/13·errors0이지만 GIF 이미지 댓글/답글/아바타가 남음. 국소 counts는 전체 댓글 수용 근거가 아님. 홈 일반 게시물은 본문/작성자 보존·다른 댓글 숨김 정상으로 별도 유지한다. 추가 제공 DOM의 GIF 부모 댓글에는 time/댓글 permalink가 없고, 자식 답글에는 exact comment time과 @mention 링크가 섞인 본문이 있다. 개인 계정/본문/CDN/class 원문은 보관하지 않는다.
+- 익명5반례 수정 전1PASS/4FAIL: GIF/답글 묶음, mention reply 행 전체, collapsed/late replies, reply Text.data 전환 실패; 일반 GIF post 보존 반례는 원래PASS. ig-comments-gif-before.log.
+- 댓글 고유 링크가 있는 행은 mention/body text도 허용한다. 고유 링크 없는 GIF/그림 행은 canonical post/Reels의 body image+profile avatar/profile link+명시 Reply 동작을 가진 안전한 최소DIV 조합을 요구한다. avatar만으로 판별하지 않고 일반 Like/Comment 버튼만 있는 이미지 게시물은 제외한다.
+- 검증된 부모 댓글과 연결된 다음 sibling의 명시 View/Hide Replies 영역을 별도 claim으로 포함해 프로필·아바타도 함께 숨긴다. reply list 밖 이미지/다른 postID/미디어·본문·보호 UI는 attachment 근거로 쓰지 않는다. 전역main/dialog를 숨기지 않는다. 기존 owner/복원 원장 경로 재사용.
+- reply action/toggle 및 mention body가 텍스트를 판별하므로 IG04에만 characterData 감시를 추가하고 기존 IG03도 유지한다. 다른 profile에 텍스트 감시를 확장하지 않으며 본문을 외부 수집/반환하지 않는다. 시험판0.1.8/build ig-comments-rich-3.
+- 마지막 guard 및 이웃 다른post/이미지 negative를 포함한 전체 Content 회귀277/277 PASS(댓글22건 포함), 실패/skip0. 실행: 기존 PLAYWRIGHT_MODULE/CHROME_EXECUTABLE 설정 후 node --test --test-concurrency=2 extension/content-tests/*.test.mjs, 로그 ig-comments-rich-regression.log. 별도 계약6/6·시험판 build·구문 검사 PASS. 이전269 및 관련56은 각각 그 소스 시점의 이력으로 보존한다. 실제 GIF/답글/프로필 수용은 사용자 재시험 전 미확정이며 제품Core/MV3/Native/Server NOT_RUN. Commit/Push/PR/Merge 없음.
+
+
+### 실제 릴스 행 추가 반영
+
+- 사용자 일반 게시물은 대상16/제한16/errors0·댓글 숨김 정상 보고, 댓글 진입 버튼은 남기는 기존 범위 유지. 릴스는 NO_TARGET0 실패다. 추가 제공 파일 baa3a054...는 댓글 행들이며 H3 없이 avatar/profile link·exact comment permalink+time·별도 dir=auto body·reply/like role-button 구조다. class/계정/CDN/본문을 저장하거나 selector로 쓰지 않는다.
+- 익명 Reels2반례를 이전 코드에서 실행해 0PASS/2FAIL(eligible0) 재현했다. H3 필수조건을 profile/body/control과 단일 댓글 permalink 구조로 대체하고, 다중 댓글 list/영상/캡션/닫기/보호 UI를 parent로 삼지 않는다. canonical post/Reels 문서에서 semantic MAIN 밖 댓글 portal도 허용하되 exact 댓글 row 검증·같은postID·보호영역/DM 제외는 유지한다. neutral HOME/profile로 확장하지 않는다. 실제 fragment의 외부 semantic ancestor는 미확보다.
+- 수정 후 댓글 전용16/16 PASS(기존14+Reels2), 실제 사용자 릴스 재시험 대기. 이전 전체269는 이 추가 수정 전 이력이며 새271 전수로 소급하지 않는다. adapter/미디어 release 관련 **40/40 PASS**, 댓글16과 서로 다른3파일 총56건(합산중복 없음), ig-comments-reels-shared.log. 계약6/6·build/구문/diff PASS. module/build FF20DEF28A7A59CBB65F91192D868E82F6411F1573300F66BEED9C8F5B60C955 일치. 전체271 로컬 재실행으로 부르지 않으며 제품/실제릴스 해결은 사용자 재시험 전 미확정이다. 시험판0.1.7/build ig-comments-reels-2로 구분하고 기존 버튼/메시지 권한은 유지한다.
+
+
+- 최신 사용자 실제 릴스 시험 실패: 0.1.6 TEST_IG_COMMENTS_APPLY, page_kind POST_OR_REELS, result NO_TARGET/eligible0/restricted0/errors0, invalidated=null이며 댓글 패널은 화면에 남았다. 이를 성공으로 기록하지 않는다. 원본/빌드 module9C98AE58... 일치를 재확인했으나 현재 릴스 패널의 DOM/실제 제외 조건은 미확정이다. 일반 게시물 DIV row 반영 및 합성269PASS가 이 실제 릴스 구조 지원을 증명하지 않는다. 닫기/목록/입력창을 포함한 현재 릴스 패널 outerHTML을 요청했다. 근거 없이 모든 DIV/aside를 숨기거나 caption/media 보존 조건을 해제하지 않는다. 게시/Commit/Push는 계속 보류한다.
+
+- 담당 채지민, codex/content-instagram-comments, 시작4daf3d3a0bc3ac3a51db98dcf6963dd61eca04db(#65 최신 수정). 기존 clean Worktree에서 별도 브랜치로 진행, 선행 PR/미디어 P2/탐색 identity 수정 보존. 기준 RC2 05_Content_Event_UI 및 feature-registry IG04/AC-IG-04-01~03: 댓글·modal 제한, 캡션/게시물/좋아요 보존.
+- 새 instagram-comments.mjs는 기존 NavigationSurfaceSession/ClaimLedger hide·복원을 재사용한다. 게시물/reel/reels 또는 명시 Comments dialog 안에서 의미상 Comments/댓글 목록, 정확한 per-comment permalink를 가진 li/listitem, 댓글로 명명된 textarea/textbox만 대상으로 한다. 캡션/post 링크·다른 postID/외부주소·media/보호 UI·DM/Stories는 제외한다. 전체 modal/UL/H2를 일괄 숨기거나 계정명/휘발CSS class를 selector로 사용하지 않는다.
+- Session adapter factory/공유 navigation whitelist에 IG04 등록, IG04에만 placeholder 관찰 추가. 기존 IG03 identity 감시와 미디어 release는 변경하지 않는다. 새 TEST_IG_COMMENTS popup3버튼을 맨위에 추가, 시험판0.1.6 FOCURVE 댓글 시험판. 기존 버튼 아래 상태/복사 기능 유지, Core/Server/Wire/제품Manifest/권한 발급·영속 저장은 변경하지 않는다.
+- 초기 전용 시험10/10 PASS(설치 Chrome headless/Playwright 합성 DOM·모의 권한), 계약6/6·build/변경JS5파일 구문/diff PASS. 내용/미디어/좋아요 보존·modal·중립경로·동적href/placeholder·다른owner·SPA/거절·pending retry·타문서·실제 TEST sender gate/adapter 포함. 전체 Content 회귀 실행 중. 최초 합성 성공을 실제 Instagram 지원으로 승격하지 않는다.
+- 최초 H2/계정링크/인증SVG 조각만으로는 댓글과 게시물 작성자/캡션을 구분할 수 없어 H2 전체숨김을 구현하지 않았다. 이후 사용자가 바깥 DIV 댓글 행을 추가 제공했다. 실제 row는 H3 author, 별도 dir=auto 본문, exact per-comment href 안 time[datetime], 답글 button, 외부 아바타를 가진 DIV형태였다. 계정/본문/CDN/class 원문은 저장하지 않고 익명 구조만 fixture에 반영한다.
+- 기존 li/listitem 전제에서 새 DIV2반례 **0PASS/2FAIL(eligible0)** → 보완 후PASS. 정확한 댓글 permalink/time와 H3·본문·버튼 조합의 최소 DIV를 찾고, 단일 댓글 구조가 유지되는 avatar parent만 포함한다. 전체 article/dialog·H2 caption·protected UI·다중 댓글/미디어 컨테이너로 넓히지 않는다. IG04 판별 의존 dir/datetime 감시도 추가, 재사용 DOM의 양방향 적격 전환 반례2건 포함.
+- 최종 전용14/14 PASS(기본10+제공DIV2+동적속성2), 계약6/6·build/구문/diff PASS. 최초 전체265/265는 이전10개 후보 selector 시점의 이력이며 최종269 전수로 합산하지 않는다. 최종 전체 Content **269/269 PASS**, fail/skip0(129.2초), ig-comments-final-regression.log. 전용14와 중복이므로 합산하지 않는다. 계약6/6·build/구문/diff PASS. 원본/빌드 module hash9C98AE58CDA41CA3F60C1F53F8A512BCBADAFC30FF64E29E210466D283BF10E2 일치. 실제 Instagram 사용자 동작/오디오·모든 DOM 변형/제품 Core 검증은 아직NOT_RUN.
+
+- 사용자 확인 예정: 일반 게시물/릴스 댓글·입력창 숨김, 사진/영상/본문/좋아요/닫기 보존, 늦은댓글 자동제한, 해제 후 복원·댓글작성 가능. NO_TARGET/FAILED/남은댓글은 성공 아님. 전체새로고침은 재적용 필요. 실제 Core/native/frozen/fullscope·효과전영속ACK·cleanup lease/결과저장·새문서/BFCache 제품 재결속·제품START/END 수용 NOT_RUN. Instagram 제안항목/흑백·키워드/블러는 이번 범위 밖. Commit/Push/PR/Merge 없음, MVP_FINAL_COMPLETE=false.
+
+
 ## 2026-11-01 PR #65 동적 탐색 identity P2
 
 - 담당 채지민, codex/content-instagram-explore. 시작6d4a5e2b057d0f7e22f6aefe97b52232331368ad, 원격 #65 HEAD/base 일치·clean 확인. review discussion4434086347 범위만 수정한다. 기존 #58/#64 미디어 P2 수정은 그대로 보존하고 재개발/타 브랜치 변경하지 않는다.
@@ -535,3 +567,13 @@
 - build16모듈 byte동일·26고유버튼·권한/WAR 보존 smoke PASS. 최종diff점검에서양측HTML document/title을모두남긴중복header를발견해공용Content헤더하나만유지했다. 이후build재생성과DOCTYPE/title각1개·26버튼·16모듈검사PASS. 이마지막수정은popupHTML헤더뿐이며148기능시험이읽는module/bootstrap/fixture는변경하지않아회귀근거를재사용한다. Node구문/diff검사PASS.
 - 종료카드효과코드/nav는70e40d3와동일, 자동재생/공통원장/watch는39새HEAD와동일. manifest는최신공용Content0.1.1을그대로선택해39대비차이가없다. 따라서47자체diff는이전8파일에서manifest가빠진7파일이다(효과/시험/nav/build/bootstrap/popup/기록). #39가미병합인동안대상통합전체diff에는선행39도보인다.
 - 설명한검증/범위로사용자승인후같은PR47에새커밋·Push하고새HEAD를게시한다. 새HEAD의공유연결부는담당재확인을받고39먼저병합→47최종diff순서를유지한다. 통합/develop병합·자동병합·기존리뷰의새HEAD승격은하지않는다. 사용자/다훈의과거정상및8/8은출처구분하여보존하고현재실제제품연동PASS로바꾸지않는다.
+
+### 2026-11-01 IG-04 사용자 재시험: 답글 토글·릴스 행 외곽 보완
+- 사용자 화면에서 답글 보기(N개), 릴스 댓글 avatar/heart 잔류 확인. reply toggle의 괄호 개수 형식을 추가하고 독립 control도 claim한다. 정확한 comment permalink를 가진 행은 동일 identity wrapper 안에서 avatar/heart까지 확장하되 다른 행·본문·닫기·영상 좋아요는 제외한다. Core/공용 계약 변경 없음.
+- 중간 검사에서 protected UI 및 recycled 행 경계 회귀를 발견해 확장 guard를 보완했다. 최종 댓글 시험24/24 PASS, 계약6/6 PASS, build/diff 검사 PASS. 설치 Chrome headless 합성 DOM/모의 권한이다. 이전 전체277은 이전 소스 근거이며 이번 전체 회귀 재실행으로 표시하지 않는다.
+- 시험판0.1.9, test_build ig-comments-controls-4. 실제 Instagram 사용자 재시험 대기; 제품 Core/MV3/Native/Server NOT_RUN. Commit/Push 없음. MVP_FINAL_COMPLETE=false.
+
+### 2026-11-01 IG-04 사용자 최종 확인
+- 사용자가 시험판0.1.9 보완 후 '문제 없네'로 정상 보고. 직전 안내한 댓글/GIF/답글/프로필/댓글 하트/답글보기 숨김, 영상·게시자·영상 좋아요·닫기 보존 및 해제 복원의 사용자 실행 결과로 기록한다. 에이전트 직접 실제 Instagram 시험이나 Core 통합 성공으로 승격하지 않는다.
+- 게시 준비: IG04 module/24개 시험, 기존 observer·adapter 등록, TEST harness 및 본 기록의9파일만 포함한다. 선행 #65(4daf3d3)와 #64→#61→#58 의존성을 유지한다. 실제 issued/native·영속 cleanup·제품Core/MV3/Server 수용 NOT_RUN, MVP_FINAL_COMPLETE=false.
+- 게시 직전 최종 전체 Content 회귀279/279 PASS(댓글24 포함), 실패/skip0. Node24·설치 Chrome headless/Playwright 합성 DOM·모의 권한. 명령 node --test --test-concurrency=2 extension/content-tests/*.test.mjs, 로그 ig-comments-publish-regression.log. 계약6/6·빌드·diff 검사 PASS. 원격 CI는 Push 후 별도 확인 대상이다.
