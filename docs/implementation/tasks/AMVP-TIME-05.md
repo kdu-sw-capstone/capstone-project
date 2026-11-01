@@ -1,5 +1,18 @@
 # AMVP-TIME-05 — 예약·한도·시간 측정
 
+## 2026-11-01 SITE_TIME 시간창 판정 착수
+
+- 담당 윤종민, `feature/additional-mvp-site-time-windows`, 기준 통합 `9ebec52dc533dd497e454815b53b654ab42ef4fa`. PR76/78/80과 다른 작업공간은 보존한다.
+- 승인 C06의 모든 matching 정책 합성, 정책 내 ALLOW union/정책 간 AND, BLOCK 우선, ONCE/WEEKLY·자정·DST membership을 Core 순수 판정기로 구현한다. 기존43 weeklyStart를 재사용하며 새 시계/예약 occurrence·public Wire/API·DNR 집행을 만들지 않는다.
+- 입력은 이미 검증된 정책 원문·canonical host·호출자가 제공한 UTC다. NO_WINDOW_BLOCK은 전체 허용/실제 해제 증거가 아니며 일일 한도·신뢰 clock/tzdb·owner/issued binding·제품 Worker 연결은 후속이다. 상태: 구현·검증 진행 중.
+
+### SITE_TIME 시간창 판정 단위 종료
+
+- `evaluateSiteTimeWindows`: 모든 matching 정책의 ONCE/WEEKLY membership, ALLOW union/정책 간 AND·BLOCK 우선, local weekday/overnight·gap SKIP/fold EARLIER_ONCE. quota 필요 여부를 별도 반환하고 전체 ALLOW/효과/cleanup 성공을 생성하지 않는다.
+- 100개 주간 창 표본3649ms를 확인해 기존 예약 helper에 caller-owned bounded date/zone offset cache를 추가했다. 기존 stateless weeklyStart/evaluateOccurrence 의미는 유지하고 같은 표본105ms를 확인했다. 단회 CPU probe이며 제품 SLA가 아니다.
+- 시간창25 + 예약/캐시9 = 영향34/34, 전체1005/1005(영향 포함), 계약6/6·Python zoneinfo/Schema 양성14/14·Chromium module/Intl1/1·syntax PASS. 초기 era 누락 처리/브라우저 JSON route 실패를 수정했으며 최종 fail/skip0이다. CI는 Node34·계약6·syntax만 수행한다.
+- 구현·로컬 검증 완료, 새 PR/원격 CI·담당 리뷰 필요. [함수·규칙·한계·검증](../evidence/AMVP-TIME-05-site-time-windows.md). 실제 verified clock/package/native host·한도·DNR/Worker/Server 집행·제품 성능은 미연결이고 전체 Core 완료율은 변경하지 않는다. PR76/78/80은 보존한다.
+
 - 담당: 윤종민. 브랜치 feature/additional-mvp-core, 시작 기준 da1c70b2b2052dece581353f81cd5eb6c604e4b1.
 - 기준: AMVP-CONTRACT-20261029-RC2; docs/design/additional-mvp-contracts/04_정책_시간.md C05/C07/C11, 06_인계_승인.md AMVP-TIME-05.
 - 일정: 사용자가 전달한 최신 일정의 11/2 예약·한도·시간 측정 우선. 개발운영.md 초기 일정보다 최신 사용자 일정이 우선한다.
