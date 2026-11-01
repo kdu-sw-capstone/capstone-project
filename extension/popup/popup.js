@@ -22,18 +22,22 @@ const errors = {
 let pendingSave=null, editTarget=null, siteBusy=false, listRevision=0, siteItems=[], sitesVerified=false;
 const pendingDeletes=new Map();
 window.FocurvePopupSettings={features:()=>structuredClone(editTarget?.feature_policies??[])};
+// Display adapter only. GuestSites.validate remains the authoritative URL/policy validator.
+function automaticSiteName(raw){try{const url=new URL(/^[a-z][a-z0-9+.-]*:\/\//i.test(raw.trim())?raw.trim():'https://'+raw.trim());return [...url.hostname.toLowerCase().replace(/\.$/,'')].slice(0,100).join('');}catch{return '';}}
+
 function updatePolicyOptions(value){
  policy.replaceChildren();
  for(const optionValue of purpose.value==='DISTRACTION'?['BLOCK','RECORD']:['ALLOW']){
   const option=document.createElement('option');option.value=optionValue;option.textContent=labels[optionValue];policy.append(option);
  }
  if(value)policy.value=value;
- window.FocurveA1UI?.sync();
+ window.FocurveA1UI?.sync();window.FocurvePopupUI?.syncChoices();
 }
 purpose.addEventListener('change',()=>updatePolicyOptions());
 function setSiteBusy(value){
  siteBusy=value;saveSite.disabled=value;reloadSites.disabled=value;cancelEdit.disabled=value;
- for(const control of siteForm.querySelectorAll('input, select'))control.disabled=value;
+ for(const control of siteForm.querySelectorAll('input, select, button'))control.disabled=value;
+ window.FocurvePopupUI?.syncChoices();
  window.FocurveA1UI?.sync(value);
  for(const button of siteList.querySelectorAll('button'))button.disabled=value;
 }
@@ -86,8 +90,8 @@ async function refreshSites(){
  siteList.replaceChildren();
  for(const site of data.items){
   const row=document.createElement('li');const description=document.createElement('span');
-  const name=document.createElement('strong');name.textContent=site.display_name;
-  const metadata=document.createElement('small');metadata.textContent=`${site.canonical_host} · ${labels[site.access_policy]}`;
+  const name=document.createElement('strong');name.textContent=site.canonical_host;name.title=site.display_name+' · '+site.canonical_host;
+  const metadata=document.createElement('small');metadata.textContent=`${labels[site.purpose]} · ${labels[site.access_policy]}`;
   description.title=`${labels[site.purpose]} / ${labels[site.access_policy]}${site.include_subdomains?' · 하위 도메인 포함':' · 정확한 호스트만'}`;
   description.append(name,metadata);
   const controls=document.createElement('div');controls.className='site-actions';
@@ -106,15 +110,16 @@ async function deleteSite(site){
  try{
   const removed=await siteRequest('DEV_GUEST_SITE_DELETE',payload,pending.request_id);
   if(removed?.site_id!==site.site_id||typeof removed.deleted_at!=='string')throw new Error('RESPONSE_UNCONFIRMED');
+  await refreshSites();
+  if(siteItems.some(item=>item.site_id===site.site_id))throw new Error('RESPONSE_UNCONFIRMED');
   pendingDeletes.delete(site.site_id);if(editTarget?.site_id===site.site_id)stopEditing();
   siteResult.textContent=`삭제 완료: ${site.canonical_host}. 현재 집중과 과거 기록은 유지됩니다.`;
-  try{await refreshSites();}catch{siteResult.textContent+=' 목록 조회 실패. 목록 다시 확인을 눌러주세요.';}
  }catch(error){siteResult.textContent=errors[error.message]||'삭제 결과를 확인하지 못했습니다. 목록을 확인하거나 같은 삭제 확인으로 재시도해주세요.';}
  finally{setSiteBusy(false);}
 }
 siteForm.addEventListener('submit',async event=>{
  event.preventDefault();if(siteBusy)return;setSiteBusy(true);
- const site={url:document.querySelector('#site-url').value,display_name:document.querySelector('#site-name').value,
+ const site={url:document.querySelector('#site-url').value,display_name:editTarget?document.querySelector('#site-name').value:automaticSiteName(document.querySelector('#site-url').value),
   include_subdomains:document.querySelector('#site-subdomains').checked,purpose:purpose.value,access_policy:policy.value,feature_policies:window.FocurveA1UI?.featuresForSave(editTarget?.feature_policies??[])??structuredClone(editTarget?.feature_policies??[])};
  const editing=editTarget!==null;
  const type=editing?'DEV_GUEST_SITE_UPDATE':'DEV_GUEST_SITE_CREATE';
@@ -123,20 +128,24 @@ siteForm.addEventListener('submit',async event=>{
  if(!pendingSave||pendingSave.body!==body)pendingSave={body,request_id:crypto.randomUUID()};
  try{
   const saved=await siteRequest(type,payload,pendingSave.request_id);
-  if(typeof saved?.canonical_host!=='string')throw new Error('RESPONSE_UNCONFIRMED');
+  const raw=site.url.trim(),host=new URL(/^[a-z][a-z0-9+.-]*:\/\//i.test(raw)?raw:'https://'+raw).hostname.toLowerCase().replace(/\.$/,'');
+  const sameFeatures=(a,b)=>Array.isArray(a)&&Array.isArray(b)&&a.map(f=>f.feature_code+':'+f.enabled).sort().join('|')===b.map(f=>f.feature_code+':'+f.enabled).sort().join('|');
+  if(typeof saved?.site_id!=='string'||!Number.isSafeInteger(saved.version)||saved.version<1||saved.canonical_host!==host||saved.display_name!==site.display_name||saved.purpose!==site.purpose||saved.access_policy!==site.access_policy||saved.include_subdomains!==site.include_subdomains||!sameFeatures(saved.feature_policies,site.feature_policies)||editing&&(saved.site_id!==editTarget.site_id||saved.version<=editTarget.version))throw new Error('RESPONSE_UNCONFIRMED');
+  await refreshSites();
+  const observed=siteItems.find(item=>item.site_id===saved.site_id);
+  if(!observed||!Number.isSafeInteger(observed.version)||observed.version<saved.version||observed.canonical_host!==saved.canonical_host||observed.display_name!==saved.display_name||observed.purpose!==saved.purpose||observed.access_policy!==saved.access_policy||observed.include_subdomains!==saved.include_subdomains||!sameFeatures(observed.feature_policies,saved.feature_policies))throw new Error('RESPONSE_UNCONFIRMED');
   pendingSave=null;stopEditing();
   siteResult.textContent=`${editing?'수정':'등록'} 완료: ${saved.canonical_host}. 변경은 다음 집중 세션부터 적용됩니다.`;
-  try{await refreshSites();}catch{siteResult.textContent+=' 목록 조회 실패. 목록 다시 확인을 눌러주세요.';}
  }catch(error){siteResult.textContent=errors[error.message]||'저장 결과를 확인하지 못했습니다. 입력을 유지한 채 다시 저장을 눌러주세요.';}
  finally{setSiteBusy(false);}
 });
 reloadSites.addEventListener('click',async()=>{
  if(siteBusy)return;reloadSites.disabled=true;
  try{await refreshSites();siteResult.textContent=editTarget?'최신 목록을 확인했습니다. 수정 입력은 유지됩니다. 충돌한 경우 입력을 따로 보관하고 최신 항목을 다시 선택해 비교해주세요.':'저장된 목록을 확인했습니다.';}
- catch{siteResult.textContent='목록을 확인하지 못했습니다. 다시 시도해주세요.';}
+ catch{siteResult.textContent='목록을 확인하지 못했습니다. 다시 시도해주세요.';window.FocurvePopupUI?.sitesFailed();}
  finally{reloadSites.disabled=siteBusy;}
 });
-refreshSites().catch(()=>{siteResult.textContent='목록을 확인하지 못했습니다. 목록 다시 확인을 눌러주세요.';});
+refreshSites().catch(()=>{siteResult.textContent='목록을 확인하지 못했습니다. 목록 다시 확인을 눌러주세요.';window.FocurvePopupUI?.sitesFailed();});
 
 const startFocus = document.querySelector('#start-focus');
 const endFocus = document.querySelector('#end-focus');
