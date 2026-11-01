@@ -1,4 +1,9 @@
 # AMVP-CONTENT-06 · 추가 Content 연결
+## 2026-11-01 PR83 로그인 보호 동적 관찰 P2 수정
+- 담당 채지민 / codex/content-instagram-grayscale / 시작7f5439afe057543f93f2589886ad3b7aadfdf4c2. review5727916908/인라인4435476825 대응. 기존 공개화면 전체흑백·프로필/알림/portal·DM/login/FOCURVE 제외·재생/복원 범위유지. IG-06에만 type/action observer추가, 다른옵션 관찰목록/selector/Wire/권한변경없음.
+- type text→password→text, form action search→accounts/login→search의 자동보호/재적용·원래sepia!important복원2반례를수정전0/2FAIL→수정후2/2PASS 확인. 다른owner claim 보존 및 보호branch복원setter실패 시 신규branch효과를얻지않고 기존의무/FAILED를보존·수리후재시도하는 반례도실패→PASS. 이를위해 IG-06 scan에서 복원오류가있으면새효과획득중단을추가, 타옵션은그대로유지.
+- 직접Windows 설치Chrome headless/Playwright 합성 IG-06 16/16·기존YouTube흑백12/12=관련28/28 PASS, 계약6/6·build/구문/diff별도PASS. 전체317은수정전근거이며 수정후전체320을실행했다고기록하지않음. 특수로그인전환은자동반례로검증했고 사용자추가로그인조작요구없음. 새사용자/원격CI/Core·MV3·Native·Server수용NOT_RUN. 미커밋/미게시, #71/#82 별도잔여요청보존, MVP_FINAL_COMPLETE=false.
+
 ## 2026-11-01 IG-06 Instagram 흑백 독립 구현
 - 최종후보0.1.16 사용자 'ㅇㅋ 아무문제없다': 안내한 탐색에서열린영상·알림·프로필포함흑백, DM/FOCURVE 제외·재생/소리·해제복원 정상보고. 사용자 실행 결과이며 에이전트제품수용과구분. 게시준비 동의 후최종전체회귀 재실행중. #82 P2수정20d5c26/기록154c769는별도브랜치에 보존했으며 본브랜치시작은70ff3e6이다. 이PR은 #82최신수정 선행통합 후최종diff·CI 재확인이 필요하며 통합충돌/순서는다훈관리. #82효과파일을구버전으로되돌리는 통합을허용하지 않는다.
 - 사용자0.1.15 잔여실패: 탐색목록은흑백이나 클릭해열린 portal영상 및본문밖알림패널은색유지. 기존main/article/dialog 수집은 본문존재시 의미표식없는추가panel을누락한다. 익명Chrome 반례2건수정전0/2 PASS→공개페이지body직계branch수집+보호branch분리로수정후2/2 PASS. 기존IG-06총13/13 PASS(프로필11+추가2), DM/login/FOCURVE 제외·미디어상태/owner/부분복원회귀 유지. TEST0.1.16/ig-grayscale-panels-3 빌드·구문·공백PASS. 새사용자재확인과원격CI/제품Core연결은미검증, 이전정상보고를전체완료로승격하지않는다. Commit/Push없음.

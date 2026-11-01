@@ -99,6 +99,9 @@ export class NavigationSurfaceSession {
         if(cleanup.restored)this.#targets.delete(element);else errors+=cleanup.error_count||1;
       }
       for(const element of current){
+        // A failed IG-06 protection split must retain its old restoration debt
+        // and must not acquire new branch effects before that cleanup succeeds.
+        if(this.#profile.feature_id==='IG-06'&&errors)break;
         if(!this.#canApply())break;
         let claim=this.#targets.get(element);
         if(!claim){
@@ -115,7 +118,8 @@ export class NavigationSurfaceSession {
       attributeFilter:['href','page-subtype','browse-id','video-id','id','class','style','inert','hidden','data-focurve-restriction','data-focurve-ui',
         ...(this.#profile.feature_id.startsWith('IG-')?['aria-label','role','alt','draggable','contenteditable']:[]),
         ...(this.#profile.feature_id==='IG-03'?['title','aria-labelledby']:[]),
-        ...(this.#profile.feature_id==='IG-04'?['placeholder','dir','datetime']:[])]});
+        ...(this.#profile.feature_id==='IG-04'?['placeholder','dir','datetime']:[]),
+        ...(this.#profile.feature_id==='IG-06'?['type','action']:[])]});
     const result={feature_id:this.#profile.feature_id,local_only:true,native_verified:false,status:errors?'FAILED':eligible?'OBSERVED':'NO_TARGET',
       eligible_target_count:eligible,restricted_target_count:restricted,error_count:errors,remaining_targets:this.#targets.size};
     if(!this.#open)return null;

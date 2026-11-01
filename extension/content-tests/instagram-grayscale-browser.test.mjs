@@ -86,3 +86,23 @@ test('actual TEST sender gate returns local effects and restoration only',async 
  const p=await fixture(t);await p.evaluate(()=>{window.chrome={runtime:{id:'test',getURL:p=>location.origin+'/'+p,onMessage:{addListener:f=>window.listener=f}}};});await p.evaluate(await readFile(new URL('../content-tools/chrome-harness/bootstrap.js',import.meta.url),'utf8'));
  const r=await p.evaluate(async()=>{let leaked=false;listener({type:'TEST_IG_GRAYSCALE_APPLY'},{id:'test',url:location.href},()=>{leaked=true;});const send=type=>new Promise(resolve=>listener({type},{id:'test',url:chrome.runtime.getURL('popup.html')},resolve));return{leaked,on:await send('TEST_IG_GRAYSCALE_APPLY'),off:await send('TEST_IG_GRAYSCALE_RELEASE')};});assert.equal(r.leaked,false);assert.equal(r.on.result.feature_id,'IG-06');assert.equal(r.on.coreConnected,false);assert.equal(r.off.released.restored,true);
 });
+
+for(const attribute of ['type','action'])test(`login protection observes ${attribute} transitions and restores without manual scan`,async t=>{
+ const html=attribute==='type'?'<section id="root" style="filter:sepia(1)!important"><input id="field" type="text"><span id="public">public</span></section>':'<section id="root" style="filter:sepia(1)!important"><form id="field" action="/search/"><input type="text"></form><span id="public">public</span></section>';
+ const p=await fixture(t,{html});await p.evaluate(()=>session.start());
+ await p.evaluate(attribute=>document.querySelector('#field').setAttribute(attribute,attribute==='type'?'password':'/accounts/login/'),attribute);
+ await p.waitForFunction(()=>document.querySelector('#root').style.filter==='sepia(1)',null,{timeout:1500});
+ assert.equal(await p.locator('#field').evaluate(e=>{for(let n=e;n;n=n.parentElement)if(getComputedStyle(n).filter.includes('grayscale'))return false;return true;}),true);
+ await p.evaluate(attribute=>document.querySelector('#field').setAttribute(attribute,attribute==='type'?'text':'/search/'),attribute);
+ await p.waitForFunction(()=>document.querySelector('#root').style.filter.includes('grayscale'),null,{timeout:1500});
+ assert.equal((await p.evaluate(()=>session.release())).restored,true);assert.deepEqual(await p.locator('#root').evaluate(e=>[e.style.filter,e.style.getPropertyPriority('filter')]),['sepia(1)','important']);
+});
+
+test('login transition keeps another owner and failed restoration debt without new grayscale claims',async t=>{
+ const p=await fixture(t,{html:'<section id="root" style="filter:sepia(1)!important"><input id="field" type="text"><span id="public">public</span></section>'});
+ await p.evaluate(()=>{session.start();ledger.grayscale('other',document.querySelector('#root'));document.querySelector('#field').type='password';});
+ await p.waitForFunction(()=>document.querySelector('#public').style.filter.includes('grayscale'));assert.equal(await p.locator('#root').evaluate(e=>e.style.filter.includes('grayscale')),true);
+ await p.evaluate(()=>ledger.release('other'));assert.equal(await p.locator('#root').evaluate(e=>e.style.filter),'sepia(1)');await p.evaluate(()=>session.release());
+ const result=await p.evaluate(()=>{document.querySelector('#field').type='text';session=make(settings);session.start();const root=document.querySelector('#root'),write=root.style.setProperty.bind(root.style);root.style.setProperty=(name,value,priority)=>{if(name==='filter'&&value==='sepia(1)')throw Error('restore failed');write(name,value,priority);};document.querySelector('#field').type='password';const failed=session.scan();const newFilter=document.querySelector('#public').style.filter;root.style.setProperty=write;const retry=session.scan();return{failed,newFilter,retry,released:session.release()};});
+ assert.equal(result.failed.status,'FAILED');assert.equal(result.newFilter,'');assert.equal(result.retry.status,'OBSERVED');assert.equal(result.released.restored,true);
+});
