@@ -180,4 +180,31 @@ class AdditionalConfigMysqlTest {
   assertThatThrownBy(()->AdditionalUsageStatistics.Range.parse(Map.of("scope",new String[]{"ACCOUNT_TOTAL"},"from_date",new String[]{"2025-01-01"},"to_date",new String[]{"2026-10-29"}))).hasMessage("VALIDATION_FAILED");
  }
 
+ long hourlySession(Fixture f){
+  String snapshot=id(),session=id();db.update("INSERT INTO policy_snapshots(id,user_id,executor_id,format_version,payload,payload_hash,created_at) VALUES(?,?,?,'1.0','{}',?,UTC_TIMESTAMP(3))",snapshot,f.identity.user(),f.executor,"0".repeat(64));
+  db.update("INSERT INTO focus_sessions(source_session_id,user_id,executor_id,policy_snapshot_id,execution_status,duration_minutes,desired_revision,body,record_status,source,origin) VALUES(?,?,?,?,'ENDED',10,1,'{}','COMPLETE','MANUAL','MEMBER')",session,f.identity.user(),f.executor,snapshot);
+  return db.queryForObject("SELECT id FROM focus_sessions WHERE source_session_id=?",Long.class,session);
+ }
+ void hourlyEvent(Fixture f,long session,long sequence,String at,String status){
+  String event=id(),snapshot=db.queryForObject("SELECT policy_snapshot_id FROM focus_sessions WHERE id=?",String.class,session),source=db.queryForObject("SELECT source_session_id FROM focus_sessions WHERE id=?",String.class,session);
+  var payload=auth.obj("event_id",event,"executor_id",f.executor,"session_id",source,"occurred_at",at,"event_type","RECORDED_ACCESS","policy_snapshot_id",snapshot,"payload",auth.obj("target_kind","SITE","target_host","example.org","target_key","SITE:example.org","access_seq",sequence));
+  db.update("INSERT INTO event_receipts VALUES(?,?,?,?,?,?,?,?,?,?,UTC_TIMESTAMP(3))",event,f.identity.user(),f.executor,session,"Event1.2","RECORDED_ACCESS","0".repeat(64),payload.toString(),status,sequence);
+  db.update("INSERT INTO access_events(event_id,session_id,occurred_at,access_seq,target_kind,target_host,target_key,reason,navigation_id,policy_snapshot_id) VALUES(?,?,?,?,?,'example.org','SITE:example.org','RECORDED_ACCESS',?,?)",event,session,java.sql.Timestamp.from(java.time.Instant.parse(at)),sequence,"SITE",id(),snapshot);
+ }
+ @Test void hourlyReadsAcceptedOwnedHistoryOverHttpWithoutExecutionOrNewSchema()throws Exception {
+  var f=fixture();long session=hourlySession(f);hourlyEvent(f,session,1,"2026-11-10T14:59:59.999Z","ACCEPTED");hourlyEvent(f,session,2,"2026-11-10T15:00:00.000Z","ACCEPTED");hourlyEvent(f,session,3,"2026-11-10T15:30:00.000Z","ACCEPTED");hourlyEvent(f,session,4,"2026-11-10T15:45:00.000Z","PENDING");hourlyEvent(f,session,5,"2026-11-11T15:00:00.000Z","ACCEPTED");
+  var foreign=fixture();hourlyEvent(foreign,hourlySession(foreign),1,"2026-11-10T15:00:00.000Z","ACCEPTED");String otherExecutor=id();db.update("INSERT INTO extension_installations(id,current_user_id,proof_hash,client_version) VALUES(?,?,?,'test')",otherExecutor,f.identity.user(),"0".repeat(64));var other=new Fixture(otherExecutor,id(),f.identity,f.store);hourlyEvent(other,hourlySession(other),1,"2026-11-10T16:00:00.000Z","ACCEPTED");
+  String cookie=id();db.update("INSERT INTO web_sessions(id_hash,user_id,csrf_hash,expires_at,auth_version) VALUES(?,?,?,DATE_ADD(UTC_TIMESTAMP(3),INTERVAL 1 HOUR),1)",MemberAuth.hash(cookie),f.identity.user(),MemberAuth.hash(id()));
+  var http=MockMvcBuilders.standaloneSetup(new MemberHourlyStatisticsApi(auth,new MemberReadModel(auth,new MemberExecution(auth,json)),manager)).build();String path="/api/v1/statistics/hourly?from_date=2026-11-11&to_date=2026-11-11";
+  http.perform(get(path)).andExpect(status().isUnauthorized());
+  var response=http.perform(get(path).cookie(new Cookie("FOCURVE_WEB",cookie))).andExpect(status().isOk()).andExpect(header().string("Cache-Control","no-store")).andExpect(jsonPath("$[0].total_access").value(2)).andExpect(jsonPath("$[0].repeat_access").value(2)).andExpect(jsonPath("$[0].quality").value("PARTIAL")).andExpect(jsonPath("$[1].total_access").value(1)).andReturn();assertThat(json.readTree(response.getResponse().getContentAsString()).size()).isEqualTo(24);
+  http.perform(get(path+"&scope=ACCOUNT_TOTAL").cookie(new Cookie("FOCURVE_WEB",cookie))).andExpect(status().isUnprocessableEntity());http.perform(get("/api/v1/statistics/hourly?from_date=2026-02-30&to_date=2026-11-11").cookie(new Cookie("FOCURVE_WEB",cookie))).andExpect(status().isUnprocessableEntity());
+  String token=new org.springframework.transaction.support.TransactionTemplate(manager).execute(tx->auth.mint(f.executor,f.identity.user(),id(),1)).path("access_token").asText();
+  long receipts=db.queryForObject("SELECT COUNT(*) FROM event_receipts",Long.class),commands=db.queryForObject("SELECT COUNT(*) FROM execution_commands",Long.class);
+  try(var tcp=new AmvpLoopbackHttp(auth,manager,publication(false),null,null,null)){
+   var result=tcp.send("GET",path,token,null);assertThat(result.statusCode()).isEqualTo(200);var rows=json.readTree(result.body());assertThat(rows.get(0).path("total_access").asLong()).isEqualTo(2);assertThat(rows.get(1).path("total_access").isNull()).isTrue();assertThat(rows.get(0).path("active_duration_ms").isNull()).isTrue();assertThat(result.headers().firstValue("Cache-Control")).contains("no-store");
+  }
+  assertThat(db.queryForObject("SELECT COUNT(*) FROM event_receipts",Long.class)).isEqualTo(receipts);assertThat(db.queryForObject("SELECT COUNT(*) FROM execution_commands",Long.class)).isEqualTo(commands);
+ }
+
 }

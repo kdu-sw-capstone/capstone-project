@@ -29,17 +29,19 @@ afterEach(async () => {
   await new Promise(resolve => setTimeout(resolve, 0));
 });
 describe("회원 Web 입력 및 실패 처리 (HTTP 모의 검증)", () => {
-  it("추가 시간대 분석을 활성 기능이나 예시 차트로 표시하지 않는다", async () => {
+  it("시간대 API의 미수집 결과를 예시 차트나 0건으로 표시하지 않는다", async () => {
     vi.stubGlobal("fetch", vi.fn(async (url: string) => {
       if (url.endsWith("/me")) return json({user_id:"1",display_name:"검증",providers:["EMAIL"]});
       if (url.endsWith("/extension-installations")) return json([]);
       if (url.startsWith("/api/v1/sites")) return json({items:[],next_cursor:null,has_more:false});
       if (url.startsWith("/api/v1/statistics/summary")) return json({quality:"NO_DATA"});
+      if (url.startsWith("/api/v1/statistics/hourly")) return json(Array.from({length:24},()=>({total_access:null,repeat_access:null,blocked_access:null,repeat_ratio:null,active_duration_ms:null,quality:"NOT_COLLECTED",as_of:"2026-11-11T00:00:00.000Z"})));
       if (url.endsWith("/dashboard")) return json({current_session:null,recent_sessions:[],recent_access:[],summary:{quality:"NO_DATA"}});
       throw new Error("unexpected request");
     }));
     render(<MemberApp />);
-    await screen.findByText("시간대별 분석은 아직 제공하지 않습니다.");
+    await screen.findByRole("table",{name:"00시부터 23시까지 시간대별 접근·반복 기록"});
+    expect(screen.getAllByText("미수집")).toHaveLength(24);
     expect(screen.queryByRole("img", {name:/0시/})).not.toBeInTheDocument();
   });
   it("미설정 소셜 제공자를 비활성화하고 이메일 인증과 분리한다", async () => {
