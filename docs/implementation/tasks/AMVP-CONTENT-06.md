@@ -385,3 +385,11 @@
 - build16모듈 byte동일·26고유버튼·권한/WAR 보존 smoke PASS. 최종diff점검에서양측HTML document/title을모두남긴중복header를발견해공용Content헤더하나만유지했다. 이후build재생성과DOCTYPE/title각1개·26버튼·16모듈검사PASS. 이마지막수정은popupHTML헤더뿐이며148기능시험이읽는module/bootstrap/fixture는변경하지않아회귀근거를재사용한다. Node구문/diff검사PASS.
 - 종료카드효과코드/nav는70e40d3와동일, 자동재생/공통원장/watch는39새HEAD와동일. manifest는최신공용Content0.1.1을그대로선택해39대비차이가없다. 따라서47자체diff는이전8파일에서manifest가빠진7파일이다(효과/시험/nav/build/bootstrap/popup/기록). #39가미병합인동안대상통합전체diff에는선행39도보인다.
 - 설명한검증/범위로사용자승인후같은PR47에새커밋·Push하고새HEAD를게시한다. 새HEAD의공유연결부는담당재확인을받고39먼저병합→47최종diff순서를유지한다. 통합/develop병합·자동병합·기존리뷰의새HEAD승격은하지않는다. 사용자/다훈의과거정상및8/8은출처구분하여보존하고현재실제제품연동PASS로바꾸지않는다.
+
+## 2026-11-01 PR57 CI 근거 보완 · 채지민
+- 브랜치 fix/ig-story-attribute-observer-p2, 시작02a653fb60e671dcf997951b220708ea146b4a7a. #71 HEAD4ebc72f와 정상사용자시험판0.1.9.2/다른worktree를 보존했다. PR57 base는 기존 codex/content-instagram-stories(08730c8) 그대로이며 #56 원본에 직접 반영하지 않는다.
+- 기능IG01/AC-IG-01-01~03·RC2 05_Content_Event_UI 기준. 기존 HEAD에는 Content workflow가 없어 새 .github/workflows/content-sessions.yml만 검증된 #54 CI 구성으로 복사했다. workflow blob44bb30d93878bd8916b034b625a82c7007adc9dc 동일. 최소권한/고정actions/Node24.19.0/Playwright1.62.1, 전체Content·계약·build·syntax 경로 유지.
+- 02a653f 대비 extension/content·content-tests·content-tools·ui 전체 diff 없음. 스토리alt/draggable 효과·시험·공통원장·Core/Server/공용계약 변경 없음. 본기록+workflow2파일만 게시할 예정.
+- 로컬 전체 Content 회귀 실행 중. 별도 계약6/6·build·전체 Content/시험 구문·diff PASS. 빌드 검사 후 사용자 기존 unpacked 댓글시험판0.1.9.2를 원래 경로에 복구했다. Node24/설치Windows Chrome headless/Playwright 합성DOM이며 실제Instagram/MV3/Native/Server 제품수용 NOT_RUN. MVP_FINAL_COMPLETE=false.
+- 게시승인 후 동일PR57 새HEAD 원격CI checkout/원본로그 확인·PR본문 갱신, 다훈 변경분/승인유효성 검토 필요. 과거리뷰를 새HEAD 승인으로 승격하지 않고 Approve/Draft해제/Resolve/Merge하지 않는다.
+- 최종 로컬 Content183/183 PASS, fail/skip0. 명령 기존 PLAYWRIGHT_MODULE/CHROME_EXECUTABLE 지정 후 node --test --test-concurrency=2 extension/content-tests/*.test.mjs, 로그 pr57-ci-local.log. 계약6/6·빌드·구문·diff 별도PASS. 다음 새HEAD 원격CI 확인.
