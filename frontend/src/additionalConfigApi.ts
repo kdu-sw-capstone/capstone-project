@@ -50,7 +50,13 @@ export function configWrite(executor:string,id:string,value:ConfigValue,version?
  return {key,async send():Promise<ConfigRecord>{
   const response=parse(await request<ConfigRecord>("/amvp/configs/"+id,"PUT",body,{key,version,create:version===undefined}),executor);
   if(response.config_id!==id)throw new UiError("다른 설정의 응답을 받았습니다.");
-  const saved=await readConfig(executor,id);
+  let saved:ConfigRecord;
+  try{saved=await readConfig(executor,id);}
+  catch(error){
+   // PUT was acknowledged. A later GET rejection is not a rejected write or a
+   // stale mutation precondition: keep its immutable request available to replay.
+   throw new UiError("저장 응답 이후 조회를 확인하지 못했습니다. 같은 저장 요청 결과를 다시 확인하세요.",{cause:error});
+  }
   if(saved.version!==response.version||canonical(saved.value)!==canonical(response.value))throw new UiError("다른 변경이 먼저 저장됐습니다. 현재 설정을 다시 조회하세요.");
   return saved;
  }};

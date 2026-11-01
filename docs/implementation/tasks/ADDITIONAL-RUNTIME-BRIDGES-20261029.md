@@ -1,5 +1,7 @@
 # 추가 MVP · 정책 발행·이용시간 수신 경계
 
+> 2026-11-01 PR69 후속 동기화: PR67 병합 **005b90134a436fd651cd07baff1be1fc934173e4**를 기존 #69에 이력 보존 merge로 반영한다. 수동 충돌은 이 작업카드1파일이며 아래 양측 전체 기록을 보존한다. `SessionNote.tsx`, `SessionNoteScope.test.tsx`, `SESSION-06.md`는 기존 **b043737102422c4618f655e99c882c56e8cadc50**의 blob과 동일하다. 그 외 변경은 통합 기준에서 가져온 #67의 기존 구현이며 재구현하지 않는다. 기존 검증/승인은 내용 동일한 근거로만 재사용하고 새 HEAD 승인으로 소급하지 않는다. 새 HEAD·CI·후보 tree 근거는 PR69 본문 및 `.local/pr69-pr67-sync-20261101/`. #63/#66·Core/Content·다른 Worktree·공유 루트 index는 변경하지 않으며 Approve/Draft 해제/Merge·실제 제품 수용은 수행하지 않는다. `MVP_FINAL_COMPLETE=false`.
+
 > 2026-11-01 PR69 리뷰 보완·통합 동기화: 독립 리뷰의 폐기 GET401 전역 인증 만료 P2를 초기 load/PUT412 후속 GET 양쪽에서 재현·수정했다. 폐기2 FAIL·현재401 대조군2 PASS → 관련33 PASS. 원래 오류 수명 경계만 보완했으며 api.ts/인증/useWork 계약은 유지한다. PR62 병합 **624c99c7846f514b683ecaaa2eac8deb48ec72f4**를 반영하면서 아래 양측 기록 전체와 Note 제품/시험 및 SESSION-06 카드 blob을 보존한다. 과거 리뷰/승인을 새 HEAD로 소급하지 않는다. #66은 기존 수정 금지 범위로 남겨 HEAD를 변경하지 않는다. 새 HEAD/CI는 PR69 본문과 `.local/pr69-review-fix-20261101/`에 기록한다.
 
 ## 후속 SESSION-06 화면 이동·입력 보존 — 2026-11-01
@@ -8,6 +10,33 @@
 - A~J 기능별 구현/미통합/실제 producer/공동 결정 분류는 PR67 작업카드 변경에 정리했다. 그 기록을 다시 쓰지 않고 다음 독립 결함인 SESSION-06을 기존 UI·Note API로 수정했다. 이전 세션의 대기 GET과 `useWork` lock이 새 세션 조회를 막고 늦은 이전 응답을 표시하는 반례 및 조회 중 입력을 덮는 반례2 FAIL → 최종 PASS. 세션별 수명/응답 세대를 결속하고 이전 PUT·412·부모 draft callback을 폐기한다. 현재 편집의 저장 여부와 서버 ACK 스냅샷도 구분한다. 중간 StrictMode 초안 실패는 게시 전 차단·수정했다.
 - 신규7 + 기존 FocusScreens18/CADENCE4 = **29 PASS**, 타입/Vite·추가 시험 타입 검사 PASS. 모의 HTTP/JS DOM이며 실제 제품 수용이 아니다. Server/DB/Note API·RC2/legacy-lock·owner/Receipt/Core/Content/Shorts/의존성 변경 없음. 상세 원문/경계는 기존 [SESSION-06](SESSION-06.md) 카드, 로컬 `.local/note-scope-20261101/`, 새 HEAD/원격 CI는 PR 본문/result를 따른다. 불필요한 DB/설치/전체 로컬 회귀는 반복하지 않는다.
 - 다음 경계: 실제 host/과거 version 기간 DTO, ONCE actor 매핑·CADENCE 단계·USG-02 hash는 공동 결정/제공물 대기다. 공개 Core e903aff/Content a6468b6·통합10ab602에서 새로운 승인된 RuntimeReport/capability/effect/release/collector/clock 제공물은 확인되지 않았다. TimeRule UTC 정밀도는 기존 PR60을 재구현하지 않는다. AI 저장 schema/동의/provider는 승인 없이 도입하지 않는다. 새 독립 결함이 확인되기 전 의미 없는 조회 화면·PR을 추가하지 않는다. 실제 Core/Content/Chrome/Native·정상 END/복원/재기동 NOT_RUN, `MVP_FINAL_COMPLETE=false`.
+
+> 2026-11-01 PR67 통합 동기화: PR62 병합 **624c99c7846f514b683ecaaa2eac8deb48ec72f4**를 기존 PR67에 이력 보존 merge로 반영했다. 수동 충돌은 이 작업카드 한 파일뿐이며 양측 전체 원문과 기존 PR67 제품/시험5파일 blob을 보존한다. 독립 리뷰의 기존35 PASS 및 Web336/격리21/CI8개 근거는 같은 내용에 한해 재사용하고 새 HEAD 승인으로 소급하지 않는다. 새 HEAD/CI는 PR67 본문 및 `.local/pr67-sync-20261101/`에 기록한다. #66 HEAD는 기존 수정 금지 조건에 따라 보존하고 #69 리뷰 수정은 별도 PR에서 처리한다. RC2/legacy-lock·생산 효과/UNKNOWN/복원 조건은 그대로다.
+
+## 설정 편집·저장 충돌의 사용자 복구 연결 — 2026-11-01
+
+- 담당 김다훈. 통합 **10ab6026f1cf7d244a75ee529830afb8bcf6b8c8**에서 `feature/additional-mvp-settings-conflict`로 분리하고 clean 관리형 Worktree를 재사용했다. #62 **b3a8d13415827442d468a7109786cac3914481c2**, #63 **3f069ed43bf54c95e9ecc2e3ad850638209759c5**, #66 **650eddd5a38a5406775ce614b1ae2474879fa0b4**는 실제 Draft·미병합으로 확인했고 해당 브랜치·HEAD를 보존한다. 새 Worktree/설치/계약/producer는 만들지 않는다.
+- 재현한 결함: 같은 설치의 전체 재조회가 편집값과 미확인 저장 요청을 버렸고, 412 후 기존 버전 편집을 해소할 제품 조작이 없었다. 최초 반례2건 수정 전 FAIL → 수정 후 PASS. 같은 설치 재조회는 편집/불변 요청을 보존하고 실패 중 저장을 막는다. CFG02로 최신 종류·소유권·ID·버전을 확인한 뒤 사용자가 서버 값으로 바꾸거나 내 편집 전체를 최신 expected version으로 이어갈 수 있다. 자동 저장/병합은 없고 최종 저장도 기존 If-Match가 다시 경합을 검사한다. SITE_TIME body.version도 같은 expected version으로 결속한다. 삭제된 설정은 재생성하지 않으며 실제 해제로 표시하지 않는다.
+- 추가 확인: PUT 성공 후 확인 GET의 401/404/412를 저장 거절·변경 충돌로 오분류해 원래 요청을 버리는 신규3 반례가 수정 전 FAIL이었다. 확인 GET 실패를 UiError/cause로 분리하고 원래 오류를 보존한다. 같은 저장 요청/key/본문/If-Match로만 명시 재확인하며 GET 오류를 PUT412처럼 처리하지 않는다. PUT 자체의 412 및 인증 거절은 기존 의미를 유지한다.
+- 직접 영향 Settings/SDK/삭제/상태6파일 **54 PASS**, 별도 최초 cause 보존 SDK **1 PASS**, 누적 전체 Web **336 PASS**(신규14 포함, 중복 합산하지 않음). TypeScript/Vite PASS. 기존 fixture 기반 fresh MySQL8.4.8 **21 PASS = runtime bridge15 + config contract6**, 실패/오류/skip0. 실제 loopback TCP에서 stale PUT412 → CFG02 version2 → 명시 If-Match2/body.version2 PUT → version3와 동일 key Receipt replay, 과거 config version·사용량/예산 불변을 확인했다. capability/clock은 SYNTHETIC이며 Core 실행이 아니다. 시험 DB **c6bd7eb865c0**/port33421, 소유권 확인 후 정상 종료. `.local/settings-conflict-20261101/`, `../verify/.local/amvp-mysql-c6bd7eb865c0/`에 원본 보존.
+- RC2·legacy-lock·Server 생산·DB schema·인증/API/RuntimeReport·Receipt의 의미·Core/Content/Shorts·의존성은 기준과 같다. 변경 없는 원장의 기존 검증을 재사용한다. 기준 Core4파일 legacy-lock FAIL, 기존 FocusScreens 복수 alert CI 변동 이슈는 별개로 보존한다. Approve·Draft 해제·Merge·실제 Chrome/Native/제품 서비스 수용 NOT_RUN. `MVP_FINAL_COMPLETE=false`.
+
+### 확정 추가 MVP A~J의 실제 경계 (현재 실행에서 바뀐 경계 중심)
+
+| 영역 | 구현/검증 상태 | 남은 연결·결정 |
+|---|---|---|
+| A 사이트·기간 이용시간 | DAY-01 IMPLEMENTED_AND_TESTED; #66 IMPLEMENTED_NOT_INTEGRATED | actual_host/target_key와 정책 host/version 기간 DTO는 CONTRACT_DECISION_REQUIRED, collector/day proof는 CORE_CONTENT_DEPENDENT |
+| B 한도 설정·조회 | 기존 CRUD 및 이번 충돌/편집 복구 IMPLEMENTED_AND_TESTED | 실제 한도 도달/집행·잔여는 CORE_CONTENT_DEPENDENT; 저장/부분량을 집행 성공으로 바꾸지 않음 |
+| C 예약 ONCE·WEEKLY | 저장·occurrence/Receipt 조회 IMPLEMENTED_AND_TESTED | ONCE actor 매핑 CONTRACT_DECISION_REQUIRED; 실제 예약/복원 CORE_CONTENT_DEPENDENT |
+| D CADENCE | 저장·frozen 설정/기한·수신 조회 IMPLEMENTED_AND_TESTED | 휴식/주기 표현 CONTRACT_DECISION_REQUIRED; 실제 actor 전환 CORE_CONTENT_DEPENDENT |
+| E YouTube·Instagram16 | 설정 CRUD IMPLEMENTED_AND_TESTED | 기능별 효과/해제/ClaimLedger·발행 provenance는 CORE_CONTENT_DEPENDENT |
+| F 시간대 통계 | #63 IMPLEMENTED_NOT_INTEGRATED | 접근·반복·차단 분포이며 이용시간으로 대체하지 않음. 새 원본 event issuer는 CORE_CONTENT_DEPENDENT |
+| G 기록·필터·메모 | 기존 조회 구현 재사용; 세션 이동·지연 응답은 INDEPENDENTLY_IMPLEMENTABLE 검증 후보 | 동일 기록/필터를 새로 만들지 않으며 SESSION-06의 이전 세션 응답 혼입 반례부터 확인 |
+| H 삭제·해제·복원 | 접수/OP/CFG/Receipt 조회 IMPLEMENTED_AND_TESTED | 실제 해제·복원은 CORE_CONTENT_DEPENDENT, UNKNOWN 의무 유지 |
+| I 오류·UNKNOWN·재진입 | 기존 표시 및 이번 저장/확인 단계 구분 IMPLEMENTED_AND_TESTED | 실제 제품 수용은 별도이며 모의 성공을 실제 적용으로 승격하지 않음 |
+| J Web·Server·DB 시나리오 | 기존 API·격리 TCP/DB 경계 IMPLEMENTED_AND_TESTED | 실제 Admission/capability/effect/clock adapter 부재는 CORE_CONTENT_DEPENDENT |
+
+- 공개 feature Core **e903aff5df3b44895a101efc39af868e543e574f**, Content **a6468b67d97ca32a1ab1ad1af66344f0a45e148e**, 통합10ab602는 이전 제공 기준과 같다. 같은 미제공 producer를 다시 구현/전면 조사하지 않는다. snapshot hash/MATCH/local_only를 Server 효과로 승격하지 않는다. 실제 새 발행·원본 effect/release/collector·clock 제공물이 올 때 adapter를 재개한다. 시간창 UTC 정밀도는 기존 PR60 구현을 재작성하지 않는다. AI/동의는 확정 추가 범위에 남지만 승인되지 않은 저장 schema/provider·동의/보존 경계를 임의 도입하지 않는다. 범위를 새로 축소하거나 기능을 추가하지 않는다.
 
 > 2026-11-01 PR62 통합 동기화: PR52가 병합된 **10ab6026f1cf7d244a75ee529830afb8bcf6b8c8**을 기존 PR62에 이력 보존 merge로 반영한다. 아래 #49~#52 및 #62의 기준 SHA·Draft/미병합·시험 수치는 각 개발 당시 기록이며 현재 상태나 실제 제품 수용 완료를 뜻하지 않는다. 수동 충돌 해결은 이 작업카드 1파일이다. #62 제품1·시험2파일은 원래 **8ceaf5c2f37a6e9823f5e587d0b2d129fb8f26fd**의 blob을 유지하고 #63·Content·다른 Worktree는 변경하지 않는다.
 
