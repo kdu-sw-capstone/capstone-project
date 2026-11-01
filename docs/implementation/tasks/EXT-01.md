@@ -1,5 +1,50 @@
 # EXT-01 · 정책 동기화
 
+## 2026-11-01 · PR75 P2: 다중 팝업 영속 sites UNKNOWN → START 차단
+
+- 시작 기준: PR75 `f9bf2fd8860276316bf98d5b538600d6ea24c8c4`, 기존 `codex/extension-popup-figma` Worktree/브랜치. [P2 원문](https://github.com/kdu-sw-capstone/capstone-project/pull/75#discussion_r4434671350), [독립 리뷰](https://github.com/kdu-sw-capstone/capstone-project/pull/75#pullrequestreview-5726860332)를 재사용했다. 아래는 신규 소스 검증이며 이전918/11을 승격한 결과가 아니다.
+- 원인: A가 남긴 영속 sites hold를 B의 reserve가 발견해 거절해도 `reserved=false`여서 B의 `held=false`가 유지됐다. B가 저장을 시도하지 않으면 관찰 자체가 없었다. 기존 Web Lock은 동시 실행만 직렬화하며 완료 뒤 남은 UNKNOWN을 해소하지 않는다. user controller의 별도 `focurve_user_ui_hold`도 sites hold를 대신하지 않는다.
+- 수정 전: 실제 HTML + popup/sites controller 전체를 두 JSDOM 창에서 공유 모의 Chrome storage/runtime/Web Lock으로 실행했다. 고정 Git 소스 `f9bf2fd`의 최초12 반례는 **4 PASS / 8 FAIL**. A의 CREATE 미확정 후 B 무저장·B reserve 거절·저장소 읽기 오류·잠금 직전 hold·START reserve 중 hold·owner 전환·reserve 읽기 실패에서 START가 각각1회(기대0)였다. 잠금 예외는 START0이지만 미처리 예외로 FAIL. 정상 START/END·sites UNKNOWN 중 정당한 END·해결 후 새 팝업·동시 START 대조군은 PASS였다.
+- `sites-model.js`: reserve 실패도 로컬 held를 고정한다. 아직 자기 요청을 예약하지 못한 경우 onHold/confirm을 호출하지 않아 기존 marker를 덮어쓰거나 지우지 않는다. storage 알림은 캐시 표시를 갱신할 뿐 START 권한의 근거로 사용하지 않는다.
+- `popup-model.js`의 공용 `checkStart`: sites/user marker 최신 조회 → 기존 STATE 조회 및 owner/executor/server/web origin/session/알려진 generation·시작 가능 상태 대조 → marker 최종 재조회 → 현재 팝업 scope/설치 준비 대조. 조회 실패·잘못된 marker·다른 요청의 user hold는 거절한다. 동일 START의 아직 미확정 표시가 없는 자기 reservation만 허용한다. STATE는 기존 인증/복구 동작을 포함할 수 있으며 새로운 무부작용 진단 권한으로 취급하지 않는다.
+- `user.js`: START는 `focurve-user-ui-operation`을 획득한 안에서 사전 검사, 기존 controller reserve, **sendOperation의 실제 START sendMessage 직전 최종 checkStart**, 응답 확인·STATE 갱신까지 수행한다. 잠금 없음/오류도 전송0으로 처리한다. 기존 user marker의 request ID가 다르면 보존한다. 중복 호출의 finally는 자기 expected 객체일 때만 정리하여 정상 승자의 scope를 지우지 않는다.
+- `shell.js`: CREATE/UPDATE/DELETE와 START가 같은 lock 규약을 사용한다. reserve에서 sites/user marker 둘 다 확인한다. storage onChanged는 새 hold를 로컬에 전파하고, 정상 외부 해소 뒤에는 controller를 새로 만들고 목록을 재조회한다. 해소 알림 자체로 START하거나 영속 marker를 삭제하지 않는다. 본인 성공 confirm 알림이 아직 busy인 controller를 중간 종료하지 않게 보존한다. 제출/삭제 당시 actor·계정·선택 버전을 capture하여 잠금 획득 전 계정 변경 시 새 계정 controller에 이전 입력을 전달하지 않는다.
+- `developer.js/.html`: 실제 로드되는 diagnostics START도 공용 helper와 같은 lock을 사용한다. 계정 변경 명령도 같은 lock에 참여한다. END에는 sites START gate를 적용하지 않았다. 미사용 `member-ui/popup.js`는 어떤 HTML에도 연결되지 않아 수정하지 않았다.
+- END controller·Core auth/owner/generation fence·타이머/실제 END 구분·DNR/Content 해제·cleanup/복원 책임은 변경하지 않았다. sites UNKNOWN인 RUNNING에서 정당한 END는1회, START는0회이며 marker 원문을 보존했다. Core·Content·Server·DB·manifest·공유 계약·UI 스타일 변경0, 다른 PR/Worktree/index와 공유 staged 삭제1,036개 보존.
+
+### 새 후보 검증과 정확한 전송 수
+
+| 조건 | START | END | 결과 |
+|---|---:|---:|---|
+| A UNKNOWN → B START, B 저장 없음 | 0 | 0 | PASS; A CREATE1·marker 보존 |
+| B reserve 거절 후 START | 0 | 0 | PASS; 추가 CREATE0·held 유지 |
+| 저장소 오류·잠금 throw/null·직전/예약 중 새 hold | 0 | 0 | PASS |
+| owner/executor/알려진 generation 전환·이전 STATE 응답 | 0 | 0 | PASS |
+| 정상 START 후 END | 1 | 1 | PASS |
+| sites UNKNOWN 중 정당한 기존 END | 0 | 1 | PASS; marker 보존 |
+| 정상 외부 해소 후 새/기존 팝업의 명시 START | 각1 | 0 | PASS; 자동 START0·최신 조회 수행 |
+| 두 팝업 또는 diagnostics/main 동시 START | 합계1 | 0 | PASS |
+| 본인 CREATE 알림·readback·confirm 후 START | 1 | 0 | PASS; CREATE1 |
+| START 검사 중 경쟁 사이트 저장 | 1 | 0 | PASS; 경쟁 CREATE0 |
+| null/false marker 또는 다른 user hold | 0 | 0 | PASS; 원문 보존 |
+| 잠금 대기 중 A→B 계정 전환의 이전 사이트 제출 | 0 | 0 | PASS; CREATE0 (기준 f9bf2fd CREATE1 FAIL) |
+| 같은 팝업의 늦은 중복 lock 실패 | 합계1 | 0 | PASS; 불필요한 user/sites HOLD 없음 |
+
+- 신규 결합 반례 **24/24 PASS** (N/S의 두 입력을 포함한 원본 fixture26개와 혼동하지 않는다). 직접 popup/sites/기존 guest/member 회귀 **83/83 PASS**, 인증·admission·세션 경계 **72/72 PASS**, Extension 전체 **942/942 PASS**, fail/skip0. 집합이 겹치므로 합산하지 않는다.
+- `npm --prefix extension run check`, 변경 member-ui JS5개 별도 `node --check`, 기존 `build:a1`, `build:member-a1`, `build:member-worker`, `build:harness` PASS. 생성된 Core/Content bundle은 기존 blob과 동일하다. 의존성/lockfile 변경0.
+- 기존 Chrome renderer를 새 소스로 실행: Windows Chrome156.0.8078.76 / Node24.19.0, **11/11 PASS**, 모의 Chrome/runtime/storage/HTTP. Figma480×600·Light/Dark·3탭·CRUD·스크롤·시간 설정·오류/복귀 영향 확인. 이전 renderer 결과/스크린샷도 별도 보존했다.
+- 로컬 ignored 원본 `.local/pr75-p2/`: `before.log`, `before-counts.json`, `scope-before*`/`scope-after*`, `same-popup-race-*`, `after-final-24.log`/`after-final-24-counts.json`, `affected-final.log`, `auth-session-boundary.log`, `extension-full-final.log`, `member-syntax.log`, `syntax.log`, `build-*.log`, `renderer-before/`, `renderer-after/`. 중간 후보의 same-popup race는 finally 조건1줄을 메모리에서만 역전한 source/hash 근거를 별도 기록하며 이를 f9bf2fd 반례로 소급하지 않는다.
+
+### 재현·재검토 범위
+
+- 새 반례: `node --test extension/tests/popup-sites-hold-start.test.cjs`. 케이스별 marker/전송 근거를 저장하려면 `FOCURVE_POPUP_TEST_EVIDENCE_FILE`에 로컬 결과 JSON 경로를 지정한다.
+- 수정 전12 재현: `FOCURVE_POPUP_TEST_SOURCE_REF=f9bf2fd8860276316bf98d5b538600d6ea24c8c4` 환경에서 `node --test --test-name-pattern='^[A-L]:' extension/tests/popup-sites-hold-start.test.cjs`. 다른 추가 시험은 이 기준으로 실행했다고 주장하지 않는다.
+- 전체: `npm --prefix extension test`. 직접 영향83은 `node --test extension/tests/popup-sites-hold-start.test.cjs extension/tests/user-popup.test.cjs extension/tests/member-sites-ui.test.cjs extension/tests/member-popup-shell.test.cjs extension/tests/guest-popup-design.test.cjs extension/tests/guest-failure-retention.test.cjs`이며 결과는 `affected-final.log`이다.
+- 인증/세션72는 `node --test extension/tests/member-auth.test.mjs extension/tests/member-auth-runtime.test.mjs extension/tests/member-reauthentication.test.cjs extension/tests/user-admission.test.cjs extension/tests/web-transition-admission.test.mjs extension/tests/session-core.test.mjs`. Chrome은 기존 PLAYWRIGHT_MODULE/CHROME_EXECUTABLE 설정 후 `node extension/tests/ui/popup_design.mjs`.
+- Core 담당의 좁은 독립 리뷰: 공용 lock의 범위와 START 최종 검사, 다른 owner/기존 user hold 보존, 기존 auth/generation 최종 방어 및 정당한 END/cleanup 보존. 실제 Core 승인·P2 thread Resolve·Approve·Draft 해제·Merge를 대신하지 않는다.
+- 원격 CI는 Push된 정확한 HEAD의 Actions/check-runs/status와 기존 FOCURVE CI workflow_dispatch 실행 가능 여부를 별도 확인한다. 그 원격 결과는 PR에 기록하며 로컬 PASS로 대체하지 않는다.
+- 실제 제품 MV3·가입/설치/서비스·기존 HOLD 환경·Native·Server/DB 저장·Core/Content 효과·정상 END/전체 복원·재기동은 **NOT_RUN**. 구현 결함 수정/모의 회귀 완료와 제품 수용을 구분하고 `MVP_FINAL_COMPLETE=false`를 유지한다.
+
 ## 2026-11-01 · 승인 Figma 팝업 제품 표시 계층 연결
 
 - 상태: **PARTIAL / 독립 리뷰·실제품 수용 대기**, `MVP_FINAL_COMPLETE=false`. 담당: 김다훈 Web·UI·통합 범위. 브랜치 `codex/extension-popup-figma`, 별도 Worktree `C:/Users/dahun/.codex/worktrees/extension-popup-figma/04 · 추가 MVP 구현`.

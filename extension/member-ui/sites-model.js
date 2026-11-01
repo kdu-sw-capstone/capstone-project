@@ -62,7 +62,8 @@
     items=page.items;intent=null;loaded=true;return true;
    }catch(e){
     if(!closed){
-     if(reserved&&(responded||!e.definitive)){held=true;try{await onHold({requestId:pending.key,action:'SITE_'+action,scope});}catch{}}
+     if(!reserved){held=true;} // Existing/unknown marker or failed reservation read/write: never clear or replace its evidence.
+     else if(responded||!e.definitive){held=true;try{await onHold({requestId:pending.key,action:'SITE_'+action,scope});}catch{}}
      else if(reserved){try{await confirm(pending.key);}catch{held=true;}}
      error=held?'저장 결과를 확인하지 못했어요. 입력을 보존하고 같은 작업을 반복하지 마세요.':e.status===412?'다른 화면에서 설정이 바뀌었어요. 목록을 다시 확인하고 최신 항목을 선택해 주세요.':e.status===401?'계정 연결을 다시 확인해 주세요.':'저장하지 못했어요. 입력과 연결 상태를 확인해 주세요.';
     }return false;
@@ -70,7 +71,7 @@
   }
   function save(site,selected=null){return mutate(selected?'UPDATE':'CREATE',{site,...(selected?{site_id:selected.site_id,version:selected.version}:{})},site);}
   function remove(site){return mutate('DELETE',{site_id:site.site_id,version:site.version});}
-  return Object.freeze({list,save,remove,view,close(){closed=true;epoch++;}});
+  return Object.freeze({list,save,remove,view,observeHold(row){if(closed||busy&&row?.requestId===intent?.key)return;held=true;render();},close(){closed=true;epoch++;}});
  }
  root.FocurveMemberSites=Object.freeze({controller});if(typeof module!=='undefined')module.exports=root.FocurveMemberSites;
 })(globalThis);
