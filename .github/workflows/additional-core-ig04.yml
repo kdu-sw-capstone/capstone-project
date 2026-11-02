@@ -1,11 +1,12 @@
 name: Additional Core IG04 admission
 on:
   pull_request:
-    branches: [integration/additional-mvp-20261029]
+    branches: [integration/additional-mvp-20261029, feature/additional-mvp-ig04-admission]
     paths:
       - 'extension/src/additional-ig04-admission.js'
       - 'extension/src/document-control-registry.js'
       - 'extension/tests/additional-ig04-admission.test.mjs'
+      - 'extension/tests/additional-ig04-lifetime.test.mjs'
       - 'extension/tests/document-control-registry.test.mjs'
       - 'extension/a1/contract.mjs'
       - 'extension/a1/schema.json'
@@ -31,5 +32,5 @@ jobs:
           cache: npm
           cache-dependency-path: extension/package-lock.json
       - run: npm ci --no-audit --no-fund
-      - run: node --test tests/additional-ig04-admission.test.mjs tests/document-control-registry.test.mjs
+      - run: node --test tests/additional-ig04-admission.test.mjs tests/additional-ig04-lifetime.test.mjs tests/document-control-registry.test.mjs
       - run: node --test ../contracts/additional-mvp/rc1/tests/legacy-boundary.test.mjs

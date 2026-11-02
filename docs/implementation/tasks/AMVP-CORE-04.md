@@ -1,5 +1,12 @@
 # AMVP-CORE-04 — Core DNR 소유권·복원
 
+## 2026-11-02 IG04 — 검증 대기 취소/만료 후속 단위
+
+- 담당 윤종민, branch `feature/additional-mvp-ig04-verification-lifetime`, 시작/선행 PR86 `fc36d5ba3c41a7aa73e064322e6878775dfe23ef`. 기존 PR86 source/branch와 Content 계보를 보존한 별도 후속이다.
+- issued/native/Registry 검증이 끝나지 않을 때 기존 expiresAt·요청 abort·명시적 invalidate로 대기를 종료한다. 늦은 성공/거절의 후속 실행·gate pin 차단, 개별취소/전체폐기 분리, monotonic 잔여 예산·잘못된 clock 거절, 최초 오류 보존을 구현했다. 새 ACK/TTL/Wire/DB·실제 정책 활성화 없음.
+- 기존 3반례 base0/3→수정3/3. 최종 신규15+기존 admission32+Registry15=62/62·전체Extension1026/1026·계약6/6 PASS(fail/skip0), PR87 실제receiver 합성/IDB 호환1/1 PASS. 모의 issued/native/authority로 제품 수용 NOT_RUN. 집합 중복 합산 금지, 중간 구현/fixture 실패도 근거 문서에 보존.
+- 상태: 구현·로컬검증 완료/새PR·리뷰 대기. 원래 PR86의 검증된 내용과 이번 후속 scope를 구분하고 새CI·다훈/지민 확인 후 통합한다. 실제 영속 예약·ACK/proof/cleanup·Worker 연결은 공동합의 대기이며 임의 구현하지 않는다. 상세 [검증 수명](../evidence/AMVP-CORE-04-ig04-verification-lifetime.md).
+
 ## 2026-11-02 IG04 — 발급 문맥/plan 사전 검증 단위
 
 - 담당 윤종민, branch `feature/additional-mvp-ig04-admission`, 시작 integration `831069805eb0f86fc526b1f0f92e0b4a01656172`. Content `8f454c93`/gate3abe4504/#83 계보를 읽기 기준으로 보존한다.
