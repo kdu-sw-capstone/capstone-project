@@ -159,3 +159,16 @@
 - 대상 브랜치: integration/additional-mvp-20261029. 자동 병합/제품 활성화 요청이 아니라 기반 모듈 리뷰 범위다.
 - 제출 전 DNR24/24·기존 계약6/6·npm run check 재실행 PASS. GitHub CI는 Ubuntu/Windows Node24에서 동일 모의 시험 수행; Windows 실제 Chrome 수용 시험을 뜻하지 않는다.
 - 미완료: legacy writer guard 전체 결속, Worker 진입점 연결, 실제 DNR·quota·브라우저 재시작 수용. 기존 API·DB·Content 구현은 이번 PR에 포함하지 않는다.
+
+
+## 2026-11-02 RuntimeReport 단일 전달 호출부 — 진행 중
+
+- 담당 윤종민, `feature/additional-mvp-report-delivery`, 시작 #76 HEAD `cc9d108d4cd8377f8985e113b1e7805a5b4c9b89`. 기존 #76 위 별도 worktree/후속 branch이며 원래 PR/dirty workspace 보존.
+- 기준: RC2 RPT-01 ReportBatch/BatchAck 및 02_API_DB.md의 동일 원문 재전송·부분 ACK·미해결 보존. 미확정 IG04/RPT-02에는 의존하지 않음.
+- 목표: 기존 발신함 batch→신뢰된 transport→기존 acknowledge의 단일 호출부. 현재 권한 재검사·취소/timeout·응답 유실·저장 실패 시 원문 보존, 자동 retry/일괄 ACK/실제 효과 상태 생성 금지.
+- 제품 Worker·실제 인증/능력 provider·Server/Content·공유 Wire/DB 형식은 변경하지 않음. send adapter는 실제 IO 직전 현재성을 재확인해야 하며 기본 권한은 거절.
+- 수용: 동일 batch bytes/IDs 재사용, partial/REJECTED/HTTP 오류 보존, old callback 격리, ACK commit 이후 취소를 rollback으로 오인하지 않음. 별도 시험과 영향 회귀 후 검토 요청.
+
+- 종료 검증: 신규24/24·관련 outbox 포함52/52·전체 Extension1031/1031·기존 계약6/6·Chromium native IndexedDB1/1·syntax/whitespace PASS. 최종 source 기준 전체·관련 시험 검증. 실제 loopback HTTP는 시험 수신기이며 권한/증거는 합성.
+- 상태: caller 단위 검토 대기. [API·입출력·실패/저장·재현·미완료](../evidence/AMVP-CORE-04-runtime-report-delivery.md). 성공 반환은 ACK 영속 확인일 뿐 전체 ACKED/정책 효과/cleanup 성공이 아님.
+- 기존 #76 제품·시험 불변, 공유 Schema/DB/Server/Content/Worker는 변경하지 않음. 실제 인증·capability/owner·verifyAck provider와 Worker 연결·제품 수용은 미완료. #76을 선행하는 별도 Draft PR로 제출하고 통합/병합은 다훈이 관리한다.
