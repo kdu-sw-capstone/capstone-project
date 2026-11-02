@@ -21,6 +21,11 @@ jobs:
           node-version: '24.19.0'
       - run: npm install --prefix "$RUNNER_TEMP/content-browser" --ignore-scripts --no-audit --no-fund --no-package-lock playwright@1.62.1
       - run: node "$RUNNER_TEMP/content-browser/node_modules/playwright/cli.js" install --with-deps chromium
+      - name: Reproduce pinned local blur models
+        run: |
+          npm exec --yes --package=pnpm@11.25.0 -- pnpm --dir extension/content-tools/blur-model install --frozen-lockfile --ignore-scripts --store-dir "$RUNNER_TEMP/blur-pnpm-store"
+          node extension/content-tools/blur-model/build.mjs
+          node extension/content-tools/build-blur-site.mjs
       - run: node --test --test-concurrency=2 extension/content-tests/*.test.mjs
         env:
           PLAYWRIGHT_MODULE: ${{ runner.temp }}/content-browser/node_modules/playwright

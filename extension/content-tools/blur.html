@@ -1,0 +1,9 @@
+<!doctype html>
+<html lang="ko"><meta charset="utf-8"><title>FOCURVE 블러 독립 시험</title>
+<style>body{font:18px sans-serif;margin:30px}button{padding:10px;margin:4px}article{display:inline-block;vertical-align:top;width:240px;margin:10px}img{display:block;width:220px;height:180px;object-fit:cover}pre{white-space:pre-wrap}#result{min-height:100px}</style>
+<h1>이미지 블러 독립 시험</h1>
+<p>실제 AI 분류가 아닙니다. 아래 생성 이미지에 정상·민감·분석 실패 결과를 모의합니다. Core·Server는 미연결입니다.</p>
+<button id="apply">블러 적용</button><button id="release">모두 해제</button><button id="replace">민감 이미지 교체</button><button id="add">동적 이미지 추가</button>
+<button id="other">다른 owner 적용</button><button id="own-release">첫 owner만 해제</button><button id="retry">실패 재시도(모의 정상으로)</button><button id="state">상태 확인</button><button id="copy">상태 복사</button>
+<section id="images"></section><pre id="result"></pre>
+<script type="module" src="blur.mjs"></script></html>

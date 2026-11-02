@@ -1,0 +1,9 @@
+<!doctype html><html lang="ko"><meta charset="utf-8"><title>FOCURVE 실제 로컬 이미지 분석</title>
+<style>body{font:18px sans-serif;margin:30px}button,input{padding:10px;margin:5px}#images{display:flex;flex-wrap:wrap;gap:20px}#images img{max-width:360px;max-height:300px;object-fit:contain}pre{white-space:pre-wrap}</style>
+<h1>실제 로컬 이미지 분석</h1>
+<p>모의 분류가 아닙니다. 선택한 이미지의 픽셀을 이 브라우저의 로컬 Worker에서 분석하며 업로드하지 않습니다.</p>
+<p>InceptionV3 → MobileNetV2, HIGH 실험 프로필입니다. 두 모델 모두 민감 분류 점수 합계 75% 이상일 때 가리는 오탐 완화 후보입니다. 일부 민감 사진을 놓칠 수 있어 정답 셋으로 비교해야 합니다. 각 이미지 아래 정답을 선택하면 오탐·미탐과 표본 지표를 비교할 수 있습니다. 표본 검증 전 정확도 향상을 확정하지 않습니다.</p>
+<button id="load">실제 모델 준비</button><input id="files" type="file" accept="image/png,image/jpeg,image/webp,image/gif" multiple aria-label="시험 이미지 선택">
+<button id="apply" disabled>분석·블러 적용</button><button id="release">블러 해제</button><button id="retry">실패 재시도</button><button id="copy">상태 복사</button>
+<p id="status" role="status">모델 준비 버튼을 눌러 주세요.</p><section id="images"></section><pre id="result"></pre>
+<script type="module" src="blur-real.mjs"></script></html>
