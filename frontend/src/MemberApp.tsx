@@ -1,3 +1,4 @@
+import SiteClassification from "./SiteClassification";
 import { SiteMark } from "./FocusShared";
 import { requestedWorkspaceView } from "./workspaceNavigation";
 import { submittedSiteHost } from "./siteHostConfirmation";
@@ -772,23 +773,6 @@ function Statistics({
       )}
     </section>
   );
-}
-function SiteClassification({open}:{open:()=>void}) {
-  const [counts,setCounts]=useState<number[]|null>(null);
-  const [error,setError]=useState("");
-  useEffect(()=>{const controller=new AbortController();async function load(){
-    const all:Site[]=[];let cursor:string|null=null;const seen=new Set<string>();
-    do {const page:Page<Site>=await request("/sites?"+new URLSearchParams({limit:"100",...(cursor?{cursor}:{})}),"GET",undefined,{signal:controller.signal});
-      if(!Array.isArray(page.items))throw new ApiError("SERVER_RESPONSE_INVALID",502);
-      all.push(...page.items);cursor=page.next_cursor;if(cursor&&seen.has(cursor))throw new ApiError("INVALID_CURSOR",400);if(cursor)seen.add(cursor);
-    }while(cursor&&!controller.signal.aborted);
-    if(!controller.signal.aborted)setCounts(["FOCUS","DISTRACTION","GENERAL"].map(p=>all.filter(s=>s.purpose===p).length));
-  }void load().catch(e=>{if(!controller.signal.aborted)setError(message(e));});return()=>controller.abort();},[]);
-  const total=counts?.reduce((a,b)=>a+b,0)??0;
-  const first=counts&&total?counts[0]/total*100:0,second=counts&&total?(counts[0]+counts[1])/total*100:0;
-  return <section className="card site-classification"><div className="panel-heading"><h4>사이트 분류 현황</h4><button onClick={open}>관리 →</button></div><p className="muted">현재 등록한 사이트 · 이용 목적 기준</p>
-    {error?<p role="alert">{error}</p>:counts===null?<p role="status">사이트 분류를 확인하고 있습니다.</p>:total===0?<p>등록된 사이트가 없습니다.</p>:<div className="distribution"><div className="donut" role="img" aria-label={"등록 사이트 "+total+"개"} style={{background:"conic-gradient(#579fff 0% "+first+"%, #7dd3e8 "+first+"% "+second+"%, #bdd6ef "+second+"% 100%)"}}><div><strong>{total}</strong><small>등록 사이트</small></div></div><ul>{counts.map((count,i)=><li key={i}><span>{["집중 대상","방해 대상","일반 이용"][i]}</span><strong>{count}개</strong><small>{(count/total*100).toFixed(1)}%</small></li>)}</ul></div>}
-  </section>;
 }
 function Dashboard({ sessions, records, sites }: { sessions: () => void; records: () => void; sites: () => void }) {
   const state = useAction();
