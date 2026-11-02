@@ -1,3 +1,10 @@
+## 2026-11-02 PR #97 안내 overlay 수명 P2 수정
+- 담당 채지민 / codex/content-keyword-url / 시작 HEAD 69660e8983f6ac16ace5911a1f3b22c9865f878e, 선행 #87 2704148b 유지. 리뷰 5732713954의 aside 생성 중 권한 회수/release 재진입 두 반례를 기존 시험에 추가해 수정 전 11 PASS/2 FAIL을 직접 확인했다. ignored 로그 extension/build/keyword-overlay-before.log.
+- keyword-session.mjs만 수명 revision과 생성 직후/연결 전후/본문 및 각 media 효과 직전 검사를 보완. append 중 release가 재진입해 뒤늦게 연결되는 자기 안내도 회수하며, 제거 실패/foreign document 안내는 별도 cleanup 의무로 보존한다. cleanup 재진입을 차단하고 재시도 가능하게 유지한다. ClaimLedger/Core/Server/Wire/다른 기능 소스는 변경하지 않았다.
+- 수정 후 Session 14/14 PASS(기존 11+리뷰 반례2+append 재진입/제거 실패·재시도1). URL/합성 화면/Session/ClaimLedger 단위/legacy 계약 관련 조합 61/61 PASS, 실패/skip0. 계약6건은 61에 포함한다. 설치 Windows Chrome headless·모의 권한/미디어/DOM hook이며 실제 MV3 경합·제품 수용 아님. 로그 keyword-overlay-after.log/keyword-overlay-regression.log. build 및 git diff --check PASS.
+- 명령: 기존 PLAYWRIGHT_MODULE/CHROME_EXECUTABLE 환경에서 node --test extension/content-tests/keyword-url.test.mjs extension/content-tests/keyword-url-page.test.mjs extension/content-tests/keyword-session-browser.test.mjs extension/content-tests/claim-ledger.test.mjs contracts/additional-mvp/rc1/tests/legacy-boundary.test.mjs; node extension/content-tools/build-chrome-harness.mjs. 원격 CI는 Push 후 별도 확인하며 기존 HEAD의 459/459를 수정본 결과로 승격하지 않는다.
+- 사용자 재확인: 기존 키워드 적용 안내/본문 가림·미디어 정지, 해제 시 안내 제거·본문 복원·자동재생 없음, 다른 owner 유지. 리뷰 재진입 반례는 자동 시험으로 확인. 실제 issued/native·영속 예약 ACK·cleanup lease·Core/Server 연결 NOT_RUN. 다음은 같은 PR Push→새 HEAD CI→다훈 변경분 재리뷰. Draft/선행 관계 유지, 병합 없음. MVP_FINAL_COMPLETE=false.
+
 ## 2026-11-02 게시 준비 · 사용자 실제 시험 결과
 - 게시 직전 직접 관련69/69 PASS(fail/skip0): URL판별24·화면1·session11·ClaimLedger27·계약6. 이전68은 최종 검증으로 대체하지 않으며 이번69는 최종 소스에서 실행했다. 로그 extension/build/keyword-publish-check.log(ignored). build·구문·diff 검사 PASS. 전체Content/제품Core·MV3/Server 수용은 여전히 NOT_RUN.
 - 사용자 보고: URL 판별 화면6항목 정상 확인에 이어, 시험 확장0.1.17의 안내한 실제 제한·해제5항목에 대해 '다 정상작동한다'고 확인했다. 범위는 YouTube 검색 gaming 제한·해제, gamings 불일치, 일반영상에서 youtube 호스트 키워드 적용시 화면/영상/소리 정지, 해제 후 직접재생이다. 사용자 실행 보고이며 독립 로그나 실제 Core 제품 수용을 대신하지 않는다.

@@ -85,3 +85,32 @@ test('foreign document adoption cannot remove another document notice; cleanup r
   const p=await fixture(t);const r=await p.evaluate(()=>{session.start();const foreign=document.implementation.createHTMLDocument('foreign');const notice=document.querySelector('[data-focurve-ui="keyword"]');foreign.body.append(foreign.adoptNode(notice));const cleanup=session.release();return {cleanup,noticeKept:notice.parentNode===foreign.body,pending:session.inspect().cleanup_pending};});
   assert.equal(r.cleanup.restored,false);assert.equal(r.noticeKept,true);assert.equal(r.pending,true);
 });
+
+for(const action of ['revoke','release'])test(`notice creation ${action} fences late overlay and media effects`,async t=>{
+  const p=await fixture(t);const r=await p.evaluate(action=>{
+    const createElement=document.createElement.bind(document);
+    document.createElement=(...args)=>{const element=createElement(...args);if(args[0]==='aside'){
+      if(action==='release')session.release();else window.allowed=false;
+    }return element;};
+    session.start();document.createElement=createElement;
+    return {notice:!!document.querySelector('[data-focurve-ui="keyword"]'),pauses,display:document.body.style.display,state:session.inspect()};
+  },action);
+  assert.equal(r.notice,false);assert.equal(r.pauses,0);assert.equal(r.display,'flex');
+  assert.equal(r.state.active,false);assert.equal(r.state.cleanup_pending,false);
+});
+
+test('release during append removes late notice; failed removal stays pending until retry',async t=>{
+  const p=await fixture(t);const r=await p.evaluate(()=>{
+    const append=document.documentElement.append.bind(document.documentElement);
+    document.documentElement.append=(notice)=>{session.release();notice.remove=()=>{throw Error('REMOVE_FAILED');};append(notice);};
+    session.start();document.documentElement.append=append;
+    const state=session.inspect(),notice=document.querySelector('[data-focurve-ui="keyword"]');
+    const failed=session.release();delete notice.remove;
+    const retry=session.release();
+    return {state,failed,retry,pauses,notice:!!document.querySelector('[data-focurve-ui="keyword"]')};
+  });
+  assert.equal(r.state.active,false);assert.equal(r.state.cleanup_pending,true);
+  assert.equal(r.failed.restored,false);assert.equal(r.failed.cleanup_pending,true);
+  assert.equal(r.retry.restored,true);assert.equal(r.retry.cleanup_pending,false);
+  assert.equal(r.pauses,0);assert.equal(r.notice,false);
+});
