@@ -19,6 +19,9 @@ def main():
  parity=json.loads(parity_path.read_text(encoding='utf8'));provenance=json.loads((root/'BUILD-PROVENANCE.json').read_text(encoding='utf8'))
  if parity.get('contract')!='FOCURVE_SOURCE_PACKAGE_PARITY_1' or parity.get('actualAcceptance') is not False or provenance.get('sourceBuildManifestSHA256')!=hashlib.sha256(parity_path.read_bytes()).hexdigest():raise SystemExit('SOURCE_BUILD_MANIFEST_UNCONFIRMED')
  checkout=pathlib.Path(__file__).resolve().parents[1]
+ spec=importlib.util.spec_from_file_location('package_provenance',checkout/'scripts/package-integrated-candidate.py')
+ binding=importlib.util.module_from_spec(spec);spec.loader.exec_module(binding)
+ binding.verify_provenance(root,checkout)
  for row in parity['files']:
   original=(checkout/row['source']).resolve();copied=(root/row['package']).resolve()
   if not original.is_relative_to(checkout) or not copied.is_relative_to(root) or not original.is_file() or not copied.is_file() or hashlib.sha256(original.read_bytes()).hexdigest()!=row['sha256'] or hashlib.sha256(copied.read_bytes()).hexdigest()!=row['sha256']:raise SystemExit('SOURCE_PACKAGE_PARITY_CHANGED')
