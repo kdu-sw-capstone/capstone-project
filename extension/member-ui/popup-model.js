@@ -63,6 +63,32 @@
   }
   return Object.freeze({act,view,close:()=>{closed=true;epoch++;},held:()=>held});
  }
- root.FocurveUserPopup=Object.freeze({present,friendlyError,controller});
+ // Called with the common UI operation lock held, including the entire START
+ // reservation and dispatch. A storage event or a cached button is not authority.
+ const siteHoldKey='focurve_member_sites_ui_hold',userHoldKey='focurve_user_ui_hold';
+ function sameStartScope(a,b){
+  return !!a&&!!b&&/^[1-9][0-9]*$/.test(String(a.owner_user_id??''))
+   &&/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(a.executor_id??'')
+   &&typeof a.server_url==='string'&&a.server_url.length>0
+   &&['owner_user_id','executor_id','server_url','web_origin','session_id','generation'].every(k=>a[k]===b[k]);
+ }
+ async function checkStart({readHolds,readState,expected,requestId,matches=()=>false,active=()=>true}){
+  function holds(row){
+   if(!row||typeof row!=='object'||Array.isArray(row)||Object.hasOwn(row,siteHoldKey))throw Error('SITE_MUTATION_UNCONFIRMED');
+   if(Object.hasOwn(row,userHoldKey)){
+    const own=row[userHoldKey];
+    if(!requestId||own?.requestId!==requestId||own.action!=='START'||own.unconfirmed)throw Error('RESPONSE_UNCONFIRMED');
+   }
+  }
+  holds(await readHolds());
+  const response=await readState(),fresh=response?.data;
+  if(!response?.ok||!present(fresh).canStart||!matches(fresh)||!sameStartScope(expected,fresh))throw Error('START_SCOPE_UNCONFIRMED');
+  // Re-read after the asynchronous STATE and reservation. No other cooperating
+  // site writer can enter until the caller releases this lock after dispatch.
+  holds(await readHolds());
+  if(!active())throw Error('START_SCOPE_UNCONFIRMED');
+  return fresh;
+ }
+ root.FocurveUserPopup=Object.freeze({present,friendlyError,controller,checkStart,sameStartScope});
  if(typeof module!=='undefined')module.exports=root.FocurveUserPopup;
 })(globalThis);

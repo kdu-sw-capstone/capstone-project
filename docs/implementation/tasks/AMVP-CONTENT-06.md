@@ -1,3 +1,9 @@
+## 2026-11-02 PR56 문서 동기화 · 채지민
+- 시작 HEAD 4cda56b6b7f9f47fba951af3e473a82e26ed539c, 통합 기준 2201654e4ba3adbc1a4738bc14723b708d522c69. 기존 PR56 브랜치에서 동기화하며 원격 integration/develop은 수정하지 않는다.
+- 수동 충돌 해결은 이 문서 한 파일뿐이다. 양 부모 원문 전체의 줄·중복·순서를 subsequence 검사하여 HEAD 401/401, 통합 328/328 보존을 확인했다. PR57 CI 이력과 PR54 CI 이력을 함께 유지했다.
+- Content 제품·시험·도구는 시작 HEAD 대비 diff 0. 나머지 변경은 최신 통합에서 자동 반영된 선행 변경이며 이번 수동 제품 수정이 아니다.
+- 직접 실행: 설치 Windows Chrome headless/Playwright 합성 DOM Stories 23/23, legacy 계약 6/6 PASS(총29, fail/skip0). 기존 Content183 전체는 재실행하지 않았다. 수동 수정 문서 공백 검사 PASS. 전체 staged 공백 검사에서는 통합 원본 frontend/src/HourlyAccessPattern.tsx:29의 끝 빈 줄 1건이 지적되어 담당 김다훈에게 정리를 요청하며 이 파일은 수정하지 않았다. 실제 MV3/Core/Native/Server 제품 수용 NOT_RUN, MVP_FINAL_COMPLETE=false.
+- 사용자 Commit·Push 승인 후 게시 진행. 새 HEAD 원격 CI와 최종 병합 조건은 게시 후 별도 확인하며 과거 CI·승인을 소급하지 않는다. 타 PR/작업공간 보존, Draft 해제·Approve·Merge 없음.
 # AMVP-CONTENT-06 · 추가 Content 연결
 ## 2026-11-01 PR57 승인 수정의 PR56 반영
 - 담당 채지민 / codex/content-instagram-stories / 시작08730c86d91d0b1d3790bc5fafc7a7ca9195ece8. discussion4434864434 요청대로 #57의02a653fb(alt/draggable 관찰·회귀2건·기록)와984b396f(CI·기록)를 fast-forward로 이력 그대로 로컬#56에 반영했다. 시작worktree clean, 타작업/PR71·82·83 보존. integration/develop/다른담당브랜치 병합은하지않는다.
@@ -399,3 +405,10 @@
 - 로컬 전체 Content 회귀 실행 중. 별도 계약6/6·build·전체 Content/시험 구문·diff PASS. 빌드 검사 후 사용자 기존 unpacked 댓글시험판0.1.9.2를 원래 경로에 복구했다. Node24/설치Windows Chrome headless/Playwright 합성DOM이며 실제Instagram/MV3/Native/Server 제품수용 NOT_RUN. MVP_FINAL_COMPLETE=false.
 - 게시승인 후 동일PR57 새HEAD 원격CI checkout/원본로그 확인·PR본문 갱신, 다훈 변경분/승인유효성 검토 필요. 과거리뷰를 새HEAD 승인으로 승격하지 않고 Approve/Draft해제/Resolve/Merge하지 않는다.
 - 최종 로컬 Content183/183 PASS, fail/skip0. 명령 기존 PLAYWRIGHT_MODULE/CHROME_EXECUTABLE 지정 후 node --test --test-concurrency=2 extension/content-tests/*.test.mjs, 로그 pr57-ci-local.log. 계약6/6·빌드·구문·diff 별도PASS. 다음 새HEAD 원격CI 확인.
+
+### 2026-11-01 PR54 Content CI 근거 보완
+- 담당 채지민, codex/content-grayscale, 시작670647f41f4e9b9c2380faede496815aa2f3d6a8. 기존 dirty root/다른 worktree 및 IG04 PR71 보존. YT-09/AC-YT-09-01~03 설계·기능 의미 변경 없음.
+- Content workflow 부재로 CI 근거가 없던 HOLD에 대응해 검증된4daf3d3의 .github/workflows/content-sessions.yml만 그대로 재사용. blob44bb30d93878bd8916b034b625a82c7007adc9dc 동일. PR 경로 trigger/수동 dispatch, 최소 contents:read, pinned actions/Node24.19.0/Playwright1.62.1, Content전체/계약/build/syntax 검사 유지.
+- 기존670647f 대비 extension/content, content-tests, content-tools, ui 전체 diff 없음. 흑백 기능/시험과 공통 원장/권한/제품계약 변경 없음. 변경 범위 workflow 신규1개+본 기록뿐.
+- 로컬 Node24·설치 Windows Chrome headless/Playwright 합성 DOM Content160/160 PASS(흑백12 포함), 계약6/6 PASS, build PASS. 전체 명령: 기존 PLAYWRIGHT_MODULE/CHROME_EXECUTABLE 설정 후 node --test --test-concurrency=2 extension/content-tests/*.test.mjs. 로그 grayscale-ci-local.log. git diff --check 및 구문 검사 확인.
+- Commit/Push 승인 후 새 HEAD 원격 CI의 checkout/원본 로그를 별도로 확인하고 PR54 갱신. 과거 Core/독립 승인을 새 HEAD 승인으로 간주하지 않으며 다훈의 유효성 재확인 필요. 제품 Core/MV3/Native/Server 수용 NOT_RUN, MVP_FINAL_COMPLETE=false. 병합/Approve/Draft 해제 없음.
