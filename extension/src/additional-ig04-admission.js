@@ -63,8 +63,8 @@ function planCopy(value, context) {
  * Trusted issued/native providers must verify the full original contracts,
  * frozen IG04 feature and registered channel; defaults deny. */
 export class IG04PlanAdmission {
-  #context; #registry; #issued; #native; #current; #now; #expires;
-  #closed = false; #epoch; #ref; #gate = null;
+  #context; #registry; #issued; #native; #current; #now; #expires; #deadline;
+  #closed = false; #epoch; #ref; #gate = null; #pending = new Set();
   constructor(options, token) {
     if (token !== OPEN) fail('IG04_USE_VERIFIED_OPEN');
     this.#context = contextCopy(options.context);
@@ -76,54 +76,118 @@ export class IG04PlanAdmission {
     if (!(this.#registry instanceof DocumentControlRegistry)
       || ![this.#issued, this.#native, this.#current, this.#now].every(v => typeof v === 'function')
       || !positive(this.#expires)) fail('IG04_PROVIDERS_REQUIRED');
+    const at = this.#now();
+    if (!Number.isSafeInteger(at) || at < 0) fail('IG04_AUTHORITY_CLOSED');
+    this.#deadline = performance.now() + Math.max(0, this.#expires - at);
     const s = this.#context.scope;
     this.#ref = freeze({executorKey: s.executor_id, tab: s.tab_id, frame: s.frame_id, documentKey: s.document_id});
   }
   static async open(options) {
     const gate = new IG04PlanAdmission(options, OPEN);
-    try { await gate.#check(); return gate; } catch (error) { gate.invalidate(); throw error; }
+    try { await gate.#bounded(options.signal, signal => gate.#check(signal)); return gate; }
+    catch (error) { gate.invalidate(); throw error; }
   }
-  invalidate() { this.#closed = true; }
+  invalidate() { this.#retire(Error('IG04_AUTHORITY_CLOSED')); }
+  #retire(reason) {
+    this.#closed = true;
+    for (const cancel of [...this.#pending]) cancel(reason);
+  }
   verifyContext(candidate) {
     if (this.#closed) return false;
     try {
       const at = this.#now(), result = this.#current(this.#context);
       if (result && typeof result.then === 'function') Promise.resolve(result).catch(() => {});
-      if (!Number.isSafeInteger(at) || at < 0 || at >= this.#expires || result !== true) { this.invalidate(); return false; }
+      if (!Number.isSafeInteger(at) || at < 0 || at >= this.#expires
+        || performance.now() >= this.#deadline || result !== true) { this.invalidate(); return false; }
       return same(candidate, this.#context);
     } catch { this.invalidate(); return false; }
   }
   getGeneration() { return this.verifyContext(this.#context) ? this.#context.scope.generation : null; }
   assertCurrent() { if (!this.verifyContext(this.#context)) fail('IG04_AUTHORITY_CLOSED'); }
-  async #document() {
-    const row = await this.#registry.load(this.#ref);
+  #step(signal) {
+    if (signal.aborted) fail('IG04_RESERVATION_ABORTED');
     this.assertCurrent();
+  }
+  #bounded(external, work, complete = value => value) {
+    this.assertCurrent();
+    if (external !== undefined && (typeof external?.aborted !== 'boolean'
+      || typeof external.addEventListener !== 'function' || typeof external.removeEventListener !== 'function'))
+      fail('IG04_INVALID_SIGNAL');
+    if (external?.aborted) fail('IG04_RESERVATION_ABORTED');
+    // Existing authority deadline, capped by elapsed monotonic time. No new
+    // grant TTL and no extension when the wall clock moves backwards.
+    const at = this.#now();
+    if (!Number.isSafeInteger(at) || at < 0 || at >= this.#expires) { this.invalidate(); fail('IG04_AUTHORITY_CLOSED'); }
+    const until = Math.min(this.#deadline, performance.now() + (this.#expires - at));
+    const controller = new AbortController();
+    return new Promise((resolve, reject) => {
+      let settled = false, timer;
+      const finish = (error, value) => {
+        if (settled) return;
+        settled = true; clearTimeout(timer);
+        external?.removeEventListener('abort', abort); this.#pending.delete(cancel);
+        if (error) reject(error); else resolve(value);
+      };
+      const cancel = error => { if (settled) return; finish(error); controller.abort(); };
+      const abort = () => cancel(Error('IG04_RESERVATION_ABORTED'));
+      const expire = () => {
+        const remaining = until - performance.now();
+        if (remaining <= 0) this.invalidate();
+        else timer = setTimeout(expire, Math.min(remaining, 2147483647));
+      };
+      this.#pending.add(cancel); external?.addEventListener('abort', abort, {once: true});
+      if (external?.aborted) abort();
+      if (!settled) expire();
+      // Consume late success/rejection even if an adapter ignores its signal.
+      // Each resumed stage also fences the inner continuation before any next
+      // provider/read/pinning; the underlying adapter is not force-terminated.
+      Promise.resolve().then(() => {
+        if (settled) return;
+        this.#step(controller.signal); return work(controller.signal);
+      }).then(value => {
+        if (settled) return;
+        if (performance.now() >= until) { this.invalidate(); return; }
+        try { this.#step(controller.signal); finish(null, complete(value)); } catch (error) { finish(error); }
+      }, error => finish(error));
+    });
+  }
+  async #document(signal) {
+    this.#step(signal);
+    const row = await this.#registry.load(this.#ref);
+    this.#step(signal);
     if (!row || !same(row.ref, this.#ref) || row.lifecycle !== 'ACTIVE' || !positive(row.epoch)
       || this.#epoch !== undefined && row.epoch !== this.#epoch) fail('IG04_DOCUMENT_RECHECK_REQUIRED');
     this.#epoch = row.epoch;
   }
-  async #check() {
-    this.assertCurrent(); await this.#document();
-    if (await this.#issued(this.#context) !== true) fail('IG04_ISSUED_UNCONFIRMED');
-    this.assertCurrent();
-    if (await this.#native(this.#context) !== true) fail('IG04_NATIVE_UNCONFIRMED');
-    this.assertCurrent(); await this.#document();
+  async #check(signal) {
+    this.#step(signal); await this.#document(signal);
+    if (await this.#issued(this.#context, {signal}) !== true) fail('IG04_ISSUED_UNCONFIRMED');
+    this.#step(signal);
+    if (await this.#native(this.#context, {signal}) !== true) fail('IG04_NATIVE_UNCONFIRMED');
+    this.#step(signal); await this.#document(signal);
   }
   async verifyPlan(value, {signal} = {}) {
     this.assertCurrent();
     const p = planCopy(value, this.#context);
     if (signal?.aborted) fail('IG04_RESERVATION_ABORTED');
-    const {reservation_identity: i, ...base} = p;
-    if (i.context_sha256 !== await digest(this.#context)
-      || i.plan_sha256 !== await digest({...base, context_sha256: i.context_sha256})) fail('IG04_PLAN_HASH_MISMATCH');
-    try { await this.#check(); } catch (error) { this.invalidate(); throw error; }
-    if (signal?.aborted) fail('IG04_RESERVATION_ABORTED');
-    const identity = [p.gate_id, p.document_instance_id];
-    if (this.#gate !== null && !same(this.#gate, identity)) fail('IG04_GATE_MISMATCH');
-    this.#gate = identity;
-    this.assertCurrent();
-    // Caller must still reserve durably and recheck authority immediately
-    // before its write. This value is NOT the plan_id ACK expected by Content.
-    return p;
+    return this.#bounded(signal, async operationSignal => {
+      const {reservation_identity: i, ...base} = p;
+      if (i.context_sha256 !== await digest(this.#context)
+        || i.plan_sha256 !== await digest({...base, context_sha256: i.context_sha256})) fail('IG04_PLAN_HASH_MISMATCH');
+      this.#step(operationSignal);
+      try { await this.#check(operationSignal); }
+      catch (error) { if (!operationSignal.aborted) this.#retire(error); throw error; }
+      this.#step(operationSignal);
+      // Caller must still reserve durably and recheck authority immediately
+      // before its write. This is NOT the plan_id ACK expected by Content.
+      return p;
+    }, verified => {
+      // Pin only in the same synchronous turn that settles admission. A
+      // cancelled inner continuation must not reserve another caller's gate.
+      const identity = [verified.gate_id, verified.document_instance_id];
+      if (this.#gate !== null && !same(this.#gate, identity)) fail('IG04_GATE_MISMATCH');
+      this.#gate = identity;
+      return verified;
+    });
   }
 }
