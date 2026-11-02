@@ -84,3 +84,13 @@
 - 순수 helper 입력의 activeSession/alreadyIssued/recovered와 시각은 신뢰 adapter가 검증해야 한다. READY는 실제 세션 시작 허가나 RUNNING 증거가 아니다. 중복 판정은 영속 발생 원장·owner/version 검증과 함께 사용해야 하며 본 모듈은 영속 멱등을 구현하지 않는다.
 - 실행기 연결 전 실제 시간대/이벤트 loop 성능·alarm 지연·재시작·실제 적용/복원을 검증해야 한다. Server weekly 구현을 변경하거나 ONCE legacy actor 매핑을 임의 확정하지 않는다. 제품 기능 전체는 부분 구현이며 작은 모듈 리뷰 단위다.
 - 최신 기준 예약8/8·계약6/6·syntax/whitespace 검증 후 Commit/Push 및 PR 제출. 원격 CI는 Ubuntu/Windows Node24에서 같은 예약·계약 검증을 수행하며 Chrome 수용은 아니다.
+
+## 2026-11-02 보수적 한도 계산 — 진행 중
+
+- 담당 윤종민, 브랜치 `feature/additional-mvp-conservative-budget`, 시작 integration `2201654e4ba3adbc1a4738bc14723b708d522c69`.
+- C05의 max(0,limit−기존차감−미해소예약), 미정 길이/day의 제한·표시 분리와 기존 DAILY_LIMIT 보존을 순수 Core 계산 함수로 구현한다. 숫자 입력은 동일 설치/정책/날짜의 검증·중복 제거된 로컬 집계라는 선행 조건이며 권한·clock·ledger 원자 저장은 구현하지 않는다.
+- #84 시간창·#89 원장 복구·#90 관측 수명과 독립. shared Wire/저장 형식/Report/Content API·실제 DNR/Chrome START는 변경하지 않는다. 부분 계산 단위와 전체 한도 집행을 구분한다.
+
+- 종료: `calculateConservativeBudget`의 순수 계산 단위를 구현했다. 알려진 debit/provisional은 정확히 차감하고, 한도 적용 정책의 미확인 gap은 표시null/집행0으로 분리하며 기존 DAILY_LIMIT을 보존한다. 무제한 정책은 해당 hold로 차단하지 않는다. 기존 통계/원장/권한 증거를 만들지 않는다.
+- 신규17/17·전체 Extension996/996·계약6/6·기존 Python 계약 oracle 대조96/96·syntax/whitespace PASS(신규17은 전체 포함, 중복 합산 금지). #89/#90 미포함 같은 integration 기준이며 시험 삭제 없음.
+- 상태: 담당 리뷰·통합 대기. 검증된 집계 provider·owner/policy/day/freshness·원자 저장/멱등/해소 proof·실제 Worker/DNR/Report/Chrome 수용은 미완료다. [API·검증·미완료 상세](../evidence/AMVP-TIME-05-conservative-budget.md).
