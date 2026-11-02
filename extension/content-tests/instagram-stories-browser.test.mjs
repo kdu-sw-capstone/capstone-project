@@ -6,6 +6,29 @@ const require=createRequire(import.meta.url),{chromium}=require(process.env.PLAY
 let browser;
 before(async()=>{browser=await chromium.launch({headless:true,...(process.env.CHROME_EXECUTABLE?{executablePath:process.env.CHROME_EXECUTABLE}:{})});});
 after(async()=>{await browser?.close();});
+test('IG portrait frame becomes eligible when its descendant leaves editable mode without a manual scan',async t=>{
+  const html='<div style="width:300px;height:600px"><img id="editable-photo" alt="" draggable="false" style="display:flex!important"><span id="editor" contenteditable="true">caption</span></div>';
+  const page=await fixture(t,{html,url:'https://www.instagram.com/stories/sample/1/'});
+  assert.equal((await page.evaluate(()=>session.start())).status,'NO_TARGET');
+  await page.locator('#editor').evaluate(e=>e.setAttribute('contenteditable','false'));
+  await page.waitForFunction(()=>document.querySelector('#editable-photo').style.display==='none',null,{timeout:2000});
+  assert.equal(await page.evaluate(()=>observations.at(-1).restricted_target_count),1);
+  assert.equal((await page.evaluate(()=>session.release())).restored,true);
+  assert.deepEqual(await page.locator('#editable-photo').evaluate(e=>[e.style.display,e.style.getPropertyPriority('display')]),['flex','important']);
+});
+test('IG portrait frame becoming editable retires only its own claim and preserves another owner',async t=>{
+  const html='<div style="width:300px;height:600px"><img id="editable-photo" alt="" draggable="false" style="display:flex!important"><span id="editor" contenteditable="false">caption</span></div>';
+  const page=await fixture(t,{html,url:'https://www.instagram.com/stories/sample/1/'});
+  assert.equal((await page.evaluate(()=>session.start())).restricted_target_count,1);
+  await page.evaluate(()=>ledger.hide('other-owner',document.querySelector('#editable-photo')));
+  await page.locator('#editor').evaluate(e=>e.setAttribute('contenteditable','true'));
+  await page.waitForFunction(()=>observations.at(-1).remaining_targets===0,null,{timeout:2000});
+  assert.equal(await page.evaluate(()=>observations.at(-1).status),'NO_TARGET');
+  assert.equal(await page.locator('#editable-photo').evaluate(e=>e.style.display),'none');
+  assert.equal((await page.evaluate(()=>session.release())).restored,true);
+  assert.equal((await page.evaluate(()=>ledger.release('other-owner'))).restored,true);
+  assert.deepEqual(await page.locator('#editable-photo').evaluate(e=>[e.style.display,e.style.getPropertyPriority('display')]),['flex','important']);
+});
 for(const [attribute,ineligible,eligible]of [['alt','loading',''],['draggable','true','false']]){
   test(`IG-01 observes ${attribute} eligibility changes without manual scan and restores display priority`,async t=>{
     const html='<div style="width:300px;height:600px"><img id="dynamic-photo" alt="" draggable="false" style="display:flex!important"></div>';
