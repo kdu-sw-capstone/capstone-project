@@ -1,3 +1,9 @@
+## 2026-11-02 PR56 문서 동기화 · 채지민
+- 시작 HEAD 4cda56b6b7f9f47fba951af3e473a82e26ed539c, 통합 기준 2201654e4ba3adbc1a4738bc14723b708d522c69. 기존 PR56 브랜치에서 동기화하며 원격 integration/develop은 수정하지 않는다.
+- 수동 충돌 해결은 이 문서 한 파일뿐이다. 양 부모 원문 전체의 줄·중복·순서를 subsequence 검사하여 HEAD 401/401, 통합 328/328 보존을 확인했다. PR57 CI 이력과 PR54 CI 이력을 함께 유지했다.
+- Content 제품·시험·도구는 시작 HEAD 대비 diff 0. 나머지 변경은 최신 통합에서 자동 반영된 선행 변경이며 이번 수동 제품 수정이 아니다.
+- 직접 실행: 설치 Windows Chrome headless/Playwright 합성 DOM Stories 23/23, legacy 계약 6/6 PASS(총29, fail/skip0). 기존 Content183 전체는 재실행하지 않았다. 수동 수정 문서 공백 검사 PASS. 전체 staged 공백 검사에서는 통합 원본 frontend/src/HourlyAccessPattern.tsx:29의 끝 빈 줄 1건이 지적되어 담당 김다훈에게 정리를 요청하며 이 파일은 수정하지 않았다. 실제 MV3/Core/Native/Server 제품 수용 NOT_RUN, MVP_FINAL_COMPLETE=false.
+- 사용자 Commit·Push 승인 후 게시 진행. 새 HEAD 원격 CI와 최종 병합 조건은 게시 후 별도 확인하며 과거 CI·승인을 소급하지 않는다. 타 PR/작업공간 보존, Draft 해제·Approve·Merge 없음.
 # AMVP-CONTENT-06 · 추가 Content 연결
 ## 2026-11-01 PR71 최종 게시 후보 · 정상 baseline0.1.9.2
 - 시작2a22fcb / codex/content-instagram-comments, 선행 #65(4daf3d3) 유지. 아래 중간0.1.10~0.1.14 실패 후보는 이력이며 최종 제출 소스가 아니다. 최종은 사용자 정상0.1.9.1(empty 릴스 보완 포함)에 semantic listitem 경계만 수정한0.1.9.2다.
@@ -36,6 +42,11 @@
 - 최종 전용14/14 PASS(기본10+제공DIV2+동적속성2), 계약6/6·build/구문/diff PASS. 최초 전체265/265는 이전10개 후보 selector 시점의 이력이며 최종269 전수로 합산하지 않는다. 최종 전체 Content **269/269 PASS**, fail/skip0(129.2초), ig-comments-final-regression.log. 전용14와 중복이므로 합산하지 않는다. 계약6/6·build/구문/diff PASS. 원본/빌드 module hash9C98AE58CDA41CA3F60C1F53F8A512BCBADAFC30FF64E29E210466D283BF10E2 일치. 실제 Instagram 사용자 동작/오디오·모든 DOM 변형/제품 Core 검증은 아직NOT_RUN.
 
 - 사용자 확인 예정: 일반 게시물/릴스 댓글·입력창 숨김, 사진/영상/본문/좋아요/닫기 보존, 늦은댓글 자동제한, 해제 후 복원·댓글작성 가능. NO_TARGET/FAILED/남은댓글은 성공 아님. 전체새로고침은 재적용 필요. 실제 Core/native/frozen/fullscope·효과전영속ACK·cleanup lease/결과저장·새문서/BFCache 제품 재결속·제품START/END 수용 NOT_RUN. Instagram 제안항목/흑백·키워드/블러는 이번 범위 밖. Commit/Push/PR/Merge 없음, MVP_FINAL_COMPLETE=false.
+## 2026-11-01 PR57 승인 수정의 PR56 반영
+- 담당 채지민 / codex/content-instagram-stories / 시작08730c86d91d0b1d3790bc5fafc7a7ca9195ece8. discussion4434864434 요청대로 #57의02a653fb(alt/draggable 관찰·회귀2건·기록)와984b396f(CI·기록)를 fast-forward로 이력 그대로 로컬#56에 반영했다. 시작worktree clean, 타작업/PR71·82·83 보존. integration/develop/다른담당브랜치 병합은하지않는다.
+- 제품수정은 IG-01 attributeFilter의alt/draggable 추가1줄뿐. 추가2시험은 수동scan없이 적격전환·이탈/재진입·다른owner보존·display!important복원을 검사한다. 승인#57 HEAD984b396 대비 extension/content·content-tests·content-tools·ui 및CI 전체diff0. CIblob44bb30d93878bd8916b034b625a82c7007adc9dc 동일. 승인된수정을재개발하거나새포맷/권한을추가하지않았다.
+- 반영후직접 Windows Node24/설치Chrome headless/Playwright 합성DOM Content183/183 PASS(스토리23·추가2포함), fail/skip0. 기존환경 node --test --test-concurrency=2 extension/content-tests/*.test.mjs, 로그stories-57-into-56-full.log. 계약6/6·build·변경JS구문·공백PASS. 수정전반례0/2FAIL→#57수정후2/2 근거는기존기록이며 이번에는반영후전체183을재실행했다.
+- 이번추가commit은본작업기록만변경. 새#56 HEAD 원격CI/최신통합후보·담당승인은Push후별도확인, #57과거CI/승인을자동승격하지않는다. 실제Chrome/MV3/Core/Native/Server제품수용NOT_RUN, MVP_FINAL_COMPLETE=false. 통합기록충돌/병합순서는다훈관리, 리뷰Resolve·Draft해제·Merge버튼조작없음.
 
 
 ## 2026-11-01 PR #65 동적 탐색 identity P2
@@ -653,3 +664,23 @@
 - nestedIdentityBoundary: post permalink는 role과 무관하게 댓글 row 근거에서 제외. timestamp만 있는 투명 wrapper는 flat timestamp와 동등하게 취급. 중첩 identity 외부에서 검증된 프로필/avatar·댓글 조작만 제외하고 임의 role=link/button의 사진·본문을 지우지 않음. 첫 후보의 무링크 avatar 회귀는 pr71-focused.log에 보존하고 검증된 무링크 avatar만 허용해 해결.
 - 신규4 포함 댓글41/41, 전체 Content296/296(실패/skip0), 계약6/6, build·변경JS node --check·git diff --check PASS. Node24.19.0 / Playwright1.62.1 / 설치Chrome headless. 명령: PLAYWRIGHT_MODULE/CHROME_EXECUTABLE 지정 후 node --test --test-concurrency=2 extension/content-tests/*.test.mjs; node --test contracts/additional-mvp/rc1/tests/legacy-boundary.test.mjs; node extension/content-tools/build-chrome-harness.mjs. 로그는 수정worktree의 ignored pr71-{before,focused,focused-final,full,contract,build}.log. 전체회귀는 owner/부분복원재시도/foreign document/generation/SPA/pagehide/늦은callback 및 기존 YouTube·IG 기능 포함. 합성DOM이며 실제 로그인/제품 수용은 미실행.
 - Commit/Push 후 동일HEAD workflow_dispatch 원격CI와 checkout SHA/tree를 별도 확인한다. 독립 재리뷰 필요: 링크된 게시물 보존 + wrapped GIF 정상 제한 및 기존 경계. Approve/Draft해제/Resolve/Merge 없음. 실제 Chrome/MV3/Core/Native/Server 제품 수용 NOT_RUN, MVP_FINAL_COMPLETE=false.
+## 2026-11-01 PR57 CI 근거 보완 · 채지민
+- 브랜치 fix/ig-story-attribute-observer-p2, 시작02a653fb60e671dcf997951b220708ea146b4a7a. #71 HEAD4ebc72f와 정상사용자시험판0.1.9.2/다른worktree를 보존했다. PR57 base는 기존 codex/content-instagram-stories(08730c8) 그대로이며 #56 원본에 직접 반영하지 않는다.
+- 기능IG01/AC-IG-01-01~03·RC2 05_Content_Event_UI 기준. 기존 HEAD에는 Content workflow가 없어 새 .github/workflows/content-sessions.yml만 검증된 #54 CI 구성으로 복사했다. workflow blob44bb30d93878bd8916b034b625a82c7007adc9dc 동일. 최소권한/고정actions/Node24.19.0/Playwright1.62.1, 전체Content·계약·build·syntax 경로 유지.
+- 02a653f 대비 extension/content·content-tests·content-tools·ui 전체 diff 없음. 스토리alt/draggable 효과·시험·공통원장·Core/Server/공용계약 변경 없음. 본기록+workflow2파일만 게시할 예정.
+- 로컬 전체 Content 회귀 실행 중. 별도 계약6/6·build·전체 Content/시험 구문·diff PASS. 빌드 검사 후 사용자 기존 unpacked 댓글시험판0.1.9.2를 원래 경로에 복구했다. Node24/설치Windows Chrome headless/Playwright 합성DOM이며 실제Instagram/MV3/Native/Server 제품수용 NOT_RUN. MVP_FINAL_COMPLETE=false.
+- 게시승인 후 동일PR57 새HEAD 원격CI checkout/원본로그 확인·PR본문 갱신, 다훈 변경분/승인유효성 검토 필요. 과거리뷰를 새HEAD 승인으로 승격하지 않고 Approve/Draft해제/Resolve/Merge하지 않는다.
+- 최종 로컬 Content183/183 PASS, fail/skip0. 명령 기존 PLAYWRIGHT_MODULE/CHROME_EXECUTABLE 지정 후 node --test --test-concurrency=2 extension/content-tests/*.test.mjs, 로그 pr57-ci-local.log. 계약6/6·빌드·구문·diff 별도PASS. 다음 새HEAD 원격CI 확인.
+
+### 2026-11-01 PR54 Content CI 근거 보완
+- 담당 채지민, codex/content-grayscale, 시작670647f41f4e9b9c2380faede496815aa2f3d6a8. 기존 dirty root/다른 worktree 및 IG04 PR71 보존. YT-09/AC-YT-09-01~03 설계·기능 의미 변경 없음.
+- Content workflow 부재로 CI 근거가 없던 HOLD에 대응해 검증된4daf3d3의 .github/workflows/content-sessions.yml만 그대로 재사용. blob44bb30d93878bd8916b034b625a82c7007adc9dc 동일. PR 경로 trigger/수동 dispatch, 최소 contents:read, pinned actions/Node24.19.0/Playwright1.62.1, Content전체/계약/build/syntax 검사 유지.
+- 기존670647f 대비 extension/content, content-tests, content-tools, ui 전체 diff 없음. 흑백 기능/시험과 공통 원장/권한/제품계약 변경 없음. 변경 범위 workflow 신규1개+본 기록뿐.
+- 로컬 Node24·설치 Windows Chrome headless/Playwright 합성 DOM Content160/160 PASS(흑백12 포함), 계약6/6 PASS, build PASS. 전체 명령: 기존 PLAYWRIGHT_MODULE/CHROME_EXECUTABLE 설정 후 node --test --test-concurrency=2 extension/content-tests/*.test.mjs. 로그 grayscale-ci-local.log. git diff --check 및 구문 검사 확인.
+- Commit/Push 승인 후 새 HEAD 원격 CI의 checkout/원본 로그를 별도로 확인하고 PR54 갱신. 과거 Core/독립 승인을 새 HEAD 승인으로 간주하지 않으며 다훈의 유효성 재확인 필요. 제품 Core/MV3/Native/Server 수용 NOT_RUN, MVP_FINAL_COMPLETE=false. 병합/Approve/Draft 해제 없음.
+
+## 2026-11-02 PR71 통합 문서 동기화
+
+- 기존 댓글 HEAD adc9d14와 Content 선행 통합 146fdb77을 병합 후보로 결합했다. 수동 해결은 본 카드 1파일뿐이며 양쪽 작업·실패·시험·미완료 원문을 순서와 중복 포함 보존했다.
+- Content 제품·시험·도구·계약은 기존 댓글 검토본과 blob 동일성을 확인해 유효한 독립 20/20 및 기존 회귀를 재사용한다. 동일 전체 시험을 새로 실행했다고 표시하지 않는다.
+- 새 HEAD의 CI·Core 변경 영향 재확인·최종 승인과 통합은 별도 조건이다. 기존 승인 효력을 자동 소급하지 않는다. 실제 제품 E2E NOT_RUN, MVP_FINAL_COMPLETE=false.

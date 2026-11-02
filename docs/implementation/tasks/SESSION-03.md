@@ -103,3 +103,11 @@ Backend 전체120/120·패키징 PASS, Frontend113/113·빌드 PASS. 격리 MySQ
 - Codex 실행: Backend138/138·패키징, Frontend114/114·빌드 PASS. 추가 HTTP/MySQL 테스트10개(복수 하위 사례 포함), 별도 독립 HTTP 재현 probe PASS. 격리 MySQL8.4.8 127.0.0.1:60046/focurve_contract_test, 합성 회원/설치/보고 사용. 실제 Chrome·회원 Core/Content 통합 NOT RUN. 응답 유실은 클라이언트가 첫 결과를 무시하고 재전송한 모의 사례이며 Server 프로세스 강제 중단은 NOT RUN.
 - MAX/MAX+1/Long.MAX_VALUE 버전 원본·frozen Snapshot 보존 및 잠금 해제 확인. 운영 Snapshot1.2 기본 OFF 유지(테스트 프로필만 ON). D01/D05 자동복구 전체 미구현 경계 유지. AC-SESSION-02/03/04의 -01/-03 중 Server 합성 보고 부분만 검증했으며 실제 적용/해제·전체 AC·MVP 완료로 승격하지 않는다.
 - 증거: <LOCAL_PATH_REDACTED> 및 released-order 로그. 후속: 독립 재리뷰, 실제 Core 해제 증거·역순/재전송 통합. 이번 Commit/Push/PR 업데이트/병합 없음.
+
+
+## 2026-11-01 집중 화면의 상태 탐색 읽기 수명
+
+- 담당 김다훈, `fix/additional-mvp-focus-read-lifetime`, 통합3569911 기준. API-SESSION-02/05와 기존 설치·사이트·당일 세션 GET을 재사용한다. 기존 상태/API/DB·실행 증거 계약을 변경하지 않는다.
+- 구 화면의 current/policy401이 새 화면을 인증 만료시키고, 구 응답 후 후속 탐색 GET을 계속한 반례5 FAIL→PASS. mounted scope/AbortSignal/각 await 및 catch 결속, 늦은 CONNECT 후속 읽기 중단, StrictMode 재생성 확인. 현재 유효한 current/policy401은 계속 인증 만료하고 조작을 허용하지 않는다.
+- 신규8 포함 직접 영향84 PASS(9파일)·타입/Vite build PASS. 실제 SDK+모의 HTTP/CONNECT이며 실제 정책 START/END·Chrome/Native·DB 제품 수용 NOT_RUN. AC-SESSION-03의 실제 적용/해제·복원 수용 PASS를 새로 부여하지 않는다.
+- START/END 전송 및 기존 #72의 접근 요약·타이머/메모·history 소스 보존. 상세/변경 요청 전체 수명과 실제 생산 경계는 별도 범위다. 원본 before/final/build 로그 `.local/focus-read-20261101/`, 최종 HEAD/CI는 후속 Draft PR 본문과 ignored result 기준이다. 승인/병합 미수행, MVP_FINAL_COMPLETE=false.

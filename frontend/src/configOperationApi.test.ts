@@ -1,0 +1,10 @@
+import {beforeEach,expect,it,vi} from "vitest";
+import {request} from "./api";
+import {readConfigOperation} from "./configOperationApi";
+vi.mock("./api",()=>({request:vi.fn(),UiError:class extends Error{}}));
+const id="10000000-0000-4000-8000-000000000001";
+const receipt={operation_id:id,state:"RELEASE_PENDING",actual_effect_confirmed:false,error_code:null};
+beforeEach(()=>{vi.mocked(request).mockReset();});
+it("queries only the exact operation and preserves release pending",async()=>{vi.mocked(request).mockResolvedValue(receipt);expect(await readConfigOperation(id)).toEqual(receipt);expect(vi.mocked(request).mock.calls[0]).toEqual([`/amvp/operations/${id}`,"GET",undefined,{signal:undefined}]);});
+it("rejects another operation and a claimed effect without confirmed state",async()=>{for(const patch of [{operation_id:crypto.randomUUID()},{actual_effect_confirmed:true},{state:"CONFIRMED"},{state:"NOT_RECEIVED"}]){vi.mocked(request).mockResolvedValue({...receipt,...patch});await expect(readConfigOperation(id)).rejects.toThrow();}});
+it("does not turn a query failure into a successful receipt or a retry",async()=>{vi.mocked(request).mockRejectedValue(new Error("offline"));await expect(readConfigOperation(id)).rejects.toThrow("offline");expect(request).toHaveBeenCalledTimes(1);});

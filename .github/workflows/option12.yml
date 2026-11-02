@@ -1,0 +1,39 @@
+name: OPTION-12 goal and AI safety
+on:
+  pull_request:
+    branches: [integration/additional-mvp-20261029]
+    paths: ['frontend/**', 'runtime-server/**', '.github/workflows/option12.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  mysql-goal-safety:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    services:
+      mysql:
+        image: mysql:8.4.8
+        env:
+          MYSQL_ROOT_PASSWORD: ci-option12-only
+          MYSQL_DATABASE: amvp_test_20261101
+          MYSQL_USER: amvp_ci
+          MYSQL_PASSWORD: ci-amvp-only
+          TZ: UTC
+        ports: ['3306:3306']
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -pci-option12-only --silent"
+          --health-interval=5s --health-timeout=5s --health-retries=20
+    env:
+      FOCURVE_OPTION12_TESTS: '1'
+      FOCURVE_AMVP_TEST_URL: jdbc:mysql://127.0.0.1:3306/amvp_test_20261101?connectionTimeZone=UTC&forceConnectionTimeZoneToSession=true&useSSL=false&allowPublicKeyRetrieval=true
+      FOCURVE_AMVP_TEST_USER: amvp_ci
+      FOCURVE_AMVP_TEST_PASSWORD: ci-amvp-only
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+      - uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+          cache-dependency-path: runtime-server/pom.xml
+      - run: bash backend/mvnw -f runtime-server/pom.xml -B -ntp -Dtest=DailyFocusGoalTest,AnalysisSafetyTest,DailyFocusGoalMysqlTest test
