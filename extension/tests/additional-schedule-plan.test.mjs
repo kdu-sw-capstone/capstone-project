@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { weeklyStart, evaluateOccurrence } from '../src/additional-schedule-plan.js';
+import { weeklyStart, evaluateOccurrence, createWeeklyStartResolver } from '../src/additional-schedule-plan.js';
 const weekly = (localDate,startLocal,timezone) => weeklyStart({localDate,startLocal,timezone,weekdays:[1,2,3,4,5,6,7]});
 test('IANA timezone local date and weekday are preserved', () => {
   assert.equal(weekly('2026-11-02','09:00','Asia/Seoul').startAt,'2026-11-02T00:00:00.000Z');
@@ -40,4 +40,16 @@ test('invalid dates, zones, inputs and implicit authorization flags fail closed'
   for (const [date,time,zone] of [['2026-02-30','09:00','UTC'],['2026-11-01','24:00','UTC'],['2026-11-01','09:00','Invalid/Zone']]) assert.throws(()=>weekly(date,time,zone),/INVALID/);
   assert.throws(()=>evaluateOccurrence({...input,durationMinutes:181}),/INVALID/);
   assert.throws(()=>evaluateOccurrence({...input,alreadyIssued:undefined}),/INVALID/);
+});
+test('derived resolver cache preserves weekday, time, zone and date boundaries after eviction', () => {
+  const resolve=createWeeklyStartResolver({capacity:1}),input={localDate:'2026-11-01',startLocal:'01:30',timezone:'America/New_York',weekdays:[7]};
+  const first=resolve(input);assert.equal(first.startAt,'2026-11-01T05:30:00.000Z');first.startAt='mutated';
+  assert.equal(resolve({...input,startLocal:'01:45'}).startAt,'2026-11-01T05:45:00.000Z');
+  assert.equal(resolve({...input,weekdays:[1]}).status,'NOT_SCHEDULED');
+  assert.equal(resolve({...input,timezone:'UTC'}).startAt,'2026-11-01T01:30:00.000Z');
+  assert.equal(resolve(input).startAt,'2026-11-01T05:30:00.000Z');
+  assert.equal(resolve({...input,localDate:'2026-03-08',startLocal:'02:30'}).reason,'DST_GAP');
+  assert.equal(resolve({...input,localDate:'2026-03-08',startLocal:'03:30'}).startAt,'2026-03-08T07:30:00.000Z');
+  assert.throws(()=>resolve({...input,timezone:'Invalid/Zone',weekdays:[1]}),/INVALID/);
+  assert.throws(()=>createWeeklyStartResolver({capacity:0}),/INVALID/);
 });

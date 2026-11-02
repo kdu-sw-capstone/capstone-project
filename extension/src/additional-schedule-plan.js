@@ -16,7 +16,7 @@ const wall = p => {
   const d = new Date(0); d.setUTCFullYear(p.year, p.month - 1, p.day);
   d.setUTCHours(p.hour, p.minute, p.second, 0); return d.getTime();
 };
-export function weeklyStart({ localDate, startLocal, timezone, weekdays }) {
+function resolveWeeklyStart({ localDate, startLocal, timezone, weekdays }, cache, capacity) {
   if (typeof localDate !== 'string' || !/^\d{4}-\d\d-\d\d$/.test(localDate)
     || typeof startLocal !== 'string' || !/^(?:[01]\d|2[0-3]):[0-5]\d$/.test(startLocal)
     || typeof timezone !== 'string' || !timezone || timezone.length > 80
@@ -31,17 +31,38 @@ export function weeklyStart({ localDate, startLocal, timezone, weekdays }) {
     hour: '2-digit', minute: '2-digit', second: '2-digit', hourCycle: 'h23'
   }); } catch { invalid(); }
   if (!weekdays.includes(weekday)) return { status: 'NOT_SCHEDULED', startAt: null };
-  const candidates = new Set();
-  // Enumerate nearby local offsets, not an assumed +/-1h DST correction. This
-  // handles non-hour folds/gaps and historical second offsets via format parts.
-  for (let delta = -26 * 60; delta <= 26 * 60; delta++) {
-    const probe = nominal + delta * 60000;
-    const offset = wall(parts(formatter, probe)) - probe;
-    candidates.add(nominal - offset);
+  const key = JSON.stringify([localDate, timezone]);
+  let offsets = cache.get(key);
+  if (!offsets) {
+    offsets = new Set();
+    const midnight = instant(`${localDate}T00:00:00.000Z`);
+    // Superset of every HH:MM +/-26h probe on this date. Scan once per date/zone,
+    // retaining minute probes and historical second offsets; never assume +/-1h.
+    for (let delta = -26 * 60; delta <= 50 * 60; delta++) {
+      const probe = midnight + delta * 60000;
+      offsets.add(wall(parts(formatter, probe)) - probe);
+    }
   }
-  const matches = [...candidates].filter(at => wall(parts(formatter, at)) === nominal).sort((a,b) => a-b);
+  cache.delete(key); cache.set(key, offsets);
+  if (cache.size > capacity) cache.delete(cache.keys().next().value); // Derived data only.
+  const matches = [...offsets].map(offset => nominal - offset)
+    .filter(at => wall(parts(formatter, at)) === nominal).sort((a,b) => a-b);
   return matches.length ? { status: 'SCHEDULED', startAt: new Date(matches[0]).toISOString() }
     : { status: 'SKIPPED', reason: 'DST_GAP', startAt: null };
+}
+
+/** Bounded, caller-owned derived cache. Recreate when the verified tzdb profile
+ * changes. No owner, occurrence, authority, claim, or durable receipt is cached.
+ */
+export function createWeeklyStartResolver({ capacity = 2048 } = {}) {
+  if (!Number.isSafeInteger(capacity) || capacity < 1) invalid();
+  const cache = new Map();
+  return input => resolveWeeklyStart(input, cache, capacity);
+}
+
+// Existing stateless API and return/error contract remain unchanged.
+export function weeklyStart(input) {
+  return createWeeklyStartResolver({ capacity: 1 })(input);
 }
 
 /** The supplied start must already be an authenticated/resolved occurrence.
