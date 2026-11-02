@@ -1,4 +1,4 @@
-import SiteClassification from "./SiteClassification";
+import SiteClassificationCard from "./SiteClassification";
 import { SiteMark } from "./FocusShared";
 import { requestedWorkspaceView } from "./workspaceNavigation";
 import { submittedSiteHost } from "./siteHostConfirmation";
@@ -773,6 +773,9 @@ function Statistics({
       )}
     </section>
   );
+}
+function SiteClassification({open}:{open:()=>void}) {
+  return <SiteClassificationCard open={open}/>;
 }
 function Dashboard({ sessions, records, sites }: { sessions: () => void; records: () => void; sites: () => void }) {
   const state = useAction();
