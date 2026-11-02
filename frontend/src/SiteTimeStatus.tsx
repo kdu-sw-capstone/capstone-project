@@ -12,7 +12,7 @@ export default function SiteTimeStatus({executor,configId,configurationVersion}:
  const key=JSON.stringify([executor,configId,configurationVersion,date,reload]);
  const [view,setView]=useState<{key:string;data:Status|null;error:string}>({key:"",data:null,error:""});
  useEffect(()=>{let disposed=false;const abort=new AbortController();setView({key,data:null,error:""});
-  if(date)void siteTimeStatus(executor,configId,date,abort.signal).then(data=>{if(!disposed)setView({key,data,error:""});}).catch(error=>{if(!disposed&&!abort.signal.aborted)setView({key,data:null,error:message(error)});});
+  if(date)void siteTimeStatus(executor,configId,date,abort.signal,configurationVersion).then(data=>{if(!disposed)setView({key,data,error:""});}).catch(error=>{if(!disposed&&!abort.signal.aborted)setView({key,data:null,error:message(error)});});
   return()=>{disposed=true;abort.abort();};
  },[executor,configId,date,key]);
  const current=view.key===key?view:{key,data:null,error:""},data=current.data;

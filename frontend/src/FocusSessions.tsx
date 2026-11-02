@@ -18,23 +18,42 @@ export default function FocusSessions({settings,cadenceSettings=settings,records
   const key=useRef(crypto.randomUUID()),previous=useRef<string|null>(null),local=useRef<string|null>(null),checked=useRef(false);
   const [localExecutor,setLocalExecutor]=useState<string|null>(null);
   const cadence=useCadenceControl(current?.session_id,current?.executor_id);
+  // Discovery belongs to this mounted screen, not to a later account/view.
+  const discovery=useRef<{live:boolean;reads:Set<AbortController>}|null>(null);
   async function load(){
-    setFresh(false);
-    const s=await request<Session|null>("/sessions/current");
-    setCurrent(s);
-    const p=s?await request<Policy>(`/sessions/${s.session_id}/policy`):null;
-    if (!checked.current) { checked.current=true;local.current=await connectExecution(); }
-    const links=await request<{executor_id:string}[]>("/extension-installations");
-    const detected=links.some(i=>i.executor_id===local.current)?local.current:null;
-    setLocalExecutor(detected);
-    const saved=await allPages<PolicySite>("/sites");
-    const day=seoulDay();const ended=await allPages<Session>(`/sessions?from_date=${day}&to_date=${day}&status=ENDED`);
-    if(!s&&previous.current){const last=await request<Session>(`/sessions/${previous.current}`);setSelectedPolicy(await request<Policy>(`/sessions/${last.session_id}/policy`));setSelected(last);}
-    previous.current=s?.session_id??null;
-    setCurrent(s);setPolicy(p);setInstallations(links);setSites(saved);setToday(ended);setLoaded(true);setFresh(true);
-    setExecutor(old=>detected??(links.some(i=>i.executor_id===old)?old:links[0]?.executor_id??""));
+    const scope=discovery.current;if(!scope?.live)return;
+    const abort=new AbortController();scope.reads.add(abort);
+    const live=()=>scope.live&&discovery.current===scope&&!abort.signal.aborted;
+    try {
+      setFresh(false);
+      const s=await request<Session|null>("/sessions/current","GET",undefined,{signal:abort.signal});
+      if(!live())return;setCurrent(s);
+      const p=s?await request<Policy>(`/sessions/${s.session_id}/policy`,"GET",undefined,{signal:abort.signal}):null;
+      if(!live())return;
+      if (!checked.current) { checked.current=true;const connected=await connectExecution();if(!live())return;local.current=connected; }
+      const links=await request<{executor_id:string}[]>("/extension-installations","GET",undefined,{signal:abort.signal});
+      if(!live())return;
+      const detected=links.some(i=>i.executor_id===local.current)?local.current:null;
+      setLocalExecutor(detected);
+      const saved=await allPages<PolicySite>("/sites",abort.signal);if(!live())return;
+      const day=seoulDay();const ended=await allPages<Session>(`/sessions?from_date=${day}&to_date=${day}&status=ENDED`,abort.signal);if(!live())return;
+      if(!s&&previous.current){
+        const last=await request<Session>(`/sessions/${previous.current}`,"GET",undefined,{signal:abort.signal});if(!live())return;
+        const lastPolicy=await request<Policy>(`/sessions/${last.session_id}/policy`,"GET",undefined,{signal:abort.signal});if(!live())return;
+        setSelectedPolicy(lastPolicy);setSelected(last);
+      }
+      previous.current=s?.session_id??null;
+      setCurrent(s);setPolicy(p);setInstallations(links);setSites(saved);setToday(ended);setLoaded(true);setFresh(true);
+      setExecutor(old=>detected??(links.some(i=>i.executor_id===old)?old:links[0]?.executor_id??""));
+    }catch(error){if(live())throw error;}finally{scope.reads.delete(abort);}
   }
-  useEffect(()=>{void work.run(load);const id=setInterval(()=>{void work.run(load);},5000);const tick=setInterval(()=>setNow(performance.now()),250);return()=>{clearInterval(id);clearInterval(tick);};},[]);
+  useEffect(()=>{
+    const scope={live:true,reads:new Set<AbortController>()};discovery.current=scope;
+    // Skip the disposed StrictMode setup before it can take useWork's lock.
+    void Promise.resolve().then(()=>{if(scope.live)void work.run(load);});
+    const id=setInterval(()=>{void work.run(load);},5000),tick=setInterval(()=>setNow(performance.now()),250);
+    return()=>{scope.live=false;for(const abort of scope.reads)abort.abort();scope.reads.clear();clearInterval(id);clearInterval(tick);};
+  },[]);
   async function start() {
     setAction("현재 브라우저 연결 확인 중…");
     try {
