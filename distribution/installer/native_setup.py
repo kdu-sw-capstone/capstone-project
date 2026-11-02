@@ -150,8 +150,9 @@ class _LockCustody:
  """
  def __init__(self,path,expected):self.path=path;self.expected=expected;self.fd=None
  def __enter__(self):
+  _need(os.name=='nt','NATIVE_SETUP_LOCK_CUSTODY_UNAVAILABLE')
   import ctypes,msvcrt
-  _need(os.name=='nt','NATIVE_SETUP_LOCK_CUSTODY_UNAVAILABLE');_plain(self.path)
+  _plain(self.path)
   k=ctypes.WinDLL('kernel32',use_last_error=True)
   k.CreateFileW.argtypes=[ctypes.c_wchar_p,ctypes.c_uint32,ctypes.c_uint32,ctypes.c_void_p,ctypes.c_uint32,ctypes.c_uint32,ctypes.c_void_p];k.CreateFileW.restype=ctypes.c_void_p
   k.CloseHandle.argtypes=[ctypes.c_void_p]

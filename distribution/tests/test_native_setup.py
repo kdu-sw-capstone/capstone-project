@@ -14,7 +14,14 @@ class SyntheticLockCustody:
  def check(self):m._need(m._file(self.path)==self.expected,'SYNTHETIC_LOCK_CHANGED')
  def archive(self,target):
   self.check();m._need(not target.exists(),'SYNTHETIC_ARCHIVE_COLLISION')
-  self.path.rename(target);self.path=target;self.check()
+  self.path.rename(target);self.path=target
+  archived=m._file(target)
+  # POSIX rename can change ctime (the _file fallback, not a birth time).
+  # Only this synthetic double accepts that metadata change; content and
+  # device/inode/size must still match the pre-rename evidence.
+  stable=lambda value:{k:v for k,v in value.items() if k!='createdNS'}
+  m._need(stable(archived)==stable(self.expected),'SYNTHETIC_LOCK_CHANGED')
+  self.expected=archived;self.check()
  def remove(self):self.check();self.path.unlink()
  def __exit__(self,*args):pass
 
@@ -351,7 +358,12 @@ class NonWindowsSecurityBoundaryTests(unittest.TestCase):
    def __getattr__(self,key):return getattr(original,key)
   return patch.object(m,'os',Platform())
  def test_production_lock_custody_rejects_nonwindows_before_open(self):
-  with self.nonwindows(),patch.object(m.os,'open') as opened:
+  import builtins
+  original=builtins.__import__
+  def without_msvcrt(name,*args,**kwargs):
+   if name=='msvcrt':raise ModuleNotFoundError("No module named 'msvcrt'")
+   return original(name,*args,**kwargs)
+  with self.nonwindows(),patch.object(m.os,'open') as opened,patch('builtins.__import__',side_effect=without_msvcrt):
    with self.assertRaisesRegex(RuntimeError,'LOCK_CUSTODY_UNAVAILABLE'):
     with m._LockCustody(pathlib.Path('unused'),{}):pass
    opened.assert_not_called()
@@ -364,3 +376,23 @@ class NonWindowsSecurityBoundaryTests(unittest.TestCase):
    with SyntheticLockCustody(p,expected) as custody:
     p.write_bytes(b'changed') # Intentionally permitted: this double is NOT a sharing lock.
     with self.assertRaisesRegex(RuntimeError,'SYNTHETIC_LOCK_CHANGED'):custody.check()
+ def test_synthetic_archive_allows_rename_ctime_change_only(self):
+  with tempfile.TemporaryDirectory() as t:
+   p=pathlib.Path(t)/'lock';p.write_bytes(b'fixture');target=p.with_name('archive');expected=m._file(p);original=m._file
+   def metadata(path):
+    value=original(path)
+    if path==target:value={**value,'createdNS':expected['createdNS']+1}
+    return value
+   with patch.object(m,'_file',side_effect=metadata),SyntheticLockCustody(p,expected) as custody:
+    custody.archive(target);custody.check()
+   self.assertEqual(target.read_bytes(),b'fixture');self.assertFalse(p.exists())
+ def test_synthetic_archive_rejects_changed_content_or_identity(self):
+  for field,value in [('sha256','changed'),('inode',-1),('device',-1),('bytes',-1)]:
+   with self.subTest(field=field),tempfile.TemporaryDirectory() as t:
+    p=pathlib.Path(t)/'lock';p.write_bytes(b'fixture');target=p.with_name('archive');expected=m._file(p);original=m._file
+    def metadata(path):
+     actual=original(path)
+     return {**actual,field:value} if path==target else actual
+    with patch.object(m,'_file',side_effect=metadata),SyntheticLockCustody(p,expected) as custody:
+     with self.assertRaisesRegex(RuntimeError,'SYNTHETIC_LOCK_CHANGED'):custody.archive(target)
+    self.assertEqual(target.read_bytes(),b'fixture')
