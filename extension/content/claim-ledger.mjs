@@ -14,6 +14,7 @@ export class ClaimLedger {
   suspend() { this.#open = false; }
 
   hide(claim, element, canApply = () => true) { return this.#acquire(claim, element, ['display', 'inert'], canApply); }
+  conceal(claim, element, canApply = () => true) { return this.#acquire(claim, element, ['opacity', 'inert'], canApply); }
   grayscale(claim, element, canApply = () => true) { return this.#acquire(claim, element, ['filter'], canApply); }
 
   #read(element, property) {
@@ -32,6 +33,7 @@ export class ClaimLedger {
   #restricted(property, original, filterBase) {
     if (property === 'inert') return { value: true };
     if (property === 'display') return { value: 'none', priority: 'important' };
+    if (property === 'opacity') return { value: '0', priority: 'important' };
     const base = filterBase.trim();
     return { value: `${base && base !== 'none' ? base + ' ' : ''}grayscale(1)`, priority: 'important' };
   }
@@ -96,6 +98,9 @@ export class ClaimLedger {
       // Inline values alone do not prove hiding against page/user styles.
       if (properties.includes('display')) {
         verified = this.#document.defaultView.getComputedStyle(element).display === 'none' && element.inert === true && verified;
+      }
+      if (properties.includes('opacity')) {
+        verified = this.#document.defaultView.getComputedStyle(element).opacity === '0' && element.inert === true && verified;
       }
       return verified;
     } catch { return false; } finally { this.#busy = false; }

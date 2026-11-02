@@ -12,6 +12,21 @@
 - 이번추가commit은본작업기록만변경. 새#56 HEAD 원격CI/최신통합후보·담당승인은Push후별도확인, #57과거CI/승인을자동승격하지않는다. 실제Chrome/MV3/Core/Native/Server제품수용NOT_RUN, MVP_FINAL_COMPLETE=false. 통합기록충돌/병합순서는다훈관리, 리뷰Resolve·Draft해제·Merge버튼조작없음.
 
 
+## 2026-11-01 PR #65 동적 탐색 identity P2
+
+- 담당 채지민, codex/content-instagram-explore. 시작6d4a5e2b057d0f7e22f6aefe97b52232331368ad, 원격 #65 HEAD/base 일치·clean 확인. review discussion4434086347 범위만 수정한다. 기존 #58/#64 미디어 P2 수정은 그대로 보존하고 재개발/타 브랜치 변경하지 않는다.
+- 원인: confirmedExploreEntry가 읽는 title/aria-labelledby/textContent/svg title·외부 참조 label text를 기존 observer가 모두 감시하지 않았다. 분류 함수는 수동 scan 시 맞지만 자동 claim 회수가 누락됐다.
+- 정확한 시작 소스에서 신규 설치 Chrome 합성5건(title/aria-labelledby pointer/기존 Text.data/svg title Text.data/외부 label Text.data) **0PASS/5FAIL** 재현. 모두 Explore→Search 뒤 자동 opacity/inert 복원 timeout(2초), pr65-identity-before.log. 사용자 실제 DOM 전체 재현이나 제품 수용으로 확대하지 않는다.
+- 최소 수정: navigation-surface observer의 IG-03에만 title/aria-labelledby 추가 및 characterData=true. 새 observer/강제 표시/claim 직접 삭제 없음. 기존 microtask 배치·동적 재분류·자기 claim 회수 경로 재사용, 다른 기능은 characterData=false로 기존 동작 유지. characterDataOldValue/본문 수집·전송·추가 로그 없음.
+- 신규5건은 각 입력의 Explore→Search 자동 복원, Search→Explore 자동 재적용, 다른 owner와 겹친 후 Search 전환 시 자기 claim만 회수, 마지막 owner 해제 시 원래 opacity0.65!important/inert=false 복원을 수동 scan 없이 검증한다. 수정 후 전체 Content **255/255 PASS**, fail/skip0(125.5초), 신규5 포함. 동일5반례 **0PASS/5FAIL→5PASS**, pr65-identity-after.log. 계약6/6·build/변경JS구문/diff PASS, source/build navigation hash BA1F283286AE62041C637DA0191B6BAEC75685825119479557DEFB1D1A27F6D8 일치. 미디어/Stories/adapter/ledger/Reels/Explore source blob이 시작HEAD와 동일함을 대조했다. 새 원격CI는 게시 후 별도 확인하며 이전250을 새 소스 근거로 소급하지 않는다.
+- 변경3파일 예정: navigation-surface.mjs, instagram-explore-browser.test.mjs, 작업카드. RC2 05_Content_Event_UI/feature-registry IG03 AC-IG-03-01~03의 검색 보존·동적 OFF·다른 owner 보존 기준. Core/Server/Wire/제품Manifest 및 #58/#64 소스 수정 없음. 실제 Core/MV3/Native/Server 제품 수용 NOT_RUN, MVP_FINAL_COMPLETE=false.
+
+
+## 2026-11-01 #65 후속 브랜치 P2 상속
+
+- 시작bb88f7e878a466491fd6f5293e9775e0866a3f6b, codex/content-instagram-explore. 수정된 #64 HEAD98bca66a0a5ceb92c13fe334586fea314577ce45를 이력 보존 로컬 merge로 반영했다. 생산 코드 자동 결합, 작업카드 prepend 충돌은 양쪽 기록 모두 보존. #65 고유 selector/search 보존·conceal/로딩/버튼은 변경하지 않는다. 전체 Content **250/250 PASS**(127.6초, fail/skip0)·계약6/6·build/구문/diff PASS, pr65-inherit-regression.log. #64 CI41263964006/job124722761125 원본239/239+계약6 SUCCESS 확인. #61 고유 Stories 시험/#64 Stories wrapper와 #65 탐색/ledger/bootstrap/popup의 기존 blob을 대조해 보존 확인했다. #65 새 원격 CI는 게시 후 별도 확인한다. 이를 확인 후 게시하며 PR Merge/Approve/Resolve/force push 없음.
+
+
 ## 2026-11-01 PR #64 공유 media P2 2건 수정
 
 - 시작7e271c87ed89f62c9bb4f65796b439524a8d5954, codex/content-instagram-reels. #58 수정21654f0을 상속한 #61의1386e1865f50ce17a1acab8c572c3d919fdbf71d를 로컬 merge했다. 예상 충돌은 작업카드 prepend와 Stories→shared media 추출 경계였다. Stories wrapper/selector는 원래 #64 그대로 보존하고 #58의 release 수정만 instagram-media.mjs로 옮겼다. NavigationSurface.close는 선행 수정 그대로 상속한다. 별도 중복 구현이나 기존 scan/invalidate P2 재개발 없음.
@@ -34,6 +49,31 @@
 - 변경: instagram-stories.mjs, navigation-surface.mjs, 신규 instagram-feature-release-browser.test.mjs, 이 작업카드. #58 공통 수정을 #61에 반영한 뒤 #64의 추출된 instagram-media.mjs로 동일하게 이관한다. #65는 새 #64를 상속하도록 순차 반영하며 force push/PR 병합하지 않는다.
 - 수정 후 전체 Content **218/218 PASS**, fail/skip0(107.6초), 신규3 포함. 계약6/6·build/diff PASS. 변경JS구문 확인 후 게시한다. 로그 pr58-feature-release-after.log. 수정 전1PASS/2FAIL→수정 후 신규3PASS이며 기존215/230 CI를 수정 후 PASS로 재사용하지 않는다. 원격 CI는 게시 후 별도로 확인한다. 제품 Core/MV3/Native/Server 수용 NOT_RUN, MVP_FINAL_COMPLETE=false.
 
+
+## 2026-11-01 IG-03 탐색 · 사용자 재시험 정상 / 게시 준비
+
+### 목록 로딩 잔여 보완
+
+- 최신 사용자 실행 근거: 0.1.5에서 게시물/로딩 표시 숨김·검색 유지·해제 후 복원을 사용자가 “ㅇㅋ 문제없네”로 정상 보고했다. 최초 검색 소실/로딩 잔여 실패 이력과 구분한다. 실제 네트워크 요청 반복 여부·전체 성능/모든 계정 DOM·제품 Core 수용은 미검증이다. 이번 게시 준비는 기록만 갱신하며 자동시험을 다시 실행한 것으로 표시하지 않는다.
+
+- 사용자 0.1.4 실제 결과: EXPLORE eligible/restricted18/18·errors0, 목록은 숨겨졌으나 로딩 표시가 계속 보임. 해제 후 정상 복원은 사용자가 확인했다. 실제 network request 반복/로딩 DOM 원문은 미확보이므로 무한 요청 발생을 확정하지 않는다.
+- 원인 후보의 최소 대응: 카드 display:none으로 인한 목록 높이 축소를 피하도록 IG03 profile만 preserveLayout으로 적용한다. ClaimLedger.conceal은 opacity:0!important+inert를 기존 property별 ownership/pending 복원 경로로 관리하고 computed opacity를 확인한다. 자손 visibility override로 노출되지 않도록 opacity를 쓴다. 기존 hide/grayscale 호출 의미는 유지한다. 이는 화면 숨김이며 네트워크/API 차단 구현이 아니다.
+- 정확한 /explore/에서 카드가 확인되는 main의 role=progressbar만 같은 claim 방식으로 숨긴다. 검색/dialog/form/FOCURVE 영역·카드 없는 최초 loading은 보존한다. 표시 역할이 다른 실제 Instagram spinner의 지원은 사용자 재확인 전 미검증이다.
+- 신규 합성 반례: 숨김 전후 main 높이 동일, 목록 로딩만 숨김/검색 로딩 보존, 원래 opacity priority/inert 복원, 다른 owner·페이지 opacity 변경 보존, 최초 로딩 유지. 공유 ledger 확장 후 전체 Content 회귀 **241/241 PASS**, fail/skip0, 124.2초, ig-explore-loading-regression.log 보존. 계약6/6·변경JS구문 PASS. 마지막 0.1.5/build ig-explore-layout-3 표기와 설명만 변경 후 build/diff 검사하며 기능 시험을 새로 실행한 것으로 주장하지 않는다. 검색 전회 실패와 이번 로딩 이력을 지우거나 기존77/9PASS를 최종 전수로 바꾸지 않는다.
+- 재시험 범위: 0.1.5에서 목록 적용 후 로딩 표시/목록 미노출, 검색 가능, 해제 후 카드/원래 화면 복원. 실제 요청 반복·CPU/장시간 성능은 미검증. Core·Server·Wire·제품 Manifest 변경/Commit/Push/Merge 없음.
+
+
+- 사용자 실제 실패: 홈 적용 후 검색 메뉴가 사라짐. 기존 설명의 검색/탐색 메뉴가 항상 별도라는 전제는 잘못이며 원본 DOM은 아직 미확보다. exact /explore/만으로 모든 링크를 숨기는 소스의 과대 판별을 확인했다. 같은 href+Search/검색 label 및 불명 링크를 추가한 합성 반례는 수정 전 FAIL(true!==false) → 수정 후 PASS. 실제 DOM이 해당 shape인지는 단정하지 않고 사용자 재시험으로 확인한다.
+- 수정: route와 명시적 탐색 identity(aria-label/title/svg title·label/aria-labelledby/text)를 함께 요구, Search/검색 표시가 하나라도 있으면 보존, 불명 메뉴도 보존한다. 직접 /explore/ 카드 제한은 유지한다. 시험판0.1.4/build ig-explore-search-fix-2로 구분하고 EXPLORE page_kind 수정. 최종 탐색9/9 PASS, 변경JS구문/build/diff PASS. 이전77은 당시 범위 기록이며 최신78 전수 실행으로 합산하지 않는다. 사용자 검색 복원·실제 검색/목록 확인 대기.
+
+- 담당 채지민, 브랜치 `codex/content-instagram-explore`, 시작 `7e271c87ed89f62c9bb4f65796b439524a8d5954`(#64). 같은 clean Worktree에서 별도 브랜치를 생성했다. 릴스/기존 스토리/adapter·P2 수정 Commit 보존. #64를 선행으로 하며 현재 통합/병합 상태를 완료로 추정하지 않는다.
+- 기준 `docs/design/additional-mvp-contracts/05_Content_Event_UI.md`의 IG03 explore-only/search 제외, `contracts/additional-mvp/rc1/feature-registry.json` IG-03 / AC-IG-03-01~03. 탐색 메뉴의 exact local /explore/ 링크와 직접 /explore/ main 내부 p/reel 카드 링크를 제한한다. 검색 경로·q/query 조회·dialog/search/form/편집기·DM/FOCURVE 보호, 일반 profile/post/home 목록은 변경하지 않는다. 전체 main/nav를 숨기거나 텍스트/휘발 class로 판별하지 않는다.
+- 재사용: NavigationSurfaceSession의 same-document 명시 재승인/claim 정리/중단/부분 실패 보존. IG-03 profile 등록과 Session adapter factory 추가, 기존 API/Wire/Core/Server/제품 Manifest 변경 없음. DOM 목록 숨김이며 일반 영상 재생 설정/미디어 pause는 변경하지 않는다. 실제 selector 변형은 사용자 확인 전 미검증이다.
+- 시험 확장 0.1.3 `FOCURVE 탐색 시험판 — Core 미연결`, 팝업 최상단 탐색 적용/해제/상태 추가. 기존 모든 버튼·버튼 아래 결과/복사 유지. build 경로는 content-resume-20261101의 기존 unpacked 폴더 그대로다. TEST 전용 authority 재승인/새로고침 초기화, 제품 권한/영속 증거 아님.
+- 검증 진행: exact 메뉴/grid·검색/일반 화면 보존, 동적 href/카드·다중 owner·SPA 승인/거절·pagehide·부분 복원/재시도·adapter/TEST sender gate 브라우저 반례8건 및 기존 adapter 회귀. 실제 실행 결과는 아래 최종 절에 기록한다.
+- 최종 직접 실행: 탐색8+기존 adapter31 = **39/39 PASS**, 기존 Stories25+Reels13 = **38/38 PASS**, 서로 다른4파일 총77건 fail/skip0. 로그 ig-explore-focused.log/ig-explore-regression.log. 계약 legacy-boundary **6/6 PASS**, 변경JS5파일 --check/build/git diff --check 성공. Node24/설치Chrome/Playwright route.fulfill 합성 DOM·모의 권한/미디어이며 실제 서비스/MV3 제품 수용이 아니다. module/build SHA256 87E926A1567538C9D79AD521A00D8D9C1E2E4A3E84E997858D4FFA06767DEDFD 일치. 이전230/217을 최신 전체 전수시험으로 소급하지 않는다.
+- 최초 사용자 시험 계획(현재 최신 보고는 위 절): 홈 적용 시 탐색 메뉴만 숨김/검색 유지, 직접 /explore/ 적용 시 카드 숨김/현재 페이지 유지, 지원 SPA 이동 재등장 제한, 해제 후 메뉴/목록 복원, 일반 게시물/프로필/DM 유지. 목록이 남거나 FAILED는 성공으로 체크하지 않는다. 새로고침 후 다시 적용한다.
+- 제품 Core issued/native/full scope·효과 전 영속 ACK·cleanup lease·제품 결과 저장/새 문서/BFCache 재결속은 미연결. 실제 Chrome 사용자 결과는 위 국소 범위만 정상 보고이며 Server/Core 제품 통합은 NOT_RUN. IG04/05/06·키워드·블러는 이번 범위 밖. Commit/Push/PR/Merge 없음, `MVP_FINAL_COMPLETE=false`.
 
 ## 2026-11-01 IG-02 Reels 첫 독립 구현 · 사용자 시험 정상 / 게시 준비
 
