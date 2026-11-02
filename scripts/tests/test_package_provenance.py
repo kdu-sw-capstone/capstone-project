@@ -203,6 +203,12 @@ class ProvenanceTests(unittest.TestCase):
     exec(compile(verify.read_text(encoding='utf-8'),str(verify),'exec'),ns)
     with patch.object(sys,'argv',['verify',str(out)]),contextlib.redirect_stdout(io.StringIO()) as capture:ns['main']()
     result=json.loads(capture.getvalue());self.assertEqual(result['cancelledInstallCLIDryRun'],'PASS_NO_INSTALL_CALLED');self.assertFalse(result['actualInstallation'])
+    # Original independent P2: only delivered ZIP manifest changes; directory stays trusted.
+    archive=out.parent/(out.name+'.zip')
+    with zipfile.ZipFile(archive) as z:entries=[(name,z.read(name)) for name in z.namelist()]
+    with zipfile.ZipFile(archive,'w') as z:
+     for name,data in entries:z.writestr(name,b'{}' if name=='MANIFEST.json' else data)
+    with patch.object(sys,'argv',['verify',str(out)]),self.assertRaisesRegex(SystemExit,'ARCHIVE_MANIFEST_MISMATCH'):ns['main']()
 
 class CompletenessTests(unittest.TestCase):
  setUp=ProvenanceTests.setUp
@@ -224,5 +230,48 @@ class CompletenessTests(unittest.TestCase):
  def test_path_normalization_alias(self):self.tamper(lambda v:v['files'][0].update(package='./'+v['files'][0]['package']))
  def test_same_content_other_origin(self):self.tamper(lambda v:v['buildInputs'][0].update(source='extension/scripts/input.js'))
 
+
+class ArchiveManifestTests(unittest.TestCase):
+ def setUp(self):
+  self.tmp=tempfile.TemporaryDirectory();self.addCleanup(self.tmp.cleanup);self.root=pathlib.Path(self.tmp.name)/'dummy';self.root.mkdir()
+  spec=importlib.util.spec_from_file_location('archive_verifier',SCRIPT.parent/'verify-integrated-package.py');self.v=importlib.util.module_from_spec(spec);spec.loader.exec_module(self.v)
+  self.data=b'dummy-not-product';self.manifest={'version':'fixture','count':1,'files':[{'path':'payload/file','bytes':len(self.data),'sha256':hashlib.sha256(self.data).hexdigest()}]}
+  m.write(self.root/'MANIFEST.json',self.manifest);self.raw=(self.root/'MANIFEST.json').read_bytes();self.archive=self.root.parent/(self.root.name+'.zip')
+ def zip(self,raw=None,extra=(),data=None):
+  import warnings
+  with warnings.catch_warnings():
+   warnings.simplefilter('ignore',UserWarning)
+   with zipfile.ZipFile(self.archive,'w') as z:
+    z.writestr('MANIFEST.json',self.raw if raw is None else raw);z.writestr('payload/file',self.data if data is None else data)
+    for name,value in extra:z.writestr(name,value)
+ def test_normal_manifest_and_complete_zip(self):
+  self.zip();self.assertEqual(self.v.verify_archive(self.root,self.manifest),{'MANIFEST.json','payload/file'})
+ def test_changed_manifest_fields_or_missing_fields_rejected(self):
+  for value in [{},{'version':'fixture'},{**self.manifest,'version':'different'},{**self.manifest,'files':[]},{**self.manifest,'extra':True}]:
+   with self.subTest(value=value):
+    self.zip(json.dumps(value).encode())
+    with self.assertRaisesRegex(SystemExit,'ARCHIVE_MANIFEST_MISMATCH'):self.v.verify_archive(self.root,self.manifest)
+ def test_duplicate_manifest_or_payload_rejected(self):
+  for name,data in [('MANIFEST.json',self.raw),('payload/file',self.data)]:
+   with self.subTest(name=name):
+    self.zip(extra=[(name,data)])
+    with self.assertRaisesRegex(SystemExit,'ARCHIVE_DUPLICATE_PATH'):self.v.verify_archive(self.root,self.manifest)
+ def test_path_aliases_rejected(self):
+  for alias in ['./payload/file','payload/../payload/file','payload\\file','PAYLOAD/file','payload/file.']:
+   with self.subTest(alias=alias):
+    self.zip(extra=[(alias,self.data)])
+    with self.assertRaises(SystemExit):self.v.verify_archive(self.root,self.manifest)
+ def test_recalculated_zip_hash_does_not_authorize_tampering(self):
+  self.zip(data=b'altered');self.assertEqual(len(m.sha(self.archive)),64)
+  with self.assertRaisesRegex(SystemExit,'ARCHIVE_HASH_MISMATCH'):self.v.verify_archive(self.root,self.manifest)
+ def test_external_manifest_structure_must_be_valid(self):
+  for value in [{k:v for k,v in self.manifest.items() if k!='count'},{**self.manifest,'count':2}]:
+   with self.subTest(value=value):
+    m.write(self.root/'MANIFEST.json',value);self.zip((self.root/'MANIFEST.json').read_bytes())
+    with self.assertRaisesRegex(SystemExit,'MANIFEST_STRUCTURE_INVALID'):self.v.verify_archive(self.root,value)
+ def test_duplicate_manifest_json_keys_rejected(self):
+  raw=self.raw.replace(b'"version": "fixture"',b'"version": "fixture", "version": "fixture"');self.assertNotEqual(raw,self.raw)
+  (self.root/'MANIFEST.json').write_bytes(raw);self.zip(raw)
+  with self.assertRaisesRegex(SystemExit,'MANIFEST_DUPLICATE_KEY'):self.v.verify_archive(self.root,self.manifest)
 
 if __name__=='__main__':unittest.main()

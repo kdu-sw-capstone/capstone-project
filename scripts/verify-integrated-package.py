@@ -1,5 +1,39 @@
 """Read-only package verification + cancelled CLI dry-run; no install/service calls."""
 import argparse,contextlib,hashlib,importlib.util,io,json,pathlib,re,sys,zipfile
+def canonical_path(name):
+ if not isinstance(name,str) or not name or '\\' in name or ':' in name or any(part in ('','.','..') or part.rstrip(' .')!=part for part in name.split('/')):raise SystemExit('ARCHIVE_PATH_INVALID')
+ return name
+
+def unique_object(pairs):
+ value={}
+ for key,item in pairs:
+  if key in value:raise SystemExit('MANIFEST_DUPLICATE_KEY')
+  value[key]=item
+ return value
+
+def verify_archive(root,manifest):
+ """Bind ZIP to the already source-validated directory, including its root manifest."""
+ raw=(root/'MANIFEST.json').read_bytes()
+ trusted=json.loads(raw.decode('utf-8'),object_pairs_hook=unique_object)
+ if trusted!=manifest or set(trusted)!={'version','count','files'} or not isinstance(trusted['version'],str) or type(trusted['count']) is not int or not isinstance(trusted['files'],list) or trusted['count']!=len(trusted['files']):raise SystemExit('MANIFEST_STRUCTURE_INVALID')
+ names=[]
+ for row in trusted['files']:
+  if not isinstance(row,dict) or set(row)!={'path','sha256','bytes'} or not isinstance(row['sha256'],str) or not re.fullmatch('[0-9a-f]{64}',row['sha256']) or type(row['bytes']) is not int or row['bytes']<0:raise SystemExit('MANIFEST_STRUCTURE_INVALID')
+  names.append(canonical_path(row['path']))
+ expected={'MANIFEST.json',*names}
+ if len({name.casefold() for name in expected})!=len(names)+1:raise SystemExit('MANIFEST_PATH_COLLISION')
+ archive=root.parent/(root.name+'.zip')
+ if not archive.is_file():raise SystemExit('VERSIONED_ARCHIVE_PATH_MISMATCH')
+ with zipfile.ZipFile(archive) as z:
+  entries=z.infolist();paths=[canonical_path(info.filename) for info in entries]
+  if len({name.casefold() for name in paths})!=len(paths):raise SystemExit('ARCHIVE_DUPLICATE_PATH')
+  if set(paths)!=expected:raise SystemExit('ARCHIVE_FILE_SET_MISMATCH')
+  if z.read('MANIFEST.json')!=raw:raise SystemExit('ARCHIVE_MANIFEST_MISMATCH')
+  for row in trusted['files']:
+   data=z.read(row['path'])
+   if len(data)!=row['bytes'] or hashlib.sha256(data).hexdigest()!=row['sha256']:raise SystemExit('ARCHIVE_HASH_MISMATCH')
+ return expected
+
 def main():
  p=argparse.ArgumentParser();p.add_argument('directory',type=pathlib.Path);a=p.parse_args();root=a.directory.resolve()
  spec=importlib.util.spec_from_file_location('integrated_package_validation',root/'installer/install_core.py');core=importlib.util.module_from_spec(spec);sys.modules[spec.name]=core;spec.loader.exec_module(core)
@@ -51,11 +85,6 @@ def main():
  finally:sys.argv=original
  if '설치를 취소했습니다' not in output.getvalue():raise SystemExit('CANCELLED_CLI_DRY_RUN_FAILED')
  archive=root.parent/(root.name+'.zip')
- if not archive.is_file():raise SystemExit('VERSIONED_ARCHIVE_PATH_MISMATCH')
- with zipfile.ZipFile(archive) as z:
-  expected={'MANIFEST.json',*(r['path'] for r in manifest['files'])}
-  if set(z.namelist())!=expected:raise SystemExit('ARCHIVE_FILE_SET_MISMATCH')
-  for row in manifest['files']:
-   if hashlib.sha256(z.read(row['path'])).hexdigest()!=row['sha256']:raise SystemExit('ARCHIVE_HASH_MISMATCH')
+ expected=verify_archive(root,manifest)
  print(json.dumps({'manifestFilesVerified':len(manifest['files']),'archiveFilesVerified':len(expected),'sourcePackageFilesVerified':len(parity['files']),'buildInputsVerified':len(parity['buildInputs']),'versionedArchiveName':archive.name,'cancelledInstallCLIDryRun':'PASS_NO_INSTALL_CALLED','installRequiredFilesVerified':len(required),'installHelperBytecode':'PASS','actualInstallation':False,'servicesStarted':False,'archiveSHA256':hashlib.sha256(archive.read_bytes()).hexdigest()}))
 if __name__=='__main__':main()
