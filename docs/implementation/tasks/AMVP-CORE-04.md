@@ -1,5 +1,25 @@
 # AMVP-CORE-04 — Core DNR 소유권·복원
 
+## 2026-11-02 PR80 문서 충돌 최소 동기화
+
+- 이번 후보 로컬 검증: 재전달20/20·계약6/6·실제 #76/#78 클래스 조합6/6·syntax PASS(fail/skip0). 권한·효과·ACK는 모의이며 제품 MV3/Server 수용 검증이 아니다. 각 집합은 합산하지 않는다.
+- 담당 윤종민. 최신 통합 `24f8b60ddd918bb0bb3d5e09a070e235f0ea9ae4`를 기존 PR80 브랜치에 merge 동기화한다. 수동 해결은 본 카드와 통합현황 두 문서뿐이며, 양쪽 원문의 비어 있지 않은 모든 줄을 중복 횟수와 순서까지 보존한다. 아래 이전 상태·실패·미완료·검증 기록은 당시 이력이다.
+- 기존 PR 제품·시험·계약 및 통합의 원본 blob을 대조하고 관련 로컬 시험과 최신 후보 CI로 확인한다. 제품 구현·검증 조건·공용 계약은 변경하지 않는다. 최신 HEAD·실행 결과는 PR에 별도 남기며 기존 승인을 새 HEAD에 소급하지 않는다.
+- #76 → #78 → #80 통합 순서와 #98 선행 관계를 보존한다. 이번 작업은 담당 브랜치 동기화이며 PR 병합·실제 Worker/Server·Chrome START 및 제품 수용 완료를 뜻하지 않는다. 병합은 다훈이 관리한다.
+
+
+## 2026-11-01 RuntimeReport 생산 원장→발신함 재전달 착수
+
+- 담당 윤종민, `feature/additional-mvp-runtime-report-replay`, 시작 통합 `3569911dde9ec71d86c3b1e36f631c34e2411d53`. 기존 PR76 수정본046bac0/PR78 생산 원장4a2065a는 리뷰 대기로 보존하며 해당 소스를 수정/병합하지 않는다.
+- 내부 producer.recover→outbox.enqueue 연결을 주입받아 원문 순서대로 재전달한다. source 원문을 지우거나 별도 성공 cursor를 먼저 전진하지 않고 target의 영속 멱등 admission을 재시도 경계로 사용한다. 부분 실패/권한 회수는 중단하고 같은 원문을 보존한다.
+- 상태: 구현·검증 진행 중. 기본 권한 거절, Worker/HTTP/효과/cleanup 활성화·Server/공개 계약 변경 없음. Node의 서비스 I/O 모의 시험과 기존 실제 두 모듈의 별도 조합 시험을 구분한다.
+
+### RuntimeReport 재전달 연결 단위 종료
+
+- `RuntimeReportReplay.replay(scope)`가 source/target snapshot을 검증하고 없는 원문만 순차 enqueue한다. 기존 영속 receipt 재사용으로 저장 직후 응답 유실·과거 live 관측 만료 후에도 원본을 보존하고 재시도한다. 별도 성공 cursor/저장소·source 삭제·ACK/효과 성공을 만들지 않는다. 기본 scope 권한은 false다.
+- 신규20/20·통합3569911+본 PR 전체981/981·계약6/6, 실제 PR76(046bac0)/78(4a2065a) 클래스+fake-IDB 조합6/6, Chromium 실제 IDB 조합1/1·syntax PASS. 신규20은 전체에 포함, 조합은 별도 실행이며 권한/증거/ACK 모의다. CI는 단위/계약/syntax만 수행한다.
+- 구현·로컬 검증 완료, 별도 PR/최신 CI·담당 리뷰 필요. [인터페이스·진단/재시도 의미·검증·미연결](../evidence/AMVP-CORE-04-runtime-report-replay.md). pending76/78 및 기존 제품/계약은 변경하지 않는다. 실제 Worker/증거·인증 HTTP·제품 수용은 미연결, 전체 Core 완료 판정이 아니다.
+
 ## 2026-11-01 PR68 — PR59 병합 후 3공유파일 충돌 해결
 
 - 새 결합 workflow 로컬 검증: DNR138/138·SiteController/loop69/69·인증33/33·계약6/6, syntax·수동3파일 whitespace PASS. 기존 #68 제품/시험4/4 및 최신 통합+원래 #68의 Extension 전체325/325 blob 동일성 확인. 각 시험 집합을 중복 합산하지 않으며 전체/실제 Chrome 시험을 새로 실행했다고 보고하지 않는다.
