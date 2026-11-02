@@ -10,9 +10,11 @@ import Sessions from "./FocusSessions";
 import Records from "./BehaviorRecords";
 import QueryTimestamp from "./QueryTimestamp";
 import BrowserUsageStatistics from "./BrowserUsageStatistics";
+import AccessPattern from "./HourlyAccessPattern";
 import "./focus-screens.css";
 import { useEffect, useState, useRef, type FormEvent } from "react";
 import Settings from "./Settings";
+import DailyFocusGoal from "./DailyFocusGoal";
 import { Login, MailRequest, VerifyPending, TokenForm, AuthComplete } from "./AuthFlow";
 import { Brand, ForestPanel, Sidebar, WorkspaceHeader } from "./UiLayout";
 import {
@@ -238,6 +240,7 @@ export default function MemberApp() {
             />
           ) : (
             <Dashboard
+              owner={user.user_id}
               sites={() => setTab("sites")}
               sessions={() => setTab("sessions")}
               records={() => {
@@ -789,10 +792,7 @@ function SiteClassification({open}:{open:()=>void}) {
     {error?<p role="alert">{error}</p>:counts===null?<p role="status">사이트 분류를 확인하고 있습니다.</p>:total===0?<p>등록된 사이트가 없습니다.</p>:<div className="distribution"><div className="donut" role="img" aria-label={"등록 사이트 "+total+"개"} style={{background:"conic-gradient(#579fff 0% "+first+"%, #7dd3e8 "+first+"% "+second+"%, #bdd6ef "+second+"% 100%)"}}><div><strong>{total}</strong><small>등록 사이트</small></div></div><ul>{counts.map((count,i)=><li key={i}><span>{["집중 대상","방해 대상","일반 이용"][i]}</span><strong>{count}개</strong><small>{(count/total*100).toFixed(1)}%</small></li>)}</ul></div>}
   </section>;
 }
-function AccessPattern(_props: { from?: string; to?: string }) {
-  return <section className="card access-pattern"><div className="panel-heading"><h4>시간대별 접근 패턴</h4><span className="badge">추가 MVP 예정</span></div><div className="unavailable-feature"><p>시간대별 분석은 아직 제공하지 않습니다.</p><p className="muted">시간대별 분석은 추가 MVP 범위입니다. 현재는 행동 기록과 기본 통계를 확인할 수 있습니다.</p></div></section>;
-}
-function Dashboard({ sessions, records, sites }: { sessions: () => void; records: () => void; sites: () => void }) {
+function Dashboard({ owner, sessions, records, sites }: { owner:string; sessions: () => void; records: () => void; sites: () => void }) {
   const state = useAction();
   const [data, setData] = useState<{ current_session: Session | null; recent_sessions: Session[]; recent_access: Record<string, unknown>[]; summary: Record<string, unknown> } | null>(null);
   const [today, setToday] = useState<Record<string, unknown> | null>(null);
@@ -803,6 +803,7 @@ function Dashboard({ sessions, records, sites }: { sessions: () => void; records
     setToday(await request("/statistics/summary?" + new URLSearchParams({from_date:day,to_date:day})));
   }); }, []);
   return <section className="page dashboard"><div className="page-heading focus-heading"><div><h3>집중 현황</h3><p className="muted">한 주의 집중을 돌아보세요. 실제 확인된 기록을 기준으로 표시합니다.</p></div><button className="primary" onClick={sessions}>현재 세션 확인</button></div>
+    <DailyFocusGoal owner={owner}/>
     <div className="period-controls"><button aria-pressed={period==="week"} onClick={()=>setPeriod("week")}>최근 7일 집계(한국 시간)</button><button aria-pressed={period==="today"} onClick={()=>setPeriod("today")}>오늘 집계(한국 시간)</button></div>
     {data && <><p className="muted">{data.current_session ? "현재 실행 상태: "+statusLabel(data.current_session.execution_status) : "현재 세션 없음"}</p><Metrics data={(period==="today" ? today : data.summary) ?? {}}/>
     <div className="dashboard-mid"><AccessPattern from={period==="today" ? day : undefined} to={period==="today" ? day : undefined}/><SiteClassification open={sites}/></div>
