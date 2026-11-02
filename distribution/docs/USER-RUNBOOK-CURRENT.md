@@ -128,3 +128,23 @@ CLI의 관측/원복은 `--observation-directory`, 적용·기동·원복은 `--
 이전 승인에서 로컬 복원이 이미 확인되고 불변 종료 기록이 생성됐지만 서버 ACK만 유실된 경우, 새로 승인된 동일 회원·설치·세션 종료 권한에서 현재 복원 상태를 다시 검증한 뒤 원래 기록만 reconcile할 수 있다. END를 다시 실행하거나 새 action/report ID를 발급하지 않는다. DOM/Binding 의무가 남거나 문서가 미확정이면 해당 재전송 경로도 거절한다. 원래 r6의 DOCUMENT_UNKNOWN은 별도 보존 사건이며 신규 수용의 선행 조건으로 강제하지 않는다.
 
 패키지의 preserved-end-context.json은 기본 DISABLED다. 패키지 존재·자동 테스트 PASS는 실제 설치/집중 권한이 아니다. 현재 설치·Chrome·서비스·START/END·복구는 새 승인과 현재 안전 검사 후에만 수행한다.
+
+
+## Native 발급 전 실패의 제한적 재개 (검토용; 기존 설치에 자동 적용 금지)
+
+ISO 기한은 lock·attempt·프로필·프로세스 생성 전에 `YYYY-MM-DDTHH:MM:SS[.ffffff]Z` 또는 명시 offset 형식으로 검증한다. PowerShell ConvertFrom-Json의 자동 DateTime 변환을 거치지 말고 원본 JSON 문자열을 Python json.load로 읽어 subprocess의 인자 배열로 전달한다. 지역 날짜·무시간대·만료·부족한 창은 파일 생성 없이 거절한다. 새 승인은 절대 기한과 설치를 명시하며, 자동 연장/재시도는 없다.
+
+일반 connect는 설치별 배타 gate와 구조화 lock, 불변 attempt/실패 증거를 만든다. attempt에는 설치·Extension·Windows SID·실행 PID/생성시각·제품 payload/installation hash·발급 staging 위치가 결속된다. scope·Chrome·등록 직전 EFFECT_STARTED를 먼저 기록한다. 이후 실패는 EFFECT_UNCONFIRMED이며 이 재개 경로로 복구하지 않는다.
+
+`native-resume-plan --instance <설치> --json`은 현재 사용자·실패/lock 원문 및 파일 identity·제품 무결성·프로세스/포트 부재·profile/Native/grant/binding/staging/미해결 의무 부재를 읽기 전용으로 확인한다. 오직 PRE_EFFECT_FAILED일 때 plan과 planSHA256을 반환한다. 기존 0바이트 lock, 불변 단계 증거가 없는 실패, 이전 HOLD, 정상 종료 갱신 실패에는 적용하지 않는다. 과거 DB safety=0은 현재 DB 안전 증명이 아니며 검사에 DB를 기동하지 않는다. 프로세스/포트 부재를 확정할 수 없으면 거절한다. Windows에서 datadir 파일의 읽기 전용·공유 금지 핸들을 확보하며 실제 재개 동안 유지한다. 핸들 확보 실패·파일 추가/변경·lease 상실도 거절한다. 설치/DB 프로세스는 시작하지 않는다.
+
+별도 승인 후 `native-resume --instance <설치> --expected-plan-sha256 <계획hash> --not-after <원본ISO> --minutes <상한> --approve-launch --user-session --json`만 실행할 수 있다. 실행은 일반 connect와 같은 gate에서 계획을 재검사하고 일회성 claim/pending을 기록한다. 원본 attempt/실패를 아카이브한 뒤 기존 lock을 original.lock으로 보존 이동한다. 아카이브/발급 실패는 pending과 증거를 보존해 후속 connect를 막는다. 이 파일을 수동 삭제하거나 hash를 새로 인정해 강제 진행하지 않는다. 성공한 재개만 pending을 닫는다.
+
+도구 코드 변경은 별도 소스 검토·시험·승인된 패키지 전달이 필요하다. 이미 설치된 manifest/도구를 직접 덮어쓰거나 hash를 재작성하여 승인된 제품으로 취급하지 않는다. 현재 48c81681e9574a0681b76b5508d6f2a3 설치는 PRE_EFFECT_FAILED 증거가 없어 계속 HOLD다. 권한 발급 성공도 확장 로드·서비스·회원 인증·START/END 수용 PASS를 뜻하지 않는다.
+
+
+### 설치 도구 시험의 플랫폼 구분
+
+Ubuntu의 기존 명령 `python3 -B -m unittest discover -s distribution/tests -p 'test_*.py'`는 합성 파일/응답을 사용하는 계약 흐름을 검증한다. 비Windows 합성 연결 시험의 `SyntheticLockCustody`는 명시적 시험 대역이며 실제 OS 공유 금지·파일 핸들 보호를 제공하거나 검증했다고 표시하지 않는다. 대역에서 파일 쓰기가 허용됨을 별도 대조 시험으로 확인한다. 정상 종료 갱신의 라우팅 시험도 같은 계약 대역을 명시적으로 사용한다.
+
+실제 `_LockCustody`·`_DatabaseLease` Windows 핸들 시험은 플랫폼 조건으로 분리하고 비Windows에서는 SKIP로 집계한다. 생산 비Windows 거절은 유지하며 별도 음성 대조 시험으로 검증한다. Windows 전체 설치 도구 시험 PASS, 비Windows 분기 모사, 실제 Ubuntu CI는 각각 다른 근거다. SKIP은 PASS에 합산하지 않는다. integration 대상 설치 도구 변경의 자동 CI 경로는 현재 없고, 기존 FOCURVE CI는 develop PR 또는 workflow_dispatch로 실행한다. 향후 승인된 제출 브랜치에서 기존 workflow_dispatch를 사용할 수 있으며 실제 Linux 실행 전 Ubuntu PASS라고 기록하지 않는다.
