@@ -1,5 +1,19 @@
 # 추가 MVP · 정책 발행·이용시간 수신 경계
 
+> PR79 선행 병합 동기화 — 2026-11-01: 기존 HEAD **e9f42615c1720f1dfea889be28aca2c54891b5fc**와 최신 통합 **831069805eb0f86fc526b1f0f92e0b4a01656172**를 이력 보존 merge한다. #73/#77은 정식 병합됐으며 해당 HEAD/코드는 다시 수정하지 않는다. 수동 충돌은 이 카드1파일뿐이고 양 부모의 전체 줄·중복 횟수·순서를 보존했다. FocusSessions/FocusReadLifetime 제품·시험 blob과 SESSION-03 기록은 기존 #79와 동일하다. 통합에서 상속되는 #68/#73/#77 코드는 해당 통합 blob 그대로이며 이 문서 수정으로 Core/Content·인증·Server·DB·Receipt·RC2/legacy-lock을 변경하지 않는다. 기존 독립 검증84/84 및 리뷰/CI14개 성공은 소스 동일성 근거로 재사용하되 새 HEAD의 승인으로 소급하지 않는다. 새 CI/후보 tree·최신 승인 효력은 별도 확인한다. #81 HEAD120f6fcb·다른 Worktree/index·공유 staged 삭제1,036개 보존, Draft/미병합 유지·Approve/해제/Merge 없음. 근거는 기존 `.local/focus-read-20261101/`와 그 하위 `sync-20261101/`. 제품 수용 NOT_RUN, MVP_FINAL_COMPLETE=false.
+
+## 집중 상태 탐색의 화면 수명 결속 — 2026-11-01
+
+- 담당 김다훈, 기존 managed Worktree 재사용. `fix/additional-mvp-focus-read-lifetime`, 기준 원격 통합 **3569911dde9ec71d86c3b1e36f631c34e2411d53**. #72/#74/#59/#75는 병합된 원문 그대로, #73 HEADbad35335 및 #77 HEAD0892895는 Draft/리뷰 대기로 보존했다. 이번 단위는 두 PR에 의존하지 않는다.
+- 실제 독립 결함: FocusSessions의 현재 상태/정책 GET을 기다리다 화면을 떠나면 구401이 useWork를 통해 새 화면의 전역 인증 만료로 전파됐다. 구 성공 응답/CONNECT 응답 뒤에도 설치·사이트·당일 종료 세션 조회를 계속했다. 최초 반례7 중 **5 FAIL/2 PASS**를 원본으로 보존했다. 기존 #72의 선택 세션 접근 요약 및 #74 행동 기록 조회와 다른 **최상위 상태 탐색/주기 조회** 경계다.
+- mounted scope와 각 읽기의 AbortController를 결속하고 각 await 뒤 현재 scope를 확인한다. GET/페이지 조회에 signal을 전달하고 폐기 후 성공·catch를 소비한다. 이미 호출한 CONNECT 자체를 취소했다고 주장하지 않으며 그 늦은 응답의 후속 HTTP만 막는다. StrictMode의 폐기 setup이 공통 작업 lock을 선점하지 않도록 최초 조회를 microtask에서 살아있는 setup만 시작한다. 공통 useWork/api.ts/인증/HTTP/Server/schema/RC2/legacy-lock·생산 actor는 바꾸지 않는다.
+- 새8 + 기존 FocusScreens/FocusSummaryScope/CadenceFocusSession/countdown/SessionNoteScope/executionWake/useCadenceControl/MemberApp 포함 **84 PASS(9파일)**, TypeScript/Vite build·diff 검사 PASS. 신규 시험은 실제 SDK+jsdom/모의 fetch·CONNECT의 응답 유실/지연 및 StrictMode이며 실제 Server/DB/Core/Chrome 수용이 아니다. 기존 미변경 Server/DB 계약·격리 근거는 재사용, 서비스·DB·메일·정책 START/END 미실행. 원본/최종 로그 `.local/focus-read-20261101/`.
+- START/END 쓰기, 상태 판단, 5초 backup/전이1초 poll, 타이머, 선택 세션 요약·메모·history 기능 원문은 보존한다. 이 수정은 상태 탐색 수명에 한정되며 기록 상세/별도 변경 요청 전체의 수명 문제가 모두 해결됐다는 뜻이 아니다. #77의 시험 정리 코드도 복사하지 않는다.
+- 새 공개 Core **PR78 HEAD4a2065a7f65c403307d9b17e6fd8a4ceae260f5d**의 설명에서 생산 원장/epoch/seq 영속화가 추가됐음을 확인했다. 실제 scope/effect callback은 false 기본이며 issued verifier·현재 epoch 등록·원장→발신함 replay·HTTP/Worker 연결은 후속으로 명시돼 있다. 설명 확인은 독립 Core 리뷰/승인/실제 제공물 수용이 아니며 기존 CapabilitySource/EvidenceVerifier/ClockProof를 중복 구현하거나 모의 성공으로 활성화하지 않는다. #76/#78/#71 팀원 소스는 수정하지 않는다.
+- 미확정 ONCE actor·CADENCE 단계·USG-02 hash, 실제 collector/clock/day·효과/해제 producer·Figma fresh 시각 대조/승인은 유지한다. 기존 Figma sparse/스크린샷 timeout의 동일 재시도는 하지 않았다. 다음은 이 독립 읽기 수명 단위의 담당 리뷰·통합, 실제 발급/검증/전송 제공물의 기존 Server 수신기 결속 및 별도 승인된 실제 적용→정상 END/복원/재기동 수용이다. **제품 수용 NOT_RUN, MVP_FINAL_COMPLETE=false**.
+
+
+
 > PR73 동기화 — 2026-11-01: PR72/74 병합 후 실제 통합 **d386f170f79368907b2f5263a299c3e0d7c65ce8**를 기존b0b44a5에 이력 보존 merge한다. 수동 충돌은 이 카드1파일이며 양측 전체 원문을 순서 보존했다. SiteTimeStatus/SDK 제품2 및 시험3의 기존 blob과 계약/DB 의미는 그대로다. 과거 Draft/검증/실패/승인은 당시 기록이며 새 HEAD에 소급하지 않는다. #72/#74/#71/#75 및 타 Worktree/index는 변경하지 않는다. 새 CI/후보 tree는 PR73 본문 및 `.local/pr73-sync-20261101/`. 실제 제품 수용 NOT_RUN, MVP_FINAL_COMPLETE=false.
 
 
