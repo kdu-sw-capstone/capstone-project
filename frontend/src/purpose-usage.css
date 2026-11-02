@@ -1,0 +1,31 @@
+/* Purpose usage views only. Existing dashboard columns, card and donut geometry are preserved. */
+.site-classification .classification-heading{gap:6px}
+.site-classification .classification-heading h4{min-width:0;flex:1}
+.site-classification .purpose-mode{display:flex;gap:2px;flex-shrink:0;border:1px solid var(--border);border-radius:8px;padding:2px}
+.site-classification .purpose-mode button{height:24px;min-height:24px;padding:2px 2px;font-size:10px;line-height:18px;border:0;border-radius:5px;white-space:nowrap;background:transparent;color:var(--muted)}
+.site-classification .purpose-mode button[aria-pressed=true]{background:var(--subtle);color:var(--ink);box-shadow:inset 0 0 0 1px var(--border)}
+.site-classification .classification-heading>button{padding:2px 5px;font-size:12px;white-space:nowrap}
+.purpose-dot{display:inline-block;width:5px;height:5px;flex-shrink:0;border-radius:50%}
+.site-classification .purpose-time-view .donut strong{font-size:24px;line-height:1.3;text-align:center;overflow-wrap:anywhere}
+.site-classification .purpose-time-status{margin:6px 0 0;font-size:12px;line-height:1.5}
+.purpose-usage-days{padding:20px;background:var(--surface);border:1px solid var(--border);border-radius:16px;box-shadow:var(--shadow)}
+.purpose-usage-days .purpose-usage-legend{display:flex;flex-wrap:wrap;gap:20px;padding:0;list-style:none;margin:14px 0 8px}
+.purpose-usage-days .purpose-usage-legend li{display:flex;align-items:center;gap:6px;background:none;padding:0;margin:0;font-size:13px}
+.purpose-usage-days .purpose-bars{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:12px;height:200px;max-width:100%;padding:8px 0 0}
+.purpose-usage-days .purpose-day{min-width:0;display:flex;flex-direction:column;align-items:stretch;gap:8px}
+.purpose-usage-days .purpose-day-bars{height:160px;display:flex;align-items:flex-end;justify-content:center;gap:4px;border-bottom:1px solid var(--border)}
+.purpose-usage-days .purpose-bar{width:20%;max-width:24px;min-width:2px;border-radius:4px 4px 0 0}
+.purpose-usage-days .purpose-bar-unknown{width:20%;max-width:24px;text-align:center;color:var(--muted);font-size:12px;align-self:center}
+.purpose-usage-days .purpose-day-label{text-align:center;white-space:nowrap;font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums}
+.purpose-usage-days .purpose-bars-placeholder{height:180px;border-bottom:1px solid var(--border);background:repeating-linear-gradient(to top,transparent 0,transparent 44px,var(--border) 44px,var(--border) 45px);opacity:.4;margin:12px 0}
+.purpose-usage-days .purpose-days-status{margin:8px 0 0;color:var(--muted);font-size:13px}
+.purpose-usage-days .purpose-values{margin-top:8px}
+.purpose-usage-days .purpose-values-scroll{overflow:auto}
+.purpose-usage-days .purpose-values table{min-width:440px;font-size:13px}
+.purpose-usage-days .purpose-values caption{font-size:14px}
+@media(max-width:600px){.purpose-usage-days .purpose-bars{gap:6px}.purpose-usage-days .purpose-day-bars{gap:2px}.purpose-usage-days .purpose-day-label{font-size:10px}}
+
+.site-classification .purpose-time-legend{min-width:0;flex:1}
+.site-classification .purpose-time-legend ul{margin:0}
+.site-classification .purpose-time-legend li{margin:2px 0;padding:2px 0;gap:8px}
+.workspace .site-classification .classification-heading .purpose-mode button{height:24px;min-height:24px;padding:2px 2px}

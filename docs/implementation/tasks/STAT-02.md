@@ -108,3 +108,13 @@ CONFIRMED RUN은 **확인 집중량**, COUNTED 브라우저 구간은 **관측 �
 4. 김다훈(Server/API·UI)·윤종민(collector/clock/immutable interval 원본)이 위 의미와 기존 API의 최소 확장을 좁게 합의해야 한다. DOM 원본이 실제로 필요한 기능만 채지민과 확인한다. 새 API/DDL/RC2 변경이 필요하면 별도 승인·합의 전 구현하지 않는다.
 
 **현재 목적별 시간 A/B/C와 실제 collector/DB 제품 데이터 수용 BLOCKED/NOT_RUN. 현재 등록 분류 표시·응답 거절/재조회·격리 UI 검증은 PASS. 11월11일에는 이 등록 분류/기존 기록 상세/미확인·오류 표현을 시연 후보로 제공할 수 있으나 목적별 관측시간 그래프 완료를 약속하지 않는다. MVP_FINAL_COMPLETE=false.**
+
+## 2026-11-02 · #93 후속 목적별 시각화 UI
+
+사용자 지시로 기존 #93에 대시보드·통계 UI만 확장한다. 팝업 UX의 Extension 파일 및 EXT-01 로컬 기록은 이 Commit/PR에 포함하지 않는다. 기존3열·카드 크기·170px 도넛을 보존하며 동일 도넛의 사이트 수/이용시간 전환, 기존 통계 화면에 최근7일 집중/방해/일반 그룹 막대 상태 컴포넌트를 추가한다.
+
+시간 컴포넌트 입력은 표현용 타입이며 HTTP/공유 계약이 아니다. 제품 기본값은 UNKNOWN이고 시간 API를 새로 추정하지 않는다. 합성 ready/partial 입력은 시험·격리 preview에서만 사용한다. 미확인·빈 상태·0·오류를 분리하고 목적별 이용시간을 확인 집중량으로 표시하지 않는다. 실제 시간 API/당시 불변 목적 귀속·일자/소유권·중복 제거 계약은 기존 위 차단 조건 그대로다. Server/DB/Core/Content/manifest 수정 없음.
+
+Figma BeixHumD7TSoo9xMVzJkhO / 3053:11310 대조: 기존 등록수 도넛 의미를 재사용하고 전환/그룹 막대는 새 UX 요구사항이다. 기존 구현과 원본의 색·도넛 크기 차이는 보존했으므로 전체 픽셀 일치는 PARTIAL. 원본 수정 및 Code Connect 생성 없음.
+
+검증 재현: `cd frontend; npm test; npm run build`. Windows 설치 Chrome+임시 Vite+합성 API의 실제 Web 렌더는 `.local/popup-ux-20261102/web-charts/render.cjs`로 실행했다. 1920 Light/1280 Dark/390 mobile, ready/partial/unknown/empty/error/loading 및 keyboard Enter 전환을 확인한다. 증거 result.json·baseline-comparison.json·PNG·all-final.log·build-final.log. 실제 API/DB/collector 및 제품 Extension 수용은 NOT_RUN/BLOCKED이며 모의 응답을 실제 데이터 성공으로 표시하지 않는다. MVP_FINAL_COMPLETE=false.

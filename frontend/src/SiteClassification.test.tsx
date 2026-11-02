@@ -36,3 +36,9 @@ it("discards a previous account's pending success on unmount",async()=>{
 it("rejects a cursor cycle without rendering the accumulated subset",async()=>{
  get.mockResolvedValueOnce(page([site("1")],"a",true)).mockResolvedValueOnce(page([site("2")],"b",true)).mockResolvedValue(page([site("3")],"a",true));render(<SiteClassification open={()=>{}}/>);await screen.findByRole("alert");expect(get).toHaveBeenCalledTimes(3);expect(screen.queryByRole("img")).not.toBeInTheDocument();
 });
+it("switches the same donut slot to unconnected time without another API",async()=>{
+ get.mockResolvedValue(page([site("1"),site("2","GENERAL")]));const view=render(<SiteClassification open={()=>{}}/>);await screen.findByRole("img",{name:/등록 사이트 2개/});const beforeCalls=get.mock.calls.length;fireEvent.click(screen.getByRole("button",{name:"시간 · 사이트 이용시간 기준"}));expect(screen.getByRole("button",{name:"시간 · 사이트 이용시간 기준"})).toHaveAttribute("aria-pressed","true");expect(screen.getByRole("img")).toHaveAccessibleName("사이트 이용시간 비율 미확인");expect(view.container.querySelectorAll(".donut")).toHaveLength(1);expect(screen.getByRole("status")).toHaveTextContent(/아직 연결되지/);expect(get).toHaveBeenCalledTimes(beforeCalls);fireEvent.click(screen.getByRole("button",{name:"개수 · 사이트 수 기준"}));expect(screen.getByRole("img")).toHaveAccessibleName(/등록 사이트 2개/);expect(get).toHaveBeenCalledTimes(beforeCalls);
+});
+it("uses a typed ready-time fixture independently of registered site counts",async()=>{
+ get.mockResolvedValue(page([site("1","FOCUS")]));render(<SiteClassification open={()=>{}} usageTime={{status:"ready",totals:{FOCUS:0,DISTRACTION:60000,GENERAL:0}}}/>);await screen.findByRole("img");fireEvent.click(screen.getByRole("button",{name:"시간 · 사이트 이용시간 기준"}));expect(screen.getByRole("img")).toHaveAccessibleName(/집중 0분, 방해 1분, 일반 0분/);expect(screen.getByText("100.0%")).toBeInTheDocument();
+});

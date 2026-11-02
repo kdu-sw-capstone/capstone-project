@@ -1,4 +1,5 @@
 import SiteClassificationCard from "./SiteClassification";
+import PurposeUsageByDay from "./PurposeUsageCharts";
 import { SiteMark } from "./FocusShared";
 import { requestedWorkspaceView } from "./workspaceNavigation";
 import { submittedSiteHost } from "./siteHostConfirmation";
@@ -749,6 +750,7 @@ function Statistics({
       {state.error && summary && <p>조회에 실패해 마지막 성공 결과를 유지합니다.</p>}
       {summary && <Metrics data={summary} />}
       <AccessPattern from={range.from} to={range.to}/>
+      <PurposeUsageByDay/>
       <div className="table-card"><table className="statistics-table"><caption>대상별 접근과 반복</caption><colgroup><col style={{width:"28%"}}/><col style={{width:"8%"}}/><col style={{width:"8%"}}/><col style={{width:"8%"}}/><col style={{width:"10%"}}/><col style={{width:"12%"}}/><col style={{width:"26%"}}/></colgroup><thead><tr><th>대상</th><th>전체 접근</th><th>반복 접근</th><th>차단 접근</th><th>반복 비율</th><th>수집 상태</th><th>기록·설정</th></tr></thead><tbody>
         {targets.map((t) => (
           <tr key={String(t.host)}><td>
