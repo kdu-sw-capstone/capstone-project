@@ -77,7 +77,8 @@ describe("daily goal actual confirmed projection",()=>{
   const old=new Promise<Goal>((_,reject)=>{rejectOld=reject;}),fresh=new Promise<Goal>(resolve=>{finishNew=resolve;});
   get.mockImplementation(async(_path,method,body)=>method==="PUT"?row({...body as Partial<Goal>,version:2}):++reads===1?row():reads===2?old:fresh);
   const expired=vi.fn();window.addEventListener("focurve:authentication-expired",expired);
-  try{render(<DailyFocusGoal owner="A" editor/>);fireEvent.click(await screen.findByRole("button",{name:"목표 수정"}));
+  try{render(<DailyFocusGoal owner="A" editor/>);const edit=await screen.findByRole("button",{name:"목표 수정"});
+   await waitFor(()=>expect(edit).toBeEnabled());fireEvent.click(edit);await screen.findByRole("button",{name:"목표 저장"});
    fireEvent.click(screen.getByRole("button",{name:"목표 상태 재조회"}));await waitFor(()=>expect(reads).toBe(2));fireEvent.click(screen.getByRole("button",{name:"목표 저장"}));
    await waitFor(()=>expect(reads).toBe(3));await act(async()=>rejectOld(new ApiError("UNAUTHENTICATED",401)));
    fireEvent.click(screen.getByRole("button",{name:"목표 상태 재조회"}));expect(reads).toBe(3);expect(expired).not.toHaveBeenCalled();
