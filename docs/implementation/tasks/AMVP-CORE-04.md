@@ -132,3 +132,13 @@
 - 대상 브랜치: integration/additional-mvp-20261029. 자동 병합/제품 활성화 요청이 아니라 기반 모듈 리뷰 범위다.
 - 제출 전 DNR24/24·기존 계약6/6·npm run check 재실행 PASS. GitHub CI는 Ubuntu/Windows Node24에서 동일 모의 시험 수행; Windows 실제 Chrome 수용 시험을 뜻하지 않는다.
 - 미완료: legacy writer guard 전체 결속, Worker 진입점 연결, 실제 DNR·quota·브라우저 재시작 수용. 기존 API·DB·Content 구현은 이번 PR에 포함하지 않는다.
+
+## 2026-11-02 문서 Registry 복구 무결성 — 진행 중
+
+- 담당 윤종민, 브랜치 `fix/additional-mvp-document-registry-recovery`, 기준 integration `2201654e4ba3adbc1a4738bc14723b708d522c69`.
+- 기존 DocumentControlRegistry의 저장 문서 identity·slot·operation ticket·binding 의무 연결을 복구/읽기/수정 전에 검사한다. 의무 누락/근거 없는 terminal·다른 문서 slot 참조를 반례로 재현하고 원본 보존·기본 거절을 확인한다.
+- 로컬 Registry 형식/DB 버전/API·IG04 ACK·CleanupGrant/완료 proof를 변경하지 않는다. 기존 native/issued 검증을 대체하거나 실제 Chrome START·병합을 수행하지 않는다.
+
+- 종료: 기존 저장 문서/slot/sequence/epoch·operation intent/ticket/binding 의무와 내부 완료 상태를 검사한다. 손상 row를 빈 pending/과거 성공으로 처리하지 않고 INVALID_DOCUMENT_REGISTRY로 거절하며 원본 보존·동일 transaction rollback을 유지한다. DB v1/형식/public API·신뢰된 caller·IG04 ACK/proof는 변경하지 않는다.
+- 보정된 기존 source 반례4건 실패를 재확인했다. 신규21/21·기존 포함36/36·전체 Extension1000/1000·계약6/6·#86/#88 별도 호환83/83·Chromium native IDB1/1·기존 Dedicated Worker 재생성 probe PASS, syntax/whitespace PASS(포함 관계 중복 합산 금지). 최초 ticket 주입의 공유 참조 문제는 원래 intent를 보존하는 주입으로 보정했으며 assertion은 유지했다.
+- 상태: 담당 리뷰·통합 대기. 실제 native/DOM proof·IG04 영속 ACK/완료·제품 Worker/Content/MV3 수용은 별도 미완료다. [복구 검증·명령·실패·제한](../evidence/AMVP-CORE-04-document-registry-recovery.md).
