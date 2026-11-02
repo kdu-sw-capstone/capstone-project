@@ -1,0 +1,10 @@
+<!doctype html><html lang="ko"><meta charset="utf-8"><title>FOCURVE URL 키워드 판별 시험</title>
+<style>body{font:18px sans-serif;max-width:900px;margin:32px auto;padding:0 20px}label{display:block;margin:18px 0}input{font:inherit;width:95%;padding:8px}button{font:inherit;padding:8px;margin:6px}pre{white-space:pre-wrap;background:#eee;padding:16px}</style>
+<h1>URL 키워드 판별 시험</h1>
+<p>독립 판별 시험입니다. 입력한 주소에 접속하거나 실제 페이지를 차단하지 않습니다. Core·세션·Server 연결은 없습니다.</p>
+<label>검사할 키워드<input id="term" value="gaming" maxlength="80"></label>
+<label>시험할 주소<input id="url" value="https://example.test/search?q=GAMING" autocomplete="off"></label>
+<button id="check">판별하기</button><button id="clear">입력 지우기</button>
+<p>이 본문의 gaming과 입력 중인 문자열은 검사 대상이 아닙니다. 위 주소 값만 버튼을 눌렀을 때 검사합니다.</p>
+<pre id="result" role="status">아직 판별하지 않았습니다.</pre>
+<script type="module" src="keyword-url.mjs"></script></html>

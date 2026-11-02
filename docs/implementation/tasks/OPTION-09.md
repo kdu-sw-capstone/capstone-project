@@ -1,3 +1,27 @@
+## 2026-11-02 게시 준비 · 사용자 실제 시험 결과
+- 게시 직전 직접 관련69/69 PASS(fail/skip0): URL판별24·화면1·session11·ClaimLedger27·계약6. 이전68은 최종 검증으로 대체하지 않으며 이번69는 최종 소스에서 실행했다. 로그 extension/build/keyword-publish-check.log(ignored). build·구문·diff 검사 PASS. 전체Content/제품Core·MV3/Server 수용은 여전히 NOT_RUN.
+- 사용자 보고: URL 판별 화면6항목 정상 확인에 이어, 시험 확장0.1.17의 안내한 실제 제한·해제5항목에 대해 '다 정상작동한다'고 확인했다. 범위는 YouTube 검색 gaming 제한·해제, gamings 불일치, 일반영상에서 youtube 호스트 키워드 적용시 화면/영상/소리 정지, 해제 후 직접재생이다. 사용자 실행 보고이며 독립 로그나 실제 Core 제품 수용을 대신하지 않는다.
+- 사용자가 결과 기록/Commit·Push·Draft PR 공유에 동의했다. branch codex/content-keyword-url, 선행 #87 codex/ig04-content-receiver HEAD2704148b9d6036a16d1ba2083ffe43ae14580744. 원격 동일 확인. 선행 base로 자체 변경만 제출하며 integration/develop의 병합·Draft해제·제품 활성화는 하지 않는다. 실제 통합 순서·최종 후보는 다훈 관리.
+- Instagram 실제 제한/복원·다른 사이트·전체 국제도메인/Unicode profile 동등성·native URL/발급권한·효과 전 영속의무/ACK·cleanup lease·새문서/BFCache 자동재적용·Core/Server 결과저장은 미검증/미연결. canApply·이동승인의 TEST 모의 true는 제품 권한이나 영속증거가 아니다. 페이지 제목/본문/입력값은 신규 판별 대상이 아니다.
+- 과거 TITLE/BODY legacy 구현과 정상 시험은 보존한다. 코드 부품·harness·시험·본 기록만 게시하며 Core/Server/공용 계약·기존16옵션 기능 코드는 변경하지 않는다. MVP_FINAL_COMPLETE=false.
+## 2026-11-02 URL 키워드 제한 · 후속 구현
+- 담당 채지민 / codex/content-keyword-url / 기준2704148b. 사용자가 URL 판별6항목 정상을 보고하고 실제 제한·해제도 계속 구현하도록 요청하여 같은 작업을 이어갔다. 기존 코드·타worktree 보존, Commit·Push 없음.
+- 신규 keyword-session.mjs: 기존 ClaimLedger 주입, owner/binding/nonce별 body display/inert 제한, HTML video/audio pause readback·play guard, body 바깥 FOCURVE 안내. 해제는 자기 claim만 복원하고 강제 autoplay하지 않는다. body교체·다른owner·부분 setter 실패 retry·foreign document 의무를 보존한다. Shared Ledger/기존 keyword/controller는 수정하지 않았다.
+- frozen policy 복사, canApply 기본false/strict 동기true·실제문서/URL 재검사, 이동 authorizeNavigation 기본false. 권한소실/pagehide는 신규효과만 중단하고 원래 cleanup을 남긴다. invalid URL은 기존제한을 자동해제하지 않는다. URL 250ms 감시는 권한이 아니며 DOM/play는 observer/capture로 검사한다.
+- TEST 확장0.1.17 keyword-block-1, 기존 YouTube/Instagram match·activeTab 유지. 키워드입력/적용/해제/상태만 추가, 기존버튼·handler/sender id+popup URL검증 보존. TEST canApply/이동승인 true는 모의이며 Core권한/영속ACK가 아니다. 새로고침 뒤 수동적용, 키워드변경은 해제→적용.
+- 최신 Chrome session11/11 PASS: body/media 제한·복원·수동재생, 제목/본문/input 제외, SPA match/unmatch·다른owner, late media/playguard, body교체, invalid인코딩, 권한/pagehide/미승인이동, pause실패/reentrant해제 후 추가pause0, 부분복원retry, foreign notice 보존. 설치WindowsChrome headless 합성DOM 및 모의media/setter이며 제품수용이 아니다.
+- 앞선 URL24+화면1+ClaimLedger27+계약6+session10 조합68/68 PASS는 최종 session 경계 보완/foreign시험 추가 전 근거로 구분. 최종 session11 재실행, 다른 소스 불변. 기존 browser29도 직전 session10과 함께39/39 PASS. 전체Content/제품연동 재실행 아님. build/구문/문서공백 확인, build session 원본해시 일치.
+- 사용자 시험예정: gaming 검색 제한/해제, gamings 불일치, 일반영상에서 host키워드youtube로 화면/소리 정지·해제 후 직접재생, 비일치영상→gaming검색 SPA 적용. 실제 사용자 제한시험 NOT_RUN. node extension/content-tools/build-chrome-harness.mjs → extension/build/content-harness 로드.
+- 미완료: 실제 Core native/current/frozen 검증·효과 전 영속의무/ACK·lease·새문서/BFCache 재적용·결과저장, Unicode/IDNA profile 전체동등성/공동벡터·활성화. local RESTRICTED_LOCAL/restored는 제품 APPLIED/RELEASED·영속cleanup 완료가 아니다. WebAudio/cross-origin iframe 제어를 이번 HTMLmedia 범위로 완료처리하지 않는다. MVP_FINAL_COMPLETE=false.
+## 2026-11-02 URL_BOUNDARY_1 · 첫 독립 판별 단위
+- 담당 채지민 / 브랜치 codex/content-keyword-url / 시작 인계 #87 HEAD 2704148b9d6036a16d1ba2083ffe43ae14580744. 기존 root 미커밋 OPTION-11/통합현황·다른 worktree 및 선행 PR 보존. 별도 worktree에서 구현하며 Commit/Push/PR 미수행.
+- 기준: docs/design/00_문서안내.md, 개발운영.md·통합현황.md, 본 카드, additional-mvp-contracts/05_Content_Event_UI.md URL_BOUNDARY_1, contracts/additional-mvp/rc1/schema.json KeywordConfig, traceability F05, tests/reference_model.py keyword_matches/boundary_match 및 test_contract.py 10개 URL vector. 기존 TITLE/BODY/substring 함수는 과거 구현이며 신규 profile로 승격하지 않는다.
+- 코드: extension/content/keyword-url.mjs·keyword-casefold.mjs. URL host/path/query값/fragment만 1회 엄격 UTF-8 decode, query+공백·key 제외, NFKC/full casefold·Unicode L/N 경계, scoped host exception. invalid percent/UTF8/host/policy는 UNCONFIRMED·matched:null, 정상 false도 ALLOW/해제증거가 아니다. URL·키워드를 결과에 싣지 않는다. 예외는 Core가 고른 frozen 정책 내부에만 적용하며 부모 정책을 합성/선택하지 않는다.
+- 기존 keyword.mjs/controller/PageGate·16옵션·Core/Server/Wire/Manifest는 변경하지 않았다. 신규 판별기의 CHECKED/EXEMPT/DISABLED/UNCONFIRMED는 local_only/native_verified:false 내부 값이며 ContentResult/EffectEvidence/Server성공 enum이 아니다. 실제 차단/observer·권한/native URL·영속 의무·cleanup/프로필 활성화는 연결하지 않았다.
+- Unicode overrides는 설치 Python3.14.7 unicodedata16.0.0에서 전 codepoint의 casefold()!=lower() 297개를 생성했다. JS NFKC/URL runtime과의 Unicode/IDNA profile 동등성·artifact hash 및 전체 공동 vector/실제 native authority 승인은 제품 활성화 전 조건이다. WHATWG domain-to-ASCII 후 STD3 label/policy host 제약을 확인하며 IDNA 전체 동등성 입증으로 표시하지 않는다. 로컬 입력 자원 상한65536자 초과도 검사불가다.
+- 시험: keyword-url.test.mjs 24/24(계약10vector 포함, double encoding은 재decode 안 함, query key/본문 미검사·ß/ς·전각·한글/astral 경계·예외·오류·입력불변/비노출), Chrome 합성 페이지1/1, 기존 detection3/browser29 = 관련57/57 + legacy계약6/6 총63/63 PASS, fail/skip0. Node24/설치WindowsChrome headless/Playwright, 네트워크는 합성 fulfill만 사용. 기존 시험은 legacy 보존 근거이고 최신 계약 제품 지원으로 승격하지 않는다. 전체Content423/제품MV3/Core/Server는 재실행/수용하지 않았다.
+- 시험화면: 기존 serve.mjs 허용경로에 keyword-url.html/mjs만 추가. node extension/content-tools/serve.mjs 실행 → http://127.0.0.1:4178/content-tools/keyword-url.html . 기존 claims/harness 경로 유지. URL 문자열을 입력해서 판별할 뿐 해당 사이트 접속/실제 페이지 차단/Server전송/저장 없음.
+- 사용자 체크 예정: gaming + ?q=GAMING 일치, /gamings 불일치, ?gaming=no 불일치, /%67aming 일치, ?q=%FF 검사불가, 게임 + ?q=게임 일치·?q=한글게임 불일치, 입력 지우기. 사용자 결과 NOT_RUN. 다음은 사용자 확인·작은 PR 리뷰와 Core profile/native URL/권한 seam 합의 후 제품 연결. 실제 차단 성공/cleanup 완료를 이번 단위로 판정하지 않는다. MVP_FINAL_COMPLETE=false.
 # OPTION-09 · 키워드 제한
 
 단계: 추가 MVP · 설계 담당 영역: Web·Server·Extension
