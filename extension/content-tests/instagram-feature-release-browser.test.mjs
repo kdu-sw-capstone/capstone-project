@@ -6,7 +6,7 @@ const require=createRequire(import.meta.url),{chromium}=require(process.env.PLAY
 let browser;
 before(async()=>{browser=await chromium.launch({headless:true,...(process.env.CHROME_EXECUTABLE?{executablePath:process.env.CHROME_EXECUTABLE}:{})});});
 after(async()=>{await browser?.close();});
-const FEATURES=['IG-01'];
+const FEATURES=['IG-01','IG-02'];
 async function fixture(t,{feature='IG-01',home=false,features=[feature]}={}){
   const context=await browser.newContext();t.after(()=>context.close());
   await context.route('**/*',async route=>{const path=new URL(route.request().url()).pathname;
@@ -55,3 +55,40 @@ for(const feature of FEATURES){
     assert.equal(await p.locator('#first').evaluate(e=>e.style.display),'flex');
   });
 }
+
+test('Reels replay release does not close Stories: late story still restricted',async t=>{
+  const p=await fixture(t,{home:true,features:['IG-01','IG-02']});
+  await p.evaluate(()=>{const link=document.createElement('a');link.href='/reel/one/';link.append(media('first',0));document.querySelector('main').append(link);});
+  await p.waitForFunction(()=>calls[0]>0);
+  await p.evaluate(()=>{const m=document.querySelector('#first');m.pause=()=>{window.pending=adapter.releaseFeature('IG-02');};m.dispatchEvent(new Event('play'));});
+  assert.equal(await p.evaluate(()=>adapter.inspect().closed),false);
+  assert.equal(await p.evaluate(()=>adapter.inspect().features.find(f=>f.feature_id==='IG-01').active),true);
+  await p.evaluate(()=>document.querySelector('main').insertAdjacentHTML('beforeend','<a id="late-story" href="/stories/sample/1/">story</a>'));
+  await p.waitForFunction(()=>document.querySelector('#late-story').inert);
+  assert.equal((await p.evaluate(()=>adapter.releaseFeature('IG-02'))).restored,true);
+  assert.equal(await p.locator('#late-story').evaluate(e=>e.inert),true);
+  assert.equal((await p.evaluate(()=>adapter.release())).cleanup_pending,false);
+});
+test('Stories replay release leaves Reels active across authorized SPA',async t=>{
+  const p=await fixture(t,{features:['IG-01','IG-02']});
+  await p.evaluate(()=>document.querySelector('main').append(media('first',0)));await p.waitForFunction(()=>calls[0]>0);
+  await p.evaluate(()=>{const m=document.querySelector('#first');m.pause=()=>{window.pending=adapter.releaseFeature('IG-01');};m.dispatchEvent(new Event('play'));});
+  assert.equal(await p.evaluate(()=>adapter.inspect().closed),false);
+  assert.equal(await p.evaluate(()=>adapter.inspect().features.find(f=>f.feature_id==='IG-02').active),true);
+  assert.equal((await p.evaluate(()=>adapter.releaseFeature('IG-01'))).restored,true);
+  await p.evaluate(()=>{history.pushState({},'','/');document.querySelector('main').innerHTML='<a id="late-reel" href="/reel/one/">reel</a>';});
+  await p.waitForFunction(()=>document.querySelector('#late-reel').inert);
+  assert.equal((await p.evaluate(()=>adapter.release())).cleanup_pending,false);
+});
+test('real authority revoke still closes both IG features and preserves foreign owner cleanup',async t=>{
+  const p=await fixture(t,{home:true,features:['IG-01','IG-02']});
+  await p.evaluate(()=>{document.querySelector('main').innerHTML='<a id="story" href="/stories/sample/1/">story</a><a id="reel" href="/reel/one/"></a>';document.querySelector('#reel').append(media('first',0));});
+  await p.waitForFunction(()=>calls[0]>0);
+  await p.evaluate(()=>{ledger.hide('other-owner',document.querySelector('#story'));current=false;document.querySelector('#first').dispatchEvent(new Event('play'));});
+  assert.equal(await p.evaluate(()=>adapter.inspect().closed),true);
+  assert.equal(await p.evaluate(()=>adapter.inspect().features.every(f=>!f.active)),true);
+  assert.equal((await p.evaluate(()=>adapter.release())).cleanup_pending,false);
+  assert.equal(await p.evaluate(()=>ledger.inspect().remaining_targets),1);
+  assert.equal(await p.locator('#story').evaluate(e=>e.inert),true);
+  await p.evaluate(()=>ledger.release('other-owner'));
+});
