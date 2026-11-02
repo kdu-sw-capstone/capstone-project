@@ -240,8 +240,34 @@ const instagramExploreReady=Promise.all([homeReady,import(chrome.runtime.getURL(
     }};
   });
 
+const instagramCommentsReady=Promise.all([homeReady,import(chrome.runtime.getURL('content/instagram-comments.mjs'))])
+  .then(([{ledger},{InstagramCommentsSession}])=>{
+    let session=null,result=null,invalidated=null;
+    const document_instance_id=crypto.randomUUID();
+    const state=()=>({testOnly:true,coreConnected:false,test_build:'ig-comments-nested-boundary-4',document_instance_id,
+      page_kind:/^\/(?:p|reel|reels)(?:\/|$)/.test(location.pathname)?'POST_OR_REELS':location.pathname==='/'?'HOME':location.pathname.startsWith('/direct/')?'DM':'OTHER',
+      result,invalidated});
+    return {handle(type){
+      let released;
+      if(type==='TEST_IG_COMMENTS_APPLY'){
+        if(invalidated)return {...state(),error:'OLD_SCOPE_CLEANUP_REQUIRED: 댓글 해제 후 다시 적용하세요.'};
+        if(!session){
+          session=new InstagramCommentsSession(document,{ledger,owner_binding_id:crypto.randomUUID(),binding_id:crypto.randomUUID(),
+            // TEST ONLY: this is not a product Core authority provider.
+            authorizeNavigation:()=>true,onObservation:value=>{result=value;},onInvalidated:value=>{invalidated=value;}});
+          try{session.start();}catch(error){session=null;throw error;}
+        }else session.scan();
+      }
+      if(type==='TEST_IG_COMMENTS_RELEASE'&&session){released=session.release();if(released.restored){session=null;result=null;invalidated=null;}}
+      return {...state(),released};
+    }};
+  });
+
 chrome.runtime.onMessage.addListener((message, sender, reply) => {
   if (sender.id !== chrome.runtime.id || sender.url !== chrome.runtime.getURL('popup.html')) return;
+  if(['TEST_IG_COMMENTS_APPLY','TEST_IG_COMMENTS_RELEASE','TEST_IG_COMMENTS_STATE'].includes(message?.type)){
+    instagramCommentsReady.then(adapter=>reply(adapter.handle(message.type))).catch(error=>reply({testOnly:true,error:error.message}));return true;
+  }
   if(['TEST_IG_EXPLORE_APPLY','TEST_IG_EXPLORE_RELEASE','TEST_IG_EXPLORE_STATE'].includes(message?.type)){
     instagramExploreReady.then(adapter=>reply(adapter.handle(message.type))).catch(error=>reply({testOnly:true,error:error.message}));return true;
   }
