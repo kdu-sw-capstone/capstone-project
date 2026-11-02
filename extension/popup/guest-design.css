@@ -1,0 +1,49 @@
+/* Guest presentation only; popup.js retains all local CRUD/session operations. */
+.guest-shell #page-subtitle{margin:0 0 6px}
+.guest-shell .page{scrollbar-gutter:auto}
+.guest-shell #current-page{overflow:hidden;scrollbar-gutter:auto}
+.guest-shell #current-page .current-card{height:352px}
+.guest-shell #current-page .site-icon img[data-icon]{width:auto;height:auto}
+.guest-shell #current-page button{margin:0;height:52px}
+.guest-shell #current-page .text-button{height:40px;min-height:40px;font-size:16px}
+.guest-shell #current-page .current-card{gap:8px}
+.guest-shell #current-page .current-identity{flex:1}
+.guest-shell #focus-card{min-height:0;border:0;background:none;padding:0;margin:0;display:flex;flex-direction:column}
+.guest-shell #focus-title{order:0;margin:8px 0;font-size:16px;font-weight:500;text-align:center}
+.guest-shell #focus-ready-time,.guest-shell #focus-countdown{order:1;margin:40px 0 20px}
+.guest-shell #focus-description{order:2;text-align:center;font-size:13px;line-height:20px;margin-bottom:40px;color:var(--muted)}
+.guest-shell #focus-presets{order:3;padding:4px;gap:4px;background:var(--card);border-radius:16px;margin:0 0 20px;height:52px}
+.guest-shell #focus-presets button{margin:0;border:0}
+.guest-shell #duration-label{order:4;margin:0 0 8px}
+.guest-shell #start-focus,.guest-shell #request-end{order:5;height:52px}
+.guest-shell #focus-feedback{margin:8px 0;font-size:13px;line-height:20px}
+.guest-shell #site-list-panel{padding-top:8px}
+.guest-shell #site-list{list-style:none;padding:0;height:252px;margin:12px 0 24px;scrollbar-gutter:auto}
+.guest-shell #site-list>li{display:flex;align-items:center;justify-content:space-between;gap:8px;min-height:96px;padding:16px 20px}
+.guest-shell #site-list strong{font-size:20px;line-height:28px;overflow-wrap:anywhere}
+.guest-shell #site-list small{font-size:13px;line-height:20px}
+.guest-shell #site-list .site-actions{display:flex;gap:4px}
+.guest-shell #site-list .site-actions button{background:transparent;color:var(--muted);border:0;width:auto;min-height:44px;height:44px;padding:8px;font-size:13px}
+.guest-shell #site-list .site-confirm{font-size:13px}
+.guest-shell #add-site{height:52px;margin:0}
+.guest-shell #reload-sites{min-height:28px;height:28px;font-size:12px;padding:2px 8px;border:0;background:transparent;margin-top:4px}
+.guest-shell #site-result{font-size:13px;line-height:20px;margin:0;min-height:40px;max-height:48px;overflow:auto}
+.guest-shell #site-count{font-size:13px;margin:4px 0}
+.guest-shell #site-editor{height:396px;padding-top:4px}
+.guest-shell #site-form{height:384px;display:flex;flex-direction:column;gap:0}
+.guest-shell #site-form .form-body{flex:none;height:280px;max-height:280px;width:100%;padding-right:2px}
+.guest-shell #site-form .form-actions{height:52px;min-height:52px;display:flex;gap:12px;margin-top:48px}
+.guest-shell #site-form .form-actions button{height:52px;margin:0}
+.guest-shell .policy-choices{border:0;padding:0;margin:0 0 8px;min-width:0}
+.guest-shell .policy-choices legend{color:var(--muted);font-size:13px;line-height:20px;margin-bottom:0}
+.guest-shell .policy-choices .choice-group{margin:8px 0 0}
+.guest-shell .switch-label{margin-top:8px}
+.guest-shell #preferences{margin:8px 0;border:0;padding:0}
+.guest-shell #preferences summary{display:none}
+.guest-shell #settings-page{padding:8px 0}
+.guest-shell #settings-page>.button-link{display:block;min-height:40px;margin:8px 0;padding:8px 12px;border:1px solid var(--border);border-radius:12px;text-align:center;color:var(--text);text-decoration:none}
+.guest-shell #ui-notice{position:absolute;left:24px;right:24px;bottom:84px;max-height:48px;overflow:auto;font-size:12px;line-height:18px;background:var(--bg);margin:0}
+.guest-shell #ui-notice:empty{display:none}
+.guest-shell #access-page{padding:8px 0}
+
+.guest-shell #sites-page:has(#site-editor:not([hidden])) #site-result{position:absolute;left:0;right:0;bottom:64px;height:48px;padding:4px 0}

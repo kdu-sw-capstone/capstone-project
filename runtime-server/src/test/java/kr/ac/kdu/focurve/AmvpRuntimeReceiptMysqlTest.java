@@ -72,6 +72,64 @@ class AmvpRuntimeReceiptMysqlTest {
   http.perform(post("/api/v1/amvp/reports/batch").header("Authorization","Bearer "+token).contentType("application/json").content(body(h,r).toString())).andExpect(status().isOk()).andExpect(jsonPath("$.items[0].status").value("ACCEPTED"));
   helper.base.db.update("UPDATE extension_tokens SET revoked_at=UTC_TIMESTAMP(3) WHERE executor_id=?",h.fixture().executor());http.perform(post("/api/v1/amvp/reports/batch").header("Authorization","Bearer "+token).contentType("application/json").content(body(h,r).toString())).andExpect(status().isUnauthorized());assertThat(config(h).path("runtime_apply_state").asText()).isEqualTo("APPLIED");
  }
+ String token(AmvpRuntimeBridgeMysqlTest.Harness h){return new TransactionTemplate(helper.base.manager).execute(tx->helper.base.auth.mint(h.fixture().executor(),h.fixture().identity().user(),id(),1)).path("access_token").asText();}
+ @Test void tcpPartialAckReplayAndReopenedSqlKeepUnknownAndOriginalReceipts()throws Exception{
+  var h=helper.fixture();String token=token(h);var source=helper.source(h.selection());
+  var first=report(h,1,"APPLIED");var bad=report(h,2,"APPLIED").put("payload_sha256","0".repeat(64));var unknown=report(h,2,"UNKNOWN");
+  var batch=body(h,first,bad,unknown);String payload=batch.toString();
+  var legacyBefore=helper.base.db.queryForObject("SELECT (SELECT COUNT(*) FROM event_receipts)+(SELECT COUNT(*) FROM access_events)+(SELECT COUNT(*) FROM session_intervals)+(SELECT COUNT(*) FROM amvp_usage_segments)",Long.class);
+  try(var http=new AmvpLoopbackHttp(helper.base.auth,helper.base.manager,h.publisher(),source,proof(h),null)){
+   var response=http.send("POST","/api/v1/amvp/reports/batch",token,payload);assertThat(response.statusCode()).isEqualTo(200);
+   var ack=helper.base.json.readTree(response.body());assertThat(ack.path("batch_id")).isEqualTo(batch.path("batch_id"));new AdditionalConfigContract(helper.base.json).validate("BatchAck",ack);
+   assertThat(ack.path("items").findValuesAsText("status")).containsExactly("ACCEPTED","REJECTED","ACCEPTED");
+   for(int n=0;n<3;n++){assertThat(ack.path("items").get(n).path("item_id")).isEqualTo(batch.path("reports").get(n).path("report_id"));assertThat(ack.path("items").get(n).path("payload_sha256")).isEqualTo(batch.path("reports").get(n).path("payload_sha256"));}
+   assertThat(ack.path("items").get(1).path("error_code").asText()).isEqualTo("HASH_MISMATCH");
+   assertThat(config(h).path("runtime_apply_state").asText()).isEqualTo("UNKNOWN");assertThat(config(h).path("applied_runtime_revision").isNull()).isTrue();
+  }
+  // Fresh SQL connections, controller context and receiver: not a MySQL/Chrome process restart.
+  var ds=new org.springframework.jdbc.datasource.DriverManagerDataSource(System.getenv("FOCURVE_AMVP_TEST_URL"),System.getenv("FOCURVE_AMVP_TEST_USER"),System.getenv("FOCURVE_AMVP_TEST_PASSWORD"));
+  var db=new org.springframework.jdbc.core.JdbcTemplate(ds);var manager=new org.springframework.jdbc.datasource.DataSourceTransactionManager(ds);
+  var reopened=new MemberAuth(db,helper.base.json,helper.base.auth.origin,Base64.getEncoder().encodeToString(new byte[32]),"chrome-extension://aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa/popup/popup.html");
+  String stored=db.queryForList("SELECT report_id,payload_json,payload_sha256 FROM amvp_reports WHERE owner_binding_id=? ORDER BY report_seq",h.fixture().binding()).toString();
+  String receipts=db.queryForList("SELECT operation_id,state,response_json FROM amvp_operations WHERE owner_binding_id=? ORDER BY operation_id",h.fixture().binding()).toString();
+  try(var http=new AmvpLoopbackHttp(reopened,manager,new AmvpPolicyPublisher(reopened,source),source,proof(h),null)){
+   // Deliberately reuse the immutable request, as a caller whose previous ACK was unavailable.
+   var retry=http.send("POST","/api/v1/amvp/reports/batch",token,payload);assertThat(retry.statusCode()).isEqualTo(200);
+   assertThat(helper.base.json.readTree(retry.body()).path("items").findValuesAsText("status")).containsExactly("DUPLICATE","REJECTED","DUPLICATE");
+   var current=http.send("GET","/api/v1/amvp/configs/"+h.policy().path("policy_id").asText(),token,null);assertThat(current.statusCode()).isEqualTo(200);assertThat(helper.base.json.readTree(current.body()).path("runtime_apply_state").asText()).isEqualTo("UNKNOWN");
+  }
+  assertThat(db.queryForList("SELECT report_id,payload_json,payload_sha256 FROM amvp_reports WHERE owner_binding_id=? ORDER BY report_seq",h.fixture().binding()).toString()).isEqualTo(stored);
+  assertThat(db.queryForList("SELECT operation_id,state,response_json FROM amvp_operations WHERE owner_binding_id=? ORDER BY operation_id",h.fixture().binding()).toString()).isEqualTo(receipts);
+  assertThat(db.queryForObject("SELECT COUNT(*) FROM amvp_reports WHERE owner_binding_id=?",Integer.class,h.fixture().binding())).isEqualTo(2);
+  assertThat(db.queryForObject("SELECT (SELECT COUNT(*) FROM event_receipts)+(SELECT COUNT(*) FROM access_events)+(SELECT COUNT(*) FROM session_intervals)+(SELECT COUNT(*) FROM amvp_usage_segments)",Long.class)).isEqualTo(legacyBefore);
+ }
+ @Test void tcpLaterItemSqlFailureKeepsEarlierCommitAndReplaysWithoutDuplicateEffect()throws Exception{
+  var h=helper.fixture();String token=token(h);var first=report(h,1,"APPLYING");var second=report(h,2,"APPLIED");var batch=body(h,first,second);
+  try(var http=new AmvpLoopbackHttp(helper.base.auth,helper.base.manager,h.publisher(),helper.source(h.selection()),proof(h),null)){
+   helper.base.db.execute("ALTER TABLE amvp_operations ADD CONSTRAINT amvp_tcp_receipt_failure CHECK (NOT(operation_id='"+second.path("report_id").asText()+"' AND state='CONFIRMED'))");
+   try{var failed=http.send("POST","/api/v1/amvp/reports/batch",token,batch.toString());assertThat(failed.statusCode()).isEqualTo(503);assertThat(helper.base.json.readTree(failed.body()).path("error").path("code").asText()).isEqualTo("STORE_UNCONFIRMED");}
+   finally{helper.base.db.execute("ALTER TABLE amvp_operations DROP CHECK amvp_tcp_receipt_failure");}
+   assertThat(helper.base.db.queryForObject("SELECT COUNT(*) FROM amvp_reports WHERE owner_binding_id=?",Integer.class,h.fixture().binding())).isEqualTo(1);
+   assertThat(helper.base.auth.one("SELECT * FROM amvp_operations WHERE operation_id=?",second.path("report_id").asText())).isNull();assertThat(config(h).path("runtime_apply_state").asText()).isEqualTo("PENDING");
+   String original=helper.base.db.queryForObject("SELECT response_json FROM amvp_operations WHERE operation_id=?",String.class,first.path("report_id").asText());
+   var retry=http.send("POST","/api/v1/amvp/reports/batch",token,batch.toString());assertThat(retry.statusCode()).isEqualTo(200);
+   assertThat(helper.base.json.readTree(retry.body()).path("items").findValuesAsText("status")).containsExactly("DUPLICATE","ACCEPTED");
+   assertThat(helper.base.db.queryForObject("SELECT response_json FROM amvp_operations WHERE operation_id=?",String.class,first.path("report_id").asText())).isEqualTo(original);
+   assertThat(helper.base.db.queryForObject("SELECT COUNT(*) FROM amvp_reports WHERE owner_binding_id=?",Integer.class,h.fixture().binding())).isEqualTo(2);assertThat(config(h).path("runtime_apply_state").asText()).isEqualTo("APPLIED");
+  }
+ }
+ @Test void tcpOwnerExecutorAndMissingEvidenceNeverAcceptClientEffectLabels()throws Exception{
+  var h=helper.fixture();var other=helper.fixture();String token=token(h),foreign=token(other);var report=report(h,1,"APPLIED");var batch=body(h,report);
+  try(var unavailable=new AmvpLoopbackHttp(helper.base.auth,helper.base.manager,h.publisher(),helper.source(h.selection()),null,null)){
+   var response=unavailable.send("POST","/api/v1/amvp/reports/batch",token,batch.toString());assertThat(response.statusCode()).isEqualTo(503);assertThat(helper.base.json.readTree(response.body()).path("error").path("code").asText()).isEqualTo("CAPABILITY_NOT_VERIFIED");
+  }
+  try(var http=new AmvpLoopbackHttp(helper.base.auth,helper.base.manager,h.publisher(),helper.source(h.selection()),proof(h),null)){
+   assertThat(http.send("POST","/api/v1/amvp/reports/batch",null,batch.toString()).statusCode()).isEqualTo(401);
+   var rejected=http.send("POST","/api/v1/amvp/reports/batch",foreign,batch.toString());assertThat(rejected.statusCode()).isEqualTo(200);assertThat(helper.base.json.readTree(rejected.body()).path("items").get(0).path("error_code").asText()).isEqualTo("FORBIDDEN_EXECUTOR");
+   var local=report.deepCopy().put("local_only",true).put("restored",true);seal(local);var notWire=http.send("POST","/api/v1/amvp/reports/batch",token,body(h,local).toString());assertThat(notWire.statusCode()).isEqualTo(200);assertThat(helper.base.json.readTree(notWire.body()).path("items").get(0).path("status").asText()).isEqualTo("REJECTED");
+  }
+  assertThat(helper.base.db.queryForObject("SELECT COUNT(*) FROM amvp_reports WHERE owner_binding_id=?",Integer.class,h.fixture().binding())).isZero();assertThat(config(h).path("runtime_apply_state").asText()).isEqualTo("PENDING");
+ }
  @Test void concreteRegisteredClockFeedsStatisticsAcrossReceiverRecreation()throws Exception{
   var h=helper.fixture();var first=helper.segment(h,1,null);var concrete=new AmvpRegisteredClockProof(helper.base.auth,Duration.ZERO);var receiver=new AmvpUsageReceiver(helper.base.auth,helper.base.manager,helper.source(h.selection()),concrete);assertThat(helper.send(h,receiver,first).path("items").get(0).path("measurement_state").asText()).isEqualTo("COUNTED");
   var next=helper.segment(h,2,first);var recreated=new AmvpUsageReceiver(helper.base.auth,helper.base.manager,helper.source(h.selection()),new AmvpRegisteredClockProof(helper.base.auth,Duration.ZERO));helper.send(h,recreated,next);

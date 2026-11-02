@@ -1,4 +1,269 @@
+## 2026-11-02 PR56 문서 동기화 · 채지민
+- 시작 HEAD 4cda56b6b7f9f47fba951af3e473a82e26ed539c, 통합 기준 2201654e4ba3adbc1a4738bc14723b708d522c69. 기존 PR56 브랜치에서 동기화하며 원격 integration/develop은 수정하지 않는다.
+- 수동 충돌 해결은 이 문서 한 파일뿐이다. 양 부모 원문 전체의 줄·중복·순서를 subsequence 검사하여 HEAD 401/401, 통합 328/328 보존을 확인했다. PR57 CI 이력과 PR54 CI 이력을 함께 유지했다.
+- Content 제품·시험·도구는 시작 HEAD 대비 diff 0. 나머지 변경은 최신 통합에서 자동 반영된 선행 변경이며 이번 수동 제품 수정이 아니다.
+- 직접 실행: 설치 Windows Chrome headless/Playwright 합성 DOM Stories 23/23, legacy 계약 6/6 PASS(총29, fail/skip0). 기존 Content183 전체는 재실행하지 않았다. 수동 수정 문서 공백 검사 PASS. 전체 staged 공백 검사에서는 통합 원본 frontend/src/HourlyAccessPattern.tsx:29의 끝 빈 줄 1건이 지적되어 담당 김다훈에게 정리를 요청하며 이 파일은 수정하지 않았다. 실제 MV3/Core/Native/Server 제품 수용 NOT_RUN, MVP_FINAL_COMPLETE=false.
+- 사용자 Commit·Push 승인 후 게시 진행. 새 HEAD 원격 CI와 최종 병합 조건은 게시 후 별도 확인하며 과거 CI·승인을 소급하지 않는다. 타 PR/작업공간 보존, Draft 해제·Approve·Merge 없음.
 # AMVP-CONTENT-06 · 추가 Content 연결
+## 2026-11-01 PR71 최종 게시 후보 · 정상 baseline0.1.9.2
+- 시작2a22fcb / codex/content-instagram-comments, 선행 #65(4daf3d3) 유지. 아래 중간0.1.10~0.1.14 실패 후보는 이력이며 최종 제출 소스가 아니다. 최종은 사용자 정상0.1.9.1(empty 릴스 보완 포함)에 semantic listitem 경계만 수정한0.1.9.2다.
+- 사용자0.1.9.2에서 '됐다 아무문제 없다' 정상 보고: 안내한 홈/릴스/빈댓글 제한·게시물 사진/영상/본문/좋아요 보존 및 해제 복원 결과로 기록. 에이전트 직접 실제Instagram/MV3수용으로 표시하지 않는다.
+- 최종 Content287/287(댓글32 포함), 계약6/6·build/구문/diff PASS. 이번 게시6파일: 댓글효과/시험·TEST bootstrap/manifest/popup·본기록. 공통 nav/ClaimLedger/adapter/Core/Server/계약 변경 없음. 실제Core/MV3/Native/Server 제품수용 NOT_RUN, MVP_FINAL_COMPLETE=false.
+- 게시승인 후 동일PR71 새HEAD CI/checkout·원본로그 확인 및 다훈 독립재검토 요청. 기존리뷰를 새HEAD 승인으로 승격하지 않으며 Draft/미병합 유지.
+
+
+## 2026-11-01 IG-04 댓글 첫 독립 구현 · 사용자 제공 DOM 반영 / 시험 대기
+
+### 릴스 그림 댓글·답글 프로필 잔여 보완
+
+- 사용자0.1.7 실제: 대상13/13·errors0이지만 GIF 이미지 댓글/답글/아바타가 남음. 국소 counts는 전체 댓글 수용 근거가 아님. 홈 일반 게시물은 본문/작성자 보존·다른 댓글 숨김 정상으로 별도 유지한다. 추가 제공 DOM의 GIF 부모 댓글에는 time/댓글 permalink가 없고, 자식 답글에는 exact comment time과 @mention 링크가 섞인 본문이 있다. 개인 계정/본문/CDN/class 원문은 보관하지 않는다.
+- 익명5반례 수정 전1PASS/4FAIL: GIF/답글 묶음, mention reply 행 전체, collapsed/late replies, reply Text.data 전환 실패; 일반 GIF post 보존 반례는 원래PASS. ig-comments-gif-before.log.
+- 댓글 고유 링크가 있는 행은 mention/body text도 허용한다. 고유 링크 없는 GIF/그림 행은 canonical post/Reels의 body image+profile avatar/profile link+명시 Reply 동작을 가진 안전한 최소DIV 조합을 요구한다. avatar만으로 판별하지 않고 일반 Like/Comment 버튼만 있는 이미지 게시물은 제외한다.
+- 검증된 부모 댓글과 연결된 다음 sibling의 명시 View/Hide Replies 영역을 별도 claim으로 포함해 프로필·아바타도 함께 숨긴다. reply list 밖 이미지/다른 postID/미디어·본문·보호 UI는 attachment 근거로 쓰지 않는다. 전역main/dialog를 숨기지 않는다. 기존 owner/복원 원장 경로 재사용.
+- reply action/toggle 및 mention body가 텍스트를 판별하므로 IG04에만 characterData 감시를 추가하고 기존 IG03도 유지한다. 다른 profile에 텍스트 감시를 확장하지 않으며 본문을 외부 수집/반환하지 않는다. 시험판0.1.8/build ig-comments-rich-3.
+- 마지막 guard 및 이웃 다른post/이미지 negative를 포함한 전체 Content 회귀277/277 PASS(댓글22건 포함), 실패/skip0. 실행: 기존 PLAYWRIGHT_MODULE/CHROME_EXECUTABLE 설정 후 node --test --test-concurrency=2 extension/content-tests/*.test.mjs, 로그 ig-comments-rich-regression.log. 별도 계약6/6·시험판 build·구문 검사 PASS. 이전269 및 관련56은 각각 그 소스 시점의 이력으로 보존한다. 실제 GIF/답글/프로필 수용은 사용자 재시험 전 미확정이며 제품Core/MV3/Native/Server NOT_RUN. Commit/Push/PR/Merge 없음.
+
+
+### 실제 릴스 행 추가 반영
+
+- 사용자 일반 게시물은 대상16/제한16/errors0·댓글 숨김 정상 보고, 댓글 진입 버튼은 남기는 기존 범위 유지. 릴스는 NO_TARGET0 실패다. 추가 제공 파일 baa3a054...는 댓글 행들이며 H3 없이 avatar/profile link·exact comment permalink+time·별도 dir=auto body·reply/like role-button 구조다. class/계정/CDN/본문을 저장하거나 selector로 쓰지 않는다.
+- 익명 Reels2반례를 이전 코드에서 실행해 0PASS/2FAIL(eligible0) 재현했다. H3 필수조건을 profile/body/control과 단일 댓글 permalink 구조로 대체하고, 다중 댓글 list/영상/캡션/닫기/보호 UI를 parent로 삼지 않는다. canonical post/Reels 문서에서 semantic MAIN 밖 댓글 portal도 허용하되 exact 댓글 row 검증·같은postID·보호영역/DM 제외는 유지한다. neutral HOME/profile로 확장하지 않는다. 실제 fragment의 외부 semantic ancestor는 미확보다.
+- 수정 후 댓글 전용16/16 PASS(기존14+Reels2), 실제 사용자 릴스 재시험 대기. 이전 전체269는 이 추가 수정 전 이력이며 새271 전수로 소급하지 않는다. adapter/미디어 release 관련 **40/40 PASS**, 댓글16과 서로 다른3파일 총56건(합산중복 없음), ig-comments-reels-shared.log. 계약6/6·build/구문/diff PASS. module/build FF20DEF28A7A59CBB65F91192D868E82F6411F1573300F66BEED9C8F5B60C955 일치. 전체271 로컬 재실행으로 부르지 않으며 제품/실제릴스 해결은 사용자 재시험 전 미확정이다. 시험판0.1.7/build ig-comments-reels-2로 구분하고 기존 버튼/메시지 권한은 유지한다.
+
+
+- 최신 사용자 실제 릴스 시험 실패: 0.1.6 TEST_IG_COMMENTS_APPLY, page_kind POST_OR_REELS, result NO_TARGET/eligible0/restricted0/errors0, invalidated=null이며 댓글 패널은 화면에 남았다. 이를 성공으로 기록하지 않는다. 원본/빌드 module9C98AE58... 일치를 재확인했으나 현재 릴스 패널의 DOM/실제 제외 조건은 미확정이다. 일반 게시물 DIV row 반영 및 합성269PASS가 이 실제 릴스 구조 지원을 증명하지 않는다. 닫기/목록/입력창을 포함한 현재 릴스 패널 outerHTML을 요청했다. 근거 없이 모든 DIV/aside를 숨기거나 caption/media 보존 조건을 해제하지 않는다. 게시/Commit/Push는 계속 보류한다.
+
+- 담당 채지민, codex/content-instagram-comments, 시작4daf3d3a0bc3ac3a51db98dcf6963dd61eca04db(#65 최신 수정). 기존 clean Worktree에서 별도 브랜치로 진행, 선행 PR/미디어 P2/탐색 identity 수정 보존. 기준 RC2 05_Content_Event_UI 및 feature-registry IG04/AC-IG-04-01~03: 댓글·modal 제한, 캡션/게시물/좋아요 보존.
+- 새 instagram-comments.mjs는 기존 NavigationSurfaceSession/ClaimLedger hide·복원을 재사용한다. 게시물/reel/reels 또는 명시 Comments dialog 안에서 의미상 Comments/댓글 목록, 정확한 per-comment permalink를 가진 li/listitem, 댓글로 명명된 textarea/textbox만 대상으로 한다. 캡션/post 링크·다른 postID/외부주소·media/보호 UI·DM/Stories는 제외한다. 전체 modal/UL/H2를 일괄 숨기거나 계정명/휘발CSS class를 selector로 사용하지 않는다.
+- Session adapter factory/공유 navigation whitelist에 IG04 등록, IG04에만 placeholder 관찰 추가. 기존 IG03 identity 감시와 미디어 release는 변경하지 않는다. 새 TEST_IG_COMMENTS popup3버튼을 맨위에 추가, 시험판0.1.6 FOCURVE 댓글 시험판. 기존 버튼 아래 상태/복사 기능 유지, Core/Server/Wire/제품Manifest/권한 발급·영속 저장은 변경하지 않는다.
+- 초기 전용 시험10/10 PASS(설치 Chrome headless/Playwright 합성 DOM·모의 권한), 계약6/6·build/변경JS5파일 구문/diff PASS. 내용/미디어/좋아요 보존·modal·중립경로·동적href/placeholder·다른owner·SPA/거절·pending retry·타문서·실제 TEST sender gate/adapter 포함. 전체 Content 회귀 실행 중. 최초 합성 성공을 실제 Instagram 지원으로 승격하지 않는다.
+- 최초 H2/계정링크/인증SVG 조각만으로는 댓글과 게시물 작성자/캡션을 구분할 수 없어 H2 전체숨김을 구현하지 않았다. 이후 사용자가 바깥 DIV 댓글 행을 추가 제공했다. 실제 row는 H3 author, 별도 dir=auto 본문, exact per-comment href 안 time[datetime], 답글 button, 외부 아바타를 가진 DIV형태였다. 계정/본문/CDN/class 원문은 저장하지 않고 익명 구조만 fixture에 반영한다.
+- 기존 li/listitem 전제에서 새 DIV2반례 **0PASS/2FAIL(eligible0)** → 보완 후PASS. 정확한 댓글 permalink/time와 H3·본문·버튼 조합의 최소 DIV를 찾고, 단일 댓글 구조가 유지되는 avatar parent만 포함한다. 전체 article/dialog·H2 caption·protected UI·다중 댓글/미디어 컨테이너로 넓히지 않는다. IG04 판별 의존 dir/datetime 감시도 추가, 재사용 DOM의 양방향 적격 전환 반례2건 포함.
+- 최종 전용14/14 PASS(기본10+제공DIV2+동적속성2), 계약6/6·build/구문/diff PASS. 최초 전체265/265는 이전10개 후보 selector 시점의 이력이며 최종269 전수로 합산하지 않는다. 최종 전체 Content **269/269 PASS**, fail/skip0(129.2초), ig-comments-final-regression.log. 전용14와 중복이므로 합산하지 않는다. 계약6/6·build/구문/diff PASS. 원본/빌드 module hash9C98AE58CDA41CA3F60C1F53F8A512BCBADAFC30FF64E29E210466D283BF10E2 일치. 실제 Instagram 사용자 동작/오디오·모든 DOM 변형/제품 Core 검증은 아직NOT_RUN.
+
+- 사용자 확인 예정: 일반 게시물/릴스 댓글·입력창 숨김, 사진/영상/본문/좋아요/닫기 보존, 늦은댓글 자동제한, 해제 후 복원·댓글작성 가능. NO_TARGET/FAILED/남은댓글은 성공 아님. 전체새로고침은 재적용 필요. 실제 Core/native/frozen/fullscope·효과전영속ACK·cleanup lease/결과저장·새문서/BFCache 제품 재결속·제품START/END 수용 NOT_RUN. Instagram 제안항목/흑백·키워드/블러는 이번 범위 밖. Commit/Push/PR/Merge 없음, MVP_FINAL_COMPLETE=false.
+## 2026-11-01 PR57 승인 수정의 PR56 반영
+- 담당 채지민 / codex/content-instagram-stories / 시작08730c86d91d0b1d3790bc5fafc7a7ca9195ece8. discussion4434864434 요청대로 #57의02a653fb(alt/draggable 관찰·회귀2건·기록)와984b396f(CI·기록)를 fast-forward로 이력 그대로 로컬#56에 반영했다. 시작worktree clean, 타작업/PR71·82·83 보존. integration/develop/다른담당브랜치 병합은하지않는다.
+- 제품수정은 IG-01 attributeFilter의alt/draggable 추가1줄뿐. 추가2시험은 수동scan없이 적격전환·이탈/재진입·다른owner보존·display!important복원을 검사한다. 승인#57 HEAD984b396 대비 extension/content·content-tests·content-tools·ui 및CI 전체diff0. CIblob44bb30d93878bd8916b034b625a82c7007adc9dc 동일. 승인된수정을재개발하거나새포맷/권한을추가하지않았다.
+- 반영후직접 Windows Node24/설치Chrome headless/Playwright 합성DOM Content183/183 PASS(스토리23·추가2포함), fail/skip0. 기존환경 node --test --test-concurrency=2 extension/content-tests/*.test.mjs, 로그stories-57-into-56-full.log. 계약6/6·build·변경JS구문·공백PASS. 수정전반례0/2FAIL→#57수정후2/2 근거는기존기록이며 이번에는반영후전체183을재실행했다.
+- 이번추가commit은본작업기록만변경. 새#56 HEAD 원격CI/최신통합후보·담당승인은Push후별도확인, #57과거CI/승인을자동승격하지않는다. 실제Chrome/MV3/Core/Native/Server제품수용NOT_RUN, MVP_FINAL_COMPLETE=false. 통합기록충돌/병합순서는다훈관리, 리뷰Resolve·Draft해제·Merge버튼조작없음.
+
+
+## 2026-11-01 PR #65 동적 탐색 identity P2
+
+- 담당 채지민, codex/content-instagram-explore. 시작6d4a5e2b057d0f7e22f6aefe97b52232331368ad, 원격 #65 HEAD/base 일치·clean 확인. review discussion4434086347 범위만 수정한다. 기존 #58/#64 미디어 P2 수정은 그대로 보존하고 재개발/타 브랜치 변경하지 않는다.
+- 원인: confirmedExploreEntry가 읽는 title/aria-labelledby/textContent/svg title·외부 참조 label text를 기존 observer가 모두 감시하지 않았다. 분류 함수는 수동 scan 시 맞지만 자동 claim 회수가 누락됐다.
+- 정확한 시작 소스에서 신규 설치 Chrome 합성5건(title/aria-labelledby pointer/기존 Text.data/svg title Text.data/외부 label Text.data) **0PASS/5FAIL** 재현. 모두 Explore→Search 뒤 자동 opacity/inert 복원 timeout(2초), pr65-identity-before.log. 사용자 실제 DOM 전체 재현이나 제품 수용으로 확대하지 않는다.
+- 최소 수정: navigation-surface observer의 IG-03에만 title/aria-labelledby 추가 및 characterData=true. 새 observer/강제 표시/claim 직접 삭제 없음. 기존 microtask 배치·동적 재분류·자기 claim 회수 경로 재사용, 다른 기능은 characterData=false로 기존 동작 유지. characterDataOldValue/본문 수집·전송·추가 로그 없음.
+- 신규5건은 각 입력의 Explore→Search 자동 복원, Search→Explore 자동 재적용, 다른 owner와 겹친 후 Search 전환 시 자기 claim만 회수, 마지막 owner 해제 시 원래 opacity0.65!important/inert=false 복원을 수동 scan 없이 검증한다. 수정 후 전체 Content **255/255 PASS**, fail/skip0(125.5초), 신규5 포함. 동일5반례 **0PASS/5FAIL→5PASS**, pr65-identity-after.log. 계약6/6·build/변경JS구문/diff PASS, source/build navigation hash BA1F283286AE62041C637DA0191B6BAEC75685825119479557DEFB1D1A27F6D8 일치. 미디어/Stories/adapter/ledger/Reels/Explore source blob이 시작HEAD와 동일함을 대조했다. 새 원격CI는 게시 후 별도 확인하며 이전250을 새 소스 근거로 소급하지 않는다.
+- 변경3파일 예정: navigation-surface.mjs, instagram-explore-browser.test.mjs, 작업카드. RC2 05_Content_Event_UI/feature-registry IG03 AC-IG-03-01~03의 검색 보존·동적 OFF·다른 owner 보존 기준. Core/Server/Wire/제품Manifest 및 #58/#64 소스 수정 없음. 실제 Core/MV3/Native/Server 제품 수용 NOT_RUN, MVP_FINAL_COMPLETE=false.
+
+
+## 2026-11-01 #65 후속 브랜치 P2 상속
+
+- 시작bb88f7e878a466491fd6f5293e9775e0866a3f6b, codex/content-instagram-explore. 수정된 #64 HEAD98bca66a0a5ceb92c13fe334586fea314577ce45를 이력 보존 로컬 merge로 반영했다. 생산 코드 자동 결합, 작업카드 prepend 충돌은 양쪽 기록 모두 보존. #65 고유 selector/search 보존·conceal/로딩/버튼은 변경하지 않는다. 전체 Content **250/250 PASS**(127.6초, fail/skip0)·계약6/6·build/구문/diff PASS, pr65-inherit-regression.log. #64 CI41263964006/job124722761125 원본239/239+계약6 SUCCESS 확인. #61 고유 Stories 시험/#64 Stories wrapper와 #65 탐색/ledger/bootstrap/popup의 기존 blob을 대조해 보존 확인했다. #65 새 원격 CI는 게시 후 별도 확인한다. 이를 확인 후 게시하며 PR Merge/Approve/Resolve/force push 없음.
+
+
+## 2026-11-01 PR #64 공유 media P2 2건 수정
+
+- 시작7e271c87ed89f62c9bb4f65796b439524a8d5954, codex/content-instagram-reels. #58 수정21654f0을 상속한 #61의1386e1865f50ce17a1acab8c572c3d919fdbf71d를 로컬 merge했다. 예상 충돌은 작업카드 prepend와 Stories→shared media 추출 경계였다. Stories wrapper/selector는 원래 #64 그대로 보존하고 #58의 release 수정만 instagram-media.mjs로 옮겼다. NavigationSurface.close는 선행 수정 그대로 상속한다. 별도 중복 구현이나 기존 scan/invalidate P2 재개발 없음.
+- 정확한 수정 전 #64 archive에 새 반례9건: **3PASS/6FAIL**. IG01/IG02 해제 후 두 번째 pause1회, play guard release의 adapter 전체닫힘, 양쪽 feature 독립 유지 실패를 재현했다. 부분 복원/후속 retry 및 실제 권한 회수의 전체닫힘은 원래 PASS. 로그 pr64-feature-release-before.log, 합성 Chrome/모의 pause·권한이다.
+- shared media release 즉시 #stop(local)으로 media open/play listener를 닫는다. surface 또는 media busy일 때 restored:false/pending을 유지하되 전역 invalidation을 부르지 않는다. 후속 release는 원래 claim/목표/다른 owner를 보존해 실제로 정리한다. 전체 authority/pagehide의 stop/invalidate는 유지.
+- 신규 공통 반례파일은 #58의3건을 상속해 IG02 같은3건과 양방향 다른 feature 보존2건·실제 권한 회수/외부 owner 보존1건을 추가했다. #64 동일 새 반례 **9/9 PASS**, 전체 Content **239/239 PASS**(113.6초), 계약6/6·build/구문/diff PASS. 로그 pr64-feature-release-focused.log/pr64-feature-release-regression.log. #58 CI41263596433/job124721658844 원본218/218+계약6, #61 CI41263744789/job124722101375 원본220/220+계약6 성공 확인. #64 수정 후 원격 CI는 별도 확인한다. 독립 재리뷰/원격CI는 별도이며 제품Core/MV3/Native/Server 수용 NOT_RUN, MVP_FINAL_COMPLETE=false.
+
+
+## 2026-11-01 #61 선행 P2 반영
+
+- #58 수정21654f086b081067b01b9d2982620f0a56f71000을 #61의 기존2e7fe758 위에 이력 보존 로컬 merge로 반영. 제품 소스는 자동 결합됐고 작업카드 충돌만 양측 기록을 모두 보존해 정리했다. #61 고유 contenteditable 감시와 양방향 반례2건은 변경하지 않았다. PR 병합/force push/별도 기능 구현 없음. IG·adapter·새 release 반례 **59/59 PASS**, fail/skip0, pr61-inherit-focused.log. build/diff PASS. #58 CI run41263596433 SUCCESS 확인(직접 전체218과 별도). #61 전체 전수는 원격 CI에서 별도로 확인하며 로컬59를220으로 합산하지 않는다.
+
+
+## 2026-11-01 PR #58 IG 기능별 release P2 수정
+
+- 담당 채지민, feature/content-session-adapter, 시작62a4233aab9a45ade36b4ec308dbe5b1f8290306. 원격 #58/#61/#64/#65 HEAD/base와 일치, 기존 clean 브랜치에서 진행. 기존 scan/invalidate·claim 누락 P2는 해결된 상태로 재사용하며 새 releaseFeature 경계만 수정한다.
+- 수정 전 새 Chrome 합성 반례3건 중1PASS/2FAIL: IG01 첫 pause 콜백의 releaseFeature 이후 다음 pause1회, play guard 재진입 release가 adapter.closed=true로 전파. 부분 cleanup/후속 retry 반례는 원래 PASS. 로그 pr58-feature-release-before.log. media.pause/paused와 권한은 모의이며 실제 오디오/MV3 수용 아님.
+- InstagramStoriesSession.release는 surface 복원 결과를 기다리기 전 로컬 media open을 닫고 replay listener를 제거한다. 바깥 pause 이후 #canApply/open 확인에서 다음 pause와 성공 관찰을 차단한다. busy release는 권한 회수 stop 대신 NavigationSurfaceSession.close(새 효과·observer/event만 닫음, invalidation 콜백 없음)를 호출해 feature-local pending을 반환한다. claim/복원 목표/LIVE 의무는 explicit release retry까지 유지한다. adapter 전체 invalidate·다른 owner ledger를 닫지 않는다.
+- 기능 해제 중 replay guard 유지라는 과거 주석/의도보다 새 효과0이라는 이번 수정 기준을 우선한다. 이미 남은 DOM/inert claim과 실패 복원 의무는 삭제하지 않으며 cleanup 미완료를 RELEASED로 승격하지 않는다. 실제 전체 revoke/pagehide의 stop/invalidate는 그대로 유지한다.
+- 변경: instagram-stories.mjs, navigation-surface.mjs, 신규 instagram-feature-release-browser.test.mjs, 이 작업카드. #58 공통 수정을 #61에 반영한 뒤 #64의 추출된 instagram-media.mjs로 동일하게 이관한다. #65는 새 #64를 상속하도록 순차 반영하며 force push/PR 병합하지 않는다.
+- 수정 후 전체 Content **218/218 PASS**, fail/skip0(107.6초), 신규3 포함. 계약6/6·build/diff PASS. 변경JS구문 확인 후 게시한다. 로그 pr58-feature-release-after.log. 수정 전1PASS/2FAIL→수정 후 신규3PASS이며 기존215/230 CI를 수정 후 PASS로 재사용하지 않는다. 원격 CI는 게시 후 별도로 확인한다. 제품 Core/MV3/Native/Server 수용 NOT_RUN, MVP_FINAL_COMPLETE=false.
+
+
+## 2026-11-01 IG-03 탐색 · 사용자 재시험 정상 / 게시 준비
+
+### 목록 로딩 잔여 보완
+
+- 최신 사용자 실행 근거: 0.1.5에서 게시물/로딩 표시 숨김·검색 유지·해제 후 복원을 사용자가 “ㅇㅋ 문제없네”로 정상 보고했다. 최초 검색 소실/로딩 잔여 실패 이력과 구분한다. 실제 네트워크 요청 반복 여부·전체 성능/모든 계정 DOM·제품 Core 수용은 미검증이다. 이번 게시 준비는 기록만 갱신하며 자동시험을 다시 실행한 것으로 표시하지 않는다.
+
+- 사용자 0.1.4 실제 결과: EXPLORE eligible/restricted18/18·errors0, 목록은 숨겨졌으나 로딩 표시가 계속 보임. 해제 후 정상 복원은 사용자가 확인했다. 실제 network request 반복/로딩 DOM 원문은 미확보이므로 무한 요청 발생을 확정하지 않는다.
+- 원인 후보의 최소 대응: 카드 display:none으로 인한 목록 높이 축소를 피하도록 IG03 profile만 preserveLayout으로 적용한다. ClaimLedger.conceal은 opacity:0!important+inert를 기존 property별 ownership/pending 복원 경로로 관리하고 computed opacity를 확인한다. 자손 visibility override로 노출되지 않도록 opacity를 쓴다. 기존 hide/grayscale 호출 의미는 유지한다. 이는 화면 숨김이며 네트워크/API 차단 구현이 아니다.
+- 정확한 /explore/에서 카드가 확인되는 main의 role=progressbar만 같은 claim 방식으로 숨긴다. 검색/dialog/form/FOCURVE 영역·카드 없는 최초 loading은 보존한다. 표시 역할이 다른 실제 Instagram spinner의 지원은 사용자 재확인 전 미검증이다.
+- 신규 합성 반례: 숨김 전후 main 높이 동일, 목록 로딩만 숨김/검색 로딩 보존, 원래 opacity priority/inert 복원, 다른 owner·페이지 opacity 변경 보존, 최초 로딩 유지. 공유 ledger 확장 후 전체 Content 회귀 **241/241 PASS**, fail/skip0, 124.2초, ig-explore-loading-regression.log 보존. 계약6/6·변경JS구문 PASS. 마지막 0.1.5/build ig-explore-layout-3 표기와 설명만 변경 후 build/diff 검사하며 기능 시험을 새로 실행한 것으로 주장하지 않는다. 검색 전회 실패와 이번 로딩 이력을 지우거나 기존77/9PASS를 최종 전수로 바꾸지 않는다.
+- 재시험 범위: 0.1.5에서 목록 적용 후 로딩 표시/목록 미노출, 검색 가능, 해제 후 카드/원래 화면 복원. 실제 요청 반복·CPU/장시간 성능은 미검증. Core·Server·Wire·제품 Manifest 변경/Commit/Push/Merge 없음.
+
+
+- 사용자 실제 실패: 홈 적용 후 검색 메뉴가 사라짐. 기존 설명의 검색/탐색 메뉴가 항상 별도라는 전제는 잘못이며 원본 DOM은 아직 미확보다. exact /explore/만으로 모든 링크를 숨기는 소스의 과대 판별을 확인했다. 같은 href+Search/검색 label 및 불명 링크를 추가한 합성 반례는 수정 전 FAIL(true!==false) → 수정 후 PASS. 실제 DOM이 해당 shape인지는 단정하지 않고 사용자 재시험으로 확인한다.
+- 수정: route와 명시적 탐색 identity(aria-label/title/svg title·label/aria-labelledby/text)를 함께 요구, Search/검색 표시가 하나라도 있으면 보존, 불명 메뉴도 보존한다. 직접 /explore/ 카드 제한은 유지한다. 시험판0.1.4/build ig-explore-search-fix-2로 구분하고 EXPLORE page_kind 수정. 최종 탐색9/9 PASS, 변경JS구문/build/diff PASS. 이전77은 당시 범위 기록이며 최신78 전수 실행으로 합산하지 않는다. 사용자 검색 복원·실제 검색/목록 확인 대기.
+
+- 담당 채지민, 브랜치 `codex/content-instagram-explore`, 시작 `7e271c87ed89f62c9bb4f65796b439524a8d5954`(#64). 같은 clean Worktree에서 별도 브랜치를 생성했다. 릴스/기존 스토리/adapter·P2 수정 Commit 보존. #64를 선행으로 하며 현재 통합/병합 상태를 완료로 추정하지 않는다.
+- 기준 `docs/design/additional-mvp-contracts/05_Content_Event_UI.md`의 IG03 explore-only/search 제외, `contracts/additional-mvp/rc1/feature-registry.json` IG-03 / AC-IG-03-01~03. 탐색 메뉴의 exact local /explore/ 링크와 직접 /explore/ main 내부 p/reel 카드 링크를 제한한다. 검색 경로·q/query 조회·dialog/search/form/편집기·DM/FOCURVE 보호, 일반 profile/post/home 목록은 변경하지 않는다. 전체 main/nav를 숨기거나 텍스트/휘발 class로 판별하지 않는다.
+- 재사용: NavigationSurfaceSession의 same-document 명시 재승인/claim 정리/중단/부분 실패 보존. IG-03 profile 등록과 Session adapter factory 추가, 기존 API/Wire/Core/Server/제품 Manifest 변경 없음. DOM 목록 숨김이며 일반 영상 재생 설정/미디어 pause는 변경하지 않는다. 실제 selector 변형은 사용자 확인 전 미검증이다.
+- 시험 확장 0.1.3 `FOCURVE 탐색 시험판 — Core 미연결`, 팝업 최상단 탐색 적용/해제/상태 추가. 기존 모든 버튼·버튼 아래 결과/복사 유지. build 경로는 content-resume-20261101의 기존 unpacked 폴더 그대로다. TEST 전용 authority 재승인/새로고침 초기화, 제품 권한/영속 증거 아님.
+- 검증 진행: exact 메뉴/grid·검색/일반 화면 보존, 동적 href/카드·다중 owner·SPA 승인/거절·pagehide·부분 복원/재시도·adapter/TEST sender gate 브라우저 반례8건 및 기존 adapter 회귀. 실제 실행 결과는 아래 최종 절에 기록한다.
+- 최종 직접 실행: 탐색8+기존 adapter31 = **39/39 PASS**, 기존 Stories25+Reels13 = **38/38 PASS**, 서로 다른4파일 총77건 fail/skip0. 로그 ig-explore-focused.log/ig-explore-regression.log. 계약 legacy-boundary **6/6 PASS**, 변경JS5파일 --check/build/git diff --check 성공. Node24/설치Chrome/Playwright route.fulfill 합성 DOM·모의 권한/미디어이며 실제 서비스/MV3 제품 수용이 아니다. module/build SHA256 87E926A1567538C9D79AD521A00D8D9C1E2E4A3E84E997858D4FFA06767DEDFD 일치. 이전230/217을 최신 전체 전수시험으로 소급하지 않는다.
+- 최초 사용자 시험 계획(현재 최신 보고는 위 절): 홈 적용 시 탐색 메뉴만 숨김/검색 유지, 직접 /explore/ 적용 시 카드 숨김/현재 페이지 유지, 지원 SPA 이동 재등장 제한, 해제 후 메뉴/목록 복원, 일반 게시물/프로필/DM 유지. 목록이 남거나 FAILED는 성공으로 체크하지 않는다. 새로고침 후 다시 적용한다.
+- 제품 Core issued/native/full scope·효과 전 영속 ACK·cleanup lease·제품 결과 저장/새 문서/BFCache 재결속은 미연결. 실제 Chrome 사용자 결과는 위 국소 범위만 정상 보고이며 Server/Core 제품 통합은 NOT_RUN. IG04/05/06·키워드·블러는 이번 범위 밖. Commit/Push/PR/Merge 없음, `MVP_FINAL_COMPLETE=false`.
+
+## 2026-11-01 IG-02 Reels 첫 독립 구현 · 사용자 시험 정상 / 게시 준비
+
+- 사용자 상태 확인 개선: 시험 확장 이름/버전을 FOCURVE 릴스 시험판 0.1.2로 구분하고 릴스 버튼을 최상단으로 옮겼다. popup.js는 누른 명령 버튼 바로 아래 결과 패널/상태 복사를 표시하고 action·checked_at·원본 response 또는 연결 error/hint를 JSON으로 제공한다. 최신 요청만 표시하며 URL/본문을 추가 수집하지 않는다. clipboard 실패 시 선택+Ctrl+C 안내, 별도 권한 추가 없음. 설치 Chrome 합성 popup에서 위치/실패 응답 JSON 복사/연결 오류 표시 검증 PASS, 구문/build PASS. 이전230은 DOM 기능 소스 근거이며 이 UI 변경 후 전체 재실행으로 주장하지 않는다.
+
+- 담당 채지민, 브랜치 `codex/content-instagram-reels`, Worktree는 위 인수 공간 `content-resume-20261101` 재사용. 시작 HEAD `2e7fe7582d343c98e12f4a1f8f0fba33a087e251`(#61). #54→#56→#57→#58→#61 선행 코드 보존, 기존 브랜치 Commit을 중복 적용하지 않는다. 현재 작업카드의 인수 기록도 함께 보존한다.
+- 기준: `docs/design/additional-mvp-contracts/05_Content_Event_UI.md`의 16옵션/미디어·복원 증거, `contracts/additional-mvp/rc1/feature-registry.json` IG-02와 AC-IG-02-01~03. 정확한 릴스 링크(/reel/id, /reels 및 /reels/id)·미리보기와 직접 main/dialog 영상·오디오만 제한한다. 일반 피드 수동 영상·스토리·DM·제어 버튼·FOCURVE UI를 유지한다. 사용자가 아래 5항목을 정상으로 보고했으며 모든 계정/DOM 변형 검증은 아니다.
+- 재사용: 스토리의 pause/play guard·중단 fence·재진입 release·retryable cleanup을 `instagram-media.mjs`로 추출, 기존 Stories wrapper/profile 유지. Reels는 별도 collect/media profile이며 IG-02를 navigation 및 Session adapter에 연결했다. Core 생산 코드/권한 발급/저장/Server/계약/제품 Manifest는 변경하지 않는다. 실제 Core 공급 없는 상태에서 OBSERVED를 제품 APPLIED로 전환하지 않는다.
+- 직접 viewer의 media 0은 OBSERVING/route block false, pause 실패 또는 DOM 제한 실패는 성공 증거 금지. entry 링크 안의 preview media도 pause하며 일반 게시물 영상은 건드리지 않는다. 해제 후 자동 play/unmute/seek를 하지 않는다. 같은 문서 이동은 명시적 재승인을 요구하고 pagehide/권한 회수 시 닫힌 scope를 자동 재개하지 않는다.
+- 시험판: 기존 popup에 릴스 적용/해제/상태 3버튼만 추가(총35), TEST popup sender gate 유지, build `ig-reels-1`. 새 unpacked 경로 `C:/Users/user/Documents/capstone-project/.worktrees/content-resume-20261101/extension/build/content-harness`. 이전 additional-mvp-content 폴더의 확장 reload만으로 이 변경이 들어오지 않는다. 기존 시험 확장을 끄고 새 경로를 로드한 뒤 Instagram 새로고침이 필요하다. 제품 sender/native 검증이 아닌 모의 콜백이다.
+- 개발 중 추출 치환의 private field 구문 오류로 최초 실행이 실패해 수정했다. 이후 고정 소스의 Reels10+Stories25+adapter31 **66/66 PASS**. 추가로 DOM 실패 허위 성공 방지·pause 중 release pending·실제 TEST bootstrap sender/릴스 적용·해제 반례3건을 추가했다. 최초 실패를 원래 기능의 회귀 완료나 수정 전 취약성 재현으로 부르지 않는다.
+- 최종 전체 Content 회귀 `node --test --test-concurrency=2 extension/content-tests/*.test.mjs`는 **230/230 PASS**, fail/skip0(109.9초), `reels-regression.log`에 보존했다. Reels13/Stories25/adapter31을 포함하므로 이전66 및 계약6과 합산하지 않는다. `reels-focused.log`는 이전66 실행으로 별도 보존한다. 계약6/6, 관련7JS syntax, harness build·git diff --check 성공. 원본/빌드 Reels SHA256 `F5AB205C17DC6207105D1E7EACFF4879D07211A64E7167E40BB42D2A3390C701` 일치 확인. Windows Node24/설치 Chrome/Playwright, route.fulfill 합성 DOM·모의 authority 및 pause/paused이며 실제 서비스/오디오/MV3 수용으로 확대하지 않는다.
+- 사용자 실제 Chrome 실행 결과: 아래 5항목 모두 정상을 보고했다(“ㅇㅋ 다 정상이야”). 자동시험과 구분하며 독립 수용 로그는 아니다. 체크 항목: (1) 릴스 메뉴/미리보기 숨김과 해제 (2) 직접 릴스 영상 표시·재생·소리 제한 (3) 같은 문서의 다음 릴스 이동/재등장에도 유지 (4) 일반 게시물 영상·스토리·DM 보존 (5) 해제 후 표시·직접 재생 가능. 실제 viewer가 남거나 OBSERVING/NO_TARGET/FAILED이면 성공으로 체크하지 않는다. 전체 새로고침은 시험판 적용이 초기화되므로 다시 적용한다.
+- 실제 Core issued/native/frozen/full scope, 효과 전 영속 의무 ACK, cleanup lease/prior footprint, 결과 영속 조회, 새 문서·BFCache 재결속/재적용 및 제품 START/END/복원/오디오 수용은 미완료. 다른 IG4옵션/키워드/블러는 이번 범위 밖. 사용자 시험 정상 보고 후 게시 준비 승인. Commit/Push는 별도 승인창으로 진행하며 Merge는 하지 않는다. `MVP_FINAL_COMPLETE=false`.
+
+## 2026-11-01 채지민 개발 인수 확인
+
+- 담당 채지민. 인수 브랜치 `codex/content-resume-20261101`, Worktree `C:/Users/user/Documents/capstone-project/.worktrees/content-resume-20261101`, 시작 HEAD `2e7fe7582d343c98e12f4a1f8f0fba33a087e251`(#61). 다훈 PC의 Worktree는 이 PC에 없으므로 새 공간이 필요했다. 기존 로컬 Content 브랜치와 root의 OPTION-11/통합현황/image-filter-demo 변경을 보존했다. 원격 fetch 후 실제 PR HEAD/base를 대조했다.
+- 원격 #54 `670647f41f4e9b9c2380faede496815aa2f3d6a8` → #56 `08730c86d91d0b1d3790bc5fafc7a7ca9195ece8` → #57 `02a653fb60e671dcf997951b220708ea146b4a7a` → #58 `62a4233aab9a45ade36b4ec308dbe5b1f8290306` → #61의 의존성 유지. 다섯 PR 모두 OPEN/Draft/미병합, 조회 시 GitHub mergeable=true였다. 이는 미래 통합 충돌 없음이나 승인 완료를 뜻하지 않는다. #57/#58/#61 자체 diff는 각각 3/11/3파일이고 각 base가 직전 PR HEAD와 일치한다. 중복 patch 적용/기존 브랜치 수정 없음.
+- 인계 완료 범위: IG alt/draggable 및 contenteditable 동적 적격 감시, YouTube 비Shorts 9옵션·IG stories 조합 adapter, frozen 옵션 복사/기능별 해제/다중 owner/중단 중 scan fence/재시도 가능한 cleanup. #58은 수정 전 리뷰가 최신 HEAD의 독립 재승인이 아니므로 통합 담당 재리뷰 대기 상태를 유지한다.
+- 실제 최신 통합 `24327d1bd8615a2274a6dead43f23b71cc06b64e`에서 `extension/member-a1/content.mjs`의 handle/scope/perform과 schema의 Shorts 한정을 재확인했다. extension 생산 코드에서 AMVP_CONTENT_2 발급/수신 경로는 확인되지 않았고 관련 registry는 contracts의 시험 참조 모델이다. 추가 adapter에 기존 Shorts 권한을 전용하지 않는다.
+- 필요한 Core 공급: issued Control/Projection/full BindingScope, 실제 native document·generation의 current 확인, 효과 이전 영속 cleanup 예약 ACK, prior footprint·cleanup lease, 관찰/복원 결과 저장·조회. Content는 검증된 입력과 ACK 이후 기존 Session 조합/결과 반환을 연결한다. 해당 공급 없는 제품 listener/성공 Receipt를 만들지 않는다.
+- 직접 실행: 기존 Node runtime·설치 Chrome·Playwright, PLAYWRIGHT_MODULE/CHROME_EXECUTABLE 지정 후 `node --test --test-concurrency=2 extension/content-tests/instagram-stories-browser.test.mjs extension/content-tests/session-adapter-browser.test.mjs` **56/56 PASS**, fail/skip0, exit0. `node --test contracts/additional-mvp/rc1/tests/legacy-boundary.test.mjs` **6/6 PASS**, exit0. 실제 Chrome 엔진의 route.fulfill 합성 DOM/모의 권한·일부 media 상태이며 실제 서비스/MV3 제품 수용이 아니다. 다훈의 과거183/215/217 및 CI 보고를 이번 독립 전수 실행으로 바꾸지 않는다.
+- 다음 독립 개발 우선순위: IG-02 Reels 제한·복원을 작은 기능 단위로 진행하고 기존 ledger/중단 fence/adapter를 재사용한다. 나머지 Instagram 4옵션·URL 키워드/블러는 후속이며 이번 인수에서 새로 구현하지 않았다. 실제 Core 연결은 위 공급 확인이 선행한다.
+- 제품 미검증: issued/native/영속 cleanup·lease 연결, 새 문서/SPA/BFCache 재결속·재적용, 정상 START/END·실제 오디오/복원/재기동. 인수 기록 외 제품 수정·Commit/Push/Approve/Merge 없음. `MVP_FINAL_COMPLETE=false`.
+
+## 2026-10-31 야간 지속 · IG editable 전환 관찰
+
+- #58 P2는 실제 최신 `62a4233aab9a45ade36b4ec308dbe5b1f8290306`/원격 CI215+계약6 SUCCESS 상태를 다시 확인했다. 소스/의존성 불변인 P2 시험은 재실행하지 않고 그대로 재사용한다. 기존 #54/#56/#57/#58 브랜치를 변경하지 않는다.
+- 이번 독립 단위는 `fix/ig-story-editability-observer`, Worktree `ig-story-editability`, base `feature/content-session-adapter`의 위 full SHA. #58 미병합에 의존하므로 해당 브랜치를 base로 별도 Draft PR을 제출하며, integration에 독립 병합하면 선행 변경까지 포함됨을 명시한다. 새 full HEAD/PR/CI/절대 Worktree/실행 소유권은 이 채팅 artifact 루트 `content-nightly-checkpoint.json`과 PR 최종 기록에 보존한다.
+- 확인된 실제 소스 결함: `instagram-stories.mjs`의 portrait-frame fallback은 내부 `[contenteditable="true"]`가 있으면 대상을 제외하지만 공유 navigation observer는 이 속성을 감시하지 않았다. 같은 DOM에서 caption 편집 종료 후 적격 전환과 편집 시작 후 대상 해제가 모두 자동 반영되지 않는다. 기존 alt/draggable 수정의 재구현이 아니다.
+- 최소 수정: navigation-surface.mjs의 **IG-01 전용** attributeFilter에 contenteditable만 추가했다. 기존 selector·다른 owner/ClaimLedger·Session·Core/Server/계약·YouTube observer 목록은 변경하지 않는다. 신규 시험은 수동scan 없이 caption true→false에서 제한, false→true에서 자기 claim 회수·다른 owner 유지·최종 display:flex!important 복원을 확인한다.
+- 같은 설치 Chrome 합성 DOM 반례 **수정 전0 PASS/2 FAIL(exit1 timeout) → 수정 후 PASS**. IG25+adapter31 직접 영향 **56/56 PASS(exit0)**, 계약 legacy-boundary **6/6 PASS(exit0)**, 구문/build/diff check PASS(exit0). 이전 #58의215는 동일 Content 기반의 참고/재사용 근거이며 신규2와 합산한 로컬217 실행을 주장하지 않는다. 새 PR CI에서 전체217을 별도 확인한다.
+- 환경 Windows Node24.19.0/설치 Chrome156.0.8078.76 headless/Playwright1.62.1, 전 요청 route.fulfill fixture. 실제 Instagram 로그인/개인정보·HOLD Chrome/프로필/설치/Native/DB는 사용하지 않았다. 증거: 채팅 artifact 루트 `ig-editability-before.log`, `ig-editability-regression.log`, `ig-editability-contract.log`; 명령은 `--test-name-pattern='IG portrait frame'`의 IG 단독, IG+session-adapter browser2파일, legacy-boundary, build-chrome-harness, 변경JS `--check`, `git diff --check`이다.
+- 예약: 동일 Content 채팅 예약은 없었으며 기존 통합 예약 focurve-2는 변경하지 않았다. 도구 등록으로 **focurve-content ACTIVE**, target thread `01a191b6-1724-73b2-b0e1-0149c53fba64`, 이번 밤 **2026-10-31 22:00~2026-11-01 07:59 KST 매시 정각**만 실행한다. 기존 장기 예약의 종료일/범위를 가져오지 않는다. 체크포인트 active=true인 기존 실행에는 중복 진입하지 않으며, stale 소유권도 근거 없이 삭제하지 않는다. 현재 검증용 장기 서비스는 없고 각 시험 프로세스는 종료됐다. 종료 시 체크포인트를 idle로 갱신해야 한다.
+
+### 실제 Core 연결 확인과 남은 BLOCKED
+
+- 최신 통합 기준을 실제 재조회한 SHA는 `24327d1bd8615a2274a6dead43f23b71cc06b64e`. 그 SHA의 `extension/member-a1/content.mjs` A1Content.handle/scope/perform과 현 Source의 `A1Client.read/commit`은 기존 d06-member-a1-1 / Shorts effect 경로다. `extension/member-a1/schema.json` projection.feature_code는 YOUTUBE_SHORTS로 한정되어 추가 옵션의 AMVP_CONTENT_2 수신기로 그대로 연결할 수 없다. 이 기존 경로를 임의 확장하거나 새 발급/저장 성공을 만들어내지 않았다.
+- 승인된 RC2 원문은 `contracts/additional-mvp/rc1/schema.json`의 BindingScope/Projection/ContentResult/EffectEvidence이다. BindingScope에 owner_epoch/executor/runtime_execution/package/runtime_revision/scope_epoch/generation/tab/frame/document/document_instance/url_sha256/focus_ref가 필요하다. ContentResult에는 issued request_id/operation_id/semantic_sha256/control_seq와 full scope/effects/remaining_claim_count/footprint_sha256/observed_at/error_code가 필요하다. adapter의 두 claim ID와 국소 counts만으로 이 필드를 채우지 않는다.
+- 실제 제공 대기: scan/DOM 효과 **전** 검증된 issued Control+Projection과 current native/document/generation 확인 closure, 영속 복원 예약 ACK 및 정당한 prior footprint/cleanup lease, 결과 저장·재조회/검증 호출. `contracts/additional-mvp/rc1/tests/review_reference.py:306`의 ContentOperationRegistry.issue(control, prior_claims, prior_footprint_sha256)/validate(result)는 **시험 참조 모델**이며 생산 Core 발급기/저장기가 아니다. 그 함수를 생산 성공처럼 호출하거나 복제하지 않는다.
+- 다음 실행은 우선 새 PR CI/실제 HEAD·원격 변경·추가 독립 리뷰를 확인한다. 이 결함과 #58 검증을 조건 변화 없이 반복하지 않는다. 새로 확인된 Content 결함 또는 실제 Core 공급 함수가 있으면 해당 독립 단위로 이어간다. 현재 확인된 다른 안전한 미완료 구현이 없으면 별도 기능/시험/PR로 시간을 채우지 않고 이 BLOCKED와 체크포인트를 보존해 종료한다. 독립 리뷰/병합은 「추가 MVP 기능별 통합 및 회귀」 담당이며 이 채팅은 Approve/Draft해제/Resolve/Merge하지 않는다.
+- 인계: 채지민은 portrait-frame editability에 따른 동적 적격 변화와 기존 다중 owner/취소·복원 경계를 함께 보존한다. local_only/native_verified:false 및 UNKNOWN/미해소 cleanup 의미 유지. 실제 Chrome 제품/Core/Native/Server/오디오/BFCache/정상 END·복원·재기동 수용 NOT_RUN, `MVP_FINAL_COMPLETE=false`.
+
+## 2026-10-31 PR #58 P2 · scan 중 취소와 재진입 cleanup
+
+- 수정 기준 `a257ce15118c29e8226a53273a5a7eaae29546cc`, 기존 `feature/content-session-adapter` Worktree clean/원격 HEAD 일치 확인 후 같은 브랜치에서 작업. 리뷰4431697837의 P2 범위만 수정한다. #54/#56/#57 원본 SHA 및 다른 Worktree를 보존하고 Draft 해제/Approve/Resolve/Merge하지 않는다.
+- 원인: canObserve는 scan 입구에서만 검사했다. 첫 target setter/click이 invalidate를 동기 호출해도 기존 반복이 다음 target을 처리했다. invalidate가 scan을 재귀 호출했고, 그 안에서 즉시 release하면 기존 scan이 끝나기 전에 restored=true/adapter released=true를 확정했다. 바깥 scan이 뒤에 만든 claim을 재시도에서 건너뛰었다. 정확한 독립8반례를 재사용해 **수정 전6 PASS/2 FAIL** 재현(추가 쓰기1회; 즉시release 후 ledger1/adapter pending=false/재시도후 ledger1).
+- adapter.invalidate는 guarded scan 재호출 대신 Session.stop을 동기로 호출한다. stop은 open/observer만 닫고 원래 claim/cleanup을 삭제하지 않는다. releaseFeature 요청은 즉시 closing으로 표시해 active=false가 되며 restored=true이고 cleanup_pending이 아닌 실제 결과에만 released를 확정한다.
+- NavigationSurfaceSession/WatchPanelSession/AutoplaySession은 scan과 release를 #busy로 서로 재진입하지 못하게 한다. scan/복원 setter/click이 진행 중이면 release는 **restored:false, cleanup_pending:true, scan_pending:true**를 반환한다. Watch는 해당 feature의 closing fence를 즉시 세우고, 다른 feature가 열려 있으면 계속 관찰한다. 마지막 feature도 closing이면 즉시 observer를 끊는다. adapter 전체 취소가 다른 owner의 ledger를 suspend하지는 않는다.
+- 이 synchronous API는 진행 중인 stack 안에서 복원을 완료했다고 가장하지 않는다. caller는 stack 종료 후 release/releaseFeature를 다시 호출하여 실제 잔여 claim을 회수해야 한다. 자동 백그라운드 복원·Server ACK는 추가하지 않는다. busy 응답의 remaining_targets=0도 완료가 아니며 cleanup_pending/scan_pending을 함께 봐야 한다. 실제 setter/cleanup 실패는 원래 immutable 복원 목표와 singleton 의무를 유지한다. Core의 UNKNOWN/미해소 상태를 이 국소 결과로 해소하지 않는다.
+- 각 target 직전 canObserve/open/document/URL/feature-active fence를 재검사한다. ClaimLedger.hide/grayscale의 선택적 내부 canApply 콜백은 실제 각 display/inert/filter 쓰기 직전·setter 반환 후에도 검사한다. 계획된 claim/pending APPLY는 쓰기 전에 보존하고 취소 후 다음 property/target을 적용하지 않는다. ledger 자체도 acquire/release 중 재진입을 pending/false로 거절하여 진행 중 entry를 먼저 지우지 못한다. 기존 기본 호출 형태·다른 owner claim/restore 목표는 유지한다.
+- autoplay는 click 직전·직후 current fence를 검사하여 첫 click의 pagehide/SPA/권한 회수 뒤 두 번째 OFF click을 막는다. IG는 실제 pause 직전·직후 current fence와 stop을 재확인해 pause callback 이후 다음 media를 멈추지 않는다. IG replay guard의 pause 중 release도 busy pending으로 남긴다. pagehide/새 문서/SPA를 새 권한으로 보지 않고 Server APPLIED/RELEASED를 생성하지 않는다.
+- 기존 exact 독립8건 **수정 후8/8 PASS**. 두 실패 반례 모두 추가 쓰기0, 닫힌 adapter pending=true/ledger1을 유지하며 후속release 후 ledger0/pending=false. 최종 focused는 ClaimLedger17 + adapter31 = **48/48 PASS**. 신규 반례는 setter 중 revoke·즉시 release(Watch/Navigation/IG/Grayscale), 첫 display 후 inert 차단, 부분 복원실패와 실제 retry/다른 owner 보존, feature만 종료, DOM override 없는 autoplay click/pagehide·SPA·authority, IG pause/pagehide 및 ledger 직접 재진입 해제다.
+- 수정 중 Content 전체 **213/213 PASS**(기존200+신규13). 이후 feature-closing 관찰 표시/마지막 Watch observer 종료와 grayscale2시험을 보강한 최종 소스는 focused48/48로 확인했다. 최종 전체215건은 새 CI 결과로 별도 기록하며 수정 전200 CI를 새 HEAD 검증으로 사용하지 않는다. 계약6/6, Content/test 전체 JS구문, build-chrome-harness, diff check PASS. 최종 CI 상태·새 SHA는 #58 설명을 확인한다.
+- 환경은 Windows Node24.19.0 + 설치 Chrome156.0.8078.76/Playwright1.62.1 합성 route.fulfill DOM 및 독립 Node/jsdom27.4.0이다. 신규 Chrome 반례12개를 구HEAD archive에 실행하면1PASS/11FAIL이고 수정 focused에서 통과했다(뒤에 추가한 grayscale2건은 이 수정 전 실행에 포함하지 않음). 원본 실패 로그는 보존: 채팅 artifact 루트 pr58-p2-before.log, pr58-p2-after-final.log, pr58-p2-browser-before.log, pr58-p2-focused-final.log, pr58-p2-content-regression.log, pr58-p2-contract.log.
+- 재리뷰 범위: ClaimLedger property 쓰기/재진입 보호, Navigation/Watch/Autoplay scan·release·closing, IG media/replay callback, adapter stop/released 확정과 관련 시험. Core issued/frozen/native·generation 검증/효과 전 영속 예약·cleanup lease/prior footprint 결속은 이전과 동일하게 미연결이다. 실제 Chrome 제품·Core·Native·Server·오디오·정상 END/복원/재기동 수용 **NOT_RUN**, `MVP_FINAL_COMPLETE=false`.
+
+## 2026-10-31 Content 대체 개발 2단계 · Session adapter 준비
+
+- 대체 개발 김다훈, 기존 담당 채지민 유지. 브랜치 `feature/content-session-adapter`, 시작 `02a653fb60e671dcf997951b220708ea146b4a7a`(#57). #54→#56→#57 위에 별도 Worktree/PR로 쌓으며 해당 원본 브랜치·미커밋 변경을 수정/병합하지 않는다. 앱 create_worktree가 workspace 하위 저장소를 sourceRoot로 허용하지 않아 기존 Git 저장소의 `git worktree add`를 사용했다. #55의 DNR 통합을 이 Content 브랜치에 다시 merge하지 않는다.
+- 기준 재사용: RC2 `05_Content_Event_UI.md` 공통 ON/OFF, AMVP_CONTENT_2 Projection.features·issued scope/generation/profile/scan·prior footprint 검증, feature-registry의 해당 AC. 이 adapter는 기존 Session의 `{feature_id, enabled, required:true}` 입력 형태만 소비하는 내부 구현이며 새 Wire/Server 계약이 아니다.
+- 실제 확인: InstagramStoriesSession은 HOME/STORIES의 대상 판별·중립 경로 관찰·동기 SPA 재승인·pagehide 종료·원래 CSS/다중 owner 복원을 이미 구현했다. #57의 alt/draggable 수정을 다시 구현하지 않았다. 미검증은 실제 Instagram DOM/소리·BFCache 재결속·Core 권한/영속 증거 연결이다. 기존 제품 `member-a1/content.mjs`의 A1Content/control scope/commit 경로는 Shorts 전용이며 추가16옵션 receiver로 일반화돼 있지 않다. 기존 controller/test bootstrap도 제품 권한 발급자가 아니다.
+- 구현 `extension/content/session-adapter.mjs`: 기존 ClaimLedger, Home/Subscriptions/Explore/Masthead/EndCards/Grayscale/Autoplay/WatchPanel/InstagramStoriesSession 재사용. YT-01,03~10 및 IG-01만 지원한다. YT-02는 기존 Shorts 경로를 보존하고 IG-02~06·KEYWORD/BLUR/ADULT_DOMAIN을 구현했다고 광고하지 않는다. 미지원·중복·잘못된 옵션과 타 host는 DOM 변경 전에 거절한다.
+- features는 생성 시 복사·동결한다. 같은 document의 adapter들은 단일 ledger를 사용하고 owner_binding_id+binding_id의 live scope를 중복 생성하지 못한다. 첫 adapter 생성 시 기존 canonical ledger를 주입할 수 있지만, 같은 document에서 나중에 다른 ledger로 갈아끼울 수 없다. Session 밖의 기존 기능과 함께 쓸 때 caller도 그 canonical ledger를 일관되게 재사용해야 한다.
+- 기존 NavigationSurfaceSession/WatchPanelSession/AutoplaySession에 선택적 내부 `canObserve` 동기 hook을 추가했다. 기존 호출자는 기본 동작을 유지하며 adapter는 필수 `isCurrent` 검사를 매 scan 전에 호출한다. Instagram play guard도 실제 pause 전 이 검사를 사용한다. false/throw/Promise는 새 효과를 허용하지 않는다. hook은 native 권한 검증의 구현이 아니라 이미 검증된 Core 문맥을 확인하기 위한 접점이다.
+- 한 Session의 invalidation은 같은 adapter의 모든 새 효과를 닫고, 기존 claim은 cleanup을 위해 남긴다. pagehide 후 pageshow/콜백 true만으로 자동 재개하지 않는다. 새 document는 새 adapter와 새 검증 문맥이 필요하다. 시작 중 후속 Session 실패 시 이미 시작한 기능을 복원하며 startup_error와 미해결 pending_features를 반환한다. 복원 실패는 기존 원장의 재시도 목표를 유지하고 동일 scope 교체를 차단한다.
+- `releaseFeature(id)`는 자기 기능만 해제하고 다른 기능/owner를 보존한다. `release()`는 모든 자기 Session의 cleanup을 시도한다. 반환은 항상 local_only/native_verified:false이며 성공 Wire/Receipt/Server 기록을 만들지 않는다. inspect의 scope는 기존 두 claim ID만 담고, feature별 observation/cleanup/active, closed/invalidation_reason/startup_error/callback_error_count를 복사해 반환한다. closed=true의 과거 OBSERVED는 현재 적용 성공 증거가 아니다. 외부 callback 실패는 별도 count로 남기며 복원을 방해하지 않는다.
+- cleanup_pending/pending_features는 아직 release가 검증되지 않은 Session의 **보수적인 의무 집합**이다. 실제 remaining claim 수·영속 cleanup 원장·전체 RELEASED를 대체하지 않는다. no-target인 live Session도 release 전에는 여기에 포함된다. release 결과의 remaining_targets=null은 예외로 관찰 부족이며 0으로 바꾸지 않는다. prior footprint/영속 결과 검증은 Core가 별도 수행해야 한다.
+
+### Core 연결의 정확한 입력·출력·책임 경계
+
+| 접점 | 내부 adapter 동작 | Core/제품 caller의 미완료 책임 |
+|---|---|---|
+| constructor(document, options) | owner_binding_id/binding_id와 features를 복사하고 지원 기능 검사 | AMVP_CONTENT_2의 실제 Projection.features 원본·mirror·semantic hash/profile·발급 operation 검증, 두 claim ID의 정당한 매핑 |
+| isCurrent(): boolean | start/매 scan/IG play 전 동기 true만 수락 | 검증된 owner/session/full document scope·generation·권한 회수·issued operation·effect 전 영속 의무와 연결된 현재 상태를 closure로 제공. 여기서 비동기 인증/DB를 기다리지 않음 |
+| authorizeNavigation({previous_url,next_url}) | 기존 Session이 요구하는 승인에 더해 전후 isCurrent 검사 | Core가 native URL/document/generation을 재검증한 뒤만 동기 true 제공. 미완료면 false/미제공. 이벤트/URL 자체로 승인하지 않음 |
+| onObservation(local snapshot) | 기능별 국소 결과와 binding ID 전달 | 실제 profile/scan/issued operation/요청/epoch/hash 결속, 영속화 및 조회·전송. OBSERVED를 APPLIED로 직접 변환 금지 |
+| invalidate(reason) / releaseFeature(id) / release() | 기존 document 신규 효과 종료·원래 자기 cleanup 결과/미해결 기능 반환 | 신원/세대 회수 시 즉시 invalidate 호출, 정당한 cleanup lease와 prior footprint 검증·remaining claim/observer/resource/media 증거 저장. callback false 감지는 다음 scan 또는 IG play 때이므로 조용한 문서는 caller가 명시적으로 invalidate해야 함 |
+| 새 문서/SPA/BFCache | 이전 adapter 자동 재개 금지, 잔여 의무 보존 | 이전 document 의무 정리 또는 정식 분리 보존, 새 native 검증·새 binding/issued operation·frozen 전달. 이 PR에서 sender/credential receiver나 권한 발급/영속 저장을 새로 구현하지 않음 |
+
+- 신규 Chrome 합성 DOM 시험17/17 PASS(Windows Node24.19.0 / 설치 Chrome156.0.8078.76 / Playwright1.62.1). frozen copy·전체9개 YT dispatch/disabled·독립 해제/다중 owner·stale adapter·caller session/generation/document 변경·SPA 승인/거절·pagehide/pageshow·신규 문서·부분 복원/재시도·foreign document·시작 실패 rollback/실패 의무·callback 오류·다른 ledger 거절 포함. 권한/세대 provider와 media.pause/paused는 모의이며 실제 native generation/오디오 수용이 아니다.
+- 기존 Content 포함 직전 전체199/199 PASS(기존183+신규16, fail/skip0). 이후 adapter 출력 metadata/동일 document ledger 검사와 시험1건을 보강해 최종 신규17/17 PASS; 기존183 Session 경로는 그 후 변경하지 않아 검증 재사용. 최종 전체200건은 새 CI에서 확인하며 로컬200 재실행으로 주장하지 않는다. 계약 legacy-boundary6/6, 전체 Content/test JS 문법, build-chrome-harness 및 diff check PASS. harness에 모듈을 복사하지만 popup/제품 Manifest/receiver에 연결하지 않는다. source/build adapter SHA256 일치.
+- 최초 신규12건 실패는 신규 adapter UUID 정규식에서 한 그룹을 누락한 코드 오류로 바로잡았다. 다음11/12의 나머지1건은 지원되는 /results+YT05를 실패 조건으로 쓴 fixture 오류이며 실제 미지원 /results+YT10으로 변경하고 실패 rollback 반례를 보강했다. 로그를 지우지 않는다. 증거는 채팅 artifact 루트의 adapter-focused.log, adapter-focused-v2.log, adapter-focused-v3.log, adapter-focused-final.log, adapter-content-regression.log, adapter-contract.log.
+- 기존 CI에는 Content 브라우저 시험이 없어 `.github/workflows/content-sessions.yml`을 추가했다. 고정 Node/Playwright·독립 Ubuntu Chromium에서 Content 전체/계약/빌드/구문을 검사한다. 최초 Push/PR 전 원격 CI는 NOT_RUN이며 결과는 PR에서 별도 확인한다. 기존 계약·package/lockfile·Core/Server·제품 activation은 변경하지 않는다.
+- 다음 최소 독립 개발: 제품 receiver를 임의 확장하기 전에 Core의 실제 issued/frozen/native·generation callback 제공과 effect 전 영속 예약/cleanup lease 연결을 담당 윤종민과 확정한다. Content는 이 API를 실제 명령에 매핑하고 결과를 기존 검증기에 제출할 준비가 됐지만, 현재 이 독립 adapter가 native/Core/Server에 연결됐다고 판단하지 않는다. 채지민 복귀 시 기존 Session·모의 경계 시험·미해결 실제 Instagram/YouTube/오디오·BFCache/END 복원 의무를 이 절과 PR에서 인계한다.
+- 상태: 독립 adapter 구현/자동 모의 검증 PASS, 제품 Core 연결 BLOCKED(실제 입력 제공/영속 결속 필요), 실제 Chrome/MV3/Instagram·YouTube 제품 수용/강제 종료/정상 END·복원·재기동 NOT_RUN. `MVP_FINAL_COMPLETE=false`.
+
+## 2026-10-31 IG-01 · PR #56 P2 속성 관찰 수정
+
+- 대체 개발 김다훈, 기존 담당 채지민 유지. 브랜치 `fix/ig-story-attribute-observer-p2`, 시작 기준 #56 `08730c86d91d0b1d3790bc5fafc7a7ca9195ece8`. 로컬 주 저장소 Worktree/브랜치 및 사용자 홈의 navigation-surface 소스 검색에서 인계된 미커밋 수정본은 찾지 못했다. 기존 독립 리뷰 fixture/실패 로그는 회수했고, 사용자 허용 범위대로 정확한 #56 HEAD에서 별도 Worktree로 최소 수정 복구. 앱 Worktree 생성기는 sourceRoot가 채팅 workspace 밖이라는 이유로 거절하여 Git worktree를 사용했다. 기존 작업자의 소스/index/실패 환경은 보존했다.
+- 근거: #56 리뷰 `5722451404` / inline `4431482803`, RC2 `docs/design/additional-mvp-contracts/05_Content_Event_UI.md` 공통 ON/OFF 및 feature-registry AC-IG-01-01~03. 관찰 누락만 수정하며 계약의 제품 수용 상태는 변경하지 않는다.
+- 코드: `navigation-surface.mjs` IG-01 전용 attributeFilter에 `alt`, `draggable` 추가. YouTube 관찰 목록/ClaimLedger/제품 receiver/Manifest/Core/Server는 변경하지 않는다.
+- 신규 브라우저 회귀 2건은 각 속성의 늦은 적격 전환→제한→이탈→복원→재진입→다른 owner 공존 중 이탈을 수동 scan 없이 확인한다. 자기 remaining_targets=0, 다른 owner의 숨김 유지, 마지막 owner 해제 후 원래 `display:flex!important` 복원을 검사한다.
+- 환경: Windows Node24.19.0 / Playwright1.62.1 / 설치 Google Chrome156.0.8078.76 headless. 기존 harness의 임시 브라우저 context와 전 요청 route.fulfill 합성 DOM만 사용했다. Instagram 네트워크/로그인·HOLD Chrome PID/프로필·Native·서비스·DB를 사용하지 않았다. 브라우저 설치/다운로드 불필요.
+- 변경 전 정확한 #56 소스에서 신규 브라우저 2건 **0 PASS / 2 FAIL**(속성만 바꾼 후 숨김 미발생 timeout). 수정 후 같은 2건 **2/2 PASS**. 기존 독립 jsdom6 반례도 원본 **4 PASS / 2 FAIL**(늦은 적격 전환, selector 이탈 미복원)→수정 **6/6 PASS**. 기존 실패 로그는 보존했다.
+- 새로 실행: `node --test --test-concurrency=2 extension/content-tests/*.test.mjs` **183/183 PASS**, fail/skip0. IG23(기존21+신규2), YouTube·ClaimLedger/다중 owner·동적 DOM/SPA·pagehide/foreign document·복원 실패/cleanup 포함. 신규2 단독 결과와 합산하지 않는다. `node --test contracts/additional-mvp/rc1/tests/legacy-boundary.test.mjs` **6/6 PASS**. 변경 JS2파일 `node --check`, `git diff --check`, `node extension/content-tools/build-chrome-harness.mjs` PASS. 빌드된 navigation-surface와 소스 SHA256 일치 `cb027db9b5d587aa62199e944efb780cf8a7a5b04272dea5e2885f64d5c662d1`.
+- 로컬 실행 증거는 이번 채팅 artifact 루트의 `p2-before-browser.log`, `p2-after-browser.log`, `independent-before.log`, `independent-after.log`, `content-regression.log`, `contract-regression.log`에 보존. 합성 브라우저 DOM/CSS 및 모의 media 시험이며 실제 Instagram 제품 수용으로 승격하지 않는다.
+- Git 반영: 검증된 이3파일만 한 수정 Commit/별도 브랜치 Push 후 #56 브랜치 `codex/content-instagram-stories`를 base로 한 별도 수정 PR을 제출한다. #56 원본 브랜치에 직접 Commit/Push하지 않는다. #54(`670647f`)→#56(`08730c8`)→P2 수정의 순차 의존성 유지. 이 수정 PR을 integration에 독립 병합하면 선행 기능까지 섞이므로 금지. #54 승인/병합, #56 담당 반영/새 HEAD 재검토 및 통합은 별도 절차이며 이번에 Merge/리뷰 대리 승인하지 않는다.
+- 상태: P2 구현·합성 자동 검증 PASS / 제품 통합·최종 수용 NOT_RUN. 실제 Instagram·Core/Native·BFCache 재결속·정상 END/재기동·영속 effect/cleanup 증거는 미검증. `MVP_FINAL_COMPLETE=false`.
+- 복귀 인계/다음 최소 작업: 채지민은 이 수정 Commit을 #56에 반영하고 변경된 관찰 경계만 재검토받는다. 이후 별도 요청에서 승인된 Core frozen/document-generation 계약에 맞춘 Content adapter와 실제 관찰/release/남은 cleanup 반환을 진행한다. Instagram 추가 옵션·YouTube 추가 개발은 이 수정 PR에 포함하지 않는다.
+
+## 2026-10-31 IG-01 스토리 · 첫 Instagram 독립 단위
+
+### 최신 제출 상태 · 실제 사용자 재시험 확인
+
+- 최종 nav-3 수정본에서 사용자가 이동 후 정상 동작을 보고했고, 이어 해제 후 화면 복원·직접 재생도 "ㅇㅇ 잘되는데"라고 확인했다. 홈 트레이 숨김/복원·일반 게시물/추천/메시지 보존과 직접 viewer 정지/재생 guard/해제/X 닫기는 앞선 사용자 보고와 구분해 근거로 보존한다. 계정·모든 DOM/지역/브라우저 변형 검증이나 실제 Core/Server 통합 완료로 확대하지 않는다. 아래 대기/실패/미커밋 표기는 각 개발 시점 이력이며 이 절이 최신 사용자 확인 상태다.
+- 사용자 요청: 여러 실제 실패가 있었으므로 리뷰에서 꼼꼼히 확인할 코멘트를 명시해 게시한다. 필수 재검토: href 없는 홈 트레이, 깊게 중첩된 사진/영상 viewer·일반 게시물/DM 제외, HOME→프로필/중간경로→STORIES→다른사람STORIES의 연속성, 재생/소리 및 해제 후 수동 재생, 다른 owner·실패/부분 복원·adoptNode, 무승인/로그인/BFCache의 fail-closed 유지. 합성 PASS만으로 승인하지 말고 실제 구조/사용자 반례와 수용 한계를 함께 검토한다.
+- 게시 후보 자체8파일(IG adapter/시험, 공유 navigation, 시험 build/bootstrap/manifest/popup, 작업카드). 새 Manifest match는 독립 시험 확장에만 Instagram host를 추가한다. 제품 Manifest/Core/Server/공유 Wire는 바꾸지 않는다. 새로고침 자동 재적용/영속 결과·cleanup/제품 Core adapter는 미구현으로 유지한다.
+- 기준 HEAD670647f의 #54는 확인 시 미병합이므로 선행 의존성을 명시한다. 자체 비교는670647f→이번HEAD의8파일이고, 통합 대상 PR 전체 diff에는 아직 #54 변경도 포함될 수 있다. #54 먼저 승인/통합 후 이 PR의 최종 diff·충돌·HEAD를 재확인해야 한다. 원래 #54 브랜치와 다른 담당자 코드는 변경하지 않는다. 자동병합/제품 활성화는 하지 않는다.
+- 최종 소스 근거는 공유 회귀97/97(IG21 포함)·계약6/6·빌드/구문/공백 PASS 및 사용자 재시험 보고. 초기171/89/16/19/20은 각 당시 소스의 이력이고 최신 전수시험으로 합산하지 않는다. 이번 게시 준비는 기록만 갱신하므로 동일 기능 시험을 다시 실행한 것으로 표시하지 않는다. 원격 CI는 게시 후 별도 결과로 확인한다.
+
+### 사용자 실제 NO_TARGET 보완
+
+### 프로필 경유 SPA 제한 연속성 수정
+
+- 사용자 nav-2 캡처: STORIES의 유효한 최종 주소이지만 invalidated.reason=ROUTE_CHANGED/cleanup_pending=false이고 마지막 result는 홈 관찰(media0/null)로 남았다. PAGEHIDE/복원 실패와 구분됐지만 실제 거절된 중간 pathname은 아직 미확보다. 따라서 특정 중간 주소를 실제 원인이라고 확정하지 않는다.
+- 좁은 중간 route whitelist가 /stories/ index·프로필 alias·탐색 등 승인된 무효과 관찰을 종료하는 구조적 문제는 별도 반례1FAIL로 재현했다. supportedRoute를 관찰 수명과 효과 대상 판정으로 분리: 같은 Instagram 문서의 중간 경로는 collect0으로 관찰만 유지하고, 실제 효과는 기존 HOME/STORIES 조건에만 허용한다. accounts/challenge/oauth/login/auth/two_factor 및 host/native reauthorization/pagehide/cleanup failure는 계속 거절한다. 새로운 효과나 Core 권한을 추가하지 않는다.
+- TEST build ig-stories-nav-3, 결과 adapter_revision=ig-stories-observe-3을 표시한다. route 무효화에는 계정명/URL 없이 origin_allowed/route_allowed/reauthorization·path_segment_count/route_family를 남긴다. 일반 YT의 무효화 응답은 바꾸지 않으며 authority 승인 요구 자체는 동일하다. 지원 route가 실패한 실제 원인이 이 변경으로 해결됐는지는 사용자 재시험 전까지 미확정이다.
+- IG21/21 PASS(기존20+중간경로 반례1), 이후 adapter revision 표시를 포함한 공유 영향 회귀/빌드 확인을 진행했다. 이전19/20과 합산하거나 실제 사용자 성공으로 승격하지 않는다. 기존 재생/홈/보호/무승인/BFCache/복원 실패 조건을 재사용한다. 미커밋/미게시 유지.
+- nav-3 최종 공유 영향 회귀7파일97/97 PASS(IG21 포함), fail/skip0, 계약6/6·구문/공백·build PASS. 원본/빌드 IG 모듈 SHA-256 일치 확인. 이는 합성 Chrome이며 사용자 실제 같은 이동 경로 해결은 재시험 대기다. 이번 단계에서 시험 범위를 더 확장하거나 진단기를 새로 만들지 않는다.
+
+- 사용자 실제 재시험에서도 홈→프로필/다른 스토리에서 제한이 끊기고 OLD_SCOPE_CLEANUP_REQUIRED가 지속됐다. 앞선19/19는 합성 경로만의 근거이며 실제 해결 판정을 보류한다. 공통 surface가 scope를 닫는 원인은 PAGEHIDE/ROUTE_CHANGED/ROUTE_CLEANUP_FAILED로 제한되지만 TEST APPLY의 throw/catch가 invalidated를 숨겨 실제 사유를 알 수 없었다.
+- 이번 추가 변경은 TEST handler 진단뿐이다. IG 오류에도 invalidated 원문 사유/result와 test_build=ig-stories-nav-2, 시험 문서 UUID, 익명 page_kind(HOME/STORIES/DM/OTHER)를 유지한다. URL/계정/본문/credential은 새로 반환하지 않는다. 실제 문서 교체/현재 build 불일치와 내부 lifecycle을 구분하기 위한 최소 자료이며 자동 재시작·가짜 재승인·오류 무시는 추가하지 않는다. 기존 pagehide/복원 실패 차단을 유지한다.
+- 진단 반례1건에서 pagehide 후 오류가 reason/build/document ID를 보존하고 cleanup을 계속할 수 있음을 확인했다. IG 전체20/20(기존19+진단1) 실행은 합성이며 실제 사용자 invalidated.reason을 받아야 원인 확정·제품 로직 보완이 가능하다. 원인 미확정/실제 실패 상태를 유지하고 수정 완료로 보고하지 않는다. 시험 확장 재빌드 후 같은 사용자 경로/오류 JSON 확인 요청, Commit/Push 없음.
+
+- 사용자 실제 홈→다른 사람 프로필→스토리 진입에서 영상이 보이고 재적용 때 OLD_SCOPE_CLEANUP_REQUIRED가 발생했다. 원인은 IG-01 routeAllowed가 HOME/STORIES만 허용하여 중간 프로필에서 controller를 닫은 것. 명시적 모의 재승인 callback이 있어도 프로필 route에서 닫히는 반례를 재현했다(수정 전1FAIL; 최초 기본 거절 callback으로 실행한 초안과 명시적 true/3초 timeout으로 고정한 반례를 구분).
+- supportedRoute에 프로필/프로필 탭·게시물·Reel 단일 페이지·DM의 중간 경로를 추가하되 그 페이지의 collect는0이므로 어떤 미디어/프로필도 제한하지 않는다. 동일 문서 내 매 이동은 기존 authorizeNavigation의 동기 true 및 host/문서 경계를 여전히 요구한다. 로그인/외부 host/새 문서/pagehide·복원 실패는 계속 닫는다. 기능을 계속 켠 상태의 중간 페이지 NO_TARGET은 적용 성공이 아니라 대상 관찰 대기이며, STORIES에서 대상0은 계속 미검증/실패다.
+- 직접 IG17/17에 이어 실제 시험 popup 경로 및 이동 중 복원 실패2건을 추가했다. 최종 IG19/19 PASS(fail/skip0): 홈1회적용→프로필→스토리→다른사람스토리 자동 재제한, 실제 TEST handler의 profile STATE/재APPLY 무오류, 이전 복원 실패 시 새효과 차단/의무 재시도, 기존 영상·홈·보호·타owner·BFCache/무승인 거절 포함. DOM/영상정지 근거는 합성이며 실제 사용자 동일경로 재시험이 남는다.
+- 이번 최종 수정은 IG adapter/해당 시험/popup 설명/작업 기록이며 공유 navigation/Core/Wire/제품 Manifest는 추가 변경하지 않는다. 이전89/89 및 전체171은 당시 소스 근거로만 보존하고 이번 재실행으로 합산하지 않는다. 새로고침 자동 재적용/영속 Core 연결은 계속 미구현이다. Commit/Push/PR/병합 없음, 최종 시험 확장 build 후 사용자 확인 대기.
+
+- 홈 숨김/해제 및 일반 게시물·추천·메시지 보존은 사용자가 "오 됐다", "둘다 됐어"라고 확인했다. 직접 viewer는 이후 계정/형태별 NO_TARGET/재생 지속으로 실패가 남았다. 시간바 진행만으로 media pause 성공/실패를 확정하지 않는다.
+- 사용자 세 번째 전체 section에서 실제 video를 확인했다. video는 portrait px frame보다11겹 이상 아래이고 프로필 img는 별도32px 링크 안에 있었다. 최초 fallback의 부모4단계 제한 때문에 video를 찾지 못하는 코드 결함을 익명 구조로 재현(신규1FAIL)했다. 4단계 상한을 제거하되 STORIES route/세로형 frame/게시물·보호 UI·interactive ancestor 제외는 유지했다. 원본 계정/얼굴/URL/휘발 class를 시험에 넣지 않았다. 기존 직접사진·media pause 실패·타문서/owner/보호 범위를 포함한 IG16/16을 최종 실행했고, 영상 replay guard/가리기/해제와 avatar/닫기 보존을 합성으로 확인했다. 실제 Instagram 같은 영상/소리 재시험은 아직 대기이며 Commit/Push는 하지 않는다.
+
+- 직접 viewer도 실제 사용자 화면에서 NO_TARGET/미디어0·재생 지속을 확인했다. 제공된 두 번째 HTML은 video가 아닌 img이며 일반 div(명시적 세로형 px height/width) 안에 있고 main/dialog 역할이 없었다. 이를 익명 구조로 재현해 사진·동형 합성 영상 반례2 FAIL을 확인했다. STORIES route에서만 보호/게시물/링크/버튼 밖 미디어의 가까운 세로형 div frame을 검사하는 fallback을 추가했다. img는 빈 alt/draggable=false를 요구한다. 댓글/편집 UI를 포함하는 frame은 제외한다. 원본 CDN URL/이미지/계정명은 fixture에 넣지 않았다.
+- 보완 후 IG 전용15/15 PASS, fail/skip0. 사진 표시/복원과 동형 합성 video의 pause·재생 guard·일반 게시물 보존을 확인했다. 실제 사용자가 준 것은 사진 HTML이므로 실제 video 구조/재생·소리 제한 성공으로 승격하지 않는다. 이전89/89는 fallback 전 회귀 근거이고 이번 변경은 IG 모듈/해당 시험뿐이므로 전체 회귀를 재실행했다고 주장하지 않는다. 최종 build/공백 검사 확인 후 사용자 사진/영상 재시험 대기, 미커밋/미게시 유지.
+
+- 실제 Instagram 사용자 캡처에서 홈 스토리가 남고 IG-01 NO_TARGET/eligible0/restricted0/error0을 확인했다. 초기 독립 링크 fixture11/11·전체171 PASS가 실제 DOM 성공을 보장하지 않음을 기록한다. 사용자 제공 outerHTML은 href 없는 div[role=button][aria-label] + ul/li + canvas + role=link/img 형태였다. 계정명·CDN URL·휘발성 class는 코드/fixture에 저장하지 않고 익명 구조만 사용한다.
+- 홈 탐지에 한국어/영어 스토리 접근성 라벨과 목록·ring/profile 구조를 함께 검증하는 경로를 추가하고 기존 URL 링크 경로를 보존했다. 일반 프로필/게시물/nav/aside/FOCURVE 영역을 제외한다. IG-01 observer에만 aria-label/role 변화를 추가하여 재사용된 일반 버튼으로 바뀌면 자기 claim을 회수한다.
+- 새 구조 반례2건에서 기존 탐지의 실패를 확인한 후 보완했다. 보완 중 한국어 HTML fixture에 charset이 없어 라벨이 깨지는 별도 시험 환경 문제를 확인하고 UTF-8 meta를 추가했다. 최종 IG13/13 PASS(fail/skip0): 제공 구조의 익명 버튼2개 제한/복원 및 label 재사용·중첩 FOCURVE 보호·일반 profile/article/aside 보존. 합성 Chrome 결과이며 실제 Instagram 사용자 재시험은 대기다.
+- Computer Use는 현재 브라우저 URL을 확신할 수 없어 도구가 중단됐으며 이후 앱 입력/추가 접근을 하지 않았다. 사용자 제공 DOM으로만 진행했다. 제품 Core/영속화·공용 계약 변경·Commit/Push는 하지 않는다. 기존 직접 viewer/미디어 시험은 합성이며 실제 viewer 구조는 추가 사용자 확인이 필요하다.
+- 보완 후 영향 회귀: IG/흑백/홈/상단바/구독/탐색/종료카드 7파일 **89/89 PASS**, fail/skip0. IG13건은 포함돼 있어 합산하지 않는다. 기존 전체171은 보완 전 근거이며 보완 후 전체173 재실행으로 기록하지 않는다. build/JS구문/공백 검사 PASS, 실제 사용자 재시험과 게시는 대기다.
+
+- 담당 채지민, `codex/content-instagram-stories`, clean 시작 HEAD `670647f41f4e9b9c2380faede496815aa2f3d6a8`(#54 흑백). 사용자 확인에 따라 Instagram 필요성 협의는 종료됐고 확정6옵션을 유지한다. 이번에는 IG-01 하나만 구현하며 Reels/탐색/댓글/제안/흑백의 추가 구현은 하지 않는다. #54 브랜치/HEAD/리뷰는 보존한다. 향후 PR은 #54 선행 관계와 실제 통합 diff를 확인해야 한다.
+- 기준 RC2 `05_Content_Event_UI.md`·feature-registry AC-IG-01-01~03: HOME/STORIES의 스토리 트레이/직접 viewer 미디어 제한, DM/일반 게시물 보존, 자기 claim 복원·SPA/native 재검증. `instagram-stories.mjs`의 InstagramStoriesSession은 기존 NavigationSurfaceSession/ClaimLedger를 재사용한다. profile IG-01에만 Instagram host를 허용하고 기존 YT host/옵션 경계는 그대로 유지한다.
+- 홈은 정규 Instagram /stories/<user>[/item] 링크만 숨긴다. article/nav/header/footer/aside/FOCURVE UI 및 그 보호 영역을 포함하는 링크는 제외한다. 직접 route는 main/role=main/dialog/presentation의 img/video/audio만 숨기며 프로필/닫기 버튼·일반 게시물·navigation을 보존한다. Instagram 실제 DOM의 모든 변형을 확인한 selector가 아니며 href 없는 스토리 버튼·다른 viewer 구조는 NO_TARGET/미지원으로 남길 수 있다. 실제 사용자 재현 후 최소 selector 보완이 필요하다.
+- 직접 스토리의 video/audio는 pause/readback과 play guard로 정지한다. paused 실패는 FAILED로 반환하며 국소 성공을 위조하지 않는다. 해제는 자기 display/inert claim을 복원하고 마지막 자기 복원 확인 후 guard를 제거한다. 해제 시 자동 재생을 강제하지 않고 사용자가 직접 재생한다. 다른 owner의 제한/guard는 보존한다. 페이지 이동·adoptNode·복원 실패 의무는 기존 공통 원장에 따른다.
+- 같은 문서 이동도 authorizeNavigation의 명시적 동기 true 없이는 재적용하지 않는다. DM/login/posts 진입으로 새 제한을 부여하지 않으며 old scope는 닫는다. pagehide는 새 적용을 닫고 pageshow만으로 재개하지 않는다. 첫 제품 연결의 native sender/frozen/issued operation/DOM 전 영속 의무·Core 결과 저장은 여전히 미구현이다. 결과는 local_only/native_verified:false/OBSERVED·NO_TARGET·FAILED이며 Server 성공/접근 Event를 만들지 않는다.
+- 기존 시험 build/bootstrap/popup을 재사용하고 Instagram TEST 명령3개를 추가했다. 시험 Manifest에 instagram.com/www.instagram.com의 content_scripts/WAR match만 추가한다. 제품 Manifest/Core/Wire/API/DB는 수정하지 않는다. activeTab 권한 유지. 시험 bootstrap의 임의 ID/모의 SPA 승인은 제품 인증이 아니다. 실제 새로고침은 초기화되고 수동 재적용이다.
+- 최초 전용 시험10PASS/1FAIL은 avatar 이미지의 크기가0인 fixture 때문에 isVisible 기대가 틀린 것이었다. fixture 크기를 명시한 뒤11/11 PASS. 별도로 보호 UI가 anchor 내부에 삽입될 때 ancestor를 숨기지 않도록 collect를 보완했다. 실제 Instagram 성공으로 보고하지 않는다. 영상 pause/play 반례는 합성 property/method를 쓰고 DOM/CSS는 설치 Chrome에서 검사한다.
+- 자동 명령: PLAYWRIGHT_MODULE/CHROME_EXECUTABLE 지정 후 bundled Node24 `--test extension/content-tests/instagram-stories-browser.test.mjs`. 전체 관련 회귀/계약/빌드 최종 결과는 후속 기록한다. 실제 로그인 Instagram·실제 영상/소리·내부 이동·DM·해제 복원은 사용자 시험 대기. 지역/계정별 DOM/브라우저·BFCache·Core/Server/영속 cleanup는 미검증이다.
+- 미커밋/미게시, Instagram trial 대상 추가로 사용자 extension reload·사이트 접근 확인이 필요할 수 있다. 다음: 자동 영향 회귀 → 사용자 Chrome 체크 → 필요한 DOM 보완 → 게시 범위 설명/사용자 승인. 추가 옵션을 한꺼번에 확장하지 않는다.
+- 최종 자동: Windows Node24 + 설치 Chrome headless/Playwright, `--test --test-concurrency=2 extension/content-tests/*.test.mjs` **171/171 PASS**(기존160+IG11), fail/skip0. IG11/11 단독 결과와 겹치므로 합산하지 않는다. legacy-boundary **6/6 PASS**, build·변경JS구문·공백 검사 PASS. build는32버튼/스토리 모듈/Instagram match를 확인했다. 실제 Chrome 확장 sender/권한과 Instagram 실제 페이지는 아직 사용자 시험 대기이며 합성 결과를 제품 수용으로 바꾸지 않는다. 변경은8파일/미커밋, #54는670647f 그대로다.
 
 ## 2026-10-31 YT-09 흑백 · 로컬 구현/사용자 확인 대기
 
@@ -320,9 +585,102 @@
 - 종료카드효과코드/nav는70e40d3와동일, 자동재생/공통원장/watch는39새HEAD와동일. manifest는최신공용Content0.1.1을그대로선택해39대비차이가없다. 따라서47자체diff는이전8파일에서manifest가빠진7파일이다(효과/시험/nav/build/bootstrap/popup/기록). #39가미병합인동안대상통합전체diff에는선행39도보인다.
 - 설명한검증/범위로사용자승인후같은PR47에새커밋·Push하고새HEAD를게시한다. 새HEAD의공유연결부는담당재확인을받고39먼저병합→47최종diff순서를유지한다. 통합/develop병합·자동병합·기존리뷰의새HEAD승격은하지않는다. 사용자/다훈의과거정상및8/8은출처구분하여보존하고현재실제제품연동PASS로바꾸지않는다.
 
+### 2026-11-01 IG-04 사용자 재시험: 답글 토글·릴스 행 외곽 보완
+- 사용자 화면에서 답글 보기(N개), 릴스 댓글 avatar/heart 잔류 확인. reply toggle의 괄호 개수 형식을 추가하고 독립 control도 claim한다. 정확한 comment permalink를 가진 행은 동일 identity wrapper 안에서 avatar/heart까지 확장하되 다른 행·본문·닫기·영상 좋아요는 제외한다. Core/공용 계약 변경 없음.
+- 중간 검사에서 protected UI 및 recycled 행 경계 회귀를 발견해 확장 guard를 보완했다. 최종 댓글 시험24/24 PASS, 계약6/6 PASS, build/diff 검사 PASS. 설치 Chrome headless 합성 DOM/모의 권한이다. 이전 전체277은 이전 소스 근거이며 이번 전체 회귀 재실행으로 표시하지 않는다.
+- 시험판0.1.9, test_build ig-comments-controls-4. 실제 Instagram 사용자 재시험 대기; 제품 Core/MV3/Native/Server NOT_RUN. Commit/Push 없음. MVP_FINAL_COMPLETE=false.
+
+### 2026-11-01 IG-04 사용자 최종 확인
+- 사용자가 시험판0.1.9 보완 후 '문제 없네'로 정상 보고. 직전 안내한 댓글/GIF/답글/프로필/댓글 하트/답글보기 숨김, 영상·게시자·영상 좋아요·닫기 보존 및 해제 복원의 사용자 실행 결과로 기록한다. 에이전트 직접 실제 Instagram 시험이나 Core 통합 성공으로 승격하지 않는다.
+- 게시 준비: IG04 module/24개 시험, 기존 observer·adapter 등록, TEST harness 및 본 기록의9파일만 포함한다. 선행 #65(4daf3d3)와 #64→#61→#58 의존성을 유지한다. 실제 issued/native·영속 cleanup·제품Core/MV3/Server 수용 NOT_RUN, MVP_FINAL_COMPLETE=false.
+- 게시 직전 최종 전체 Content 회귀279/279 PASS(댓글24 포함), 실패/skip0. Node24·설치 Chrome headless/Playwright 합성 DOM·모의 권한. 명령 node --test --test-concurrency=2 extension/content-tests/*.test.mjs, 로그 ig-comments-publish-regression.log. 계약6/6·빌드·diff 검사 PASS. 원격 CI는 Push 후 별도 확인 대상이다.
+
+### 2026-11-01 PR71 P2 mixed listitem 경계 수정·사용자 시험 준비
+- 담당 채지민, codex/content-instagram-comments, 시작2a22fcb82af5249e2dc23c92bea547fc0eeef0d4 / PR71 discussion4434481327. 선행 #65(4daf3d3) 그대로, 다른 branch/worktree 보존. 기준 IG04/AC-IG-04-01~03 및 RC2 05_Content_Event_UI: 댓글만 제한하고 게시물 사진/본문/게시자/영상 좋아요·미디어 보존, 자기 claim 해제/복원.
+- 원인: comment permalink의 closest li/role=listitem을 무조건 댓글 행으로 반환해 mixed post까지 hide/inert. 리뷰는 jsdom 합성 반례였으며 실제 사용자 Instagram 버그 관측으로 바꿔 기록하지 않는다. 설치 Chrome 합성 DOM에서 LI/role=listitem × 좁은 댓글 증거 없음/검증된 DIV 댓글 혼합4건을 수정 전0PASS/4FAIL로 독립 재현(ig-comments-post-before.log).
+- 변경: semantic shortcut은 고유 comment identity와 direct inline 구조·안전 경계를 갖춘 좁은 행에만 허용. 이미지/p/button/중첩 container 등을 가진 listitem은 자동 채택하지 않고 기존 DIV 증거 경로로 검증된 좁은 댓글만 찾는다. 명확하지 않으면 NO_TARGET이며 게시물 전체를 감추지 않는다. 기존 단순LI·GIF/답글·프로필/댓글 하트·토글·owner/cleanup 의미 보존.
+- 수정 후 기존24+mixed4=댓글28/28 PASS. 이어서 inline행→mixed post 재활용 시 자기 claim 회수/다른 owner 보존/원래 display 복원1건을 추가하고 전체 Content 회귀 실행 중. 계약6/6·build·효과 모듈 구문·diff PASS. 최신 시험판0.1.10/test_build ig-comments-post-boundary-5. 실제 사용자 재시험/새 HEAD CI는 아직 미실행. Commit/Push/Approve/Merge 없음. 제품Core/MV3/Native/Server NOT_RUN, MVP_FINAL_COMPLETE=false.
+- 최종 Node24·설치 Windows Chrome headless/Playwright 합성 DOM 전체 Content284/284 PASS(댓글29 포함), fail/skip0. 명령 기존 PLAYWRIGHT_MODULE/CHROME_EXECUTABLE 설정 후 node --test --test-concurrency=2 extension/content-tests/*.test.mjs, 로그 ig-comments-post-full.log. 혼합4반례0/4→4/4, 동적 재활용1/1 및 기존24댓글·다른 Content 기능 보존. 계약6/6/build/구문/diff 별도PASS. 문서 추가 후 기능 소스 변경 없음. 다음 사용자0.1.10 실제 게시물/릴스 제한·복원 확인→게시 승인→같은PR71 Push/새HEAD CI/다훈 재검토.
+- 사용자0.1.10 첫 화면은 댓글이 남았고 OBSERVED1/1(errors0) 보고. 이후 제공 HTML과 화면 postID가 달라 같은 대상을 확정하지 못했으며 추가 상태9/9도 시각 정상으로 승격하지 않는다. 제공 HTML의 구조(aria-disabled avatar button/linked avatar/H3/body BR/time permalink/Like+Reply)를 익명 fixture로 추가해 mixed post 보존·행 제한·복원 PASS. 실제 계정/본문/CDN 원문은 저장하지 않는다.
+- 이번 단계에서 추가 제품 selector 수정은 하지 않았다. 제공 행 구조는 기존 P2 수정 소스에서 이미 제한되므로 실제 누락 원인을 추정해 넓은 listitem 선택을 되돌리지 않는다. TEST harness에 현재 post와 일치하는 댓글 permalink 수/실제 표시된 permalink 수만 추가해 실제 DOM과 URL 불일치/후보 누락을 구분한다. URL/계정/본문 반환 없음. sender gate 유지.
+- 댓글 최종30/30 PASS(기존29+제공 구조1, TEST diagnostics 적용/해제 개수 검사 포함), build/diff PASS. 앞선 전체284는 제품 소스 동일성으로 과거 근거 유지; 현재 전체285 실행으로 표시하지 않는다. 시험판0.1.11/ig-comments-post-check-6. 다음 동일 화면에서 적용·시각 확인·상태 diagnostics 확인 필요. 미커밋/미게시 유지.
+
+### 2026-11-01 IG04 P2 수정 후 semantic 댓글 행 누락 보완
+- 사용자0.1.11: Reels 댓글 일부/profile 잔류와 일반 게시물 댓글 목록 미제한. 상태OBSERVED92/92/errors0이나 현재 post permalink48개 중 표시1개. 전체수용FAIL로 유지하며 eligible 수만으로 성공 판정하지 않는다.
+- P2 수정의 inline-only semantic shortcut이 정상적인 중첩 LI/role=listitem 댓글도 제외할 수 있음을 별도 익명2반례로 확인(수정 전0PASS/2FAIL). 실제 사용자 전체 DOM이 이 구조와 동일하다고 단정하지 않는다. 사진/본문을 가진 mixed post를 무조건 선택하던 구형 동작은 복구하지 않는다.
+- rich semantic 행에 exact 단일 comment/time+profile+본문+명시Reply 근거를 요구하고, p/picture/중첩listitem/입력창/미디어/본문 이미지·복수댓글 조상을 제외해 검증된 댓글만 제한한다. 프로필·댓글 하트는 같은 행에서 처리. 기존DIV/GIF 경로·원장/권한/cleanup·다훈 mixed post 반례 보존. 시험판0.1.12/ig-comments-rich-list-7, diagnostic counts 유지.
+- 전체 회귀 실행 중. 사용자 실제 재시험·제품 Core/MV3/Native/Server NOT_RUN, 미커밋/미게시 유지. MVP_FINAL_COMPLETE=false.
+- 최종 전체 Content287/287 PASS(댓글32 포함), 실패/skip0. 기존환경 Node24/Windows 설치Chrome headless/Playwright 합성 DOM, node --test --test-concurrency=2 extension/content-tests/*.test.mjs, ig-comments-rich-list-full.log. 새 semantic2반례0/2→2/2, mixed post4건·기존GIF/프로필/하트/다른owner·복원/YouTube 회귀 포함. 계약6/6/build/구문/diff 별도PASS. 실제 사용자0.1.12 재시험 전 성공 확정 금지.
+
+### 2026-11-01 IG04 홈 게시물 hashtag-only 본문 누락
+- 사용자0.1.12: 릴스 목록 댓글 정상, 홈에서 연 일반 게시물은 답글만 숨고 부모 댓글 잔류. 실제 화면은 hashtag-only 댓글 다수와 일반문장 댓글이 혼합됨. 정상 릴스 보고는 사용자 실행으로 한정, 홈 전체 수용 실패 유지.
+- 확인된 원인: bodyContent가 @mention 링크는 본문으로 인정하나 #hashtag 링크만 있는 span은 일반 text walker에서 anchor text를 제외해 누락. 익명 hashtag-only classic 행 반례를 수정 전0/1FAIL로 확인한 뒤 @/# 링크 본문 근거를 허용. 이것은 본문 근거만 보완하며 exact comment/time/profile/행 경계 검증·mixed post 거절은 그대로다. 사용자 화면의 모든 잔류 원인이 이 한 가지라고 단정하지 않는다.
+- 수정 후 댓글33/33 PASS(신규hash1+기존32), 계약6/6/build/diff PASS. 기존 릴스/GIF/답글·mixed post 보존·해제 복원 포함. 이번 전체 Content 재실행 안 함; 직전287은 이전 source 이력으로 구분. 시험판0.1.13/ig-comments-hashtag-8. 다음 사용자 동일 홈 게시물 부모댓글·프로필·하트 제한/해제와 게시물 보존 확인. 미커밋/미게시, 제품Core/MV3/Native/Server NOT_RUN, MVP_FINAL_COMPLETE=false.
+
+### 2026-11-01 IG04 게시물 조상 경계에서 정상 댓글 행을 버리는 문제 수정
+- 사용자0.1.13: 현재post permalink15/15가 전부 표시되고 댓글 잔류. OBSERVED14/14는 부모댓글 수용 성공이 아니며 사용자실패 기록 유지.
+- 확정 반례: linked avatar를 포함한 정상 댓글 행을 찾은 후 H2 caption/다른 avatar가 있는 큰 post parent로 올라갈 때 unsafe parent의 외부 avatar 때문에 return null하여 정상 행까지 폐기. 기존 단일행 fixture에는 enclosing post author/profile 경계가 없어 놓쳤다. 신규 익명 shared-caption/복수avatar 반례 수정 전FAIL→후PASS.
+- 수정: 안전한 avatar 포함 댓글 행이 이미 확인됐으면 unsafe post에서는 확장을 중단하고 좁은 행을 유지한다. 자기 avatar wrapper 안에 보호UI가 있는 불완전 행은 기존 거절 유지. mixed listitem/본문사진/게시자/게시물 좋아요 보존과 릴스/GIF/다른owner/cleanup 의미를 바꾸지 않는다.
+- 추가 직접 재현: 사용자 최신 outerHTML을 메모리로 읽고 URL 경로만 익명 sample로 치환, post avatar+H2+photo+Like enclosing DOM에서 설치 Chrome으로 구 guard/new guard를 비교. before restricted0/commentHidden false → after restricted1/commentHidden true, postHidden false 및 release restored true 모두 확인. 실제 원문/계정/댓글/CDN은 Git에 추가하지 않았고 ignored build의 진단 스크립트만 사용, 외부 리소스 요청은 차단. 실제 Instagram 전체문서 수용과 구분한다.
+- 댓글34/34·계약6/6/build/diff PASS, 전체 Content 재실행하지 않음(직전287은 이전 소스 이력). 시험판0.1.14/ig-comments-ancestor-9. 다음 사용자 같은게시물 실제 댓글·프로필·하트 제한과 해제 재시험. 미커밋/미게시, 제품Core/MV3/Native/Server NOT_RUN, MVP_FINAL_COMPLETE=false.
+
+### 2026-11-01 사용자 요청 0.1.9 기준 릴스 잔여 행 보완 시험판
+- 사용자가 0.1.9 복귀 후 홈 정상·릴스 일부 본문은 없고 프로필/시간/좋아요/답글 잔류 보고. 신규 제공 outerHTML의 본문 DIV는 비어 있고 exact comment/time·linked avatar/동일 author·Reply/Like만 남아 있다. 원래0.1.9 bodyContent 필수조건이 이 행을 누락한다.
+- 기존2a22fcb source를 ignored extension/build/comments-baseline-2a22fcb에 보존·재생성하고 그 사본에만 emptyCommentRow를 추가했다. exact comment/time/oneComment 기존 검증 유지, 동일 profile avatar/author+명시Reply·본문이 실제 공백인 경우만 허용하고 post p/h1/h2/media/input·다른 body image는 거절. 사용자 요청대로 누적 P2 후보 소스를 이 시험판에 섞지 않았다.
+- baseline 신규 empty 반례 수정 전FAIL→후PASS. 기존24+empty1=25/25 PASS, 설치Chrome 합성DOM. 실제 제공HTML도 격리 wrapper에서 구판 댓글행 미숨김→신판 숨김·복원, 게시물 유지 확인. 최초 실제HTML 진단은 fixture charset 누락으로 한국어Reply가 깨져 실패했으므로 meta UTF-8을 추가해 동일 원문으로 비교했으며 제품 검사를 완화하지 않았다.
+- Chrome의 기존 extension/build/content-harness만 baseline 보완판으로 갱신. 버전0.1.9.1 / ig-comments-baseline-empty-1. 현재 tracked working tree에는 이전 P2 후보0.1.14가 보존되어 있으며 시험판의 empty 보완은 아직 그 후보에 통합하지 않았다. 사용자 시험 성공만으로 이 둘이 동일하거나 PR71 P2가 해결됐다고 기록하면 안 된다. 다음은 baseline 보완 실제 사용자 시험→정상본과P2 안전수정을 반례 기반으로 별도 정리한 뒤 게시승인. Commit/Push 없음, 기존 #71 그대로, MVP_FINAL_COMPLETE=false.
+
+### 2026-11-01 정상 확인 baseline0.1.9.1 보존 / PR71 P2만 재정리
+- 사용자 baseline0.1.9.1에서 기능 정상 보고 후 P2도 정상기능 보존하며 수정 지시. 누적 실패 후보 source/test/harness는 ignored build/ig-comments-previous-candidate-preserved에 보존하고, 정상 baseline 사본의 효과코드/시험판을 tracked 경로로 다시 가져와 최소 변경했다. root/타 worktree/선행65는 보존.
+- 기준 효과코드는 사용자 확인0.1.9.1과 byte 비교했으며 차이는 commentRow semantic 선택과 rejected semantic ancestor에서의 검색/확장 중단뿐이다. 기존 DIV/emptyCommentRow/본문/GIF/릴스/ClaimLedger/해제/권한/observer 로직은 baseline 그대로다. 과거실패후보의 hashtag/ancestor/diagnostics 등 일괄 반영하지 않았다.
+- P2 수정: LI/role=listitem도 단일 comment identity·안전 row·post 사진/본문/중첩 list·입력창 제외를 확인하고 simple inline 또는 exact time+profile+Reply 구조만 허용. 본문이 hashtag/비어 있어도 올바른 semantic 댓글 행은 보존한다. mixed post 조상은 선택하지 않고 그 아래 좁은 검증된 DIV만 찾으며 거절된 row 경계를 넘지 않는다.
+- baseline P2 반례 실행0PASS/5FAIL(초기 후보의 hashtag 관련1 포함)을 보존. 최종 제출시험은 baseline기존24+empty1+P2 mixed4+structured LI text/hashtag/empty3으로 재정리했다. 과거 탐색성 fixture/진단기의 결과를 최종 후보수에 합산하지 않는다. 강화된mixed반례는 post author avatar/H2/photo/본문/Like 보존·댓글 행만 제한/복원까지 확인한다.
+- 최신시험판0.1.9.2 / ig-comments-baseline-p2-2. 전체 회귀 실행 중, 계약6/6·빌드 PASS. 사용자 새 후보 재시험·원격CI 미실행, Commit/Push/Merge 없음. 제품Core/MV3/Native/Server NOT_RUN, MVP_FINAL_COMPLETE=false.
+- 최종 전체 Content287/287 PASS(댓글32 포함), fail/skip0. Node24/설치Windows Chrome headless/Playwright 합성DOM·모의권한. 명령 기존환경 node --test --test-concurrency=2 extension/content-tests/*.test.mjs, 로그 ig-comments-baseline-p2-full.log. 별도계약6/6/build/구문/diff검사 PASS. 실제 unpacked module/source hash동일 확인. 이전0.1.14의287과 다른 후보이며 혼합하지 않는다. 다음 사용자0.1.9.2 홈·릴스·빈댓글 정상과 게시물보존/복원 확인→게시승인→같은PR71 새HEAD/CI/다훈 독립재검토.
+
+## 2026-11-01 PR71 중첩 댓글 근거와 게시물 경계 재수정
+- 담당 채지민 / codex/content-instagram-comments / 시작 9a6ce8542efe054f40f087baff8059b803d406a1. review5727088612의 span 본문+중첩 exact time/Reply 구조를 LI/role=listitem 각각 설치 Windows Chrome 합성 DOM에서 재현: 수정 전 0/2 PASS, 게시물 전체 숨김 FAIL.
+- rich semantic 행의 중첩 permalink column 바깥에 독립 본문/비프로필 이미지가 있으면 전체 행을 선택하지 않는다. avatar/author/행 control은 허용하고 기존 좁은 DIV 탐색은 유지한다. flat GIF 댓글의 이미지 허용을 되돌리지 않는다. 기존 GIF LI/hashtag DIV/외부 ancestor 누락 수정과 빈 댓글, owner·cleanup·복원 구현은 유지한다. 공용 계약·ClaimLedger·NavigationSurface·Core는 수정하지 않는다.
+- AC-IG-04-01~03 기준: 댓글 제한과 게시물/좋아요 보존을 동시에 검사. 댓글 Chrome 합성 시험37/37(기존35+새2), 계약6/6 PASS. 전체 Content 회귀는 실행 중이며 최종 결과를 아래에 기록한다. 시험판0.1.9.4 / ig-comments-nested-boundary-4 빌드·구문·공백 검사 PASS. 이번 사용자 재시험/원격CI/실제Core·MV3·Native·Server 수용 NOT_RUN. Commit/Push 전 사용자 시험 대기, #56과 통합 충돌은 이번 수정에 포함하지 않음. MVP_FINAL_COMPLETE=false.
+
+- 최종 전체 Content292/292 PASS(댓글37 포함), fail/skip0. 기존 Node24/Playwright/설치Chrome headless 환경에서 node --test --test-concurrency=2 extension/content-tests/*.test.mjs 실행, ig-comments-nested-boundary-full.log 보존. 계약6/6은 별도 실행. 사용자 실제 Instagram 정상 보고와 원격CI는 이 새 후보에서 아직 없으며 과거 결과를 승격하지 않는다.
+
+- 사용자 시험판0.1.9.4에서 안내한 홈/릴스 댓글 제한·게시물 사진/영상/본문/게시자/게시물 좋아요 보존·해제 복원을 확인 후 'ㅇㅇ 문제없어' 보고. 사용자 실행 결과이며 에이전트 독립 실제 제품 검증으로 승격하지 않는다. 사용자 게시 동의 후 이번6파일만 Commit/Push 진행. 새HEAD 원격CI는 게시 후 별도 확인하며 #56 수정·통합 충돌 해결·병합은 포함하지 않는다.
+
+## 2026-11-01 PR71 정상 댓글 누락 3건 재수정
+- 담당 채지민, codex/content-instagram-comments, 시작4ebc72fb0da5a9fbbc8ab46bac3825808a6550fd. review5726885645의 GIF LI/hashtag-only DIV/외부 post ancestor3반례를 별도 익명Chrome 시험으로 추가하여 수정 전0PASS/3FAIL 확인. 기존 사용자정상0.1.9.1/0.1.9.2 및 P2 mixed-post 안전수정은 유지한다. #65선행 및 통합충돌은 다훈관리, 임의 merge/다른PR 수정 없음.
+- GIF LI: 기존 단일comment identity/row안전/post신호 거절·exacttime/profile/명시Reply 근거를 유지하면서 rich semantic 행의 body image를 허용. simple inline shortcut은 기존 avatar-only 기준 유지. 본문이 비어 있는 정상 semantic행도 기존 지원 그대로다.
+- hashtag DIV: 기존 @mention과 별도로 #로 시작하는 같은Instagram local /explore/tags/<tag>/ 링크만 본문 근거로 허용. URL/본문/계정 데이터를 반환하거나 저장하지 않는다. LI hashtag PASS를 DIV지원 증거로 대체하지 않는다.
+- ancestor: 외부 post의 unsafe/다른avatar로 인해 완성된 좁은 댓글을 버리지 않고 다음 기존break로 확장만 중단한다. 자기avatar wrapper에 보호UI가 들어 있는 불완전 column은 기존거절 유지. rejected semantic row 경계와 mixedpost보호는 유지.
+- 첫 수정 검사에서 semantic 빈 본문에 추가 body조건을 요구한 후보가 기존회귀1건에 실패해 해당 추가조건을 제거했다. 최초실패로그 ig-comments-three-review-after.log 보존. 최종전체회귀 실행 중; 계약6/6/build/구문/diff 별도PASS. 시험판0.1.9.3/ig-comments-review-three-3. 실제 사용자재시험/원격CI 미실행, 미커밋/미게시. 제품Core/MV3/Native/Server NOT_RUN, MVP_FINAL_COMPLETE=false.
+- 최종 Node24/설치Windows Chrome headless/Playwright 합성DOM 전체 Content290/290 PASS(댓글35 포함), 실패/skip0. 명령 기존환경 node --test --test-concurrency=2 extension/content-tests/*.test.mjs, 로그 ig-comments-three-review-full.log. 리뷰3반례0/3→3/3, 기존32댓글·mixedpost·empty릴스·owner·복원/YouTube 회귀 포함. 계약6/6/build/구문/diff 별도PASS. 기존다훈 독립15건을 직접 재실행했다고 기록하지 않는다. 다음 사용자0.1.9.3 정상경로 확인→Commit/Push승인→동일PR71 새HEAD/CI상태 보고; 충돌순서는다훈관리 유지.
+- 사용자0.1.9.3에서 'ㅇㅋ 문제 없어' 정상 보고: 안내한 홈/hashtag 댓글·릴스/GIF/빈댓글 제한·게시물 보존·해제 복원 사용자 실행 결과로 기록한다. 에이전트 실제 제품수용으로 승격하지 않는다. 게시범위6파일(효과/시험/TEST bootstrap·manifest·popup/본기록), 통합충돌·선행순서는다훈관리. 새HEAD 원격CI는Push후 확인.
+
+
+## 2026-11-01 김다훈 인계: PR71 잔존 P2 직접 수정
+- 사용자/채지민 협의로 IG-04 기존 결함만 인계. 독립 worktree ig-comments-suggestions-p2 / codex/ig-comments-p2-repair, 시작 c9393d5901150e77b96999eefbef14f071436c7a. 원격 codex/content-instagram-comments 동일 확인. 원본 Content worktree·공유 staged 삭제1,036파일·#83 및 다른 PR 변경 없음.
+- 기준: feature-registry.json AC-IG-04-01~03 및 docs/design/additional-mvp-contracts/05_Content_Event_UI.md. 게시물/좋아요 보존, 옵션별 own claim/복원, 문서/세대/권한 경계 유지. Core/Server/계약/공통 원장은 수정하지 않음.
+- discussion4435270652/656 반례를 설치 Windows Chrome headless/Playwright 합성 DOM에서 재현. 링크로 감싼 사진/본문 mixed LI·role=listitem2건, span·DIV timestamp wrapper 정상 GIF2건: 수정 전0PASS/4FAIL → 수정 후4PASS. 과거 flat GIF/hashtag DIV/빈댓글/중첩답글/동적DOM/SPA/원래mixed-post 반례 유지.
+- nestedIdentityBoundary: post permalink는 role과 무관하게 댓글 row 근거에서 제외. timestamp만 있는 투명 wrapper는 flat timestamp와 동등하게 취급. 중첩 identity 외부에서 검증된 프로필/avatar·댓글 조작만 제외하고 임의 role=link/button의 사진·본문을 지우지 않음. 첫 후보의 무링크 avatar 회귀는 pr71-focused.log에 보존하고 검증된 무링크 avatar만 허용해 해결.
+- 신규4 포함 댓글41/41, 전체 Content296/296(실패/skip0), 계약6/6, build·변경JS node --check·git diff --check PASS. Node24.19.0 / Playwright1.62.1 / 설치Chrome headless. 명령: PLAYWRIGHT_MODULE/CHROME_EXECUTABLE 지정 후 node --test --test-concurrency=2 extension/content-tests/*.test.mjs; node --test contracts/additional-mvp/rc1/tests/legacy-boundary.test.mjs; node extension/content-tools/build-chrome-harness.mjs. 로그는 수정worktree의 ignored pr71-{before,focused,focused-final,full,contract,build}.log. 전체회귀는 owner/부분복원재시도/foreign document/generation/SPA/pagehide/늦은callback 및 기존 YouTube·IG 기능 포함. 합성DOM이며 실제 로그인/제품 수용은 미실행.
+- Commit/Push 후 동일HEAD workflow_dispatch 원격CI와 checkout SHA/tree를 별도 확인한다. 독립 재리뷰 필요: 링크된 게시물 보존 + wrapped GIF 정상 제한 및 기존 경계. Approve/Draft해제/Resolve/Merge 없음. 실제 Chrome/MV3/Core/Native/Server 제품 수용 NOT_RUN, MVP_FINAL_COMPLETE=false.
+## 2026-11-01 PR57 CI 근거 보완 · 채지민
+- 브랜치 fix/ig-story-attribute-observer-p2, 시작02a653fb60e671dcf997951b220708ea146b4a7a. #71 HEAD4ebc72f와 정상사용자시험판0.1.9.2/다른worktree를 보존했다. PR57 base는 기존 codex/content-instagram-stories(08730c8) 그대로이며 #56 원본에 직접 반영하지 않는다.
+- 기능IG01/AC-IG-01-01~03·RC2 05_Content_Event_UI 기준. 기존 HEAD에는 Content workflow가 없어 새 .github/workflows/content-sessions.yml만 검증된 #54 CI 구성으로 복사했다. workflow blob44bb30d93878bd8916b034b625a82c7007adc9dc 동일. 최소권한/고정actions/Node24.19.0/Playwright1.62.1, 전체Content·계약·build·syntax 경로 유지.
+- 02a653f 대비 extension/content·content-tests·content-tools·ui 전체 diff 없음. 스토리alt/draggable 효과·시험·공통원장·Core/Server/공용계약 변경 없음. 본기록+workflow2파일만 게시할 예정.
+- 로컬 전체 Content 회귀 실행 중. 별도 계약6/6·build·전체 Content/시험 구문·diff PASS. 빌드 검사 후 사용자 기존 unpacked 댓글시험판0.1.9.2를 원래 경로에 복구했다. Node24/설치Windows Chrome headless/Playwright 합성DOM이며 실제Instagram/MV3/Native/Server 제품수용 NOT_RUN. MVP_FINAL_COMPLETE=false.
+- 게시승인 후 동일PR57 새HEAD 원격CI checkout/원본로그 확인·PR본문 갱신, 다훈 변경분/승인유효성 검토 필요. 과거리뷰를 새HEAD 승인으로 승격하지 않고 Approve/Draft해제/Resolve/Merge하지 않는다.
+- 최종 로컬 Content183/183 PASS, fail/skip0. 명령 기존 PLAYWRIGHT_MODULE/CHROME_EXECUTABLE 지정 후 node --test --test-concurrency=2 extension/content-tests/*.test.mjs, 로그 pr57-ci-local.log. 계약6/6·빌드·구문·diff 별도PASS. 다음 새HEAD 원격CI 확인.
+
 ### 2026-11-01 PR54 Content CI 근거 보완
 - 담당 채지민, codex/content-grayscale, 시작670647f41f4e9b9c2380faede496815aa2f3d6a8. 기존 dirty root/다른 worktree 및 IG04 PR71 보존. YT-09/AC-YT-09-01~03 설계·기능 의미 변경 없음.
 - Content workflow 부재로 CI 근거가 없던 HOLD에 대응해 검증된4daf3d3의 .github/workflows/content-sessions.yml만 그대로 재사용. blob44bb30d93878bd8916b034b625a82c7007adc9dc 동일. PR 경로 trigger/수동 dispatch, 최소 contents:read, pinned actions/Node24.19.0/Playwright1.62.1, Content전체/계약/build/syntax 검사 유지.
 - 기존670647f 대비 extension/content, content-tests, content-tools, ui 전체 diff 없음. 흑백 기능/시험과 공통 원장/권한/제품계약 변경 없음. 변경 범위 workflow 신규1개+본 기록뿐.
 - 로컬 Node24·설치 Windows Chrome headless/Playwright 합성 DOM Content160/160 PASS(흑백12 포함), 계약6/6 PASS, build PASS. 전체 명령: 기존 PLAYWRIGHT_MODULE/CHROME_EXECUTABLE 설정 후 node --test --test-concurrency=2 extension/content-tests/*.test.mjs. 로그 grayscale-ci-local.log. git diff --check 및 구문 검사 확인.
 - Commit/Push 승인 후 새 HEAD 원격 CI의 checkout/원본 로그를 별도로 확인하고 PR54 갱신. 과거 Core/독립 승인을 새 HEAD 승인으로 간주하지 않으며 다훈의 유효성 재확인 필요. 제품 Core/MV3/Native/Server 수용 NOT_RUN, MVP_FINAL_COMPLETE=false. 병합/Approve/Draft 해제 없음.
+
+## 2026-11-02 PR71 통합 문서 동기화
+
+- 기존 댓글 HEAD adc9d14와 Content 선행 통합 146fdb77을 병합 후보로 결합했다. 수동 해결은 본 카드 1파일뿐이며 양쪽 작업·실패·시험·미완료 원문을 순서와 중복 포함 보존했다.
+- Content 제품·시험·도구·계약은 기존 댓글 검토본과 blob 동일성을 확인해 유효한 독립 20/20 및 기존 회귀를 재사용한다. 동일 전체 시험을 새로 실행했다고 표시하지 않는다.
+- 새 HEAD의 CI·Core 변경 영향 재확인·최종 승인과 통합은 별도 조건이다. 기존 승인 효력을 자동 소급하지 않는다. 실제 제품 E2E NOT_RUN, MVP_FINAL_COMPLETE=false.
