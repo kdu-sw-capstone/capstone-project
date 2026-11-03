@@ -1,4 +1,28 @@
 # AMVP-CONTENT-06 · 추가 Content 연결
+## 2026-11-03 다훈 잔여 연결 단위 — plan0·null identity 로컬 의무
+- 기존 미커밋 startup/revision 및 게시된 #87/#99 수명 수정을 보존했다. 실제 공백3건: 동기 inspect에서 identity hash 생성 전 의무를 조회할 안정적 local_plan_id가 없음, hash 생성 후 원래 record 귀속을 확인할 수 없음, plan0와 receiver/adapter 공통 자원을 함께 구분할 local_records 관측이 없음. 동일3건 0PASS/3FAIL→3PASS. hash 실패 시 권한 context 무효화와 함께 원래 document 진단까지 사라지는 추가 공백1건도 FAIL→PASS로 보완했다.
+- gate의 #issued 기존 원장을 재사용한다. record 생성 시 Content 내부 UUID local_plan_id를 한 번만 부여하고 identity=null부터 유지하며 기존 plan_id/identity와 연결한다. 기존 reservation identity는 Content hash 구조이지 Core 영속 receipt가 아니다. local_records에는 원래 generation·state·호출 여부·응답 관측·미확인 commit·로컬 완료/잔여 의무를 복사해 제공하고, local_tracking에는 기존 gate instance·gate-local document instance·구조적으로 결속한 원래 context scope와 미종료 reserve callback 수를 기록한다. hash 실패는 APPLY context를 계속 무효화하며 보존한 scope 사본을 권한 검사에 재사용하지 않는다.
+- reserve_called=false는 이 gate가 callback을 호출하지 않았다는 로컬 관측일 뿐 전역 미접수 증거가 아니다. MATCHING_PLAN_ID도 전송 값 관측이며 durable_commit_status는 계속 UNCONFIRMED다. timeout·throw·응답 유실·close 이후 늦은 응답은 원래 record/첫 상태/의무를 지우지 않는다. 부분 record의 로컬 완료와 receiver listener/adapter observer 등 공통 자원은 분리하며 identities=[]/plan0/all completed만으로 watch 전체 종료를 만들지 않는다. watch_ref/cutoff_ref·Grant·fake Core identity·terminal은 생성하지 않는다.
+- Node24.19.0/빈 DOM·EventTarget·style 대역에서 신규8사례 포함46/46 PASS(기존startup/gate/receiver/evidenceSnapshot·ClaimLedger17·계약6), FAIL/SKIP0. snapshot 전후 귀속, null hash 실패, timeout+late reply, sync throw, hash 전 release, 두 plan의 부분 완료+다른 owner 보존+receiver 공통 listener, 복사본 변조 거절을 확인했다. 실제 신뢰 원본이나 Core commit을 구현·검증한 시험은 아니다. 구문·git diff --check PASS. 기존38/125/101과 중복 합산하지 않는다. 실제 Chrome/브라우저 회귀/원격CI는 이번 제한으로 NOT_RUN이다.
+- 재현 명령은 기존 Node startup/claim-ledger/legacy-boundary 3파일 실행과 같다. 기존 pr99-review/local-record-before.log / local-record-after-focused.log / local-record-scope-before.log / local-record-final-callbacks.log 보존. 추가 제품 변경은 hide-reservation-gate.mjs의 로컬 기록뿐이며 receiver/adapter local_startup·ClaimLedger 복원 경로·reserve payload/proof 형식은 변경하지 않았다.
+- 외부 local_record/watch_ref/cutoff/scan0 closure/cleanup-only takeover 공유 형식과 실제 provider의 ABA 비재사용·영속 원본 조회는 공동 합의/구현 대기다. 다음 독립 후보는 snapshot 대기 중 로컬 revision 변화의 일관성 재검사이며 Core proof 생산은 포함하지 않는다. Git 반영은 별도 사용자 승인·신규 원격 HEAD 대조·독립 검토·정확HEAD CI 후 #87 우선/#99 상속 순서로 진행한다. Commit/Push/PR/병합 없음. M1 BLOCKED, 제품 E2E NOT_RUN, MVP_FINAL_COMPLETE=false.
+## 2026-11-03 다훈 잔여 연결 단위 — 미시작·부분 시작 로컬 관측
+- 기존 #87/#99 및 완료 proof revision 미커밋 수정은 보존했다. Content 내부 `local_startup` 진단만 추가하며 공용 Wire/Schema·watch/closure/proof 타입이나 provider를 정의하지 않는다. receiver의 기존 transport(instance/Worker), adapter의 기존 scope, 원래 boundContext/generation/document 검증을 그대로 사용한다. 기록 자체는 native/영속 증거가 아니다.
+- adapter는 start 진입/반환·최초 실패·scope 등록·pagehide 등록 상태·Session 구성/시작 시도와 반환 횟수·자원 불확실성을 기록한다. start_called와 성공한 started를 혼동하지 않는다. Session 시작 중 예외가 있으면 자원 생성 불확실성을 보존하며 일반 release 결과만으로 이를 소급 제거하지 않는다. 기존 started/cleanup_pending/실제 restore 동작은 변경하지 않고 local_startup.resources_may_remain으로 감시·불확실 자원을 별도 구분한다.
+- receiver는 adapter 생성·start 호출 여부와 자체 pagehide/navigation listener 상태를 별도로 반환한다. adapter 미진입·plan0·claims cleanup_pending=false라도 receiver pagehide가 남으면 receiver_resources_may_remain=true다. 이 값으로 watch 종료·RESTORED·가짜 identity/Grant를 생성하지 않으며 실제 Core 검증 closure 전 영속 watch 완료는 미구현/HOLD다. constructor 자체가 반환되기 전 실패하여 객체를 얻지 못한 외부 미확정 의무는 이 내부 기록만으로 복구 완료할 수 없다.
+- 기록 공백3반례: adapter 미진입인데 receiver listener 잔존, pagehide가 실제 등록된 후 예외, plan0 observer 감시 중 상태. 수정 전 0PASS/3FAIL(진단 필드 부재)→수정 후3PASS. 최초 fixture에서 Worker provider 누락으로 UNBOUND를 잘못 기대한 로그와 이후 수정된 fixture 실패 원본을 모두 보존. 추가 시험의 listener 제거 실패는 기존 adapter가 예외를 전달하지 않고 cleanup_pending=true로 보존하는 계약에 맞춰 fixture 기대를 바로잡았으며 제품 실패를 skip/성공으로 바꾸지 않았다.
+- Node24.19.0/EventTarget/MutationObserver·빈 DOM 대역 기반 새15사례를 포함하여 37/37(새14+기존ClaimLedger17+계약6), 추가 adapter 구성거절1/1 PASS. 고유38사례·FAIL/SKIP0, 두 실행이며125/101 등과 중복 합산하지 않는다. input verify strict true·동기 isCurrent·늦은 verifyInput 이후 scoped release·gate 완료 revision·다른 owner 복원·진단 복사본 변조·release 재시도 보존을 확인했다. 테스트 파일 ig04-startup-local.test.mjs는 브라우저/외부 패키지 없이 실행 가능하다. 명령: node --test extension/content-tests/ig04-startup-local.test.mjs extension/content-tests/claim-ledger.test.mjs contracts/additional-mvp/rc1/tests/legacy-boundary.test.mjs. 추가1건은 --test-name-pattern='adapter construction rejection'. 구문/공백 PASS.
+- 기존 pr99-review의 startup-local-before.log / startup-local-before-corrected-fixture.log / startup-local-after.log / startup-local-final.log / startup-construction-boundary.log 보존. 이번 실제 Chrome 실행 금지에 따라 기존 receiver/gate/evidence 브라우저101 및 실제 BFCache/설치/E2E/원격CI는 NOT_RUN이며 기존 로그를 현재 변경본 PASS로 승격하지 않는다. Node에서 실제 모듈의 receiver/query·gate·evidenceSnapshot 경계를 별도 모사했다.
+- 다음 독립 후보: plan0·identity=null을 포함한 원래 local 의무의 안정적 추적. 외부 local_record/watch_ref/scan0 종료 형식과 cleanup-only takeover는 공동 확정/실제 provider 대기이며 새 권한 API를 만들지 않는다. Commit/Push/PR/병합 없음. M1 BLOCKED, 제품 E2E NOT_RUN, MVP_FINAL_COMPLETE=false.
+## 2026-11-03 다훈 잔여 연결 단위 — 완료 proof 소비의 로컬 revision
+- 원격 #87은523612f8, #99는ccb4468f이며 선행/base·Draft 불변을 확인했다. 기존 Worktree의 게시된 수명 수정과 미커밋 상태를 보존하고 새 변경만 추가했다. LOCAL-ORIGIN-P2-CURRENTNESS 후보 manifest87b07a2d746b8ccccd2d4e95a0265c1f5e37c0091b0410d172ae4f2b09b3d84a 및 SPEC의 UNAPPROVED/실제 provider 미구현/ABA token비재사용 전제를 대조했다. 합성 seam이나 token 모양을 공용 API·권한으로 채택하지 않았다.
+- 선택한 구현1개: 기존 HideReservationGate.completeReservation의 비동기 verifier 대기 전후 및 최종 동기 cleanup callback 이후 로컬 revision을 재검사한다. gate instance-private counter만 close/cancel에서 전진시키고, 마지막 검사와 completed 쓰기 사이 await는 없다. 공개 입력/출력·identity·proof·Schema·reserve ACK 형식과 verifyInput strict true/동기 isCurrent는 불변이다. 이 counter는 Core/provider fence가 아니며 외부 ABA 보장을 증명하지 않는다.
+- 기존 실패2건: scoped release가 proof 대기 중 재실행됐는데 이전 proof가 소비됨; 마지막 locallyRestored callback이 close에 재진입하고 true를 반환해도 완료로 소비됨. 동일 반례0PASS/2FAIL→2PASS. 실패 시 기존 LOCAL_CLEANUP_UNCONFIRMED를 사용하고 원래 identity/미해결 의무를 남긴다. 새 검증 시도는 정상 proof를 다시 검증해야 한다.
+- receiver41/evidence25/reservation29/계약6=영향101/101 PASS, FAIL/SKIP0. 추가 old-scope 정상1/1 PASS: APPLY 권한 회수 후에도 기존 scoped release와 검증된 완료는 허용하고 신규 APPLY는 거절, 예약 추가 없음. 총102개 고유 사례를 두 실행으로 검증했고 기존125/독립2와 합산하지 않는다. Node24.19.0/Playwright1.62.1/headless Chromium 합성 권한·proof·라우팅 fixture; 실제 Chrome 제품·Core provider·Server 성공 증거가 아니다. 구문·git diff --check PASS. 로그는 기존 pr99-review/completion-revision-before.log / completion-revision-after.log / completion-revision-old-scope.log.
+- 실제 watch_ref 별도 소비, adapter 미시작/부분시작의 외부 증거, plan0/identity=null local 원장, scan0 종료 proof, cleanup-only takeover 및 provider 조회/영속 소비 결속은 신뢰 형식·공동 승인·실제 provider가 없는 부분을 HOLD한다. 이번 구현은 기존 reservation completion의 Content 로컬 소비 경계이며 새 watch closure receiver나 영속 cleanup 성공을 구현한 것이 아니다. 다음 독립 작업 후보는 기존 inspect/started/startup_error와 모순되지 않는 adapter 미시작·부분시작 로컬 추적이며 새 Wire/증거 형식은 확정 전 도입하지 않는다. Commit/Push/PR/병합 없음. M1 BLOCKED, 제품 E2E NOT_RUN, MVP_FINAL_COMPLETE=false.
+## 2026-11-03 다훈 격리 후속 — receiver SPA 왕복 퇴역
+- #87 2704148b를 상속한 #99 f6d99efd 기반 content-lifecycle-dahun 미커밋 수정. receiver의 기존 document/Worker/lifetime 거절을 재사용해 Navigation.currententrychange에서 URL 이탈을 관측한다. 지연 예약 ACK 전에 push/replace로 이탈 후 원래 URL 복귀하는 기존 2 FAIL을 수정했고 동일 URL state 갱신은 보존한다. cleanup proof·영속 예약·watch_ref·takeover 계약을 추가하거나 완화하지 않는다.
+- blur/receiver 수명·복원 영향89/89 및 추가 문서/BFCache2/2 PASS, 세부 명령/실패 원본/시험 범위는 OPTION-11의 같은 날짜 후속 기록에 연결한다. 실제 BFCache 적중·issued/native·영속 ACK·CleanupGrant·Worker·Server 제품 수용 NOT_RUN. 별도 Core/Content 선행 통합/검토 전 로컬 구현 상태이며 Commit/Push/PR/병합 없음. M1 BLOCKED, MVP_FINAL_COMPLETE=false.
 ## 2026-11-01 PR83 로그인 보호 동적 관찰 P2 수정
 - 담당 채지민 / codex/content-instagram-grayscale / 시작7f5439afe057543f93f2589886ad3b7aadfdf4c2. review5727916908/인라인4435476825 대응. 기존 공개화면 전체흑백·프로필/알림/portal·DM/login/FOCURVE 제외·재생/복원 범위유지. IG-06에만 type/action observer추가, 다른옵션 관찰목록/selector/Wire/권한변경없음.
 - type text→password→text, form action search→accounts/login→search의 자동보호/재적용·원래sepia!important복원2반례를수정전0/2FAIL→수정후2/2PASS 확인. 다른owner claim 보존 및 보호branch복원setter실패 시 신규branch효과를얻지않고 기존의무/FAILED를보존·수리후재시도하는 반례도실패→PASS. 이를위해 IG-06 scan에서 복원오류가있으면새효과획득중단을추가, 타옵션은그대로유지.
@@ -771,3 +795,93 @@
 - 실행명령:기존PLAYWRIGHT_MODULE/CHROME_EXECUTABLE지정후 node --test extension/content-tests/ig04-receiver-browser.test.mjs; node --test --test-concurrency=2 extension/content-tests/*.test.mjs; node --test contracts/additional-mvp/rc1/tests/legacy-boundary.test.mjs; node extension/content-tools/build-chrome-harness.mjs; node --check; git diff --check. ignored로그receiver-focused*.log/receiver-startup-before.log/receiver-full.log/receiver-contract.log/receiver-build.log. 최종CI exact checkout/tree는외부검증기록에남긴다.
 - Draft PR은 codex/ig04-evidence-completion(base8f454c9)위독립4파일diff로제출한다. gate3abe450/snapshot8f454c9은선행미병합commit이며새receiver PR승인으로기존PR/생산연결완료를대신하지않는다. Core다음최소작업:실제native sender/issued frozen입력→verifyInput/isCurrent provider,영속plan commit ACK→reserve,cleanup lease/영속terminal→verifyRelease/verifyCompletion,새Worker재검증/의무복구,조회결과의ContentResult/EffectEvidence·RuntimeReport producer/Server verifier결속. 모두미확정함수/schema는공동합의필요다.
 - source기존gate/snapshot/IG01~06·Core·Server·Wire/Schema는수정하지않음. 실제설치/정책START/서비스/Native/DB실행없음. Approve/Draft해제/Resolve/Merge·forcePush없음. 제품수용NOT_RUN,MVP_FINAL_COMPLETE=false.
+
+
+## 2026-11-03 다훈 격리 수정 — Snapshot 대기 현재성 경합
+- 기준 #87 51c0b6398babc36200cb86f1c3793a3c30742bba / #99 28437bad10717b194f3dd089590f7e8b95d0a097. 기존 미커밋 수명·로컬 의무 수정은 보존. 신규 수정은 receiver query/apply의 비동기 결과 소비 경계와 Node 전용 시험에 한정한다.
+- query가 Snapshot 대기 전후 기존 receiver revision·adapter instance를 비교하며, 열린 scope의 generation·동기 strict-true 현재 권한을 재검사한다. 전환 중 읽은 Snapshot은 null로 버리고 현재 로컬 상태/의무를 반환한다. fresh old-scope cleanup 조회는 유지한다. apply/duplicate apply는 query 대기 이후에도 기존 revision·권한을 재확인하며 release/퇴역 뒤 accepted:true를 반환하지 않는다. 기존 gate proof 완료 검증은 변경하지 않았다.
+- 신규 ig04-snapshot-currentness.test.mjs: 실제 adapter Snapshot의 전달만 지연하는 Node 대역과 실제 gate hash 대기로 검증. release, document/generation, Worker 교체, 관측된 권한 회수 후 재허용, 정상 Snapshot, 신규/중복 apply 경합, identity 생성 귀속·미확인 의무, old-scope/다른 owner 보존 10건. 동일 입력 기존 published receiver 3 PASS/7 FAIL → 수정 10/10 PASS.
+- node --test extension/content-tests/ig04-snapshot-currentness.test.mjs extension/content-tests/ig04-startup-local.test.mjs extension/content-tests/claim-ledger.test.mjs contracts/additional-mvp/rc1/tests/legacy-boundary.test.mjs: 총56/56 PASS, FAIL/SKIP0. 격리 artifact의 harness build·receiver/신규시험 syntax 및 git diff --check PASS. 기존 전체 CI는 원래 SHA에만 귀속하며 새 수정본 전체/원격 CI/실제 Chrome 수용으로 소급하지 않는다.
+- 한계: 조회·callback 등에서 관측되지 않은 provider 권한 A→B→A는 Content의 동기 boolean만으로 검출 불가. 실제 비재사용 provider revision 계약은 여전히 HOLD. 신규 authority/watch_ref/cutoff_ref/Grant/terminal 및 영속 완료를 생성하지 않음. M1 BLOCKED, 제품 E2E NOT_RUN, MVP_FINAL_COMPLETE=false. Commit/Push/PR/병합 미수행.
+
+
+## 2026-11-03 다훈 전담 Content 현황 확정·scan0 내부 producer 격리 개발
+
+### 범위·기준·협업
+- 사용자 실제 합의: 11/3~4 다훈 Content 잔여 개발·Core/Server 연결 전담. 지민에게 정식 결과물을 인계받았다는 뜻이 아니며, 지민은 중복 개발 방지·기존 구현/계약 검토·기술 지원. 11/5 실제 결과로 잔여 재배분. 최신 사용자 일정 11/11 시연·11/12 발표·11/15 전체 목표가 저장소 예전 2027/2 일정 문구보다 우선한다. 이번에 공용 일정 문서는 수정하지 않는다.
+- 이 채팅은 로컬 개발/검증, 「추가 MVP 기능별 통합 및 회귀」는 독립 검토/Git/PR/CI/병합. 「Shorts·SPA 및 세션 안정화」는 #26 이식·composer 경계, 「IG04 Core·Content 연결 계약 정리」는 watch/권한/provider 형식, 「FOCURVE — Web·Server·DB·UI 통합 및 회귀」는 공식 패키지·설치/Native/제품 실행을 유지. 메시지는 발송하지 않고 최근 완료 기록과 원격을 읽었다.
+- 현재 integration 원격 e3a3760d43ef0f410beda5b296eb4cd85241638f. #87 a9ba54b18f42814d14475c8d19cff99d3c92165d를 정확히 추출해 시작했다. 기존 열린 receiver checkout2704148은 최신이 아니므로 수정하지 않았다. 기존 lifecycle worktree의 미커밋10파일과 공유 staged삭제1,036파일은 보존한다.
+- 새 managed Worktree: C:/Users/dahun/.codex/worktrees/content-scan0-producer/04 · 추가 MVP 구현, detached HEAD a9ba54b18f42814d14475c8d19cff99d3c92165d. 기존 #87/#99/#26 branch/ref/index를 변경하지 않는다. 최초 격리 사본과 실패로그도 남긴다. Commit/Push/새PR/승인/병합 미수행.
+
+### PR 실제 최신 상태 (이 실행 중 #99가 갱신되어 재확인)
+| PR | full HEAD | base | 상태·검증 한계 |
+|---|---|---|---|
+| #82 | 917ab3c8383f80bc4b4f52985e81e3152c115eea | integration/additional-mvp-20261029 | OPEN/APPROVED, check SUCCESS. 독립 추천11/11 기존 근거 재사용; 제품 완료 아님 |
+| #83 | 1291aeb18a83a69aff7a0866953b4133c23857bb | integration/additional-mvp-20261029 | OPEN/CHANGES_REQUESTED, 현재 rollup 비어 있음. 댓글20/추천11/흑백19 기존 수정/검토를 재개발하지 않음. 과거 Core 승인과 현재 보호조건 구분 |
+| #87 | a9ba54b18f42814d14475c8d19cff99d3c92165d | codex/ig04-evidence-completion @8f454c937c905ed7ad4e0650274e27b2830812ea | OPEN/Draft, Snapshot3파일 게시 완료. CI41605776604 Content462/462·계약6/6. GitHub APPROVED 집계의 기존 리뷰는2704148 귀속이며 최신 수정3파일 독립4/4와 전체 최신 담당승인은 구분 |
+| #97 | 33b88f810f4e56bb42f4956c95860dab70a55cbb | codex/ig04-content-receiver | OPEN/Draft/APPROVED, check SUCCESS. URL/Session 직접69/69(계약6 포함) 기존 근거. #99와 별도 자손이며 서로 상속했다고 가정하지 않음 |
+| #99 | e701b33e123ac4f9b4622b5c076ceeb452b1aba9 | codex/ig04-content-receiver @a9ba54b | 점검 초기28437bad였으나 통합 채팅에서 정상 상속 갱신. a9ba54b ancestry 직접 확인. CI41606827603 Content527/527·계약6/6, 시험 tree24a532ba9447dd8d2fae168d47428059b13653fa 일치 근거. 새HEAD 변경분 지민/종민 재검토 필요 |
+| #26 | 47f3cb409d1b499fb1736eacd9c682121b88f647 | develop | OPEN/Draft/REVIEW_REQUIRED·CI5개SUCCESS. 공유 ClaimLedger 이식91/91·누락fixture 보완·Git 반영은 Shorts/통합 채팅 결과. 본채팅 재구현 금지, 실제 제품 Shorts PARTIAL |
+| #78 | 6bddd0c1231cf6050cb4fa286a1040ea00a3824c | integration/additional-mvp-20261029 | OPEN/APPROVED, RuntimeReport producer 독립 구현·CI PASS. 실제 source/effect/epoch verifier·Worker 호출은 별도 |
+| #80 | 62c02aac9c69d842f91e7954baa82562c9932c21 | integration/additional-mvp-20261029 | OPEN/APPROVED, replay/checkpoint 독립 구현·CI PASS. 제품 scheduler/authority 연결 아님 |
+| #98 | 505e9738f78c509fabe84abdccf54ae086c1537d | feature/additional-mvp-runtime-report-outbox | OPEN/APPROVED, delivery 독립 구현·CI PASS. Content 효과/cleanup 완료를 ACK로 대신하지 않음 |
+
+### 기능별 현재 상태표
+구현/합성PASS/독립검토/게시/통합/제품은 서로 다른 축이다. 아래의 실제 Core↔Content/Chrome 제품 수용은 전부 미완료 또는 NOT_RUN이며, 과거 실패 제품 실행은 별도 보존한다.
+| 범위 | 실제 코드·이미 구현된 부분 | 자동/독립 검토·Git | 실제 남은 부분 |
+|---|---|---|---|
+| 사이트 차단·페이지 숨김 | ClaimLedger.hide/conceal·NavigationSurfaceSession 및 Core DNR 별개 | Content 공통 owner/restore 회귀 재사용; DNR을 Content에 중복 구현 안 함 | 제품 frozen/issued/native 권한과 feature executor 연결 |
+| 키워드 URL·미디어 정지 | #97 inspectKeywordUrl/KeywordSession.start/scan/release, URL 전용·미디어 pause·동적 body·scope cleanup | 독립 구현/시험/담당검토/Commit·Push 완료, 미병합 | trusted frozen/native URL·영속 의무·lease·전체 Unicode/IDNA profile 동등성·제품 연결 |
+| 이미지 블러 | #99 BlurSession·두 모델·HIGH·이미지 교체·reveal·지연 결과·SPA 퇴역 | 구현/자동/독립 검토/게시, 최신 Snapshot 상속/CI 완료, 미병합 | 실제 정책·Core 권한/효과전 ACK·보고·제품 성능/정답셋·제품 복원 |
+| YouTube 옵션·Shorts | 각 Navigation/WatchPanel/Autoplay·기존 Shorts 실행 코드 | 공통옵션 회귀PASS; #26 독립이식91/91과 Git/CI는 별도 source | A0 content-entry/A1 content/member-a1 content 실제 composer의 공유 원장 주입·제품 Shorts 수용. 전용 채팅 소유 |
+| IG01~06 | Stories/Reels/Explore/Comments/Suggestions/Grayscale Session·scoped 원장/복원 | #56/#58/#61/#64/#65/#71 병합 확인, #82/#83 미병합. 기존20/11/19와 현재477 합성회귀는 겹치므로 합산하지 않음 | 각 기능 정책 전달/효과전 예약/실제 수용. IG04 외 gate가 제품에 연결됐다고 가정 금지 |
+| 동적 DOM·target교체·원래스타일/속성/미디어 복원 | Session scan/MutationObserver·ClaimLedger·Instagram media·Autoplay/Keyword media | partial setter/foreign/다른owner/late callback 회귀PASS | 실제 사이트 drift·인증화면/제품 workload·영속 복원과 새 문서 재결속 |
+| START·END | 내부 start/apply·stop/invalidate·releaseFeature/release 분리 | 자동PASS/게시. receiver 접수≠효과, release≠외부cleanup완료 | Worker 실제 명령·권한·ACK·결과·Server·정상제품END |
+| document/generation/instance·Worker권한회수 | receiver #current/#cleanupLifetime·gate epoch/context·Session scope | default deny·퇴역·늦은응답 회귀PASS | 인증된 provider token 비재사용·Worker재시작 인수/재검증 |
+| pushState/replaceState·뒤/앞 | Navigation currententrychange·popstate/hashchange·refresh/receiver URL 퇴역 | SPA 왕복·sameURL·페이지이동 합성PASS | 실제제품 sender/channel·History 수명·새문서 권한 발급 |
+| BFCache/새문서·세션 재진입 | pagehide 단방향 retire·LIVE cleanup fence·새Session 요구 | 모의persisted return 재활성 차단PASS | 실제 Chrome BFCache 수용, 자동 reauthorization/reapply 소비자 미연결 |
+| cleanup 실패·재시도 | 원래 ClaimLedger 목표/타owner보존·original scoped release·pending 유지 | 자동/독립근거 재사용·현재477회귀PASS | 영속 lease/closure·terminal·재시작 recovery는 Core provider 필요 |
+
+### 다훈 구현 재사용·Git 상태
+- gate3abe450, snapshot/hook8f454c9, receiver2704148을 재구현하지 않았다.
+- 완료 proof 대기 revision 재검사, SPA왕복 퇴역, local_startup/부분시작, plan0/identity=null/미확인reserve tracking은 #87의523612f/51c0b639에 반영된 실제 코드다. snapshot 경합 수정은 a9ba54b로 게시 완료. 수정전3PASS/7FAIL→10/10·영향56/56·독립4/4를 기존 동일소스 근거로 재사용하며 다시 실행했다는 뜻이 아니다.
+- #99 신규 블러 수명/퇴역/해제·cleanup 보완은28437bad, 최신 a9상속은e701b33e로 게시 완료. 최신527 CI 근거를 과거469와 구분한다. #87의 a9와 #99 e701에서 이번 수정대상 receiver/adapter/navigation3파일이 동일 blob임을 직접 diff확인했지만, 이번477은 #99 모델/전체527 누적 후보 검증을 대신하지 않는다.
+- verifyInput은 await 결과 ===true, isCurrent/getGeneration/Worker는 동기 strict guard 유지. Snapshot await 전후 receiver revision·adapter identity·현재성 재검사 및 proof await 이후 gate #cleanupRevision 재검사 유지. 이번에 이 기존 수정들을 다시 변경하지 않았다.
+
+### 잔여 개발 A/B/C/D 분류·우선순위
+| 후보 | 이미 구현됨 / 실제 공백 | 파일·함수와 선행 조건 | 분류·담당 충돌·영향검증 |
+|---|---|---|---|
+| P1 scan0 producer | 개별 snapshot/stop/scan flags는 존재; 자원종료/실제queue drain을 묶는 호출점 부재 → 이번 구현 | NavigationSurfaceSession / Adapter / Receiver.quiescenceSnapshot | A, 내부 only. Core형식 변경 없음; 공유클래스 영향 전체477 필요. 독립리뷰/Git는 통합담당 |
+| P0 실제 시연 policy/effect 흐름 | local executor만 있고 production receiver channel/provider/composer 부재 | 실제 Worker→검증 input→watch영속준비→reserve commit→DOM→evidence producer→RuntimeReport78→replay80/delivery98→Server verifier | C+D, Core 윤종민·Server 총괄 다훈·실행 별도 승인. fake ACK 금지 |
+| P1 watch_ref async consumer | verifyInput strictboolean·adapter.start 경계 존재, 별도 async 참조소비 없음 | IG04ContentReceiver.apply에서 adapter 생성/시작 전, cancellation·원래context/transport·local revision 전후검사. 실제 watch_ref/read 계약 확정 후만 연결 | B/C. verifyInput 반환을 DTO로 바꾸거나 isCurrent에Promise 삽입 금지. 실패/lost/stale/권한회수 회귀 필요 |
+| P1 미시작/부분시작/plan0 closure | local_startup·receiver/adapter자원·local_plan_id/identity=null·called/unobserved는 이미 있음 | local producer 결과+원본 record 식별을 Core closure 소비와 연결할 부분만 남음 | A 국소 관측 준비는 이번까지, B/C 외부closure는HOLD. 미시작watch없음으로 대체 금지 |
+| P1 cleanup-only takeover | original scope release/다른owner원장 보존은 존재; 새Worker의 검증된 인수consumer 없음 | receiver release/completeReservation의 별도 facade, 원래identity/transport 유지 및 검증된Grant/lease·조회/cutoff 필요 | B/C. APPLY재승인과 분리; Core 기존원본/인수 API없음. 예전instance 권한을 boolean으로 되살리지 않음 |
+| P0 trusted Worker channel | getWorkerInstance·native document/current callback은 있음; 실제 runtime listener/인증sender/bootstrap 없음 | Worker registry/admission 실제issuer·현재channel·nonreuse revision provider | C. Content가 emitter/issuer/secret을 대체 발급하지 않음 |
+| P1 SPA/BFCache/새문서 자동재적용 | 퇴역/효과차단/cleanup은 구현; production 재승인 요청→새frozen권한→새receiver는 미연결 | navigation document registry/Worker 요청·새capability·prior-footprint/cleanup lease가 먼저 | B/C/D. #26 전용개발을 가져오지 않음 |
+| P2 기능 조합·local 자원종료 | 개별 owner/effect/cleanup 시험은 존재, 최신#97/#99/producer 누적 연결 근거는 아직 없음 | KeywordSession/BlurSession 독립 종료관측 확장 여부는 IG04리뷰후 실제 공백 기준. 구현된수명수정재개발금지 | A 로컬만 가능. 통합채팅의Git/CI 누적작업과 중복하지 않음 |
+
+### 공유 계약/provider 경계
+- 최신 검토 후보 LOCAL-ORIGIN-P2-CURRENTNESS(manifest87b07a2d746b8ccccd2d4e95a0265c1f5e37c0091b0410d172ae4f2b09b3d84a). W3-TYPE-R1/P1을 대체로 뒤집지 않고 identity6필드·binding/cutoff·타입/canonical 유지, 원본 async lookup 뒤 소비전현재성 보완. 계약채팅 독립23/23+추가15/15, 기존104/R243/RC25/canonical268 bytes동일 재사용.
+- 이는 공동최종승인/생산 API 제공이 아니다. 실제 provider가 revision/fence A→B→A로 값을 재사용하면 두endpoint비교만으로검출못함(별도 관측2). 인증source·원본immutable lookup·nonreuse revision/fence·최종소비/영속commit 결속은 윤종민Core provider 책임과 실제Serverauthority 입력 필요. M1 BLOCKED 유지.
+- 이번 local_quiescence 구조는 Content 내부 진단이며 위 DTO의 result/CLOSED_LOCAL/evidence_sha256/watch_ref/cutoff_ref/Grant/terminal을 생성하지 않는다. 원래 input context는 frozen 사본이며 실제 권한 성공 proof가 아니다. scope가 없던 미시작receiver에 임의watch/plan을 만들지 않는다.
+
+### 이번 실제 구현·실패→통과
+- 내부 quiescenceSnapshot()를 Session→Adapter→Receiver로 연결. Session은 동기 close로 신규예약·효과 차단, 실제 queued microtask와 sync scan stack가끝난후 snapshot. busy/scheduled를강제false로쓰지않음. own observer/listener를 개별 추적하고 각remove/disconnect 실패에도 나머지정리를시도, 미확인은보존/재시도. LIVE/claim/복원목표/외부예약의무는보존.
+- receiver는 자기pagehide/navigation listener도정리, 비동기input검증미종료·Worker/document변경·revision경합은locally_quiescent=false/구snapshot폐기. APPY재활성금지, 원래scopedRELEASE는기존경로로별도검증후가능. 단순정지는복원·cleanup완료가아님.
+- scan0과reserve callback완료분리: reserve_callbacks_unsettled>0이면scan_drained=true일수있어도locally_quiescent=false. 늦은callback은새효과를만들지않으며실제응답관측후재조회가능. callback이응답해도record.obligation_pending과cleanup_pending은Core완료검증전유지한다.
+- 최소3반례(queued scan/수신기전체자원/미시작/제거실패재시도 중3명시시험): 이전API부재로0PASS/3FAIL → 같은3을최종신규15에포함PASS. 이것은새연결요구미구현확인이며기존승인기능결함으로소급하지않는다.
+- 중간공통disconnect후기존제거실패회귀1FAIL 발견→자원미해소를release restored=false에포함해기존회귀36/36확인. 시험작성중frozen context변경을허용한다고잘못가정한assertion은TypeError거절을확인하도록정정. 기존gate가없는plan0로잘못가정한시험도빈gate.local_records기준으로정정. 초기로그는그대로보존.
+- 변경제품3파일: extension/content/{navigation-surface,session-adapter,ig04-receiver}.mjs. 신규시험2파일 ig04-quiescence.test.mjs(Node9) / ig04-quiescence-browser.test.mjs(Chrome합성6), 본카드1 =6파일. #99블러/#97키워드/#26/Core/Server/schema는수정하지않음.
+- 최종정확소스전체Content477/477 = 기존#87 462 +신규15, FAIL/SKIP0. 계약6/6·기존harness빌드·모든Content/test MJS node--check·gitdiff--check PASS(각종료0). 초기483전체는기존6시험을복사prefix에중복포함한중간후보이며최종수에합산하지않음. 이후callback미확인조건보완/중복제거후정확477새전체검증. #99최신527과도합산하지않음.
+- 환경: Node24.19.0 / 기존Playwright1.62.1 / 설치Chrome headless 임시합성context·network route.fulfill. 실제확장설치/사용자Chrome/Native/DB/START/END/서비스미실행. remoteCI는이번미게시diff에대해NOT_RUN, 독립리뷰도대기.
+- 명령: PLAYWRIGHT_MODULE=기존runtime dependencies/node/node_modules/playwright, CHROME_EXECUTABLE=설치Chrome경로를지정해 node --test --test-concurrency=2 extension/content-tests/*.test.mjs; node --test contracts/additional-mvp/rc1/tests/legacy-boundary.test.mjs; node extension/content-tools/build-chrome-harness.mjs; node --check; git diff --check.
+- 증거디렉터리 C:/Users/dahun/.codex/visualizations/2026/10/31/01a191b6-1724-73b2-b0e1-0149c53fba64/content-scan0-20261103/: final-content-full.log/final-contract.log/final-build.log/verification.json/content-scan0.patch/pr-state.json. 새코드와문서SHA256·基準tree·명령/종료코드/실패경과기록. 실행시험프로세스종료·임시브라우저정상정리완료, 새상시서비스/자동예약/잠금생성없음. 기존타작업프로세스/잠금은변경하지않음.
+
+### 다음 작업·11/4 범위·11/5 재분담
+1. 즉시: 이번15시험/3생산파일독립리뷰 → 통합담당이승인된Git범위에서#99누적후보의정확tree에반영/검증. 본채팅은Commit/Push를대신하지않음. 같은3생산파일의#87/#99기준동일성확인완료.
+2. 다음독립후보: Keyword/Blur의실제정책조합에필요한로컬자원종료·callback관측공백만확인/준비. 이미완료된#99수명·#97media/ClaimLedger알고리즘은재구현하지않음. 별도소유자/미커밋과안겹치는격리후속으로만진행.
+3. 다음연결후보: watch_ref별도async참조consumer→미시작/plan0 closure→cleanup-only takeover. 이셋은공유형식/실제provider선행이며지금독립완료가능이라고보고하지않음. 동기strict guard/원본identity/응답후currentrevision검사재사용.
+- 11/4까지다훈범위: producer독립리뷰후보/정확누적영향검증·로컬실패재현/수정, 공동형식확정즉시Content asyncconsumer최소연결. provider가없으면실제연결완료기한은확약불가. 단순시험수확대/임의권한발급으로시간채우지않음.
+- 11/5지민재분담후보: 실제Instagram DOM드리프트/IG01~06 제품수용·미디어/복원수동사례,정해진형식의Contentwatch/cleanup consumer,새문서/BFCache자동재승인client 및keyword/blur실제사이트검증. 본결과를정식인수인계받았다고가정하지않고당시HEAD/진척에따라배정.
+- 실제제품전필수: 공동동일후보수락·신뢰issued/frozen/nativeauthority·영속watch/planprovider·검증된ACK·lease/oldscopeclosure·Workerchannel/restartadoption·RuntimeReport/ServerEvidenceVerifier결속·승인된공식설치환경과실제정책ON/OFF/복원/재기동수용. 이번로컬결과가이를대체하지않음.
+- NO_FURTHER_CHECK 아님: 안전한로컬producer는실제개발완료했으나독립리뷰/제품연결잔여존재. M1 BLOCKED / Shorts PARTIAL / 제품E2E NOT_RUN / MVP_FINAL_COMPLETE=false.

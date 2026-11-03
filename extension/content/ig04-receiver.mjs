@@ -4,12 +4,18 @@ import {boundContext,canonical,freezeCopy} from './local-evidence.mjs';
 // Trusted-call receiver seam. No Chrome listener, sender/authority issuer,
 // ACK/proof Wire schema, storage implementation or ContentResult conversion.
 export class IG04ContentReceiver {
-  #document;#options;#worker;#url;#id=crypto.randomUUID();#adapter;
+  #document;#options;#worker;#url;#navigation;#id=crypto.randomUUID();#adapter;
   #input;#candidate;#key;#opening=false;#closed=false;#retired=false;#revision=0;#released=false;
   #workerLost=false;
+  #localStartup={adapter_start_called:false,pagehide_listener:'NOT_ATTEMPTED',navigation_listener:'NOT_ATTEMPTED'};
   constructor(document,options={}){
     this.#document=document;this.#options={...options};this.#worker=this.#readWorker();this.#url=document.location.href;
-    this.pagehide=()=>this.invalidate('PAGEHIDE');document.defaultView?.addEventListener('pagehide',this.pagehide);
+    this.pagehide=()=>this.invalidate('PAGEHIDE');
+    if(document.defaultView){this.#localStartup.pagehide_listener='UNCONFIRMED';document.defaultView.addEventListener('pagehide',this.pagehide);this.#localStartup.pagehide_listener='ATTACHED';}
+    // URL round trips must retire this receiver before a pending ACK can win.
+    this.route=()=>{this.#lifetime();};
+    this.#navigation=document.defaultView?.navigation;
+    if(this.#navigation){this.#localStartup.navigation_listener='UNCONFIRMED';this.#navigation.addEventListener('currententrychange',this.route);this.#localStartup.navigation_listener='ATTACHED';}
   }
   #sync(fn){try{const v=fn();if(v&&typeof v.then==='function'){Promise.resolve(v).catch(()=>{});return undefined;}return v;}catch{return undefined;}}
   #readWorker(){const v=this.#sync(()=>this.#options.getWorkerInstance?.());return typeof v==='string'&&v.length>0&&v.length<=200?v:null;}
@@ -34,9 +40,12 @@ export class IG04ContentReceiver {
   }
   #transport(){return freezeCopy({receiver_instance_id:this.#id,worker_instance_id:this.#worker});}
   #ready(){return ['verifyInput','isCurrent','reserve','getGeneration','getWorkerInstance','verifyRelease','verifyCompletion'].every(k=>typeof this.#options[k]==='function');}
-  #deny(reason){return {local_only:true,native_verified:false,accepted:false,reason,cleanup_pending:this.#adapter?.inspect().cleanup_pending??false,revalidation_required:this.#retired};}
+  #startup(){return {...this.#localStartup,adapter_created:!!this.#adapter,
+    receiver_resources_may_remain:['ATTACHED','UNCONFIRMED'].includes(this.#localStartup.pagehide_listener)||['ATTACHED','UNCONFIRMED'].includes(this.#localStartup.navigation_listener)};}
+  #deny(reason){return {local_only:true,native_verified:false,accepted:false,reason,cleanup_pending:this.#adapter?.inspect().cleanup_pending??false,revalidation_required:this.#retired,local_startup:this.#startup()};}
   invalidate(reason='AUTHORITY_REVOKED'){
     this.#closed=true;this.#retired=true;this.#revision++;this.#adapter?.invalidate(reason);
+    if(this.#navigation){this.#localStartup.navigation_listener='UNCONFIRMED';this.#navigation.removeEventListener('currententrychange',this.route);this.#localStartup.navigation_listener='REMOVED';}
     return this.#deny(reason);
   }
   async apply(input,authorization){
@@ -58,7 +67,7 @@ export class IG04ContentReceiver {
       let verified=false;try{verified=await this.#options.verifyInput(authorization,freezeCopy({...frozen,transport:this.#transport()}))===true;}catch{}
       if(!this.#lifetime()||this.#closed||revision!==this.#revision)return this.#deny('REVALIDATION_REQUIRED');
       if(!verified||!this.#current(context))return this.#deny('INPUT_AUTHORITY_UNCONFIRMED');
-      if(this.#adapter)return {accepted:true,duplicate:true,...await this.query()};
+      if(this.#adapter)return await this.#appliedQuery(context,revision,true);
       this.#input=frozen;this.#key=key;
       const lifetime=this.#transport();
       this.#adapter=new ContentSessionAdapter(this.#document,{
@@ -71,19 +80,52 @@ export class IG04ContentReceiver {
             const ok=await this.#options.verifyCompletion(proof,freezeCopy({...expected,transport:lifetime}));return this.#cleanupLifetime()&&ok===true;},
           timeoutMs:this.#options.timeoutMs??5000,maxPlans:this.#options.maxPlans??256}
       });
+      this.#localStartup.adapter_start_called=true;
       const result=this.#adapter.start();
       if(result.startup_error){this.#closed=true;return this.#deny('CONTENT_START_FAILED');}
-      return {accepted:true,duplicate:false,...await this.query()};
+      return await this.#appliedQuery(context,revision,false);
     }catch{this.#closed=true;this.#adapter?.invalidate('CONTENT_START_FAILED');return this.#deny('CONTENT_START_FAILED');}
     finally{this.#opening=false;if(!this.#input)this.#candidate=null;}
   }
+  async #appliedQuery(context,revision,duplicate){
+    const result=await this.query();
+    // Query itself waits; dispatch acceptance must not survive a release/retirement.
+    if(revision!==this.#revision||!this.#current(context))return this.#deny('REVALIDATION_REQUIRED');
+    return {accepted:true,duplicate,...result};
+  }
   async query(){
-    this.#lifetime();let snapshot=null;try{if(this.#adapter)snapshot=await this.#adapter.evidenceSnapshot('IG-04');}catch{}
-    // Recheck after the snapshot's asynchronous hashing wait.
-    this.#lifetime();
+    this.#lifetime();if(!this.#closed&&this.#input)this.#current(this.#input.context);
+    const revision=this.#revision,adapter=this.#adapter;
+    let snapshot=null;try{if(adapter)snapshot=await adapter.evidenceSnapshot('IG-04');}catch{}
+    // A local snapshot is not a current authority proof. Preserve old-scope
+    // cleanup reads, but never combine a pre-transition snapshot with new state.
+    this.#lifetime();if(!this.#closed&&this.#input)this.#current(this.#input.context);
+    if(revision!==this.#revision||adapter!==this.#adapter)snapshot=null;
     return {local_only:true,native_verified:false,...this.#transport(),revalidation_required:this.#retired,
+      local_startup:this.#startup(),
       phase:this.#retired?'REVALIDATION_REQUIRED':this.#closed?'CLOSED_LOCAL':this.#adapter?'BOUND_LOCAL':'UNBOUND',
       state:this.#adapter?.inspect()??null,snapshot};
+  }
+  async quiescenceSnapshot(){
+    // Internal local producer only: no watch_ref, cutoff, Grant or terminal.
+    // Stop future effects before yielding, without granting scoped RELEASE.
+    this.#closed=true;this.#retired=true;this.#revision++;
+    for(const [target,type,callback,key]of [[this.#document.defaultView,'pagehide',this.pagehide,'pagehide_listener'],
+      [this.#navigation,'currententrychange',this.route,'navigation_listener']]){
+      if(!target||['NOT_ATTEMPTED','REMOVED'].includes(this.#localStartup[key]))continue;
+      this.#localStartup[key]='UNCONFIRMED';try{target.removeEventListener(type,callback);this.#localStartup[key]='REMOVED';}catch{}
+    }
+    const revision=this.#revision,adapter=this.#adapter;
+    let result=null;try{if(adapter)result=await adapter.quiescenceSnapshot();}catch{}
+    // Pending verifyInput cannot start an adapter after retirement. Report it
+    // until the actual continuation finishes rather than inventing a drain.
+    const lifetime_current=this.#cleanupLifetime();
+    const current=revision===this.#revision&&adapter===this.#adapter&&lifetime_current;
+    const detached=!this.#startup().receiver_resources_may_remain;
+    return {local_only:true,native_verified:false,...this.#transport(),context:freezeCopy((this.#input??this.#candidate)?.context??null),
+      local_startup:this.#startup(),state:this.#adapter?.inspect()??null,snapshot:current?result?.snapshot??null:null,
+      local_quiescence:{future_effects_closed:this.#closed,receiver_listeners_detached:detached,input_verification_pending:this.#opening,
+        lifetime_current,locally_quiescent:current&&detached&&!this.#opening&&(adapter?result?.local_quiescence.locally_quiescent===true:true)}};
   }
   async release(bindingContext,authorization){
     if(!this.#ready()||!this.#cleanupLifetime())return this.#deny('REVALIDATION_REQUIRED');

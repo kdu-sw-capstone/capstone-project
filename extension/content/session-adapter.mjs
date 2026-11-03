@@ -27,6 +27,8 @@ export class ContentSessionAdapter {
   #document;#options;#features;#ledger;#scope;#entries=new Map();#started=false;#closed=false;
   #isCurrent;#authorizeNavigation;#onObservation;#onInvalidated;#callbackErrors=0;#startupError=null;#invalidated=null;
   #ig04Reservation;
+  // Local diagnostics, not a watch identity, durable receipt or terminal proof.
+  #localStartup={phase:'NOT_ENTERED',start_calls:0,pagehide_listener:'NOT_ATTEMPTED',session_construct_attempts:0,sessions_constructed:0,session_start_attempts:0,session_start_returned:0,resource_uncertainty:false,first_failure:null};
   constructor(document,{owner_binding_id,binding_id,features,isCurrent,authorizeNavigation=null,
     ledger,onObservation=()=>{},onInvalidated=()=>{},ig04Reservation}){
     if(![owner_binding_id,binding_id].every(v=>typeof v==='string'&&UUID.test(v)))throw Error('INVALID_CLAIM_SCOPE');
@@ -64,20 +66,44 @@ export class ContentSessionAdapter {
     this.#emit(this.#onObservation,this.inspect());
   }
   start(){
+    this.#localStartup.start_calls++;
+    if(this.#started)throw Error('CONTENT_ADAPTER_ALREADY_STARTED');
+    this.#localStartup.phase='ENTERED';
+    try{this.#start();this.#localStartup.phase=this.#startupError?'FAILED_OR_PARTIAL':'RETURNED';return this.inspect();}
+    catch(error){
+      this.#localStartup.phase=this.#started||this.#localStartup.resource_uncertainty?'FAILED_OR_PARTIAL':'FAILED_BEFORE_RESOURCES';
+      this.#localStartup.first_failure??=this.#startupError??error.message;
+      throw error;
+    }
+  }
+  #construct(factory){
+    this.#localStartup.session_construct_attempts++;
+    try{const session=factory();this.#localStartup.sessions_constructed++;return session;}
+    catch(error){this.#localStartup.resource_uncertainty=true;throw error;}
+  }
+  #start(){
     if(this.#started)throw Error('CONTENT_ADAPTER_ALREADY_STARTED');
     if(!this.#current())throw Error('CURRENT_AUTHORITY_REJECTED');
     let live=LIVE.get(this.#ledger);if(!live){live=new Map();LIVE.set(this.#ledger,live);}
     if(live.has(this.#scope))throw Error('CONTENT_SCOPE_CLEANUP_REQUIRED');
-    live.set(this.#scope,this);this.#started=true;this.#document.defaultView.addEventListener('pagehide',this.pagehide);
+    live.set(this.#scope,this);this.#started=true;
+    this.#localStartup.pagehide_listener='UNCONFIRMED';
+    this.#document.defaultView.addEventListener('pagehide',this.pagehide);
+    this.#localStartup.pagehide_listener='ATTACHED';
     const options={...this.#options,ledger:this.#ledger,canObserve:()=>this.#current(),ig04Reservation:this.#ig04Reservation,
       authorizeNavigation:change=>{if(!this.#current())return false;const result=this.#authorizeNavigation?.(change);if(result&&typeof result.then==='function')Promise.resolve(result).catch(()=>{});return result===true&&this.#current();},
       onObservation:r=>this.#observe(r),onInvalidated:r=>this.invalidate(r.reason)};
     try{
       const watch=this.#features.filter(f=>WATCH.has(f.feature_id)&&f.enabled);
-      if(watch.length){const session=new WatchPanelSession(this.#document,{...options,features:watch});for(const f of watch)this.#entries.set(f.feature_id,{session,released:false});}
-      for(const f of this.#features)if(f.enabled&&!WATCH.has(f.feature_id))this.#entries.set(f.feature_id,{session:new (FACTORIES.get(f.feature_id))(this.#document,options),released:false});
-      for(const session of new Set([...this.#entries.values()].map(e=>e.session))){session.start();if(this.#closed)throw Error('CONTENT_START_INVALIDATED');}
-    }catch(error){this.#startupError=error.message;this.release();}
+      if(watch.length){const session=this.#construct(()=>new WatchPanelSession(this.#document,{...options,features:watch}));for(const f of watch)this.#entries.set(f.feature_id,{session,released:false});}
+      for(const f of this.#features)if(f.enabled&&!WATCH.has(f.feature_id))this.#entries.set(f.feature_id,{session:this.#construct(()=>new (FACTORIES.get(f.feature_id))(this.#document,options)),released:false});
+      for(const session of new Set([...this.#entries.values()].map(e=>e.session))){
+        this.#localStartup.session_start_attempts++;
+        try{session.start();this.#localStartup.session_start_returned++;}
+        catch(error){this.#localStartup.resource_uncertainty=true;throw error;}
+        if(this.#closed)throw Error('CONTENT_START_INVALIDATED');
+      }
+    }catch(error){this.#startupError=error.message;this.#localStartup.first_failure??=error.message;this.release();}
     return this.inspect();
   }
   invalidate(reason='AUTHORITY_REVOKED'){
@@ -103,7 +129,8 @@ export class ContentSessionAdapter {
     this.#closed=true;
     for(const id of this.#entries.keys())this.releaseFeature(id);
     if([...this.#entries.values()].every(e=>e.released)){
-      this.#document.defaultView?.removeEventListener('pagehide',this.pagehide);
+      this.#localStartup.pagehide_listener='UNCONFIRMED';
+      if(this.#document.defaultView){this.#document.defaultView.removeEventListener('pagehide',this.pagehide);this.#localStartup.pagehide_listener='REMOVED';}
       if(LIVE.get(this.#ledger)?.get(this.#scope)===this)LIVE.get(this.#ledger).delete(this.#scope);
     }
     return this.inspect();
@@ -112,6 +139,8 @@ export class ContentSessionAdapter {
     const pending=[...this.#entries].filter(([,e])=>!e.released).map(([id])=>id);
     return structuredClone({local_only:true,native_verified:false,scope:this.#options,started:this.#started,closed:this.#closed,invalidation_reason:this.#invalidated,
       startup_error:this.#startupError,callback_error_count:this.#callbackErrors,
+      local_startup:{...this.#localStartup,scope_registered:LIVE.get(this.#ledger)?.get(this.#scope)===this,
+        resources_may_remain:this.#localStartup.resource_uncertainty||pending.length>0||['ATTACHED','UNCONFIRMED'].includes(this.#localStartup.pagehide_listener)},
       // Before release, a live session may own unobserved/failed mutations. Only
       // its verified release result can clear this conservative obligation.
       cleanup_pending:pending.length>0,pending_features:pending,
@@ -121,6 +150,23 @@ export class ContentSessionAdapter {
     const e=this.#entries.get(feature_id);
     if(feature_id!=='IG-04'||!e)throw Error('UNOWNED_EVIDENCE_FEATURE');
     return e.session.evidenceSnapshot();
+  }
+  async quiescenceSnapshot(){
+    if(this.#features.length!==1||this.#features[0].feature_id!=='IG-04')throw Error('UNSUPPORTED_EVIDENCE_FEATURE');
+    this.invalidate('LOCAL_QUIESCENCE_REQUESTED');
+    // Detaching this adapter's listener is independent of RELEASE authority.
+    // Keep LIVE registration, claims and all durable obligations untouched.
+    if(this.#localStartup.pagehide_listener!=='NOT_ATTEMPTED'){
+      this.#localStartup.pagehide_listener='UNCONFIRMED';
+      try{this.#document.defaultView.removeEventListener('pagehide',this.pagehide);this.#localStartup.pagehide_listener='REMOVED';}catch{}
+    }
+    const e=this.#entries.get('IG-04');
+    const snapshot=e?await e.session.quiescenceSnapshot():null;
+    const listener_detached=['NOT_ATTEMPTED','REMOVED'].includes(this.#localStartup.pagehide_listener);
+    const session_confirmed=e?snapshot.local_quiescence.locally_quiescent:!this.#localStartup.resource_uncertainty;
+    return {local_only:true,native_verified:false,state:this.inspect(),snapshot,
+      local_quiescence:{future_effects_closed:this.#closed,adapter_listener_detached:listener_detached,
+        locally_quiescent:this.#closed&&listener_detached&&session_confirmed&&!this.#localStartup.resource_uncertainty}};
   }
   async completeReservation(identity,proof){
     const e=this.#entries.get('IG-04');

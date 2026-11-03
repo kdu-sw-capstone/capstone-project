@@ -36,6 +36,65 @@ const apply=p=>p.evaluate(()=>receiver.apply(input,'input-token'));
 async function applied(p){const r=await apply(p);assert.equal(r.accepted,true);await p.waitForFunction(()=>document.querySelector('#comment').inert);return r;}
 async function id(p){return p.evaluate(async()=>{const q=await receiver.query();return q.snapshot.gate.reservations[0].identity;});}
 const release=p=>p.evaluate(()=>receiver.release(binding,'release-token'));
+test('completion reply from before a repeated scoped release retains debt until a fresh verification',async t=>{
+ const p=await fixture(t,{completion:'deferred'});await applied(p);const identity=await id(p);await release(p);
+ await p.evaluate(identity=>{window.oldCompletion=receiver.completeReservation(binding,identity,'completion-token');},identity);
+ await p.waitForFunction(()=>checks.completion.length===1);
+ await release(p);
+ await p.evaluate(()=>checks.completion[0].resolve(true));
+ const stale=await p.evaluate(()=>oldCompletion);
+ assert.equal(stale.accepted,false);assert.equal(stale.state.cleanup_pending,true);
+ await p.evaluate(identity=>{window.freshCompletion=receiver.completeReservation(binding,identity,'completion-token');},identity);
+ await p.waitForFunction(()=>checks.completion.length===2);
+ await p.evaluate(()=>checks.completion[1].resolve(true));
+ assert.equal((await p.evaluate(()=>freshCompletion)).accepted,true);
+ assert.equal((await p.evaluate(()=>receiver.query())).state.cleanup_pending,false);
+});
+
+test('local cleanup reentry at final proof consumption cannot be mistaken for an unchanged revision',async t=>{
+ const p=await fixture(t);await applied(p);await release(p);
+ const result=await p.evaluate(async()=>{
+  const {HideReservationGate}=await import('/content/hide-reservation-gate.mjs');
+  const gate=new HideReservationGate(ledger,{...opts,context:binding,verifyContext:()=>true},()=>{},binding.scope);
+  gate.hide('local-review',document.querySelector('#comment'),()=>true);
+  const snapshot=await gate.snapshot(),identity=snapshot.reservations[0].identity;
+  gate.close();let reads=0;
+  const result=await gate.completeReservation(identity,'completion-token',()=>{if(++reads===2)gate.close();return true;});
+  return {result,obligations:gate.inspect().reservation_obligations.length};
+ });
+ assert.equal(result.result.accepted,false);assert.equal(result.obligations,1);
+});
+test('stable old-scope completion remains available after APPLY authority is revoked',async t=>{
+ const p=await fixture(t);await applied(p);const identity=await id(p);
+ await p.evaluate(()=>current=false);await release(p);
+ const result=await p.evaluate(identity=>receiver.completeReservation(binding,identity,'completion-token'),identity);
+ assert.equal(result.accepted,true);assert.equal(result.local_only,true);assert.equal(result.native_verified,false);
+ assert.equal(result.state.cleanup_pending,false);assert.equal(await hidden(p),false);
+ assert.equal((await apply(p)).accepted,false);assert.equal(await p.evaluate(()=>requests.length),1);
+});
+for(const method of ['pushState','replaceState'])test(`receiver retires on SPA ${method} round trip before a late reservation ACK`,async t=>{
+ const p=await fixture(t,{reservation:'deferred'});await apply(p);await p.waitForFunction(()=>requests.length===1);
+ await p.evaluate(method=>{
+  if(!navigation)throw Error('NAVIGATION_API_REQUIRED_FOR_FIXTURE');
+  const before=location.href;history[method]({},'','/p/other/');history[method]({},'',before);
+  requests[0].resolve(requests[0].plan.plan_id);
+ },method);
+ await p.waitForTimeout(60);
+ const result=await p.evaluate(()=>receiver.query());
+ assert.equal(result.revalidation_required,true);assert.equal(await hidden(p),false);
+ assert.equal((await apply(p)).accepted,false);
+ const ended=await release(p);assert.equal(ended.accepted,true);assert.equal(ended.state.cleanup_pending,true);
+});
+test('receiver same-URL state update keeps authority but persisted return never reopens it',async t=>{
+ const p=await fixture(t);await applied(p);
+ await p.evaluate(()=>history.replaceState({ui:'only'},'',location.href));
+ assert.equal((await p.evaluate(()=>receiver.query())).revalidation_required,false);assert.equal(await hidden(p),true);
+ await p.evaluate(()=>{dispatchEvent(new PageTransitionEvent('pagehide',{persisted:true}));dispatchEvent(new PageTransitionEvent('pageshow',{persisted:true}));});
+ assert.equal((await apply(p)).accepted,false);
+ const ended=await release(p);assert.equal(ended.accepted,true);assert.equal(await hidden(p),false);
+ // Local restoration is not completion of the externally reserved obligation.
+ assert.equal(ended.state.cleanup_pending,true);
+});
 for(const missing of ['verifyInput','isCurrent','reserve','getGeneration','getWorkerInstance','verifyRelease','verifyCompletion'])test(`missing ${missing} denies receiver before any effect`,async t=>{
  const p=await fixture(t,{missing});assert.equal((await apply(p)).accepted,false);assert.equal(await hidden(p),false);assert.equal(await p.evaluate(()=>requests.length),0);
 });
