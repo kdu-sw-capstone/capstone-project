@@ -7,13 +7,15 @@ export class IG04ContentReceiver {
   #document;#options;#worker;#url;#navigation;#id=crypto.randomUUID();#adapter;
   #input;#candidate;#key;#opening=false;#closed=false;#retired=false;#revision=0;#released=false;
   #workerLost=false;
+  #localStartup={adapter_start_called:false,pagehide_listener:'NOT_ATTEMPTED',navigation_listener:'NOT_ATTEMPTED'};
   constructor(document,options={}){
     this.#document=document;this.#options={...options};this.#worker=this.#readWorker();this.#url=document.location.href;
-    this.pagehide=()=>this.invalidate('PAGEHIDE');document.defaultView?.addEventListener('pagehide',this.pagehide);
+    this.pagehide=()=>this.invalidate('PAGEHIDE');
+    if(document.defaultView){this.#localStartup.pagehide_listener='UNCONFIRMED';document.defaultView.addEventListener('pagehide',this.pagehide);this.#localStartup.pagehide_listener='ATTACHED';}
     // URL round trips must retire this receiver before a pending ACK can win.
     this.route=()=>{this.#lifetime();};
     this.#navigation=document.defaultView?.navigation;
-    this.#navigation?.addEventListener('currententrychange',this.route);
+    if(this.#navigation){this.#localStartup.navigation_listener='UNCONFIRMED';this.#navigation.addEventListener('currententrychange',this.route);this.#localStartup.navigation_listener='ATTACHED';}
   }
   #sync(fn){try{const v=fn();if(v&&typeof v.then==='function'){Promise.resolve(v).catch(()=>{});return undefined;}return v;}catch{return undefined;}}
   #readWorker(){const v=this.#sync(()=>this.#options.getWorkerInstance?.());return typeof v==='string'&&v.length>0&&v.length<=200?v:null;}
@@ -38,10 +40,12 @@ export class IG04ContentReceiver {
   }
   #transport(){return freezeCopy({receiver_instance_id:this.#id,worker_instance_id:this.#worker});}
   #ready(){return ['verifyInput','isCurrent','reserve','getGeneration','getWorkerInstance','verifyRelease','verifyCompletion'].every(k=>typeof this.#options[k]==='function');}
-  #deny(reason){return {local_only:true,native_verified:false,accepted:false,reason,cleanup_pending:this.#adapter?.inspect().cleanup_pending??false,revalidation_required:this.#retired};}
+  #startup(){return {...this.#localStartup,adapter_created:!!this.#adapter,
+    receiver_resources_may_remain:['ATTACHED','UNCONFIRMED'].includes(this.#localStartup.pagehide_listener)||['ATTACHED','UNCONFIRMED'].includes(this.#localStartup.navigation_listener)};}
+  #deny(reason){return {local_only:true,native_verified:false,accepted:false,reason,cleanup_pending:this.#adapter?.inspect().cleanup_pending??false,revalidation_required:this.#retired,local_startup:this.#startup()};}
   invalidate(reason='AUTHORITY_REVOKED'){
     this.#closed=true;this.#retired=true;this.#revision++;this.#adapter?.invalidate(reason);
-    this.#navigation?.removeEventListener('currententrychange',this.route);
+    if(this.#navigation){this.#localStartup.navigation_listener='UNCONFIRMED';this.#navigation.removeEventListener('currententrychange',this.route);this.#localStartup.navigation_listener='REMOVED';}
     return this.#deny(reason);
   }
   async apply(input,authorization){
@@ -76,6 +80,7 @@ export class IG04ContentReceiver {
             const ok=await this.#options.verifyCompletion(proof,freezeCopy({...expected,transport:lifetime}));return this.#cleanupLifetime()&&ok===true;},
           timeoutMs:this.#options.timeoutMs??5000,maxPlans:this.#options.maxPlans??256}
       });
+      this.#localStartup.adapter_start_called=true;
       const result=this.#adapter.start();
       if(result.startup_error){this.#closed=true;return this.#deny('CONTENT_START_FAILED');}
       return {accepted:true,duplicate:false,...await this.query()};
@@ -87,6 +92,7 @@ export class IG04ContentReceiver {
     // Recheck after the snapshot's asynchronous hashing wait.
     this.#lifetime();
     return {local_only:true,native_verified:false,...this.#transport(),revalidation_required:this.#retired,
+      local_startup:this.#startup(),
       phase:this.#retired?'REVALIDATION_REQUIRED':this.#closed?'CLOSED_LOCAL':this.#adapter?'BOUND_LOCAL':'UNBOUND',
       state:this.#adapter?.inspect()??null,snapshot};
   }
