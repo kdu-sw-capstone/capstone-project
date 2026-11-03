@@ -8,7 +8,7 @@ chrome.runtime.onMessage.addListener((message,sender,reply)=>{
     const [{BlurSession},{profile},{imageKey}]=await ready;
     if(message.type==='SELECT_IMAGE'){diagnosisEpoch++;selecting=true;return {testOnly:true,selecting:true};}
     if(message.type==='SELECTED_STATE')return {testOnly:true,selected_image:selected};
-    if(message.type==='RELEASE'){diagnosisEpoch++;selecting=false;selected=null;const uiClean=!inspector||inspector.release();if(uiClean)inspector=null;const result=session?.release();if(!result||result.restored)session=null;return {released:result??{restored:true},testOnly:true,diagnosis_cleanup_pending:!uiClean};}
+    if(message.type==='RELEASE'){diagnosisEpoch++;selecting=false;selected=null;const uiClean=!inspector||inspector.release();if(uiClean)inspector=null;const result=session?.release();if(!result||(result.restored&&result.cleanup_pending!==true))session=null;return {released:result??{restored:true},testOnly:true,diagnosis_cleanup_pending:!uiClean};}
     if(message.type==='APPLY'){
       if(opening)throw Error('BUSY');opening=true;
       try{if(session&&!session.inspect().active)throw Error('OLD_SCOPE_CLEANUP_REQUIRED');
