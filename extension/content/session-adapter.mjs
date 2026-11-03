@@ -151,6 +151,23 @@ export class ContentSessionAdapter {
     if(feature_id!=='IG-04'||!e)throw Error('UNOWNED_EVIDENCE_FEATURE');
     return e.session.evidenceSnapshot();
   }
+  async quiescenceSnapshot(){
+    if(this.#features.length!==1||this.#features[0].feature_id!=='IG-04')throw Error('UNSUPPORTED_EVIDENCE_FEATURE');
+    this.invalidate('LOCAL_QUIESCENCE_REQUESTED');
+    // Detaching this adapter's listener is independent of RELEASE authority.
+    // Keep LIVE registration, claims and all durable obligations untouched.
+    if(this.#localStartup.pagehide_listener!=='NOT_ATTEMPTED'){
+      this.#localStartup.pagehide_listener='UNCONFIRMED';
+      try{this.#document.defaultView.removeEventListener('pagehide',this.pagehide);this.#localStartup.pagehide_listener='REMOVED';}catch{}
+    }
+    const e=this.#entries.get('IG-04');
+    const snapshot=e?await e.session.quiescenceSnapshot():null;
+    const listener_detached=['NOT_ATTEMPTED','REMOVED'].includes(this.#localStartup.pagehide_listener);
+    const session_confirmed=e?snapshot.local_quiescence.locally_quiescent:!this.#localStartup.resource_uncertainty;
+    return {local_only:true,native_verified:false,state:this.inspect(),snapshot,
+      local_quiescence:{future_effects_closed:this.#closed,adapter_listener_detached:listener_detached,
+        locally_quiescent:this.#closed&&listener_detached&&session_confirmed&&!this.#localStartup.resource_uncertainty}};
+  }
   async completeReservation(identity,proof){
     const e=this.#entries.get('IG-04');
     if(!e)return {local_only:true,accepted:false,reason:'UNOWNED_RESERVATION_FEATURE'};
