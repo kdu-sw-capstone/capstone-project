@@ -6,6 +6,7 @@ import {inspectKeywordUrl} from './keyword-url.mjs';
 export class KeywordSession {
   #doc;#ledger;#policy;#canApply;#authorize;#claim;#url;#observer;#notice;
   #active=false;#started=false;#busy=false;#queued=false;#timer;#result=null;#revision=0;#cleaning=false;
+  #observerState='NOT_ATTEMPTED';#listeners=[];#polling=false;#callbacks=0;
   constructor(document,{ledger,policy,owner_binding_id,binding_id,canApply=()=>false,authorizeNavigation=()=>false}) {
     const uuid=/^[a-f0-9]{8}(?:-[a-f0-9]{4}){3}-[a-f0-9]{12}$/;
     if(!(ledger instanceof ClaimLedger)||![owner_binding_id,binding_id].every(x=>typeof x==='string'&&uuid.test(x)))throw Error('INVALID_KEYWORD_SCOPE');
@@ -13,12 +14,16 @@ export class KeywordSession {
     this.#doc=document;this.#ledger=ledger;this.#policy=structuredClone(policy);this.#canApply=canApply;this.#authorize=authorizeNavigation;
     this.#claim=JSON.stringify(['KEYWORD',owner_binding_id,binding_id,crypto.randomUUID()]);
     this.refresh=()=>{if(this.#active&&!this.#queued){this.#queued=true;queueMicrotask(()=>{this.#queued=false;if(this.#active)this.scan();});}};
-    this.play=event=>{if(this.#active&&this.#ledger.inspect(this.#claim).remaining_targets>0&&this.#current()&&event.target?.ownerDocument===this.#doc){try{event.target.pause();if(event.target.paused!==true)throw Error('MEDIA_NOT_STOPPED');}catch{this.#result={...this.#result,status:'FAILED',media_stopped:false};}}};
+    this.play=event=>{this.#callbacks++;try{if(this.#active&&this.#ledger.inspect(this.#claim).remaining_targets>0&&this.#current()&&event.target?.ownerDocument===this.#doc){try{event.target.pause();if(event.target.paused!==true)throw Error('MEDIA_NOT_STOPPED');}catch{this.#result={...this.#result,status:'FAILED',media_stopped:false};}}}finally{this.#callbacks--;}};
     this.pagehide=()=>this.stop();
   }
   #current(checkUrl=true){try{const v=this.#canApply();if(v&&typeof v.then==='function')Promise.resolve(v).catch(()=>{});return this.#active&&this.#doc.defaultView?.document===this.#doc&&(!checkUrl||this.#doc.location.href===this.#url)&&v===true;}catch{return false;}}
   #base(){return {local_only:true,native_verified:false,core_connected:false};}
-  #observe(){if(this.#active)this.#observer.observe(this.#doc.documentElement,{childList:true,subtree:true,attributes:true,attributeFilter:['style','inert']});}
+  #observe(){if(this.#active){this.#observerState='UNCONFIRMED';this.#observer.observe(this.#doc.documentElement,{childList:true,subtree:true,attributes:true,attributeFilter:['style','inert']});this.#observerState='ATTACHED';}}
+  #listen(target,type,callback,capture=false){const entry={target,type,callback,capture,removed:false};this.#listeners.push(entry);target.addEventListener(type,callback,capture);}
+  #termination(){const observer_stopped=['NOT_ATTEMPTED','CONSTRUCTED','STOPPED'].includes(this.#observerState),listeners_pending=this.#listeners.filter(e=>!e.removed).length;
+    return {scan_in_progress:this.#busy,scan_scheduled:this.#queued,callbacks_in_progress:this.#callbacks,observer_stopped,listeners_pending,polling_active:this.#polling,
+      locally_quiescent:!this.#active&&!this.#busy&&!this.#queued&&!this.#callbacks&&observer_stopped&&!listeners_pending&&!this.#polling};}
   #pending(){return this.#ledger.inspect(this.#claim).remaining_targets>0||!!this.#notice;}
   #cleanNotice(){const notice=this.#notice;if(!notice)return true;
     if(notice.ownerDocument!==this.#doc)return false;
@@ -32,13 +37,13 @@ export class KeywordSession {
     if(this.#started)throw Error('KEYWORD_ALREADY_STARTED');
     if(this.#doc.defaultView.top!==this.#doc.defaultView||!/^https?:$/.test(this.#doc.location.protocol))throw Error('UNSUPPORTED_KEYWORD_DOCUMENT');
     this.#started=true;this.#active=true;this.#url=this.#doc.location.href;
-    this.#observer=new this.#doc.defaultView.MutationObserver(this.refresh);
-    for(const event of ['popstate','hashchange','yt-navigate-finish'])this.#doc.defaultView.addEventListener(event,this.refresh);
-    this.#doc.defaultView.navigation?.addEventListener('currententrychange',this.refresh);
-    this.#doc.defaultView.addEventListener('pagehide',this.pagehide);
-    this.#doc.addEventListener('play',this.play,true);
+    this.#observerState='UNCONFIRMED';this.#observer=new this.#doc.defaultView.MutationObserver(this.refresh);this.#observerState='CONSTRUCTED';
+    for(const event of ['popstate','hashchange','yt-navigate-finish'])this.#listen(this.#doc.defaultView,event,this.refresh);
+    if(this.#doc.defaultView.navigation)this.#listen(this.#doc.defaultView.navigation,'currententrychange',this.refresh);
+    this.#listen(this.#doc.defaultView,'pagehide',this.pagehide);
+    this.#listen(this.#doc,'play',this.play,true);
     // Fallback only observes URL identity; it does not authorize a transition.
-    this.#timer=this.#doc.defaultView.setInterval(()=>{if(this.#doc.location.href!==this.#url)this.refresh();},250);
+    this.#polling=true;this.#timer=this.#doc.defaultView.setInterval(()=>{if(this.#doc.location.href!==this.#url)this.refresh();},250);
     return this.scan();
   }
   scan(){
@@ -49,9 +54,10 @@ export class KeywordSession {
       if(!approved||!this.#current(false)){this.stop();return this.#result={...this.#base(),status:'REVALIDATION_REQUIRED',matched:null,cleanup_pending:this.#pending()};}
       this.#url=this.#doc.location.href;
     }
-    this.#busy=true;this.#observer.disconnect();const revision=this.#revision;
+    this.#busy=true;const revision=this.#revision;
     const current=()=>revision===this.#revision&&this.#current();
     try{
+      this.#observerState='UNCONFIRMED';this.#observer.disconnect();this.#observerState='STOPPED';
       const check=inspectKeywordUrl(this.#url,this.#policy);
       this.#result={...this.#base(),...check};
       if(check.matched!==true){
@@ -87,11 +93,12 @@ export class KeywordSession {
   }
   stop(){
     this.#revision++;
-    this.#active=false;this.#observer?.disconnect();clearInterval(this.#timer);
-    for(const event of ['popstate','hashchange','yt-navigate-finish'])this.#doc.defaultView.removeEventListener(event,this.refresh);
-    this.#doc.defaultView.navigation?.removeEventListener('currententrychange',this.refresh);
-    this.#doc.defaultView.removeEventListener('pagehide',this.pagehide);this.#doc.removeEventListener('play',this.play,true);
+    this.#active=false;
+    if(this.#observer){this.#observerState='UNCONFIRMED';try{this.#observer.disconnect();this.#observerState='STOPPED';}catch{}}
+    if(this.#polling&&this.#timer!==undefined)try{this.#doc.defaultView.clearInterval(this.#timer);this.#polling=false;}catch{}
+    // A failed removal cannot skip the remaining owned resources.
+    for(const entry of this.#listeners)if(!entry.removed)try{entry.target.removeEventListener(entry.type,entry.callback,entry.capture);entry.removed=true;}catch{}
   }
-  release(){this.stop();const cleanup=this.#clean();return {...this.#base(),...cleanup,cleanup_pending:!cleanup.restored};}
-  inspect(){return structuredClone({...this.#base(),active:this.#active,result:this.#result,cleanup_pending:this.#pending()});}
+  release(){this.stop();const cleanup=this.#clean();return {...this.#base(),...cleanup,local_termination:this.#termination(),cleanup_pending:!cleanup.restored||!this.#termination().locally_quiescent};}
+  inspect(){return structuredClone({...this.#base(),active:this.#active,result:this.#result,local_termination:this.#termination(),cleanup_pending:this.#pending()||(!this.#active&&!this.#termination().locally_quiescent)});}
 }

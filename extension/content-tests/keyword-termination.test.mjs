@@ -1,0 +1,40 @@
+import test from 'node:test';import assert from 'node:assert/strict';
+import {fixture,tick} from './keyword-termination-fixture.mjs';
+import {KeywordSession} from '../content/keyword-session.mjs';import {ClaimLedger} from '../content/claim-ledger.mjs';
+function make(){const h=fixture();h.ledger=new ClaimLedger(h.doc);h.session=new KeywordSession(h.doc,{ledger:h.ledger,owner_binding_id:'00000000-0000-4000-8000-000000000001',binding_id:'00000000-0000-4000-8000-000000000002',policy:{enabled:true,match_profile:'URL_BOUNDARY_1',scope:'FOCUS_FROZEN',terms:['restricted'],exceptions:[]},canApply:()=>true});return h;}
+test('keyword reports actual queued scan until its callback drains',async t=>{const h=make();t.after(()=>h.session.release());h.session.start();h.session.refresh();h.session.stop();
+ assert.equal(h.session.inspect().local_termination.scan_scheduled,true);await tick();assert.equal(h.session.inspect().local_termination.locally_quiescent,true);});
+test('keyword disconnect failure cannot strand play listener and masquerade as cleanup',async t=>{const h=make();t.after(()=>{h.observers[0].failDisconnect=false;h.session.release();});h.session.start();h.observers[0].failDisconnect=true;
+ const r=h.session.release();assert.equal(r.cleanup_pending,true);assert.equal(h.doc.listeners.get('play').size,0);assert.equal(h.session.inspect().local_termination.observer_stopped,false);
+ h.observers[0].failDisconnect=false;assert.equal(h.session.release().cleanup_pending,false);});
+
+test('keyword media callback remains pending during reentrant release; no later pause',async t=>{const h=make();t.after(()=>h.session.release());let during,later=0;
+ const media={ownerDocument:h.doc,paused:true,pause(){during=h.session.release();}};h.doc.media=[media,{ownerDocument:h.doc,paused:false,pause(){later++;}}];
+ h.session.start();assert.equal(later,0);assert.equal(during.local_termination.scan_in_progress,true);assert.equal(during.cleanup_pending,true);
+ await tick();assert.equal(h.session.inspect().local_termination.locally_quiescent,true);});
+test('keyword listener removal failure is separately tracked and retries without losing another owner',async t=>{const h=make();t.after(()=>{h.doc.failRemove=false;h.session.release();h.ledger.release('other');});
+ assert.equal(h.session.start().status,'RESTRICTED_LOCAL');h.ledger.hide('other',h.doc.body);h.doc.failRemove=true;
+ assert.equal(h.session.release().cleanup_pending,true);assert.equal(h.session.inspect().local_termination.listeners_pending,1);assert.equal(h.doc.body.inert,true);
+ h.doc.failRemove=false;assert.equal(h.session.release().cleanup_pending,false);assert.equal(h.doc.body.inert,true);h.ledger.release('other');assert.equal(h.doc.body.inert,false);assert.equal(h.doc.body.style.getPropertyPriority('display'),'important');});
+test('keyword play listener tracks execution until actual callback returns',async t=>{const h=make();t.after(()=>h.session.release());h.session.start();let during;
+ const media={ownerDocument:h.doc,paused:true,pause(){during=h.session.release();}};h.session.play({target:media});
+ assert.equal(during.local_termination.callbacks_in_progress,1);assert.equal(during.cleanup_pending,true);assert.equal(h.session.inspect().local_termination.locally_quiescent,true);});
+test('keyword queued callback after pagehide cannot pause a late media element',async t=>{const h=make();t.after(()=>h.session.release());h.session.start();h.session.refresh();h.win.dispatchEvent(new Event('pagehide'));
+ let pauses=0;h.doc.media=[{ownerDocument:h.doc,paused:false,pause(){pauses++;}}];await tick();assert.equal(pauses,0);assert.equal(h.session.inspect().local_termination.locally_quiescent,true);assert.equal(h.session.inspect().cleanup_pending,true);h.session.release();});
+test('keyword partial startup retains unknown observer acquisition',()=>{const h=make();h.win.MutationObserver=class{constructor(){throw Error('UNKNOWN_ACQUISITION');}};
+ assert.throws(()=>h.session.start(),/UNKNOWN_ACQUISITION/);assert.equal(h.session.release().cleanup_pending,true);assert.equal(h.session.inspect().local_termination.observer_stopped,false);});
+test('keyword termination snapshots are copies and contain no URL or policy words',async t=>{const h=make();t.after(()=>h.session.release());h.session.start();h.session.stop();const q=h.session.inspect();q.local_termination.locally_quiescent=false;
+ assert.equal(h.session.inspect().local_termination.locally_quiescent,true);assert.equal(JSON.stringify(q.local_termination).includes('restricted'),false);});
+
+test('keyword restore failure remains tied to original body and restores important on retry',async t=>{const h=make();t.after(()=>h.session.release());h.session.start();const set=h.doc.body.style.setProperty;
+ h.doc.body.style.setProperty=(...args)=>{if(args[0]==='display')throw Error('RESTORE_FAILED');return set(...args);};const r=h.session.release();assert.equal(r.restored,false);assert.equal(r.cleanup_pending,true);
+ h.doc.body.style.setProperty=set;assert.equal(h.session.release().cleanup_pending,false);assert.equal(h.doc.body.style.getPropertyValue('display'),'grid');assert.equal(h.doc.body.style.getPropertyPriority('display'),'important');});
+test('keyword foreign notice is retained without touching foreign document, then cleanup retries',async t=>{const h=make();t.after(()=>h.session.release());h.session.start();const notice=h.doc.created.find(e=>e.tagName==='ASIDE');notice.ownerDocument={};
+ assert.equal(h.session.release().restored,false);assert.equal(notice.isConnected,true);assert.equal(h.session.inspect().cleanup_pending,true);
+ notice.ownerDocument=h.doc;assert.equal(h.session.release().cleanup_pending,false);});
+test('keyword partial listener registration can be removed without assuming failed add was absent',async()=>{const h=make(),add=h.doc.addEventListener.bind(h.doc);
+ h.doc.addEventListener=(...args)=>{add(...args);throw Error('ATTACH_UNCONFIRMED');};assert.throws(()=>h.session.start(),/ATTACH_UNCONFIRMED/);
+ assert.equal(h.session.inspect().local_termination.listeners_pending>0,true);assert.equal(h.session.release().cleanup_pending,false);assert.equal(h.doc.listeners.get('play').size,0);});
+test('keyword interval cancellation failure stays pending and later retry uses original handle',async t=>{const h=make();t.after(()=>h.session.release());h.session.start();const clear=h.win.clearInterval;h.win.clearInterval=()=>{throw Error('CLEAR_FAILED');};
+ assert.equal(h.session.release().cleanup_pending,true);assert.equal(h.session.inspect().local_termination.polling_active,true);h.win.clearInterval=clear;
+ assert.equal(h.session.release().cleanup_pending,false);});

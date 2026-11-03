@@ -129,3 +129,15 @@
 ### 2026-10-10 중간 게시 완료
 
 구현3d7bff718e756cedb0950858885edbb6f472ea68를 feature/content-control로 Push하고 원격SHA 일치를 확인했다. 이전 게시/작성자 차단 해소(사용자 지정 local Git 작성자 적용). PR/리뷰/develop병합 미수행. 자동29/29 PASS·사용자 OPTION-09 부분 확인은 상세 기록과 동일하며 실제 서비스/Core/Server·목록/모델·복구 미검증 유지. 오늘은 중간 공유로 종료, 다음은 D-06 연결 제안 팀 검토→세부계약 합의→Core 연결/실제 Chrome 검증. 최신 게시/재개 원본은 Content_Control_2026-10-10.md 참조.
+
+
+## 2026-11-03 다훈 전담 — keyword 로컬 종료 관측 격리 수정
+- 담당 김다훈. 별도 managed Worktree C:/Users/dahun/.codex/worktrees/content-keyword-termination/04 · 추가 MVP 구현, detached 기준 33b88f810f4e56bb42f4956c95860dab70a55cbb. 기존 #97/#99 원격·타worktree/index·scan0 미커밋·공유staged삭제1,036파일 보존. Commit/Push/PR/병합은 별도 승인으로 미수행. #26/#87/IG04 producer·Core/Server/Schema 변경 없음.
+- KeywordSession.stop이 observer disconnect 예외 이후 play/navigation listener·polling 정리를 건너뛰는 실제 반례를 수정했다. scan/queued microtask/play callback·observer/listener/polling 상태를 inspect()/release().local_termination에 복사해 노출한다. stop은 각 자원 정리를 독립 시도하고 실제 미종료 flag/실패를 보존한다. 원래 ClaimLedger·notice cleanup/다른 owner·display!important·미디어 재생 금지 의미는 유지한다.
+- 동일한 최종 fixture와 정확한 기준 소스를 격리 추출하여 최소2반례 수정전0PASS/2FAIL(exit1) → 최종 같은2PASS. keyword-exact-before.log는 정확 baseline이며 최초 로그와 구분한다. 신규 12시험은 최종 Node회귀 59/59 PASS에 포함, FAIL/SKIP0(exit0). 계약6/6도 각 집합에 포함되어 키워드59와 블러67을 합산하지 않는다. Node24.19 DOM/Events/observer·media/model/runtime 대역이며 실제 Chrome/모델/Native/START/END 미실행이다.
+- 기본거절/기존URL·frozen옵션·정책 판별/두모델·임계값·기존스타일/복원알고리즘을 재개발하지 않는다. 로컬 진단은 외부 watch_ref/closure/CleanupGrant/Server RELEASED/Worker physical model 종료 증거가 아니다. pending_model_tasks는 Content가 기다린 decode/반환Promise이며 provider가 early-reject한 뒤 Worker에서 계속 도는 실제 계산까지 확인하지 않는다.
+- Node 영향범위·명령은 C:/Users/dahun/.codex/visualizations/2026/10/31/01a191b6-1724-73b2-b0e1-0149c53fba64/content-termination-20261103/handoff.json에 정확히 저장한다. node --check 변경파일·git diff --check·기존 build-chrome-harness PASS. 블러 전용 site/model rebuild는 새worktree에 검증 model artifact/dependency가 없어 NOT_RUN, 다운로드/설치/실행하지 않음. generic harness build가 새 blur code/site bundle 검증을 대신하지 않는다.
+- Browser 전체 회귀·실제 두모델/사이트·원격CI는 이번 변경에서 NOT_RUN. 기존 원격 PASS는 기존HEAD에만 귀속한다. 최초 넓은회귀 선택에 포함된 blur-diagnostics/popup-state가 Playwright 모듈 미해결로 실패했으며 Chrome launch 전 종료, 선택실패로그를 보존하고 실제 브라우저 파일을 제외한 Node-only 집합을 실행했다.
+- 자료: C:/Users/dahun/.codex/visualizations/2026/10/31/01a191b6-1724-73b2-b0e1-0149c53fba64/content-termination-20261103/keyword-verification.json·keyword.patch·keyword-exact-before.log 및 상위디렉터리 keyword-termination-regression.log. 파일 SHA256/기준HEAD/tree/patch 적용확인/명령·종료코드/의미 한계 기록. Session 자원 scope만 관측하며 TEST bootstrap의 상시 메시지/페이지 listener 전체 종료 proof로 확대하지 않는다.
+- 통합 채팅에 독립 검토 인계만 요청한다. 검토범위: 자원실패시 나머지정리/미확정참조보존·late continuation·다른owner/원래목표·콜백재진입·관측사본/정보노출·사용하는 caller의 pending 소비. 실제 provider·watch_ref·closure·CleanupGrant/Worker/RuntimeReport/Server 연결은 HOLD.
+- 남은 Content: 실제 제품 callback/provider 소비 위치와 불변 context 결속·watch/old-scope cleanup consumer는 공동 형식/실제 API 필요. 11/5 지민 재분담 후보는 승인된 Chrome에서 각 기능의 실제DOM·SPA/BFCache·미디어/모델·복원 수용과 확정된 Content consumer 연결. 실제수용/Git/독립검토는 별도다. M1 BLOCKED / Shorts PARTIAL / 제품E2E NOT_RUN / MVP_FINAL_COMPLETE=false.
