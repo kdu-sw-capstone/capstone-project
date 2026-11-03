@@ -2,7 +2,7 @@ import {useEffect,useRef,useState} from "react";
 import {ApiError,message} from "./api";
 import {Panel,Toggle,canonicalDraftHost} from "./AdditionalUi";
 import HostScopeEditor,{type HostScope} from "./HostScopeEditor";
-import TimeRuleEditor,{WhenEditor,type TimeWindow,type RuleWhen} from "./TimeRuleEditor";
+import {WhenEditor,type RuleWhen} from "./TimeRuleEditor";
 import {internalFeatures} from "./additionalFeatures";
 import {configWrite,configDelete,listConfigs,readConfig,type ConfigRecord,type ConfigValue} from "./additionalConfigApi";
 import RuntimeDeliveryPanel from "./RuntimeDeliveryPanel";
@@ -12,7 +12,7 @@ import DeletedConfigReleasePanel,{type DeletedConfigRef} from "./DeletedConfigRe
 import {configDelivery} from "./runtimeDeliveryState";
 
 type Kind=ConfigValue["kind"];
-const names:Record<Kind,string>={CONTENT:"콘텐츠 제한",CADENCE:"반복 집중·휴식",SITE_TIME:"사이트 시간·일일 한도",FOCUS_SCHEDULE:"집중 예약"};
+const names:Record<Kind,string>={CONTENT:"콘텐츠 제한",CADENCE:"반복 집중·휴식",SITE_TIME:"사이트별 하루 이용 한도",FOCUS_SCHEDULE:"집중 예약"};
 function blank(kind:Kind,id:string):ConfigValue {
  if(kind==="CONTENT")return {kind,features:internalFeatures.map(([feature_id])=>({feature_id,enabled:false,required:true})),keyword:{enabled:false,match_profile:"URL_BOUNDARY_1",terms:[],exceptions:[],scope:"FOCUS_FROZEN"},adult:{enabled:false,artifact_id:null,artifact_sha256:null,custom_hosts:[],exceptions:[],scope:"FOCUS_FROZEN"},blur:{enabled:false,sensitivity:"HIGH",model_profile_id:null,profile_sha256:null,scope:"FOCUS_FROZEN"}};
  if(kind==="CADENCE")return {kind,enabled:false,focus_minutes:25,rest_minutes:5,cycles:4,auto_start_next:false,rest_clock:"ELAPSED_WALL_CLOCK",missed_focus:"WAIT_USER",deadline_at:null};
@@ -90,7 +90,7 @@ export default function AdditionalSettings({installations}:{installations:{execu
   {loaded&&executor&&<DailyUsagePanel executor={executor} records={rows} />}
   {loaded&&executor&&<ScheduleExecutionPanel executor={executor} records={rows} />}
   {editor&&value&&<Panel title={names[value.kind]+" 편집"}><form onSubmit={e=>{e.preventDefault();void save();}}><fieldset disabled={busy||!loaded}>
-   {value.kind!=="CONTENT"&&<Toggle title="이 설정 사용" checked={Boolean(value.enabled)} onChange={enabled=>change({enabled})}/>}
+   {value.kind!=="CONTENT"&&value.kind!=="SITE_TIME"&&<Toggle title="이 설정 사용" checked={Boolean(value.enabled)} onChange={enabled=>change({enabled})}/>}
    {value.kind==="CONTENT"&&<>
     {internalFeatures.map(([feature_id,title,description])=><Toggle key={feature_id} title={title} description={description} checked={(value.features as Feature[]).find(f=>f.feature_id===feature_id)?.enabled??false} onChange={enabled=>change({features:[...(value.features as Feature[]).filter(f=>f.feature_id!==feature_id),{feature_id,enabled,required:true}]})}/>)}
     <Toggle title="URL 키워드 제한" checked={Boolean((value.keyword as Nested).enabled)} onChange={enabled=>nested("keyword",{enabled})}/>
@@ -102,7 +102,15 @@ export default function AdditionalSettings({installations}:{installations:{execu
     <Toggle title="이미지 블러" checked={Boolean((value.blur as Nested).enabled)} onChange={enabled=>nested("blur",{enabled})}/><p>블러 민감도는 높음입니다. 검증된 모델·목록이 없으면 실행이 제한되며 저장만으로 활성화되지 않습니다.</p>
    </>}
    {value.kind==="CADENCE"&&<><label>집중 시간(분)<input type="number" min={1} max={180} value={Number(value.focus_minutes)} onChange={e=>change({focus_minutes:e.target.valueAsNumber})}/></label><label>휴식 시간(분)<input type="number" min={1} max={180} value={Number(value.rest_minutes)} onChange={e=>change({rest_minutes:e.target.valueAsNumber})}/></label><label>반복 횟수<input type="number" min={1} max={12} value={Number(value.cycles)} onChange={e=>change({cycles:e.target.valueAsNumber})}/></label><Toggle title="다음 집중 자동 시작" checked={Boolean(value.auto_start_next)} onChange={auto_start_next=>change({auto_start_next})}/><label>반복 종료 기한(UTC) · 비우면 없음<input type="datetime-local" step="0.001" value={typeof value.deadline_at==="string"?value.deadline_at.slice(0,-1):""} onChange={e=>{try{change({deadline_at:e.target.value?new Date(e.target.value+"Z").toISOString():null});}catch{setError("반복 종료 기한을 확인하세요.");}}}/></label><p>놓친 집중은 사용자 확인을 기다립니다. 휴식은 실제 경과 시간을 사용합니다. 종료 기한 변경은 다음 실행부터 적용됩니다.</p></>}
-   {value.kind==="SITE_TIME"&&<><label>사이트 도메인<input required value={String((value.scope as Nested).host)} onChange={e=>nested("scope",{host:e.target.value})} onBlur={e=>{try{nested("scope",{host:canonicalDraftHost(e.target.value)});}catch{setError("사이트 도메인을 확인하세요.");}}}/></label><Toggle title="하위 도메인 포함" checked={Boolean((value.scope as Nested).include_subdomains)} onChange={include_subdomains=>nested("scope",{include_subdomains})}/><label>하루 한도(분) · 비우면 무제한<input type="number" min={1} max={1440} value={value.daily_limit_ms===null?"":Number(value.daily_limit_ms)/60000} onChange={e=>change({daily_limit_ms:e.target.value===""?null:e.target.valueAsNumber*60000})}/></label><TimeRuleEditor windows={value.windows as TimeWindow[]} onChange={windows=>change({windows})}/><p>일일 한도는 해당 설치 기준입니다.</p></>}
+   {value.kind==="SITE_TIME"&&<>
+    <label>사이트 도메인<input required value={String((value.scope as Nested).host)} onChange={e=>nested("scope",{host:e.target.value})} onBlur={e=>{try{nested("scope",{host:canonicalDraftHost(e.target.value)});}catch{setError("사이트 도메인을 확인하세요.");}}}/></label>
+    <Toggle title="하위 도메인 포함" checked={Boolean((value.scope as Nested).include_subdomains)} onChange={include_subdomains=>nested("scope",{include_subdomains})}/>
+    <label>하루 한도(분) · 비우면 무제한<input type="number" min={1} max={1440} value={value.daily_limit_ms===null?"":Number(value.daily_limit_ms)/60000} onChange={e=>change({daily_limit_ms:e.target.value===""?null:e.target.valueAsNumber*60000})}/></label>
+    <p>빈칸은 제한 없음입니다. 제한 없음은 다른 제한의 해제 완료를 뜻하지 않습니다.</p>
+    <p>초기화 기준: 설치에 적용된 시간대의 하루 경계입니다. 실제 기준과 오늘 사용량은 일일 기록에서 확인하며, 미확인 값은 확정하지 않습니다.</p>
+    <p>저장된 사용 설정: {value.enabled?"켜짐":"꺼짐"} · 이 화면에서 자동 변경하지 않습니다. 한도 저장과 실제 제한 적용은 별도로 확인합니다.</p>
+    {Array.isArray(value.windows)&&value.windows.length>0&&<p role="note">이전 시간창 {value.windows.length}개는 원본대로 보존합니다. 이 화면은 시간창을 편집하거나 해제하지 않습니다.</p>}
+   </>}
    {value.kind==="FOCUS_SCHEDULE"&&<><label>예약 이름<input required maxLength={80} value={String(value.name)} onChange={e=>change({name:e.target.value})}/></label><label>집중 시간(분)<input type="number" min={1} max={180} value={Number(value.duration_minutes)} onChange={e=>change({duration_minutes:e.target.valueAsNumber})}/></label><WhenEditor value={value.when as RuleWhen} onChange={when=>change({when})}/><p>기존 집중이 우선하며 예약의 종료 시각을 연장하지 않습니다. 실행 결과는 Core 연결 후 별도로 확인합니다.</p></>}
    {conflict&&<div role="group" aria-label="설정 버전 충돌"><p>다른 변경이 먼저 저장됐습니다. 내 편집은 보존하며 자동으로 덮어쓰지 않습니다. 내 편집 전체를 계속하면 최신 서버 값과 다른 항목은 다음 저장 때 덮어쓸 수 있습니다.</p><button type="button" onClick={()=>{void readLatest();}}>최신 저장 버전 확인</button>{conflict.latest&&<><p>확인한 서버 버전 {conflict.latest.version} · {conflict.latest.deleted_at===null?"실제 적용과 별도로 확인합니다.":"설정 삭제됨 · 실제 해제 완료를 뜻하지 않습니다. 편집을 닫고 삭제 상태를 확인하세요."}</p>{conflict.latest.deleted_at===null&&<><button type="button" onClick={()=>resolveConflict(false)}>서버의 최신 설정으로 바꾸기</button><button type="button" onClick={()=>resolveConflict(true)}>최신 버전 기준으로 내 편집 계속</button></>}</>}</div>}
    <div className="additional-actions"><button disabled={busy||!!conflict} type="submit">{pending.current?"같은 저장 요청 결과 다시 확인":"설정 저장"}</button><button type="button" disabled={busy} onClick={()=>{pending.current=null;deletePending.current=null;setConflict(null);setEditor(null);}}>편집 닫기</button></div>
