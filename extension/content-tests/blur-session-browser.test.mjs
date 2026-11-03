@@ -129,3 +129,220 @@ test('page removing an active cover restores the same mask without repeating cla
   const result=await p.evaluate(()=>{document.querySelector('[data-focurve-ui="blur"]').remove();session.scan();return {covers:document.querySelectorAll('[data-focurve-ui="blur"]').length,calls,state:session.inspect()};});
   assert.equal(result.covers,1);assert.equal(result.calls,1);assert.equal(result.state.counts.SENSITIVE,1);assert.equal(await p.locator('[data-focurve-ui="blur"]').isVisible(),true);
 });
+
+for(const loss of ['false','throw','promise'])test(`observed ${loss} authority loss retires pending blur across later permission recovery`,async t=>{
+  const p=await fixture(t);
+  await p.evaluate(()=>{
+    window.authorityMode='current';window.analysisCalls=0;
+    session=make({canApply:()=>{
+      if(authorityMode==='throw')throw Error('AUTHORITY_LOOKUP_FAILED');
+      if(authorityMode==='promise')return Promise.resolve(true);
+      return authorityMode==='current';
+    },classify:()=>{analysisCalls++;return new Promise(resolve=>window.finishOld=resolve);}});
+    session.start();
+  });
+  await p.waitForFunction(()=>typeof finishOld==='function');
+  await p.evaluate(loss=>{authorityMode=loss;finishOld({verdict:'SAFE',profile_sha256:profile.sha256});},loss);
+  // Let the old completion observe the missing synchronous authority.
+  await p.waitForTimeout(60);
+  const retired=await p.evaluate(()=>session.inspect());
+  await p.evaluate(async()=>{authorityMode='current';await add();session.scan();});
+  const result=await p.evaluate(()=>({state:session.inspect(),calls:analysisCalls,covers:document.querySelectorAll('[data-focurve-ui="blur"]').length}));
+  assert.equal(retired.active,false);
+  assert.equal(retired.cleanup_pending,true);
+  assert.equal(result.state.active,false);
+  assert.equal(result.calls,1);
+  assert.equal(result.covers,1);
+  assert.equal(await p.evaluate(()=>session.release().restored),true);
+});
+
+test('authority retirement keeps failed cleanup and a separately authorized successor layer',async t=>{
+  const p=await fixture(t);
+  await p.evaluate(()=>session.start());await p.waitForFunction(()=>session.inspect().counts.SENSITIVE===1);
+  const result=await p.evaluate(()=>{
+    const own=document.querySelector('[data-focurve-ui="blur"]');
+    allowed=false;own.click();
+    const retired=session.inspect();
+    own.remove=()=>{};
+    const failed=session.release();
+    allowed=true;window.successor=make();successor.start();
+    delete own.remove;
+    const retry=session.release();
+    return {retired,failed,retry,covers:document.querySelectorAll('[data-focurve-ui="blur"]').length,successor:successor.inspect(),style:document.querySelector('img').style.cssText};
+  });
+  assert.equal(result.retired.active,false);
+  assert.equal(result.failed.cleanup_pending,true);
+  assert.equal(result.retry.restored,true);
+  assert.equal(result.covers,1);
+  assert.equal(result.successor.active,true);
+  assert.match(result.style,/grayscale\(1\).*important/);
+  assert.equal(await p.evaluate(()=>successor.release().restored),true);
+});
+
+test('authority callback release cannot return true to restart its own retired session',async t=>{
+  const p=await fixture(t);
+  const result=await p.evaluate(()=>{
+    let checks=0;
+    session=make({canApply:()=>{if(++checks===2)session.release();return true;}});
+    session.start();
+    return {state:session.inspect(),calls,covers:document.querySelectorAll('[data-focurve-ui="blur"]').length};
+  });
+  assert.equal(result.state.active,false);
+  assert.equal(result.state.cleanup_pending,false);
+  assert.equal(result.calls,0);
+  assert.equal(result.covers,0);
+});
+
+for(const method of ['pushState','replaceState'])test(`SPA ${method} round trip retires the old analysis even when URL returns before its reply`,async t=>{
+  const p=await fixture(t);
+  await p.evaluate(()=>{session=make({classify:()=>new Promise(resolve=>window.oldRouteReply=resolve)});session.start();});
+  await p.waitForFunction(()=>typeof oldRouteReply==='function');
+  const transition=await p.evaluate(method=>{
+    if(!window.navigation)throw Error('NAVIGATION_API_REQUIRED_FOR_FIXTURE');
+    const before=location.href;
+    history[method]({},'','/other-route');
+    const afterLeaving=session.inspect();
+    history[method]({},'',before);
+    oldRouteReply({verdict:'SAFE',profile_sha256:profile.sha256});
+    return afterLeaving;
+  },method);
+  await p.waitForTimeout(60);
+  const result=await p.evaluate(()=>({state:session.inspect(),image:session.inspectImage(document.querySelector('img')),cleanup:session.release()}));
+  assert.equal(transition.active,false);
+  assert.equal(transition.cleanup_pending,true);
+  assert.equal(result.state.active,false);
+  assert.notEqual(result.image.status,'SAFE');
+  assert.equal(result.cleanup.restored,true);
+});
+
+for(const method of ['pushState','replaceState'])test(`same-URL ${method} state update preserves the currently authorized session`,async t=>{
+  const p=await fixture(t);await p.evaluate(()=>session.start());
+  await p.waitForFunction(()=>session.inspect().counts.SENSITIVE===1);
+  const result=await p.evaluate(method=>{
+    history[method]({ui:'only'},'',location.href);
+    return {state:session.inspect(),cleanup:session.release()};
+  },method);
+  assert.equal(result.state.active,true);
+  assert.equal(result.state.counts.SENSITIVE,1);
+  assert.equal(result.cleanup.restored,true);
+});
+
+test('persisted pagehide/pageshow never resumes old blur; cleanup retry preserves a new session',async t=>{
+  const p=await fixture(t);
+  await p.evaluate(()=>{session=make({classify:()=>new Promise(resolve=>window.bfcacheReply=resolve)});session.start();});
+  await p.waitForFunction(()=>typeof bfcacheReply==='function');
+  const state=await p.evaluate(()=>{
+    const oldCover=document.querySelector('[data-focurve-ui="blur"]');
+    dispatchEvent(new PageTransitionEvent('pagehide',{persisted:true}));
+    oldCover.remove=()=>{};const failed=session.release();
+    dispatchEvent(new PageTransitionEvent('pageshow',{persisted:true}));
+    window.successor=make();successor.start();
+    bfcacheReply({verdict:'SAFE',profile_sha256:profile.sha256});
+    delete oldCover.remove;
+    const retry=session.release();
+    return {failed,retry,old:session.inspect(),style:document.querySelector('img').style.cssText};
+  });
+  await p.waitForFunction(()=>successor.inspect().counts.SENSITIVE===1);
+  assert.equal(state.failed.cleanup_pending,true);
+  assert.equal(state.retry.restored,true);
+  assert.equal(state.old.active,false);
+  assert.equal(await p.locator('[data-focurve-ui="blur"]').count(),1);
+  assert.match(state.style,/grayscale\(1\).*important/);
+  assert.equal(await p.evaluate(()=>successor.release().restored),true);
+});
+
+test('generation fence change retires old blur while the new generation keeps its own layer',async t=>{
+  const p=await fixture(t);
+  await p.evaluate(()=>{window.generation=1;session=make({canApply:()=>generation===1,classify:()=>new Promise(resolve=>window.generationReply=resolve)});session.start();});
+  await p.waitForFunction(()=>typeof generationReply==='function');
+  await p.evaluate(()=>{generation=2;session.scan();window.successor=make({canApply:()=>generation===2});successor.start();generationReply({verdict:'SAFE',profile_sha256:profile.sha256});});
+  await p.waitForFunction(()=>successor.inspect().counts.SENSITIVE===1);
+  const result=await p.evaluate(()=>({old:session.inspect(),cleanup:session.release(),count:document.querySelectorAll('[data-focurve-ui="blur"]').length}));
+  assert.equal(result.old.active,false);assert.equal(result.cleanup.restored,true);assert.equal(result.count,1);
+  assert.equal(await p.evaluate(()=>successor.release().restored),true);
+});
+
+test('late model result cannot alter an image adopted by another document',async t=>{
+  const p=await fixture(t);
+  await p.evaluate(()=>{session=make({classify:()=>new Promise(resolve=>window.foreignReply=resolve)});session.start();});
+  await p.waitForFunction(()=>typeof foreignReply==='function');
+  await p.evaluate(()=>{
+    const frame=document.createElement('iframe');document.body.append(frame);
+    window.foreignDocument=frame.contentDocument;
+    foreignDocument.body.append(foreignDocument.adoptNode(document.querySelector('img')));
+    foreignReply({verdict:'SENSITIVE',profile_sha256:profile.sha256});
+    session.scan();
+  });
+  const result=await p.evaluate(()=>({
+    ownCovers:document.querySelectorAll('[data-focurve-ui="blur"]').length,
+    foreignCovers:foreignDocument.querySelectorAll('[data-focurve-ui="blur"]').length,
+    style:foreignDocument.querySelector('img').style.cssText,
+    cleanup:session.release()
+  }));
+  assert.equal(result.ownCovers,0);assert.equal(result.foreignCovers,0);
+  assert.match(result.style,/grayscale\(1\).*important/);assert.equal(result.cleanup.restored,true);
+});
+
+for(const entry of ['release','replace-target'])test(`cleanup ${entry} reentry never removes the same cover twice or reports nested completion`,async t=>{
+  const p=await fixture(t);await p.evaluate(()=>session.start());await p.waitForFunction(()=>session.inspect().counts.SENSITIVE===1);
+  const result=await p.evaluate(async entry=>{
+    const old=document.querySelector('img'),cover=document.querySelector('[data-focurve-ui="blur"]'),remove=cover.remove.bind(cover);
+    let calls=0,nested;
+    cover.remove=()=>{calls++;if(calls===1)nested=session.release();remove();};
+    if(entry==='release')session.release();
+    else {old.remove();await add();session.scan();}
+    return {calls,nested,state:session.inspect(),covers:document.querySelectorAll('[data-focurve-ui="blur"]').length};
+  },entry);
+  assert.equal(result.calls,1);
+  assert.equal(result.nested.restored,false);
+  assert.equal(result.nested.cleanup_pending,true);
+  assert.equal(result.state.active,false);
+  assert.equal(result.state.cleanup_pending,false);
+  assert.equal(result.covers,0);
+});
+
+for(const change of ['src','srcset','node'])test(`late SAFE for replaced ${change} cannot clear the replacement mask`,async t=>{
+  const p=await fixture(t);
+  await p.evaluate(()=>{window.targetReplies=[];session=make({classify:()=>new Promise(resolve=>targetReplies.push(resolve))});session.start();});
+  await p.waitForFunction(()=>targetReplies.length===1);
+  await p.evaluate(async change=>{
+    const old=document.querySelector('img'),canvas=document.createElement('canvas');canvas.width=123;canvas.height=91;
+    if(change==='node'){const replacement=old.cloneNode();replacement.src=canvas.toDataURL();old.replaceWith(replacement);await replacement.decode();}
+    else {old[change]=canvas.toDataURL();await old.decode();}
+    session.scan();
+    targetReplies[0]({verdict:'SAFE',profile_sha256:profile.sha256});
+  },change);
+  await p.waitForFunction(()=>targetReplies.length===2);
+  assert.equal(await p.locator('[data-focurve-ui="blur"]').count(),1);
+  assert.equal(await p.locator('[data-focurve-ui="blur"]').isVisible(),true);
+  await p.evaluate(()=>targetReplies[1]({verdict:'SENSITIVE',profile_sha256:profile.sha256}));
+  await p.waitForFunction(()=>session.inspect().counts.SENSITIVE===1);
+  const result=await p.evaluate(()=>({cleanup:session.release(),style:document.querySelector('img').style.cssText}));
+  assert.equal(result.cleanup.restored,true);assert.match(result.style,/grayscale\(1\).*important/);
+});
+
+test('failed reentrant cleanup retries only its own layer after successor starts',async t=>{
+  const p=await fixture(t);await p.evaluate(()=>session.start());await p.waitForFunction(()=>session.inspect().counts.SENSITIVE===1);
+  const result=await p.evaluate(()=>{
+    const cover=document.querySelector('[data-focurve-ui="blur"]');let calls=0,nested;
+    cover.remove=()=>{calls++;if(calls===1){nested=session.release();window.successor=make();successor.start();}throw Error('REMOVE_FAILED');};
+    const failed=session.release();delete cover.remove;const retry=session.release();
+    return {calls,nested,failed,retry,covers:document.querySelectorAll('[data-focurve-ui="blur"]').length};
+  });
+  assert.equal(result.calls,1);assert.equal(result.nested.cleanup_pending,true);assert.equal(result.failed.restored,false);
+  assert.equal(result.retry.restored,true);assert.equal(result.covers,1);
+  await p.waitForFunction(()=>successor.inspect().counts.SENSITIVE===1);
+  assert.equal(await p.evaluate(()=>successor.release().restored),true);
+});
+
+test('SPA departure and DOM replacement during cleanup never create effects in the old session',async t=>{
+  const p=await fixture(t);await p.evaluate(()=>session.start());await p.waitForFunction(()=>session.inspect().counts.SENSITIVE===1);
+  const result=await p.evaluate(()=>{
+    const old=document.querySelector('img'),cover=document.querySelector('[data-focurve-ui="blur"]'),remove=cover.remove.bind(cover);
+    let nested,calls=0;cover.remove=()=>{calls++;if(calls===1){history.pushState({},'','/next');old.replaceWith(old.cloneNode());nested=session.release();}remove();};
+    session.release();session.scan();
+    return {calls,nested,state:session.inspect(),covers:document.querySelectorAll('[data-focurve-ui="blur"]').length};
+  });
+  assert.equal(result.calls,1);assert.equal(result.nested.restored,false);assert.equal(result.state.active,false);
+  assert.equal(result.state.cleanup_pending,false);assert.equal(result.covers,0);
+});

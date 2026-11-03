@@ -3,7 +3,7 @@
 // Separate backdrop layers preserve every image declaration and other owner.
 export class BlurSession {
   #doc;#canAnalyze;#refreshTimer;#moveFrame;#classifyImage;#selectImage;#classify;#currentAuthority;#profile;#items=new Map();#active=false;#started=false;
-  #url;#observer;#resize;#busy=false;#queued=false;#epoch=0;#overflow=0;#timeout;#max;
+  #url;#observer;#resize;#navigation;#busy=false;#queued=false;#epoch=0;#overflow=0;#timeout;#max;
   constructor(document,{classify,classifyImage,selectImage=()=>true,canAnalyze=()=>true,profile,canApply=()=>false,timeoutMs=3000,maxTargets=128}={}){
     if(!profile||typeof profile.id!=='string'||!profile.id||!/^[a-f0-9]{64}$/.test(profile.sha256)||profile.level!=='HIGH')throw Error('INVALID_BLUR_PROFILE');
     if(!Number.isSafeInteger(timeoutMs)||timeoutMs<1||timeoutMs>60000||!Number.isSafeInteger(maxTargets)||maxTargets<1||maxTargets>512)throw Error('INVALID_BLUR_LIMIT');
@@ -11,14 +11,33 @@ export class BlurSession {
     this.refresh=()=>{if(!this.#active||this.#queued)return;this.#queued=true;this.#refreshTimer=setTimeout(()=>{this.#refreshTimer=null;this.#queued=false;if(this.#active)this.scan();},120);};
     this.move=()=>{if(!this.#current()||this.#moveFrame!=null)return;this.#moveFrame=this.#doc.defaultView.requestAnimationFrame(()=>{this.#moveFrame=null;if(this.#current()){for(const row of this.#items.values())this.#position(row);this.refresh();}});};
     this.hide=()=>this.invalidate();
+    this.route=()=>{this.#current();};
   }
-  #current(){try{const v=this.#currentAuthority();if(v&&typeof v.then==='function'){Promise.resolve(v).catch(()=>{});return false;}
-    return this.#active&&v===true&&this.#doc.defaultView?.document===this.#doc&&this.#doc.location.href===this.#url;}catch{return false;}}
+  #current(){
+    if(!this.#active)return false;
+    let current=false;
+    try{const v=this.#currentAuthority();
+      if(v&&typeof v.then==='function')Promise.resolve(v).catch(()=>{});
+      else current=this.#active&&v===true&&this.#doc.defaultView?.document===this.#doc&&this.#doc.location.href===this.#url;
+    }catch{}
+    // Once an observation loses authority/document scope, this instance retires.
+    // A later true value needs a new session; existing layers remain cleanup debt.
+    if(!current)this.invalidate();
+    return current;
+  }
   #key(image){return JSON.stringify([image.currentSrc,image.src,image.srcset,image.sizes,image.naturalWidth,image.naturalHeight]);}
   #valid(row){return this.#current()&&this.#items.get(row.image)===row&&row.image.ownerDocument===this.#doc&&row.image.isConnected&&row.key===this.#key(row.image);}
-  #remove(row){row.controller.abort();row.image.removeEventListener('click',row.click,true);this.#resize?.unobserve(row.image);
-    if(row.cover.ownerDocument!==this.#doc)return false;
-    try{row.cover.remove();return !row.cover.parentNode;}catch{return false;}}
+  #remove(row){
+    // A synchronous abort/remove callback may re-enter release or scan cleanup.
+    // The outer removal owns this row until readback; nested cleanup keeps debt.
+    if(row.removing)return false;
+    row.removing=true;
+    try{
+      row.controller.abort();row.image.removeEventListener('click',row.click,true);this.#resize?.unobserve(row.image);
+      if(row.cover.ownerDocument!==this.#doc)return false;
+      try{row.cover.remove();return !row.cover.parentNode;}catch{return false;}
+    }finally{row.removing=false;}
+  }
   #position(row){if(row.cover.ownerDocument!==this.#doc)return;
     const image=row.image,rect=image.getBoundingClientRect();
     const win=this.#doc.defaultView;const visible=image.ownerDocument===this.#doc&&image.isConnected&&rect.width>0&&rect.height>0&&rect.bottom>0&&rect.top<win.innerHeight&&rect.right>0&&rect.left<win.innerWidth&&win.getComputedStyle(image).visibility!=='hidden';
@@ -42,6 +61,11 @@ export class BlurSession {
   start(){if(this.#started)throw Error('BLUR_ALREADY_STARTED');this.#started=true;this.#url=this.#doc.location.href;this.#active=true;
     if(!this.#current()){this.invalidate();return this.inspect();}
     const win=this.#doc.defaultView;
+    // Observe committed route identity, not a future model response's URL.
+    // State-only updates at the same URL retain their existing authority.
+    this.#navigation=win.navigation;
+    this.#navigation?.addEventListener('currententrychange',this.route);
+    win.addEventListener('yt-navigate-finish',this.route);
     this.#observer=new win.MutationObserver(records=>{if(records.some(record=>!record.target.closest?.('[data-focurve-ui="blur"]')))this.refresh();});this.#resize=new win.ResizeObserver(this.move);
     this.#observer.observe(this.#doc.documentElement,{subtree:true,childList:true,attributes:true,attributeFilter:['src','srcset','sizes','style','class']});
     this.#doc.addEventListener('load',this.refresh,true);this.#doc.addEventListener('visibilitychange',this.refresh);win.addEventListener('scroll',this.move,true);win.addEventListener('resize',this.move);
@@ -104,6 +128,8 @@ export class BlurSession {
     for(const row of this.#items.values())row.controller.abort();
     const win=this.#doc.defaultView;this.#doc.removeEventListener('load',this.refresh,true);this.#doc.removeEventListener('visibilitychange',this.refresh);win?.removeEventListener('scroll',this.move,true);win?.removeEventListener('resize',this.move);
     for(const event of ['pagehide','popstate','hashchange'])win?.removeEventListener(event,this.hide);
+    this.#navigation?.removeEventListener('currententrychange',this.route);
+    win?.removeEventListener('yt-navigate-finish',this.route);
   }
   release(){this.invalidate();for(const [image,row]of this.#items)if(this.#remove(row))this.#items.delete(image);
     return {local_only:true,restored:this.#items.size===0,cleanup_pending:this.#items.size>0};}
