@@ -98,7 +98,7 @@ class ProvenanceTests(unittest.TestCase):
   self.git('init','-q');self.git('config','user.name','Synthetic Fixture');self.git('config','user.email','fixture@example.invalid')
   (self.root/'source.txt').write_text('approved',encoding='utf-8')
   (self.root/'.gitignore').write_text('frontend/dist/\nruntime-server/target/\n',encoding='utf-8')
-  for name in ['distribution/config.example.json','frontend/src/input.ts','runtime-server/src/Input.java','extension/scripts/input.js']:
+  for name in ['distribution/config.example.json','distribution/native/NativeLinkHost.cs','frontend/src/input.ts','runtime-server/src/Input.java','extension/scripts/input.js']:
    p=self.root/name;p.parent.mkdir(parents=True,exist_ok=True);p.write_text('{}',encoding='utf-8')
   self.git('add','.');self.git('commit','-qm','synthetic source')
   self.sha=self.git('rev-parse','HEAD');self.tree=self.git('rev-parse','HEAD^{tree}')
@@ -163,6 +163,8 @@ class ProvenanceTests(unittest.TestCase):
   shutil.copytree(repository/'distribution/installer',self.root/'distribution/installer',ignore=shutil.ignore_patterns('__pycache__'))
   for folder in ['distribution/launch','distribution/docs','distribution/native','scripts']:(self.root/folder).mkdir(parents=True,exist_ok=True)
   (self.root/'distribution/native/NativeLinkHost.cs').write_text('dummy',encoding='utf-8')
+  for name in ['NativeInputCloseTests.cs','NativeLinkTests.cs','NativePipeTests.cs']:
+   (self.root/'distribution/native'/name).write_text('dummy native test, never shipped',encoding='utf-8')
   (self.root/'distribution/config.example.json').write_text('{}',encoding='utf-8')
   for name in re.findall("'app/extension/([^']+)'",SCRIPT.read_text(encoding='utf-8')):
    p=self.root/'extension'/name;p.parent.mkdir(parents=True,exist_ok=True);p.write_text('{}' if name.endswith('.json') else 'dummy',encoding='utf-8')
@@ -230,6 +232,35 @@ class CompletenessTests(unittest.TestCase):
  def test_path_normalization_alias(self):self.tamper(lambda v:v['files'][0].update(package='./'+v['files'][0]['package']))
  def test_same_content_other_origin(self):self.tamper(lambda v:v['buildInputs'][0].update(source='extension/scripts/input.js'))
 
+
+class NativeInventoryTests(unittest.TestCase):
+ git=ProvenanceTests.git
+ save_receipt=ProvenanceTests.save_receipt
+ package=ProvenanceTests.package
+ def setUp(self):
+  ProvenanceTests.setUp(self)
+  folder=self.root/'distribution/native';folder.mkdir(exist_ok=True)
+  for name in ['NativeLinkHost.cs','NativeInputCloseTests.cs','NativeLinkTests.cs','NativePipeTests.cs']:
+   (folder/name).write_text('dummy '+name,encoding='utf-8')
+  self.git('add','distribution/native');self.git('commit','-qm','synthetic native product and tests')
+  self.sha=self.git('rev-parse','HEAD');self.tree=self.git('rev-parse','HEAD^{tree}');self.identity={'sourceGitSHA':self.sha,'sourceGitTree':self.tree}
+  self.value.update(self.identity);self.save_receipt()
+ def test_native_inventory_matches_single_product_copy(self):
+  files,_=m.source_inventory(self.root)
+  self.assertEqual([row['package'] for row in files if row['package'].startswith('native/')],['native/NativeLinkHost.cs'])
+  package=self.package();self.assertEqual(m.verify_provenance(package,self.root),self.identity)
+  self.assertEqual(sorted(p.name for p in (package/'native').iterdir()),['NativeLinkHost.cs'])
+ def test_missing_native_product_source_rejected(self):
+  (self.root/'distribution/native/NativeLinkHost.cs').unlink()
+  with self.assertRaisesRegex(SystemExit,'NATIVE_PRODUCT_SOURCE_REQUIRED'):m.source_inventory(self.root)
+ def test_missing_or_changed_packaged_native_product_rejected(self):
+  package=self.package();product=package/'native/NativeLinkHost.cs';raw=product.read_bytes();product.unlink()
+  with self.assertRaisesRegex(SystemExit,'PACKAGE_INVENTORY_MISMATCH'):m.verify_provenance(package,self.root)
+  product.write_bytes(raw+b'changed')
+  with self.assertRaisesRegex(SystemExit,'SOURCE_PACKAGE_PARITY_CHANGED'):m.verify_provenance(package,self.root)
+ def test_native_test_file_in_package_rejected(self):
+  package=self.package();(package/'native/NativePipeTests.cs').write_bytes(b'not product')
+  with self.assertRaisesRegex(SystemExit,'PACKAGE_INVENTORY_MISMATCH'):m.verify_provenance(package,self.root)
 
 class ArchiveManifestTests(unittest.TestCase):
  def setUp(self):

@@ -38,6 +38,7 @@ def build_receipt(root,path,identity):
 
 PACKAGED_FOLDERS=[('frontend/dist','app/web'),('extension','app/extension'),('distribution/installer','installer'),('distribution/native','native'),('distribution/launch','launch'),('distribution/docs','docs')]
 EXTENSION_IGNORES=('node_modules','tests','scripts','content-tests','content-tools','.chrome-harness','.gitignore','package*.json','README*.md')
+NATIVE_PRODUCT_FILE='NativeLinkHost.cs'
 
 def source_inventory(checkout):
  """Derive completeness from checkout and copy rules, never submitted rows."""
@@ -50,7 +51,10 @@ def source_inventory(checkout):
  for source,target in PACKAGED_FOLDERS:
   folder=checkout/source
   patterns=EXTENSION_IGNORES if source=='extension' else ('__pycache__','*.pyc') if source=='distribution/installer' else ()
-  for path in sorted(folder.rglob('*')):
+  # Native is deliberately a single-file copy, not a recursive directory copy.
+  if source=='distribution/native' and not (folder/NATIVE_PRODUCT_FILE).is_file():raise SystemExit('NATIVE_PRODUCT_SOURCE_REQUIRED')
+  paths=[folder/NATIVE_PRODUCT_FILE] if source=='distribution/native' else sorted(folder.rglob('*'))
+  for path in paths:
    parts=path.relative_to(folder).parts
    if any(fnmatch.fnmatch(part,pattern) for part in parts for pattern in patterns):continue
    if path.is_symlink():raise SystemExit('SOURCE_INVENTORY_SCOPE_MISMATCH')
@@ -115,7 +119,7 @@ def main():
  (out/'app/server').mkdir();shutil.copyfile(ROOT/'runtime-server/target/focurve-server-0.0.1-SNAPSHOT.jar',out/'app/server/server.jar')
  shutil.copytree(ROOT/'distribution/installer',out/'installer',ignore=shutil.ignore_patterns('__pycache__','*.pyc'))
  for name in ['launch','docs']:shutil.copytree(ROOT/'distribution'/name,out/name)
- (out/'native').mkdir();shutil.copyfile(ROOT/'distribution/native/NativeLinkHost.cs',out/'native/NativeLinkHost.cs')
+ (out/'native').mkdir();shutil.copyfile(ROOT/'distribution/native'/NATIVE_PRODUCT_FILE,out/'native'/NATIVE_PRODUCT_FILE)
  shutil.copyfile(ROOT/'distribution/config.example.json',out/'config.example.json')
  # Existing launch contracts, not a new background runner or approval extension.
  (out/'Install-FOCURVE.cmd').write_text('@echo off\r\nchcp 65001 >nul\r\necho FOCURVE integrated candidate - actual acceptance pending\r\n"%~dp0vendor\\python\\python.exe" -I -B -X utf8 "%~dp0installer\\install_core.py" install --config "%~dp0config.example.json" --interactive\r\npause\r\n',encoding='ascii')
