@@ -106,6 +106,27 @@ export class IG04ContentReceiver {
       phase:this.#retired?'REVALIDATION_REQUIRED':this.#closed?'CLOSED_LOCAL':this.#adapter?'BOUND_LOCAL':'UNBOUND',
       state:this.#adapter?.inspect()??null,snapshot};
   }
+  async quiescenceSnapshot(){
+    // Internal local producer only: no watch_ref, cutoff, Grant or terminal.
+    // Stop future effects before yielding, without granting scoped RELEASE.
+    this.#closed=true;this.#retired=true;this.#revision++;
+    for(const [target,type,callback,key]of [[this.#document.defaultView,'pagehide',this.pagehide,'pagehide_listener'],
+      [this.#navigation,'currententrychange',this.route,'navigation_listener']]){
+      if(!target||['NOT_ATTEMPTED','REMOVED'].includes(this.#localStartup[key]))continue;
+      this.#localStartup[key]='UNCONFIRMED';try{target.removeEventListener(type,callback);this.#localStartup[key]='REMOVED';}catch{}
+    }
+    const revision=this.#revision,adapter=this.#adapter;
+    let result=null;try{if(adapter)result=await adapter.quiescenceSnapshot();}catch{}
+    // Pending verifyInput cannot start an adapter after retirement. Report it
+    // until the actual continuation finishes rather than inventing a drain.
+    const lifetime_current=this.#cleanupLifetime();
+    const current=revision===this.#revision&&adapter===this.#adapter&&lifetime_current;
+    const detached=!this.#startup().receiver_resources_may_remain;
+    return {local_only:true,native_verified:false,...this.#transport(),context:freezeCopy((this.#input??this.#candidate)?.context??null),
+      local_startup:this.#startup(),state:this.#adapter?.inspect()??null,snapshot:current?result?.snapshot??null:null,
+      local_quiescence:{future_effects_closed:this.#closed,receiver_listeners_detached:detached,input_verification_pending:this.#opening,
+        lifetime_current,locally_quiescent:current&&detached&&!this.#opening&&(adapter?result?.local_quiescence.locally_quiescent===true:true)}};
+  }
   async release(bindingContext,authorization){
     if(!this.#ready()||!this.#cleanupLifetime())return this.#deny('REVALIDATION_REQUIRED');
     const bound=this.#input??this.#candidate;if(!bound)return this.#deny('RECEIVER_NOT_BOUND');
