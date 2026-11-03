@@ -1,4 +1,7 @@
 # AMVP-CONTENT-06 · 추가 Content 연결
+## 2026-11-03 다훈 격리 후속 — receiver SPA 왕복 퇴역
+- #87 2704148b를 상속한 #99 f6d99efd 기반 content-lifecycle-dahun 미커밋 수정. receiver의 기존 document/Worker/lifetime 거절을 재사용해 Navigation.currententrychange에서 URL 이탈을 관측한다. 지연 예약 ACK 전에 push/replace로 이탈 후 원래 URL 복귀하는 기존 2 FAIL을 수정했고 동일 URL state 갱신은 보존한다. cleanup proof·영속 예약·watch_ref·takeover 계약을 추가하거나 완화하지 않는다.
+- blur/receiver 수명·복원 영향89/89 및 추가 문서/BFCache2/2 PASS, 세부 명령/실패 원본/시험 범위는 OPTION-11의 같은 날짜 후속 기록에 연결한다. 실제 BFCache 적중·issued/native·영속 ACK·CleanupGrant·Worker·Server 제품 수용 NOT_RUN. 별도 Core/Content 선행 통합/검토 전 로컬 구현 상태이며 Commit/Push/PR/병합 없음. M1 BLOCKED, MVP_FINAL_COMPLETE=false.
 ## 2026-11-01 PR83 로그인 보호 동적 관찰 P2 수정
 - 담당 채지민 / codex/content-instagram-grayscale / 시작7f5439afe057543f93f2589886ad3b7aadfdf4c2. review5727916908/인라인4435476825 대응. 기존 공개화면 전체흑백·프로필/알림/portal·DM/login/FOCURVE 제외·재생/복원 범위유지. IG-06에만 type/action observer추가, 다른옵션 관찰목록/selector/Wire/권한변경없음.
 - type text→password→text, form action search→accounts/login→search의 자동보호/재적용·원래sepia!important복원2반례를수정전0/2FAIL→수정후2/2PASS 확인. 다른owner claim 보존 및 보호branch복원setter실패 시 신규branch효과를얻지않고 기존의무/FAILED를보존·수리후재시도하는 반례도실패→PASS. 이를위해 IG-06 scan에서 복원오류가있으면새효과획득중단을추가, 타옵션은그대로유지.
