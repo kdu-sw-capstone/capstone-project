@@ -67,7 +67,7 @@ export class IG04ContentReceiver {
       let verified=false;try{verified=await this.#options.verifyInput(authorization,freezeCopy({...frozen,transport:this.#transport()}))===true;}catch{}
       if(!this.#lifetime()||this.#closed||revision!==this.#revision)return this.#deny('REVALIDATION_REQUIRED');
       if(!verified||!this.#current(context))return this.#deny('INPUT_AUTHORITY_UNCONFIRMED');
-      if(this.#adapter)return {accepted:true,duplicate:true,...await this.query()};
+      if(this.#adapter)return await this.#appliedQuery(context,revision,true);
       this.#input=frozen;this.#key=key;
       const lifetime=this.#transport();
       this.#adapter=new ContentSessionAdapter(this.#document,{
@@ -83,14 +83,24 @@ export class IG04ContentReceiver {
       this.#localStartup.adapter_start_called=true;
       const result=this.#adapter.start();
       if(result.startup_error){this.#closed=true;return this.#deny('CONTENT_START_FAILED');}
-      return {accepted:true,duplicate:false,...await this.query()};
+      return await this.#appliedQuery(context,revision,false);
     }catch{this.#closed=true;this.#adapter?.invalidate('CONTENT_START_FAILED');return this.#deny('CONTENT_START_FAILED');}
     finally{this.#opening=false;if(!this.#input)this.#candidate=null;}
   }
+  async #appliedQuery(context,revision,duplicate){
+    const result=await this.query();
+    // Query itself waits; dispatch acceptance must not survive a release/retirement.
+    if(revision!==this.#revision||!this.#current(context))return this.#deny('REVALIDATION_REQUIRED');
+    return {accepted:true,duplicate,...result};
+  }
   async query(){
-    this.#lifetime();let snapshot=null;try{if(this.#adapter)snapshot=await this.#adapter.evidenceSnapshot('IG-04');}catch{}
-    // Recheck after the snapshot's asynchronous hashing wait.
-    this.#lifetime();
+    this.#lifetime();if(!this.#closed&&this.#input)this.#current(this.#input.context);
+    const revision=this.#revision,adapter=this.#adapter;
+    let snapshot=null;try{if(adapter)snapshot=await adapter.evidenceSnapshot('IG-04');}catch{}
+    // A local snapshot is not a current authority proof. Preserve old-scope
+    // cleanup reads, but never combine a pre-transition snapshot with new state.
+    this.#lifetime();if(!this.#closed&&this.#input)this.#current(this.#input.context);
+    if(revision!==this.#revision||adapter!==this.#adapter)snapshot=null;
     return {local_only:true,native_verified:false,...this.#transport(),revalidation_required:this.#retired,
       local_startup:this.#startup(),
       phase:this.#retired?'REVALIDATION_REQUIRED':this.#closed?'CLOSED_LOCAL':this.#adapter?'BOUND_LOCAL':'UNBOUND',
