@@ -4,12 +4,16 @@ import {boundContext,canonical,freezeCopy} from './local-evidence.mjs';
 // Trusted-call receiver seam. No Chrome listener, sender/authority issuer,
 // ACK/proof Wire schema, storage implementation or ContentResult conversion.
 export class IG04ContentReceiver {
-  #document;#options;#worker;#url;#id=crypto.randomUUID();#adapter;
+  #document;#options;#worker;#url;#navigation;#id=crypto.randomUUID();#adapter;
   #input;#candidate;#key;#opening=false;#closed=false;#retired=false;#revision=0;#released=false;
   #workerLost=false;
   constructor(document,options={}){
     this.#document=document;this.#options={...options};this.#worker=this.#readWorker();this.#url=document.location.href;
     this.pagehide=()=>this.invalidate('PAGEHIDE');document.defaultView?.addEventListener('pagehide',this.pagehide);
+    // URL round trips must retire this receiver before a pending ACK can win.
+    this.route=()=>{this.#lifetime();};
+    this.#navigation=document.defaultView?.navigation;
+    this.#navigation?.addEventListener('currententrychange',this.route);
   }
   #sync(fn){try{const v=fn();if(v&&typeof v.then==='function'){Promise.resolve(v).catch(()=>{});return undefined;}return v;}catch{return undefined;}}
   #readWorker(){const v=this.#sync(()=>this.#options.getWorkerInstance?.());return typeof v==='string'&&v.length>0&&v.length<=200?v:null;}
@@ -37,6 +41,7 @@ export class IG04ContentReceiver {
   #deny(reason){return {local_only:true,native_verified:false,accepted:false,reason,cleanup_pending:this.#adapter?.inspect().cleanup_pending??false,revalidation_required:this.#retired};}
   invalidate(reason='AUTHORITY_REVOKED'){
     this.#closed=true;this.#retired=true;this.#revision++;this.#adapter?.invalidate(reason);
+    this.#navigation?.removeEventListener('currententrychange',this.route);
     return this.#deny(reason);
   }
   async apply(input,authorization){
