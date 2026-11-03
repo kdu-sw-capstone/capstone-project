@@ -216,3 +216,12 @@ UNKNOWN·active session 1·unreleased Journal 1·pending Outbox 2·transition/ro
 - 로컬 증거는 `.local/shorts-night/`의 `dom-readiness-before.log`, `dom-readiness-fixed.log`, `effect-readiness-full-regression.log`, `effect-readiness-syntax.log`, `effect-readiness-bundle-parity.json` 및 기존 실제 사건 디렉터리. 인증 정보·DB·프로필·원시 증거는 게시하지 않는다.
 - 실제 원인 확인을 위한 담당 경계: 채지민 Content에는 뷰어/미디어 렌더 순서·원본 측정/기존 FOCURVE_SHORTS_APPLY_REJECTED 또는 CHECKPOINT_FAILED 로그, 윤종민 Core에는 해당 operation/문서·NR/DP·Receipt 결속을 확인할 과제가 남는다. 아직 팀원에게 메시지/검토 승인 기록을 대신 생성하지 않았다. 별도 추가 MVP 구현 변경이나 공유 계약 결정은 요구되지 않았다.
 - 재수용은 새 검토 ZIP과 소스 hash를 고정한 별도 승인 후 수행한다. 보존된 실패 설치는 재사용하지 않는다. 최소 경로는 회원 Extension START 1회 → 검색/홈·빈 뷰어 후 media 추가·Shorts 왕복·새로고침/뒤앞/BFCache·일반 영상 → 정상 END/DOM·원장·ACK·잠금 복원이다. 기존 console 오류와 실제 효과 측정·operation/document 결속을 실패 시점에 보존해야 한다. UNKNOWN이면 즉시 중단·보존, 회원 복원 PASS 전 guest/재기동 금지. 이번 단계 실제 Chrome/END/재기동은 NOT_RUN이다.
+
+
+### 2026-11-03 PR26 최소 이식 후보 — NOT_COMMITTED
+base PR26 HEAD2a2f1b4/develop9868a0f Draft. 별도shorts-pr26-port detached Worktree. 기존PR26 A0구현/policy카드/Shorts수정보존. 통합e3a3760의ClaimLedger는#26에없어알고리즘변경없이신규선행의존성으로추가. shorts공유claim/A0ledger인자만이식,packer는#26의기존Core생성코드보존후원장의존성추가. 원본integration카드덮어쓰기안함. YT08실제adapter는테스트fixtures/yt08-port에만두고import만후보ledger로결속. productionreceiver/gate/authority/composer변경없음. 후보Shorts+bundle회귀91/91PASS,skip0,구문/diffcheckPASS. 실제production동시주입UNKNOWN,EndCards선행통합및명시ledger전달독립검토필요. Commit/Push/PR수정/Chrome/Native/START/END0. 결과PR26-PORT-RESULT.json및test로그authority-overlap에보존. ShortsPARTIAL·IG04BLOCKED·E2ENOT_RUN·MVP_FINAL_COMPLETE=false.
+
+
+### 2026-11-03 후보tree fixture 누락 수정 — EXACT_TREE_TESTED
+이전43e98168 후보에미추적fixture디렉터리2파일누락되어CHANGES_REQUIRED. 이전Worktree91PASS를이전treePASS로간주하지않는다. 새tree d7da4caad200d012cc58751bdf798c320c3e4650는이전tree+fixtures/yt08-port/endcards.mjs 및navigation-surface.mjs만추가. 통합e3a3760 원본과대조,후보ClaimLedger상대import외변경없음. 전체변경목록/blob/SHA는PR26-FIXTURE-FIX-RESULT.json. 새tree git archive를별도exact-tree-fixture-fix에추출하고기존node_modules만연결,소스overlay없이91/91PASS·skip0·bundle재현3·구문PASS. 시험후전체소스manifest동일확인.
+생산연결공백유지: A0content-entry:9와A1/membercontent:8에서기본효과생성시ledger주입없음. trustedcomposer의문서별원장동일성/수명/소유scope를Core·Content담당과합의후해당생성호출및번들입력에주입필요. 이번엔그코드수정0. 독립재검토는새tree전체의재현성과추가fixture2개진위/import범위,이전지적해소에한정. 승인전Commit/Push/PR/merge0. 제품E2ENOT_RUN·ShortsPARTIAL·IG04BLOCKED·MVP_FINAL_COMPLETE=false.

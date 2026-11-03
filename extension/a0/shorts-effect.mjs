@@ -2,7 +2,7 @@ import { ShortsControl } from '../content/shorts.mjs';
 import { featureEntry } from '../content/entry.mjs';
 import { confirmedEffect } from './contract.mjs';
 export class A0ShortsEffect {
- constructor(document,{deadline=3000,preserveOnFailure=false}={}){this.document=document;this.window=document.defaultView;this.control=new ShortsControl(document);this.deadline=deadline;this.preserveOnFailure=preserveOnFailure;this.epoch=0;this.nodeIds=new WeakMap();this.nextId=0;this.plans=new Map();}
+ constructor(document,{deadline=3000,preserveOnFailure=false,ledger}={}){this.document=document;this.window=document.defaultView;this.control=new ShortsControl(document,{ledger});this.deadline=deadline;this.preserveOnFailure=preserveOnFailure;this.epoch=0;this.nodeIds=new WeakMap();this.nextId=0;this.plans=new Map();}
  id(element){if(!this.nodeIds.has(element))this.nodeIds.set(element,++this.nextId);return this.nodeIds.get(element);}
  plan(){
   // Plan only nodes that ShortsControl.apply can mutate on this route.
