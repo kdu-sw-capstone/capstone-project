@@ -774,3 +774,12 @@
 - 신규PR은 기존PR과 중복되지 않는독립gate diff지만 사용자지시에 따라 생성 전에 보고만 한다. 검증후 별도branch Commit/Push까지 수행하며 PR생성/Approve/Draft해제/Resolve/Merge 없음. Core(윤종민)의 실제 API/증거/완료 연결 후 별도 리뷰가 필요하다. 실제Chrome/MV3/Core/Native/Server제품수용NOT_RUN, MVP_FINAL_COMPLETE=false.
 
 - 최종 로컬 Content362/362 PASS(기존333+신규29,실패/skip0),계약6/6·build·구문·diff PASS. source1291aeb의정확사본에서동일기본거절/초기gate3시험은0PASS/3FAIL(gate-before.log),최종동일3은집중29에포함하여PASS. 이반례는새예약요구의미구현을입증하며기존TEST기능자체의결함으로소급하지않는다. 새로운독립검토/제품Core권한성공이아니다. 게시branch의정확HEAD workflow_dispatch CI는외부검증기록에연결한다. PR은생성전보고조건으로미생성유지.
+
+
+## 2026-11-04 계약 CI 불일치 격리 수정 후보 (미게시)
+
+### 2026-11-01 IG-06 사용자 전달 범위 확인
+사용자가 팀 회신으로 "흑백처리는 싹 다, 프로필까지" 포함한다고 전달했다. Content IG-06 적용 화면은 기존 피드/게시물/릴스에 프로필·프로필 게시물/릴스/태그 목록·탐색·스토리를 포함한다. 기존 DM·로그인/인증·FOCURVE UI 제외, 영상 재생/소리 유지, scope별 복원 규칙은 유지한다. 이전 구현의 프로필/스토리 제외는 공동 확정 제외가 아니었으며 이를 해소한다. Wire/Schema·권한·제품 활성화 계약을 변경하거나 실제 수용 완료로 판정하는 기록은 아니다. feature-registry의 기존 FEED/POST/REELS 예시는 비포괄적 경로 예시로 유지하며 최종 통합 검토에서 이 범위 확인을 함께 대조한다.
+
+
+위 사용자 요구 원문은 보존한다. 제품 흑백 범위를 축소하거나 기존 구현을 변경하지 않는다. 이 기록만으로 공동 계약/Manifest 개정이 승인됐다고 보지 않는다. 보호된 계약 05에 추가됐던 설명만 기존 작업카드로 이동하며 계약·revision manifest·legacy-lock 값은 변경하지 않는다. 공동 계약 표현의 정비는 담당 판정 후 별도 반영한다. legacy-lock 17개 불일치는 미해소다.
