@@ -236,6 +236,219 @@ class Changes {
   }
 }
 ;return {Changes};})();
+modules["content/claim-ledger.mjs"]=(()=>{// Document-local effect primitive. The verified caller owns policy selection,
+// durable intent/receipt, native binding, and the Core wire evidence envelope.
+// Sharing this ledger is required when independent options own the same node.
+class ClaimLedger {
+  #document;
+  #entries = new Map();
+  #open = true;
+  #busy = false;
+  #hidePlans = new WeakMap();
+  #appliedHidePlans = new WeakMap();
+
+  constructor(document) { this.#document = document; }
+
+  // A lifecycle invalidation never grants a new document authority. Cleanup of
+  // this exact document remains possible after new effects have been closed.
+  suspend() { this.#open = false; }
+
+  hide(claim, element, canApply = () => true) { return this.#acquire(claim, element, ['display', 'inert'], canApply); }
+  conceal(claim, element, canApply = () => true) { return this.#acquire(claim, element, ['opacity', 'inert'], canApply); }
+  grayscale(claim, element, canApply = () => true) { return this.#acquire(claim, element, ['filter'], canApply); }
+
+  #hideState(element) {
+    return ['display','inert'].map(property=>{
+      const current=this.#read(element,property),entry=this.#entries.get(element)?.get(property);
+      const restore=entry&&(!entry.written||entry.pending||this.#equal(current,entry.written))?entry.original:current;
+      return {property,current,restore,target:this.#restricted(property,restore),
+        entry:entry?{original:entry.original,written:entry.written,pending:entry.pending??null,claims:[...entry.claims].sort()}:null};
+    });
+  }
+  // Read-only local plan, not a durable reservation or authority proof. Do not
+  // expose Element references to a persistence callback.
+  planHide(claim,element) {
+    if(typeof claim!=='string'||!claim||claim.length>256)throw Error('INVALID_CLAIM_ID');
+    if(!this.#open||this.#busy||element?.ownerDocument!==this.#document||!element.isConnected)throw Error('HIDE_PLAN_UNAVAILABLE');
+    const state=this.#hideState(element);
+    if(state.some(p=>p.entry?.pending))throw Error('HIDE_PLAN_UNAVAILABLE');
+    const plan={plan_id:crypto.randomUUID(),claim,properties:state.map(({property,current,restore,target})=>({property,current:{...current},restore:{...restore},target:{...target}}))};
+    plan.properties.forEach(p=>{Object.freeze(p.current);Object.freeze(p.restore);Object.freeze(p.target);Object.freeze(p);});
+    Object.freeze(plan.properties);Object.freeze(plan);
+    this.#hidePlans.set(plan,{element,claim,state:JSON.stringify(state)});return plan;
+  }
+  applyHidePlan(plan,element,canApply) {
+    const saved=this.#hidePlans.get(plan);this.#hidePlans.delete(plan);
+    if(!saved||saved.element!==element||!this.#open||this.#busy||element?.ownerDocument!==this.#document||!element.isConnected
+      ||JSON.stringify(this.#hideState(element))!==saved.state)return null;
+    const verified=this.hide(saved.claim,element,canApply);
+    if(verified)this.#appliedHidePlans.set(plan,{element,state:JSON.stringify(this.#hideState(element))});
+    return verified;
+  }
+  isHiddenBy(claim,element,plan) {
+    if(element?.ownerDocument!==this.#document)return false;
+    if(plan){const applied=this.#appliedHidePlans.get(plan);
+      if(!applied||applied.element!==element||applied.state!==JSON.stringify(this.#hideState(element)))return false;}
+    return ['display','inert'].every(property=>{const entry=this.#entries.get(element)?.get(property);
+      return entry?.claims.has(claim)&&!entry.pending&&entry.written&&this.#equal(this.#read(element,property),entry.written);})
+      &&this.#document.defaultView.getComputedStyle(element).display==='none'&&element.inert===true;
+  }
+
+  #read(element, property) {
+    if (property === 'inert') return { value: element.inert };
+    return { value: element.style.getPropertyValue(property), priority: element.style.getPropertyPriority(property) };
+  }
+
+  #equal(a, b) { return a.value === b.value && a.priority === b.priority; }
+
+  #write(element, property, state) {
+    if (property === 'inert') element.inert = state.value;
+    else if (state.value) element.style.setProperty(property, state.value, state.priority);
+    else element.style.removeProperty(property);
+  }
+
+  #restricted(property, original, filterBase) {
+    if (property === 'inert') return { value: true };
+    if (property === 'display') return { value: 'none', priority: 'important' };
+    if (property === 'opacity') return { value: '0', priority: 'important' };
+    const base = filterBase.trim();
+    return { value: `${base && base !== 'none' ? base + ' ' : ''}grayscale(1)`, priority: 'important' };
+  }
+
+  #apply(element, property, entry, canApply = () => true) {
+    if (element.ownerDocument !== this.#document || canApply() !== true) return false;
+    if (entry.pending?.kind === 'RESTORE') return false;
+    const current = this.#read(element, property);
+    // A page edit is the new baseline; never adopt another claim's owned value.
+    const changed = !entry.pending && entry.written && !this.#equal(current, entry.written);
+    if (changed) entry.original = current;
+    // Preserve the original declaration (including variables) for cleanup, but
+    // compose from its resolved value so `var(--x) -> none` stays valid CSS.
+    // Reuse this baseline while owned to avoid accumulating our own grayscale.
+    if (property === 'filter' && ((!entry.written && !entry.pending) || changed)) {
+      entry.filterBase = this.#document.defaultView.getComputedStyle(element).filter;
+      if (typeof entry.filterBase !== 'string' || !entry.filterBase) return false;
+    }
+    const next = entry.pending?.target ?? this.#restricted(property, entry.original, entry.filterBase);
+    // Record intended ownership before the setter: a setter can mutate then throw.
+    entry.written = next;
+    entry.pending = {kind:'APPLY',target:next};
+    if (canApply() !== true || element.ownerDocument !== this.#document) return false;
+    if (!this.#equal(current, next)) this.#write(element, property, next);
+    if (canApply() !== true || element.ownerDocument !== this.#document) return false;
+    const written = this.#equal(this.#read(element, property), next);
+    const verified = property === 'filter'
+      ? written && /(?:^|\s)grayscale\(1\)$/.test(this.#document.defaultView.getComputedStyle(element).filter)
+      : written;
+    if (verified) entry.pending = null;
+    return verified;
+  }
+
+  #acquire(claim, element, properties, canApply) {
+    if (typeof claim !== 'string' || !claim || claim.length > 256) throw Error('INVALID_CLAIM_ID');
+    if (!this.#open) throw Error('DOCUMENT_EFFECTS_CLOSED');
+    if (element?.ownerDocument !== this.#document) throw Error('FOREIGN_DOCUMENT');
+    // A page setter can synchronously call back into acquire/release. Never
+    // mutate an entry while an outer effect still owns its pending write.
+    if (this.#busy) return false;
+    if (canApply() !== true) return false;
+    let entries = this.#entries.get(element);
+    // Do not add another owner or reapply over an unresolved restoration.
+    if ([...(entries?.values() ?? [])].some(entry => entry.pending?.kind === 'RESTORE')) return false;
+    if (!entries) { entries = new Map(); this.#entries.set(element, entries); }
+    this.#busy = true;
+    try {
+      // Plan ALL properties before effect. This is an in-memory cleanup ledger,
+      // not a replacement for the caller's effect-before-durable-write gate.
+      for (const property of properties) {
+        let entry = entries.get(property);
+        if (!entry) {
+          entry = { original: this.#read(element, property), written: null, claims: new Set() };
+          entries.set(property, entry);
+        }
+        entry.claims.add(claim);
+      }
+      let verified = true;
+      for (const property of properties) {
+        if (canApply() !== true || !this.#apply(element, property, entries.get(property), canApply)) { verified = false; break; }
+      }
+      // Inline values alone do not prove hiding against page/user styles.
+      if (properties.includes('display')) {
+        verified = this.#document.defaultView.getComputedStyle(element).display === 'none' && element.inert === true && verified;
+      }
+      if (properties.includes('opacity')) {
+        verified = this.#document.defaultView.getComputedStyle(element).opacity === '0' && element.inert === true && verified;
+      }
+      return verified;
+    } catch { return false; } finally { this.#busy = false; }
+  }
+
+  release(claim) {
+    if (this.#busy) return {restored:false,remaining_targets:this.inspect(claim).remaining_targets,error_count:0,cleanup_pending:true};
+    this.#busy = true;
+    try {
+    let errors = 0;
+    for (const [element, entries] of this.#entries) {
+      for (const [property, entry] of entries) {
+        if (!entry.claims.has(claim)) continue;
+        // Adoption is not detachment or GONE. No authority to mutate the new
+        // document, including when reasserting another old claim. Retain debt.
+        if (element.ownerDocument !== this.#document) { errors++; continue; }
+        try {
+          if (entry.claims.size > 1) {
+            // Reconcile a page edit while the other owner still needs protection.
+            if (!this.#apply(element, property, entry)) { errors++; continue; }
+            entry.claims.delete(claim);
+          } else {
+            const current = this.#read(element, property);
+            // A detached node is not GONE: attempt restoration and retain failures.
+            // Once a write has begun, an unexpected value may be its partial
+            // result, not a page edit. Keep the immutable goal across retries.
+            // Without separate provenance, pending writes never redefine baseline.
+            const expected = entry.pending?.kind === 'RESTORE' ? entry.pending.target
+              : entry.pending?.kind === 'APPLY' || entry.written && this.#equal(current, entry.written) ? entry.original : current;
+            entry.pending = {kind:'RESTORE',target:expected};
+            if (!this.#equal(current, expected)) this.#write(element, property, expected);
+            if (!this.#equal(this.#read(element, property), expected)) { errors++; continue; }
+            entries.delete(property);
+          }
+        } catch { errors++; }
+      }
+      if (entries.size === 0) this.#entries.delete(element);
+    }
+    const remaining = this.inspect(claim).remaining_targets;
+    return { restored: errors === 0 && remaining === 0, remaining_targets: remaining, error_count: errors };
+    } finally { this.#busy = false; }
+  }
+
+  inspect(claim) {
+    let remaining = 0, properties = 0;
+    for (const entries of this.#entries.values()) {
+      let matched = false;
+      for (const entry of entries.values()) {
+        if (claim === undefined || entry.claims.has(claim)) { matched = true; properties++; }
+      }
+      if (matched) remaining++;
+    }
+    // No DOM references, text, URL, or native/whole-session success assertion.
+    return { remaining_targets: remaining, remaining_properties: properties };
+  }
+  // The Session supplies its private claim set. Never enumerate another
+  // owner's IDs, DOM text/attributes, original styles or Element references.
+  snapshotClaims(claims) {
+    const selected=new Set(claims),rows=[];
+    for(const [element,entries]of this.#entries)for(const claim of selected){
+      const properties=[];
+      for(const [property,entry]of entries)if(entry.claims.has(claim)){
+        let matches=null;try{if(element.ownerDocument===this.#document)matches=!!entry.written&&this.#equal(this.#read(element,property),entry.written);}catch{}
+        properties.push({property,pending:entry.pending?.kind??null,matches_owned:matches});
+      }
+      if(properties.length)rows.push({claim,foreign_document:element.ownerDocument!==this.#document,connected:element.isConnected===true,properties});
+    }
+    return structuredClone({remaining_targets:new Set(rows.map(r=>r.claim)).size,claims:rows});
+  }
+}
+;return {ClaimLedger};})();
 modules["content/entry.mjs"]=(()=>{// A route candidate is not an access event. Core must verify explicit navigation,
 // RUNNING, sender/tab/frame, owner and the common navigation_id before recording.
 function featureEntry(href) {
@@ -278,14 +491,22 @@ function createShortsNotice(document){
 }
 ;return {restrictionStyles,createShortsNotice};})();
 modules["content/shorts.mjs"]=(()=>{const { createShortsNotice }=modules["ui/restriction.mjs"];
-const { Changes }=modules["content/changes.mjs"];
+const { ClaimLedger }=modules["content/claim-ledger.mjs"];
 const { featureEntry }=modules["content/entry.mjs"];
 
 // DOM adapter only: no policy selection, session state or access event generation.
 class ShortsControl {
-  constructor(document) {
+  constructor(document, {ledger = new ClaimLedger(document)} = {}) {
+    if (!(ledger instanceof ClaimLedger)) throw Error('SHARED_LEDGER_REQUIRED');
     this.document = document;
-    this.changes = new Changes();
+    // The trusted composer must pass the same ledger to all overlapping adapters.
+    // This claim is local effect ownership, never a Core authority or wire ID.
+    const claim = 'shorts:' + globalThis.crypto.randomUUID();
+    this.changes = {
+      hide: element => ledger.hide(claim, element),
+      restore: () => ledger.release(claim).restored,
+      get size() { return ledger.inspect(claim).remaining_targets; },
+    };
     this.onPlay = event => {
       if (this.active && featureEntry(document.location.href) === 'YOUTUBE_SHORTS' &&
           event.target.matches?.('video, audio') && event.target.closest('ytd-shorts')) event.target.pause();
@@ -304,30 +525,42 @@ class ShortsControl {
     const viewers = direct ? [...this.document.querySelectorAll('ytd-shorts')] : [];
     viewers.forEach(viewer => elements.add(viewer));
     let changed = 0, deferred = 0, status = elements.size ? 'SUPPORTED' : 'FAILED';
+    let failure=elements.size?null:'TARGET_MISSING';
+    const reject=code=>{status='FAILED';failure??=code;};
+    this.lastApplyFailure=null;
     for (const element of elements) {
       // A ledger-backed adapter can defer a node which appeared after its
       // durable plan. Direct legacy callers retain the existing default.
-      if(allowElement&&!allowElement(element)){deferred++;status='FAILED';continue;}
+      if(allowElement&&!allowElement(element)){deferred++;reject('UNPLANNED_NODE');continue;}
       try {
-        if (this.changes.hide(element)) changed++; else status = 'FAILED';
+        if (this.changes.hide(element)) changed++; else reject('NODE_HIDE_UNCONFIRMED');
         if (direct && element.matches('ytd-shorts')) {
           for (const video of element.querySelectorAll('video, audio')) {
             video.pause();
-            if (!video.paused) status = 'FAILED';
+            if (!video.paused) reject('MEDIA_PAUSE_UNCONFIRMED');
           }
         }
-      } catch { status = 'FAILED'; }
+      } catch { reject('NODE_APPLY_EXCEPTION'); }
     }
     if (direct) {
-      if (!viewers.length) status = 'FAILED';
+      if (!viewers.length) reject('VIEWER_MISSING');
       if (!this.notice?.isConnected) {
         this.notice = createShortsNotice(this.document);
         this.document.documentElement.append(this.notice);
       }
       const view=this.document.defaultView,rect=this.notice.getBoundingClientRect(),style=view.getComputedStyle(this.notice);
-      if(style.display==='none'||style.visibility==='hidden'||Number(style.opacity)===0||style.pointerEvents==='none'||rect.width<view.innerWidth||rect.height<view.innerHeight)status='FAILED';
+      // CSSOM root client size is the document viewport excluding scrollbars;
+      // innerWidth/Height includes them. A fixed inset:0 box covers the former.
+      const viewport=this.document.compatMode==='BackCompat'?this.document.body:this.document.documentElement;
+      const width=viewport?.clientWidth,height=viewport?.clientHeight;
+      if(style.display==='none'||style.visibility==='hidden'||Number(style.opacity)===0)reject('NOTICE_NOT_VISIBLE');
+      if(style.pointerEvents==='none')reject('NOTICE_NOT_INTERACTIVE');
+      if(!Number.isFinite(width)||!Number.isFinite(height)||width<=0||height<=0||!['width','height','left','top','right','bottom'].every(key=>Number.isFinite(rect[key])))reject('NOTICE_VIEWPORT_UNCONFIRMED');
+      else if(rect.width<width||rect.height<height||rect.left>0||rect.top>0||rect.right<width||rect.bottom<height)reject('NOTICE_VIEWPORT_NOT_COVERED');
       this.notice.updateRestrictionState(viewers.length > 0 && status !== 'FAILED');
+      if(failure)this.lastApplyFailure={code:failure,viewport_width:Number.isFinite(width)?width:null,viewport_height:Number.isFinite(height)?height:null,notice_width:Number.isFinite(rect.width)?rect.width:null,notice_height:Number.isFinite(rect.height)?rect.height:null,notice_left:Number.isFinite(rect.left)?rect.left:null,notice_top:Number.isFinite(rect.top)?rect.top:null,notice_right:Number.isFinite(rect.right)?rect.right:null,notice_bottom:Number.isFinite(rect.bottom)?rect.bottom:null};
     } else { this.notice?.remove(); this.notice = null; }
+    if(failure&&!this.lastApplyFailure)this.lastApplyFailure={code:failure};
     return {feature:'shorts',status,changed,...(allowElement?{deferred}:{})};
   }
   release() {
@@ -351,7 +584,7 @@ modules["a0/shorts-effect.mjs"]=(()=>{const { ShortsControl }=modules["content/s
 const { featureEntry }=modules["content/entry.mjs"];
 const { confirmedEffect }=modules["a0/contract.mjs"];
 class A0ShortsEffect {
- constructor(document,{deadline=3000}={}){this.document=document;this.window=document.defaultView;this.control=new ShortsControl(document);this.deadline=deadline;this.epoch=0;this.nodeIds=new WeakMap();this.nextId=0;this.plans=new Map();}
+ constructor(document,{deadline=3000,preserveOnFailure=false,ledger}={}){this.document=document;this.window=document.defaultView;this.control=new ShortsControl(document,{ledger});this.deadline=deadline;this.preserveOnFailure=preserveOnFailure;this.epoch=0;this.nodeIds=new WeakMap();this.nextId=0;this.plans=new Map();}
  id(element){if(!this.nodeIds.has(element))this.nodeIds.set(element,++this.nextId);return this.nodeIds.get(element);}
  plan(){
   // Plan only nodes that ShortsControl.apply can mutate on this route.
@@ -374,9 +607,9 @@ class A0ShortsEffect {
    if(!this.running||epoch!==this.epoch)return;
    this.scanning=true;this.observer.disconnect();
    let deferred=false;
-   try{if(initializing&&Date.now()>=end){startupTimedOut=true;this.stopEpoch();return;}const plan=this.plan();await saveLedger(plan);if(!this.running||epoch!==this.epoch)return;if(initializing&&Date.now()>=end){startupTimedOut=true;this.stopEpoch();return;}const durable=new Set(plan.map(x=>x.node_id)),result=this.control.apply({allowElement:element=>durable.has(this.nodeIds.get(element))});deferred=result.deferred>0;const evidence=this.evidence();if(!deferred&&result.status==='FAILED'&&evidence.route_kind==='SHORTS'&&evidence.viewer_count>0&&evidence.media_count>0)this.errors++;}
-   catch(error){console.error('FOCURVE_EFFECT_SCAN_FAILED',/^[A-Z_]{1,64}$/.test(error?.message??'')?error.message:'UNCONFIRMED');this.errors++;this.stopEpoch();this.control.release();}
-   finally{this.scanning=false;if(this.running&&epoch===this.epoch){this.observer.observe(this.document.documentElement,{childList:true,subtree:true,attributes:true,attributeFilter:['style','inert']});if(deferred)this.refresh();}}
+   try{if(initializing&&Date.now()>=end){startupTimedOut=true;this.stopEpoch();return;}const plan=this.plan();await saveLedger(plan);if(!this.running||epoch!==this.epoch)return;if(initializing&&Date.now()>=end){startupTimedOut=true;this.stopEpoch();return;}const durable=new Set(plan.map(x=>x.node_id)),result=this.control.apply({allowElement:element=>durable.has(this.nodeIds.get(element))});deferred=result.deferred>0;const evidence=this.evidence();if(!deferred&&result.status==='FAILED'&&evidence.route_kind==='SHORTS'&&evidence.viewer_count>0&&evidence.media_count>0){this.errors++;try{console.error('FOCURVE_SHORTS_APPLY_REJECTED',JSON.stringify(this.control.lastApplyFailure));}catch{}}}
+   catch(error){console.error('FOCURVE_EFFECT_SCAN_FAILED',/^[A-Z_]{1,64}$/.test(error?.message??'')?error.message:'UNCONFIRMED');this.errors++;this.stopEpoch();if(!this.preserveOnFailure)this.control.release();}
+   finally{this.scanning=false;if(this.running&&epoch===this.epoch){this.observer.observe(this.document.documentElement,{childList:true,subtree:true,attributes:true,attributeFilter:['style','inert','href','is-shorts']});if(deferred)this.refresh();}}
   };
   this.refresh=()=>{this.queuedScans++;this.pending=this.pending.then(()=>{this.queuedScans--;return this.scan();}).catch(()=>{this.errors++;});};this.pending=Promise.resolve();
   this.observer.observe(this.document.documentElement,{childList:true,subtree:true});this.refresh();

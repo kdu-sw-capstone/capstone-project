@@ -37,6 +37,13 @@ it("readback tolerates JSON key order but refuses another version",async()=>{
  await expect(configWrite(executor,id,value).send()).resolves.toEqual(reordered);
  vi.mocked(request).mockResolvedValueOnce(row).mockResolvedValueOnce({...row,version:2});await expect(configWrite(executor,id,value).send()).rejects.toThrow();
 });
+it("preserves the first GET failure as cause without classifying it as a rejected acknowledged write",async()=>{
+ const failure=Object.assign(new Error("VERSION_CONFLICT"),{status:412}),write=configWrite(executor,id,value);
+ vi.mocked(request).mockResolvedValueOnce(row).mockRejectedValueOnce(failure);
+ const error=await write.send().catch(error=>error);expect(error.cause).toBe(failure);expect(error.status).toBeUndefined();
+ vi.mocked(request).mockResolvedValueOnce(row).mockResolvedValueOnce(row);await expect(write.send()).resolves.toEqual(row);
+ const puts=vi.mocked(request).mock.calls.filter(c=>c[1]==="PUT");expect(puts[1][2]).toEqual(puts[0][2]);expect(puts[1][3]).toEqual(puts[0][3]);
+});
 it("does not accept another installation's saved response",async()=>{
  vi.mocked(request).mockResolvedValueOnce({...row,executor_id:id});await expect(configWrite(executor,id,value).send()).rejects.toThrow();expect(request).toHaveBeenCalledTimes(1);
 });
