@@ -2,7 +2,7 @@ name: Additional MVP runtime bridges
 on:
   pull_request:
     branches: [integration/additional-mvp-20261029]
-    paths: ['runtime-server/**/Amvp*', 'frontend/src/RuntimeDelivery*', 'frontend/src/runtimeDeliveryState.ts', '.github/workflows/additional-runtime-bridges.yml']
+    paths: ['runtime-server/**/Amvp*', 'runtime-server/**/ServerM1Prepared*', 'frontend/src/RuntimeDelivery*', 'frontend/src/runtimeDeliveryState.ts', '.github/workflows/additional-runtime-bridges.yml']
   push:
     branches: [feature/additional-mvp-runtime-adapters]
   workflow_dispatch:
@@ -59,3 +59,7 @@ jobs:
           cache-dependency-path: runtime-server/pom.xml
       - run: bash backend/mvnw -f runtime-server/pom.xml -B -ntp '-Dtest=AmvpRuntimeBridgeMysqlTest,AmvpRuntimeBridgeApiTest,AmvpRuntimeBridgeConfigurationTest' verify
       - run: bash backend/mvnw -f runtime-server/pom.xml -B -ntp '-Dtest=*,!AdditionalConfigMysqlTest,!AmvpRuntimeBridgeMysqlTest' verify
+      # Reuse the populated schema; this suite owns only its UUID/user-scoped fixture rows.
+      - run: bash backend/mvnw -f runtime-server/pom.xml -B -ntp '-Dtest=ServerM1PreparedAdaptersTest,ServerM1PreparedAdaptersMysqlTest' verify
+        env:
+          FOCURVE_PREPARED_ADAPTER_TESTS: '1'
