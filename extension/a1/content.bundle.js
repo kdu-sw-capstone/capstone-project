@@ -5588,9 +5588,13 @@ class ShortsControl {
     if(failure&&!this.lastApplyFailure)this.lastApplyFailure={code:failure};
     return {feature:'shorts',status,changed,...(allowElement?{deferred}:{})};
   }
-  release() {
+  // Suspend new media effects without restoring existing owned DOM changes.
+  suspend() {
     this.active = false;
     this.document.removeEventListener('play',this.onPlay,true);
+  }
+  release() {
+    this.suspend();
     this.notice?.remove(); this.notice = null;
     const changed = this.changes.size > 0;
     const restored = this.changes.restore();
@@ -5643,7 +5647,7 @@ class A0ShortsEffect {
   while(this.running&&epoch===this.epoch){const evidence=this.evidence();if(evidence.error_count)return {result_state:'APPLY_FAILED',evidence};if(evidence.route_kind==='OTHER')return {result_state:'NOT_APPLICABLE',evidence};if(confirmedEffect(evidence))return {result_state:'APPLIED',evidence};if(Date.now()>=end)return {result_state:'TIMED_OUT',evidence};await new Promise(resolve=>{this.waitResolve=resolve;this.timer=this.window.setTimeout(resolve,30);});}
   return {result_state:'APPLY_FAILED',evidence:this.evidence()};
  }
- stopEpoch(){this.epoch++;this.running=false;this.observer?.disconnect();this.window.clearTimeout(this.timer);this.waitResolve?.();this.waitResolve=null;}
+ stopEpoch(){this.epoch++;this.running=false;this.control.suspend();this.observer?.disconnect();this.window.clearTimeout(this.timer);this.waitResolve?.();this.waitResolve=null;}
  async release(){
   this.stopEpoch();await this.pending;let restored=false,error_count=0;
   try{restored=this.control.release();}catch{error_count++;}

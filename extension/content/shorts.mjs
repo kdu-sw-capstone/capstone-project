@@ -71,9 +71,13 @@ export class ShortsControl {
     if(failure&&!this.lastApplyFailure)this.lastApplyFailure={code:failure};
     return {feature:'shorts',status,changed,...(allowElement?{deferred}:{})};
   }
-  release() {
+  // Suspend new media effects without restoring existing owned DOM changes.
+  suspend() {
     this.active = false;
     this.document.removeEventListener('play',this.onPlay,true);
+  }
+  release() {
+    this.suspend();
     this.notice?.remove(); this.notice = null;
     const changed = this.changes.size > 0;
     const restored = this.changes.restore();
