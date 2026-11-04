@@ -2,7 +2,7 @@ import { ShortsControl } from '../content/shorts.mjs';
 import { featureEntry } from '../content/entry.mjs';
 import { confirmedEffect } from './contract.mjs';
 export class A0ShortsEffect {
- constructor(document,{deadline=3000,preserveOnFailure=false}={}){this.document=document;this.window=document.defaultView;this.control=new ShortsControl(document);this.deadline=deadline;this.preserveOnFailure=preserveOnFailure;this.epoch=0;this.nodeIds=new WeakMap();this.nextId=0;this.plans=new Map();}
+ constructor(document,{deadline=3000,preserveOnFailure=false,ledger}={}){this.document=document;this.window=document.defaultView;this.control=new ShortsControl(document,{ledger});this.deadline=deadline;this.preserveOnFailure=preserveOnFailure;this.epoch=0;this.nodeIds=new WeakMap();this.nextId=0;this.plans=new Map();}
  id(element){if(!this.nodeIds.has(element))this.nodeIds.set(element,++this.nextId);return this.nodeIds.get(element);}
  plan(){
   // Plan only nodes that ShortsControl.apply can mutate on this route.
@@ -27,7 +27,7 @@ export class A0ShortsEffect {
    let deferred=false;
    try{if(initializing&&Date.now()>=end){startupTimedOut=true;this.stopEpoch();return;}const plan=this.plan();await saveLedger(plan);if(!this.running||epoch!==this.epoch)return;if(initializing&&Date.now()>=end){startupTimedOut=true;this.stopEpoch();return;}const durable=new Set(plan.map(x=>x.node_id)),result=this.control.apply({allowElement:element=>durable.has(this.nodeIds.get(element))});deferred=result.deferred>0;const evidence=this.evidence();if(!deferred&&result.status==='FAILED'&&evidence.route_kind==='SHORTS'&&evidence.viewer_count>0&&evidence.media_count>0){this.errors++;try{console.error('FOCURVE_SHORTS_APPLY_REJECTED',JSON.stringify(this.control.lastApplyFailure));}catch{}}}
    catch(error){console.error('FOCURVE_EFFECT_SCAN_FAILED',/^[A-Z_]{1,64}$/.test(error?.message??'')?error.message:'UNCONFIRMED');this.errors++;this.stopEpoch();if(!this.preserveOnFailure)this.control.release();}
-   finally{this.scanning=false;if(this.running&&epoch===this.epoch){this.observer.observe(this.document.documentElement,{childList:true,subtree:true,attributes:true,attributeFilter:['style','inert']});if(deferred)this.refresh();}}
+   finally{this.scanning=false;if(this.running&&epoch===this.epoch){this.observer.observe(this.document.documentElement,{childList:true,subtree:true,attributes:true,attributeFilter:['style','inert','href','is-shorts']});if(deferred)this.refresh();}}
   };
   this.refresh=()=>{this.queuedScans++;this.pending=this.pending.then(()=>{this.queuedScans--;return this.scan();}).catch(()=>{this.errors++;});};this.pending=Promise.resolve();
   this.observer.observe(this.document.documentElement,{childList:true,subtree:true});this.refresh();
