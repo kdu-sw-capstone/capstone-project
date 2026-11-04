@@ -15,19 +15,23 @@ export class NavigationSurfaceSession {
   #reservation;
   #observing=false;#scanSequence=0;#scanComplete=false;#lastObservation=null;#lastCleanup=null;
   #claimEpoch='';
-  constructor(document,{ledger,owner_binding_id,binding_id,onObservation=()=>{},onInvalidated=()=>{},authorizeNavigation=null,canObserve=()=>true,ig04Reservation},profile){
+  #observerState='NOT_ATTEMPTED';#listeners=[];
+  #lifetimeRecords;#observerResource;
+  constructor(document,{ledger,owner_binding_id,binding_id,onObservation=()=>{},onInvalidated=()=>{},authorizeNavigation=null,canObserve=()=>true,ig04Reservation,localLifetime},profile){
     // Profiles are module-owned selectors, not page/Wire policy or capability.
     if(!profile||!['YT-01','YT-05','YT-06','YT-07','YT-08','YT-09','IG-01','IG-02','IG-03','IG-04','IG-05','IG-06'].includes(profile.feature_id)||typeof profile.collect!=='function'||typeof profile.routeAllowed!=='function')throw Error('INVALID_NAVIGATION_PROFILE');
     this.#profile=Object.freeze({...profile});
     if(!(ledger instanceof ClaimLedger))throw Error('SHARED_LEDGER_REQUIRED');
     if(![owner_binding_id,binding_id].every(value=>typeof value==='string'&&UUID.test(value)))throw Error('INVALID_CLAIM_SCOPE');
     this.#document=document;this.#ledger=ledger;this.#scope=JSON.stringify([owner_binding_id,binding_id,profile.feature_id]);
+    this.#lifetimeRecords=localLifetime;
     this.#observe=onObservation;this.#invalidateCallback=onInvalidated;
     this.#authorizeNavigation=authorizeNavigation;
     this.#canObserve=canObserve;
     this.refresh=()=>{
       if(!this.#open||this.#scheduled)return;this.#scheduled=true;
-      queueMicrotask(()=>{this.#scheduled=false;if(this.#open)this.scan();});
+      const ticket=this.#lifetimeRecords?.begin('session.scheduled_scan');
+      queueMicrotask(()=>{try{this.#scheduled=false;if(this.#open)this.scan();}finally{ticket?.finish();}});
     };
     this.pagehide=()=>this.#invalidate('PAGEHIDE');
     if(profile.feature_id==='IG-04'&&ig04Reservation!==undefined){
@@ -43,16 +47,35 @@ export class NavigationSurfaceSession {
     let live=LIVE.get(this.#ledger);if(!live){live=new Map();LIVE.set(this.#ledger,live);}
     if(live.has(this.#scope))throw Error(this.#profile.prefix+'_SCOPE_ALREADY_ACTIVE');
     live.set(this.#scope,this);this.#started=true;this.#open=true;this.#url=url.href;
-    this.#observer=new win.MutationObserver(this.refresh);
-    for(const name of ['popstate','hashchange','yt-navigate-finish'])win.addEventListener(name,this.refresh);
-    win.navigation?.addEventListener('currententrychange',this.refresh);win.addEventListener('pagehide',this.pagehide);
+    this.#observerResource=this.#lifetimeRecords?.resource('session.observer');
+    this.#observerState='UNCONFIRMED';this.#observer=new win.MutationObserver(this.refresh);this.#observerState='CONSTRUCTED';this.#observerResource?.inactive();
+    for(const name of ['popstate','hashchange','yt-navigate-finish'])this.#listen(win,name,this.refresh);
+    if(win.navigation)this.#listen(win.navigation,'currententrychange',this.refresh);
+    this.#listen(win,'pagehide',this.pagehide);
     return this.scan();
   }
+  #listen(target,type,callback){
+    if(!this.#canApply())throw Error('SESSION_RETIRED_DURING_INSTALL');
+    const entry={target,type,callback,removed:false,resource:this.#lifetimeRecords?.resource('session.'+type)};this.#listeners.push(entry);
+    try{target.addEventListener(type,callback);}
+    catch(error){
+      // A reentrant stop may have removed this entry BEFORE add actually ran.
+      entry.removed=false;entry.resource?.unknown();
+      if(!this.#open)this.#disconnect();
+      throw error;
+    }
+    entry.removed=false;entry.resource?.attached();
+    if(!this.#canApply()){
+      this.#disconnect();
+      throw Error('SESSION_RETIRED_DURING_INSTALL');
+    }
+  }
   #disconnect(){
-    this.#observing=false;
-    this.#observer?.disconnect();const win=this.#document.defaultView;
-    for(const name of ['popstate','hashchange','yt-navigate-finish'])win.removeEventListener(name,this.refresh);
-    win.navigation?.removeEventListener('currententrychange',this.refresh);win.removeEventListener('pagehide',this.pagehide);
+    // Attempt every owned resource even if an earlier removal throws. Unknown
+    // acquisition/removal remains unknown; it must not become a scan0 proof.
+    if(this.#observer){this.#observerState='UNCONFIRMED';this.#observerResource?.unknown();try{this.#observer.disconnect();this.#observing=false;this.#observerState='STOPPED';this.#observerResource?.inactive();}catch{}}
+    for(const entry of this.#listeners)if(!entry.removed){entry.resource?.unknown();try{entry.target.removeEventListener(entry.type,entry.callback);entry.removed=true;entry.resource?.removed();}catch{}}
+    return this.#observerState!=='UNCONFIRMED'&&this.#listeners.every(entry=>entry.removed);
   }
   #invalidate(reason,details=null){
     if(!this.#open)return;this.#open=false;this.#disconnect();
@@ -72,7 +95,8 @@ export class NavigationSurfaceSession {
     if(this.#document.location.href!==this.#url){this.#invalidate('ROUTE_CHANGED');return false;}
     return true;
   }
-  scan(){
+  scan(){return this.#lifetimeRecords?this.#lifetimeRecords.run('session.scan',()=>this.#scan()):this.#scan();}
+  #scan(){
     if(!this.#open||this.#busy)return null;
     this.#busy=true;
     this.#scanSequence++;this.#scanComplete=false;
@@ -131,13 +155,13 @@ export class NavigationSurfaceSession {
         if(verified)restricted++;else if(verified!==null)errors++;
       }
     }catch{errors++;}
-    if(this.#open)this.#observer.observe(this.#document.documentElement,{subtree:true,childList:true,attributes:true,
+    if(this.#open){this.#observerState='UNCONFIRMED';this.#observerResource?.unknown();this.#observer.observe(this.#document.documentElement,{subtree:true,childList:true,attributes:true,
       characterData:['IG-03','IG-04','IG-05'].includes(this.#profile.feature_id),
       attributeFilter:['href','page-subtype','browse-id','video-id','id','class','style','inert','hidden','data-focurve-restriction','data-focurve-ui',
         ...(this.#profile.feature_id.startsWith('IG-')?['aria-label','role','alt','draggable','contenteditable']:[]),
         ...(this.#profile.feature_id==='IG-03'?['title','aria-labelledby']:[]),
         ...(this.#profile.feature_id==='IG-04'?['placeholder','dir','datetime']:[]),
-        ...(this.#profile.feature_id==='IG-06'?['type','action']:[])]});
+        ...(this.#profile.feature_id==='IG-06'?['type','action']:[])]});this.#observerState='ATTACHED';this.#observerResource?.attached();}
     this.#observing=this.#open;this.#scanComplete=this.#open;
     const reservation=this.#reservation?.inspect();
     const result={feature_id:this.#profile.feature_id,local_only:true,native_verified:false,status:errors?'FAILED':reservation?.pending_reservations?'OBSERVING':eligible?'OBSERVED':'NO_TARGET',
@@ -149,12 +173,12 @@ export class NavigationSurfaceSession {
     }finally{this.#busy=false;}
   }
   release(){
-    this.#open=false;this.#disconnect();
+    this.#open=false;const disconnected=this.#disconnect();
     this.#reservation?.close();
     if(this.#busy){this.#lastCleanup={local_only:true,restored:false,remaining_targets:this.#targets.size,error_count:0,cleanup_pending:true,scan_pending:true,
       ...(this.#reservation?.inspect()??{})};return structuredClone(this.#lastCleanup);}
     this.#busy=true;
-    try{let errors=0;
+    try{let errors=disconnected?0:1;
     for(const [element,claim]of this.#targets){
       const cleanup=this.#ledger.release(claim);
       if(cleanup.restored)this.#targets.delete(element);else errors+=cleanup.error_count||1;
@@ -177,6 +201,19 @@ export class NavigationSurfaceSession {
       observer_active:this.#observing,scan_in_progress:this.#busy,scan_scheduled:this.#scheduled,
       scan_sequence:this.#scanSequence,scan_complete:this.#scanComplete,observation:this.#lastObservation,
       cleanup:this.#lastCleanup,dom_cleanup_confirmed:this.#restored(),ledger:this.#ledger.snapshotClaims(this.#ownClaims()),gate:gate??null});
+  }
+  async quiescenceSnapshot(){
+    if(this.#profile.feature_id!=='IG-04')throw Error('UNSUPPORTED_EVIDENCE_FEATURE');
+    // Close synchronously, but let the actual queued refresh and synchronous
+    // scan stack finish. Never force busy/scheduled to false or clear claims.
+    this.close();await new Promise(resolve=>queueMicrotask(resolve));
+    const snapshot=await this.evidenceSnapshot();
+    const observer_stopped=['NOT_ATTEMPTED','CONSTRUCTED','STOPPED'].includes(this.#observerState);
+    const listeners_detached=this.#listeners.every(entry=>entry.removed);
+    const scan_drained=!this.#busy&&!this.#scheduled;
+    const reservation_callbacks_settled=(snapshot.gate?.local_tracking.reserve_callbacks_unsettled??0)===0;
+    return {...snapshot,local_quiescence:{future_effects_closed:!this.#open,observer_stopped,listeners_detached,scan_drained,reservation_callbacks_settled,
+      locally_quiescent:!this.#open&&observer_stopped&&listeners_detached&&scan_drained&&reservation_callbacks_settled&&(this.#lifetimeRecords?.snapshot().drained??true)}};
   }
   async completeReservation(identity,proof){
     if(!this.#reservation)return {local_only:true,accepted:false,reason:'RESERVATION_GATE_REQUIRED'};
