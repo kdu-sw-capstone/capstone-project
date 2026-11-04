@@ -5248,7 +5248,11 @@ class DocumentLifecycle {
       (tab.generation ?? 0) + (kind === 'HISTORY' && prior?.url !== event.url ? 1 : 0);
     const phase = kind === 'READY' ? 'READY_ROOT_OBSERVED' :
       kind === 'HISTORY' ? 'POLICY_REEVALUATION_REQUIRED' :
-      prior && !tab?.pending && prior.url === event.url ? prior.phase : 'COMMITTED_NOT_READY';
+      // Only a duplicate commit of the current document retains readiness.
+      // A previously replaced document can become current again (e.g. a
+      // history activation with no observed BEFORE); its old phase/READY is
+      // neither current readiness nor a reason to suppress the Root recheck.
+      prior && tab?.documentId === event.documentId && !tab.pending && prior.url === event.url ? prior.phase : 'COMMITTED_NOT_READY';
     this.documents.set(key, { ...prior, tabId: event.tabId, frameId: 0,
       documentId: event.documentId, url: event.url, phase, at: event.timeStamp, generation });
     this.tabs.set(event.tabId, { documentId: event.documentId, at: event.timeStamp, pending: false, generation });
