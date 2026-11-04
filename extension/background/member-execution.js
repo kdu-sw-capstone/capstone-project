@@ -115,10 +115,38 @@ class MemberJournalStore {
       request.onsuccess = () => done(request.result.filter(entry => entry.owner_key === ownerKey && entry.executor_id === executorId));
     });
   }
-  save(entry) {
+  save(entry, options = {}) {
     const copy = structuredClone(entry);
     if (!/^MEMBER:[1-9][0-9]*$/.test(copy.owner_key)) throw new Error('INVALID_OWNER');
+    if (Object.hasOwn(options, 'expected')) {
+      const expected = structuredClone(options.expected); let failure;
+      return this.transaction('readwrite', (store, done) => {
+        const request = store.get([copy.owner_key, copy.session_id]);
+        request.onsuccess = () => { try {
+          if (JSON.stringify(request.result ?? null) !== JSON.stringify(expected)) {
+            failure = new Error('JOURNAL_CONFLICT'); store.transaction.abort(); return;
+          }
+          store.put(copy); done(null);
+        } catch (error) { failure = error; store.transaction.abort(); } };
+      }).catch(error => { throw failure ?? error; });
+    }
     return this.transaction('readwrite', (store, done) => { store.put(copy); done(null); });
+  }
+
+  // Trusted Core callback only. Invoke native dispatch synchronously in the
+  // same readonly snapshot as the original operation/footprint. Box its Promise.
+  withFootprint(supplied, dispatch, { applying = false } = {}) {
+    const expected = structuredClone(supplied); let failure;
+    return this.transaction('readonly', (store, done) => {
+      const request = store.get([expected.owner_key, expected.session_id]);
+      request.onsuccess = () => { try {
+        const current = request.result;
+        if (!current || ['owner_key', 'session_id', 'executor_id', 'command_id', 'snapshot', 'rules'].some(key => JSON.stringify(current[key]) !== JSON.stringify(expected[key]))
+          || current.revision > expected.revision || current.action_seq > expected.action_seq
+          || applying && JSON.stringify(current) !== JSON.stringify(expected)) throw new Error('JOURNAL_SCOPE_MISMATCH');
+        done(dispatch());
+      } catch (error) { failure = error; store.transaction.abort(); } };
+    }).catch(error => { throw failure ?? error; });
   }
 }
 
@@ -137,9 +165,11 @@ const timestamp = value => Number.isFinite(parseServerTime(value));
 // command payload alone. The reconciled flag is internal, not a Server wire.
 // journal.save resolves only when the durable transaction has committed.
 class SiteController {
-  constructor({ dnr, tabs, journal, getContext, blockedPageUrl, now = Date.now,
+  constructor({ dnr, tabs, journal, getContext, getDnrContext = null, blockedPageUrl, now = Date.now,
+    dnrWriter = globalThis.FocurveMemberDnrWriter?.write,
+    dnrAuthorityState = () => globalThis.FocurveMemberAuth?.AuthStore.writeState(),
     wait = ms => new Promise(resolve => setTimeout(resolve, ms)) }) {
-    Object.assign(this, { dnr, tabs, journal, getContext, blockedPageUrl, now, wait });
+    Object.assign(this, { dnr, tabs, journal, getContext, getDnrContext, blockedPageUrl, now, wait, dnrWriter, dnrAuthorityState });
     this.queue = Promise.resolve();
   }
 
@@ -149,8 +179,8 @@ class SiteController {
     return result;
   }
 
-  async guard(command, desired) {
-    const context = await this.getContext();
+  async guard(command, desired, provider = this.getContext) {
+    const context = await provider.call(this);
     if (!context || context.reconciled !== true) throw new Error('RECONCILE_REQUIRED');
     if (!UUID.test(command?.command_id) || !UUID.test(command.session_id)
       || !UUID.test(command.executor_id) || !Number.isSafeInteger(command.desired_revision)
@@ -192,9 +222,41 @@ class SiteController {
 
   async removeOwned(entry) {
     await this.checkOwned(entry);
-    if (entry.rules.length) await this.dnr.updateSessionRules({ removeRuleIds: entry.rules.map(rule => rule.id) });
+    if (entry.rules.length) await this.writeOwned(entry, { removeRuleIds: entry.rules.map(rule => rule.id) });
     const actual = await this.dnr.getSessionRules();
     if (actual.some(rule => entry.rules.some(owned => owned.id === rule.id))) throw new Error('RELEASE_UNCONFIRMED');
+  }
+
+  async writeOwned(supplied, suppliedRequest, command = null, context = null) {
+    const entry = structuredClone(supplied), request = structuredClone(suppliedRequest);
+    const input = command && structuredClone(command), expectedContext = context && structuredClone(context);
+    // Source-only adapters keep their previous behavior. The shipped classic
+    // Worker installs the immutable gate before constructing execution loops.
+    if (typeof this.dnrWriter !== 'function') return this.dnr.updateSessionRules(request);
+    if (typeof this.journal.withFootprint !== 'function') throw new Error('JOURNAL_GUARD_UNAVAILABLE');
+    if ((request.addRules ?? []).some(rule => !entry.rules.some(owned => sameRule(owned, rule)))
+      || (request.removeRuleIds ?? []).some(id => !entry.rules.some(rule => rule.id === id))) throw new Error('JOURNAL_SCOPE_MISMATCH');
+    return this.dnrWriter(request, async send => {
+      const applying = !!request.addRules?.length;
+      const authority = applying ? this.dnrAuthorityState() : null;
+      if (applying) {
+        if (!authority || authority.pending !== false) throw new Error('DNR_AUTHORITY_UNAVAILABLE');
+        if (typeof this.getDnrContext !== 'function') throw new Error('LOCAL_DNR_CONTEXT_UNAVAILABLE');
+        // The ordinary Server/auth check happened before queuing. This provider
+        // must only read local auth/current command: never nest Auth.serial/HTTP
+        // inside the shared DNR lock (Guest START may already hold Auth.serial).
+        const fresh = await this.guard(input, 'APPLIED', this.getDnrContext);
+        if (fresh.command_id !== input.command_id) throw new Error('STALE_COMMAND');
+        if (fresh.owner_key !== expectedContext?.owner_key) throw new Error('OWNER_CHANGED');
+      }
+      const actual = await this.checkOwned(entry);
+      if (applying && actual.some(rule => request.addRules.some(r => r.id === rule.id))) throw new Error('RULE_OWNERSHIP_CONFLICT');
+      return this.journal.withFootprint(entry, () => {
+        if (applying && (authority !== this.dnrAuthorityState() || authority.pending !== false)) throw new Error('OWNER_CHANGED');
+        if (applying && parseServerTime(input.execute_before) <= this.now()) throw new Error('APPLY_EXPIRED_OR_INVALID');
+        return send();
+      }, { applying });
+    });
   }
 
   async divert(command, context, sites) {
@@ -251,13 +313,14 @@ class SiteController {
         if (!result.isSupported) throw new Error('RULE_UNSUPPORTED');
       }
       await this.recheck(input, context, 'APPLIED');
-      await this.journal.save(entry);
+      await this.journal.save(entry, { expected: null });
+      const pendingEntry = structuredClone(entry);
       try {
         await this.recheck(input, context, 'APPLIED');
         // Re-read before adding: ID ownership can change across an await.
         const actual = await this.dnr.getSessionRules();
         if (actual.some(rule => rules.some(candidate => candidate.id === rule.id))) throw new Error('RULE_OWNERSHIP_CONFLICT');
-        if (rules.length) await this.dnr.updateSessionRules({ addRules: rules });
+        if (rules.length) await this.writeOwned(entry, { addRules: rules }, input, context);
         const after = await this.dnr.getSessionRules();
         if (!rules.every(rule => after.some(item => sameRule(item, rule)))) throw new Error('APPLY_UNCONFIRMED');
         await this.divert(input, context, input.snapshot.sites);
@@ -266,18 +329,18 @@ class SiteController {
         const appliedMs = this.now();
         entry.applied_at = new Date(appliedMs).toISOString();
         entry.planned_end_at = new Date(appliedMs + entry.duration_minutes * 60000).toISOString();
-        await this.journal.save(entry);
+        await this.journal.save(entry, { expected: pendingEntry });
         return { observed: 'APPLIED', duplicate: false };
       } catch (error) {
         entry.desired = 'RELEASED'; entry.observed = 'UNCONFIRMED'; entry.action_seq++;
         try {
           await this.removeOwned(entry);
           entry.observed = 'RELEASED';
-          await this.journal.save(entry);
+          await this.journal.save(entry, { expected: pendingEntry });
         } catch {
           entry.observed = 'UNCONFIRMED';
           // If storage also fails, the original pre-apply journal still exists.
-          try { await this.journal.save(entry); } catch { /* report failure below */ }
+          try { await this.journal.save(entry, { expected: pendingEntry }); } catch { /* report failure below */ }
           throw new Error('ROLLBACK_UNCONFIRMED', { cause: error });
         }
         throw error;
@@ -292,13 +355,15 @@ class SiteController {
       const entry = await this.journal.load(context.owner_key, input.session_id);
       if (!entry || entry.owner_key !== context.owner_key || entry.executor_id !== context.executor_id
         || entry.session_id !== input.session_id || entry.revision > input.desired_revision) throw new Error('JOURNAL_SCOPE_MISMATCH');
+      const previous = structuredClone(entry);
       entry.desired = 'RELEASED'; entry.observed = 'UNCONFIRMED';
       entry.revision = input.desired_revision; entry.action_seq++;
-      await this.journal.save(entry);
+      await this.journal.save(entry, { expected: previous });
+      const pendingEntry = structuredClone(entry);
       await this.recheck(input, context, 'RELEASED');
       await this.removeOwned(entry);
       entry.observed = 'RELEASED';
-      await this.journal.save(entry);
+      await this.journal.save(entry, { expected: pendingEntry });
       return { observed: 'RELEASED' };
     });
   }
@@ -779,11 +844,23 @@ class MemberExecutionLoop {
     this.captureSuspended = new Set();
     this.queue = Promise.resolve(); this.recovered = new Set(); this.command = null;
     this.controller = new SiteController({ dnr, tabs, journal, blockedPageUrl, now,
-      getContext: () => this.context() });
+      getContext: () => this.context(), getDnrContext: () => this.dnrContext() });
     this.access = new MemberAccessCollector({store:accessStore,getContext: at => this.accessContext(at), blockedPageUrl});
     this.view = { status: 'IDLE', session_id: null };
   }
   serial(work) { const result = this.queue.then(work); this.queue = result.catch(() => {}); return result; }
+  async dnrContext() {
+    const auth = globalThis.__memberIntegration?.auth;
+    if (!auth) throw new Error('LOCAL_DNR_CONTEXT_UNAVAILABLE');
+    // Local load only. context()/getCredentials/status may acquire Auth.serial
+    // or perform HTTP and must not be called from inside the DNR lock.
+    const record = await auth.load(), command = this.command;
+    if (!command || record.phase !== 'LINKED' || record.server_url !== this.client.baseUrl
+      || !/^[1-9][0-9]*$/.test(record.owner_user_id) || record.executor_id !== command.executor_id) throw new Error('EXECUTION_SCOPE_MISMATCH');
+    return { owner_key: 'MEMBER:' + record.owner_user_id, executor_id: record.executor_id,
+      session_id: command.session_id, command_id: command.command_id, revision: command.desired_revision,
+      desired: command.type === 'APPLY_POLICY' ? 'APPLIED' : 'RELEASED', reconciled: true };
+  }
   async context() {
     const credentials = await this.getCredentials(), command = this.command;
     if (!command) throw new Error('RECONCILE_REQUIRED');
@@ -836,9 +913,11 @@ class MemberExecutionLoop {
       return;
     }
     if (journal.executor_id !== row.executor_id || journal.owner_key !== row.owner_key) throw new Error('JOURNAL_SCOPE_MISMATCH');
-    journal.desired = 'RELEASED'; journal.observed = 'UNCONFIRMED'; await this.journal.save(journal);
+    const previous = structuredClone(journal);
+    journal.desired = 'RELEASED'; journal.observed = 'UNCONFIRMED'; await this.journal.save(journal, { expected: previous });
+    const pending = structuredClone(journal);
     await this.scope(row); await this.controller.removeOwned(journal);
-    journal.observed = 'RELEASED'; await this.journal.save(journal);
+    journal.observed = 'RELEASED'; await this.journal.save(journal, { expected: pending });
   }
   async localEnd(row, reason) {
     await this.cleanup(row);

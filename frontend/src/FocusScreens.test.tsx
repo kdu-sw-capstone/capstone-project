@@ -7,9 +7,9 @@ import {clearCsrf} from "./api";
 const json=(v:unknown,status=200)=>new Response(JSON.stringify(v),{status,headers:{"Content-Type":"application/json"}});
 const sid="11111111-1111-4111-8111-111111111111";
 afterEach(()=>{cleanup();clearCsrf();vi.unstubAllGlobals();vi.unstubAllEnvs();});
-function sessionFixture(status:string|null,connected=true){const data={session_id:sid,execution_status:status,record_status:"PARTIAL",duration_minutes:30,active_duration_ms:120000,started_at:"2026-10-08T00:00:00Z",planned_end_at:new Date(Date.now()+1800000).toISOString(),ended_at:status==="ENDED"?"2026-10-08T00:02:00Z":undefined};const fetch=vi.fn(async(url:string,init?:RequestInit)=>{if(url.endsWith("/csrf"))return json({csrf_token:"test"});if(url.endsWith("/sessions/current"))return json(status?data:null);if(url.endsWith("/extension-installations"))return json(connected?[{executor_id:sid}]:[]);if(url.includes("/sites")||url.includes("/sessions?")||url.includes("/access-events?"))return json({items:[],next_cursor:null});if(url.endsWith("/policy"))return json({sites:[]});if(url.endsWith("/note"))return json({text:"",version:0});if(url.endsWith("/end"))return json({...data,execution_status:"ENDING"},202);if(url.endsWith("/sessions")&&init?.method==="POST")return json({...data,execution_status:"STARTING"},202);throw Error(url);});vi.stubGlobal("fetch",fetch);return fetch;}
+function sessionFixture(status:string|null,connected=true){const data={session_id:sid,execution_status:status,record_status:"PARTIAL",duration_minutes:30,active_duration_ms:120000,started_at:"2026-10-08T00:00:00Z",planned_end_at:new Date(Date.now()+1800000).toISOString(),ended_at:status==="ENDED"?"2026-10-08T00:02:00Z":undefined};const fetch=vi.fn(async(url:string,init?:RequestInit)=>{if(url.endsWith("/csrf"))return json({csrf_token:"test"});if(url.endsWith("/sessions/current"))return json(status?data:null);if(url.endsWith("/extension-installations"))return json(connected?[{executor_id:sid}]:[]);if(url.includes("/amvp/configs?"))return json({items:[],next_cursor:null,has_more:false});if(url.includes("/sites")||url.includes("/sessions?")||url.includes("/access-events?"))return json({items:[],next_cursor:null});if(url.endsWith("/policy"))return json({sites:[]});if(url.endsWith("/note"))return json({text:"",version:0});if(url.endsWith("/end"))return json({...data,execution_status:"ENDING"},202);if(url.endsWith("/sessions")&&init?.method==="POST")return json({...data,execution_status:"STARTING"},202);throw Error(url);});vi.stubGlobal("fetch",fetch);return fetch;}
 describe("Figma 집중 화면 상태 (HTTP 모의; 실제 Extension 검증 아님)",()=>{
-  it.each([null,"STARTING","RUNNING","ENDING","ENDED","UNKNOWN"])("%s에서도 타이머·정책·메모·기록 구조를 유지한다",async(status)=>{sessionFixture(status);render(<Sessions settings={()=>{}} records={()=>{}}/>);await waitFor(()=>expect(screen.queryByText("세션과 연결 상태를 확인하고 있습니다.")).not.toBeInTheDocument());expect(screen.getByRole("region",{name:"집중 타이머"})).toBeInTheDocument();expect(screen.getByLabelText("세션 메모 · 선택")).toBeInTheDocument();expect(screen.getByText("최근 종료 세션")).toBeInTheDocument();if(status==="STARTING"||status==="ENDING")expect(screen.getByRole("button",{name:"세션 종료"})).toBeDisabled();if(status==="STARTING")expect(screen.queryByText("집중 세션 진행")).not.toBeInTheDocument();if(status==="ENDED")expect(screen.getByRole("button",{name:"다음 집중 준비"})).toBeEnabled();});
+  it.each([null,"STARTING","RUNNING","ENDING","ENDED","UNKNOWN"])("%s에서도 타이머·정책·메모·기록 구조를 유지한다",async(status)=>{sessionFixture(status);render(<Sessions settings={()=>{}} records={()=>{}}/>);await waitFor(()=>expect(screen.queryByText("세션과 연결 상태를 확인하고 있습니다.")).not.toBeInTheDocument());expect(screen.getByRole("region",{name:"집중 타이머"})).toBeInTheDocument();await screen.findByText("저장된 반복 설정이 없습니다.");expect(screen.queryByRole("alert")).not.toBeInTheDocument();expect(screen.getByLabelText("세션 메모 · 선택")).toBeInTheDocument();expect(screen.getByText("최근 종료 세션")).toBeInTheDocument();if(status==="STARTING"||status==="ENDING")expect(screen.getByRole("button",{name:"세션 종료"})).toBeDisabled();if(status==="STARTING")expect(screen.queryByText("집중 세션 진행")).not.toBeInTheDocument();if(status==="ENDED")expect(screen.getByRole("button",{name:"다음 집중 준비"})).toBeEnabled();});
   it("미연결은 구조를 유지하며 시작을 막고 다음 행동을 안내한다",async()=>{sessionFixture(null,false);render(<Sessions settings={()=>{}} records={()=>{}}/>);await screen.findByText(/회원 연결된 Extension이 없습니다/);expect(screen.getByRole("button",{name:"▶ 집중 시작"})).toBeDisabled();expect(screen.getByText("확장 프로그램 연결 방법")).toBeInTheDocument();fireEvent.click(screen.getByRole("button",{name:"50분"}));expect(screen.getByLabelText("집중 시간 (분)")).toHaveValue(50);});
   it("한 번 클릭으로 종료 요청하되 실제 해제 확인 전에는 완료로 표시하지 않는다",async()=>{
     const fetch=sessionFixture("RUNNING");render(<Sessions settings={()=>{}} records={()=>{}}/>);
@@ -27,6 +27,7 @@ it("시작 실패 해제 확인 후 화면 구조를 유지하고 다음 시작�
  vi.stubGlobal("fetch",vi.fn(async(url:string)=>{
   if(url.endsWith("/sessions/current"))return json(active?{...failed,execution_status:"STARTING"}:null);
   if(url.endsWith("/extension-installations"))return json([{executor_id:sid}]);
+  if(url.includes("/amvp/configs?"))return json({items:[],next_cursor:null,has_more:false});
   if(url.endsWith("/policy"))return json({sites:[]});
   if(url.endsWith("/note"))return json({text:"",version:0});
   if(url.endsWith(sid))return json(failed);
@@ -43,11 +44,13 @@ it("상태 조회 실패 뒤에는 마지막 화면을 유지해도 시작 요�
  let fail=false;vi.stubGlobal("fetch",vi.fn(async(url:string)=>{
   if(url.endsWith("/sessions/current"))return fail?json({error:{code:"VALIDATION_FAILED"}},422):json(null);
   if(url.endsWith("/extension-installations"))return json([{executor_id:sid}]);
+  if(url.includes("/amvp/configs?"))return json({items:[],next_cursor:null,has_more:false});
   return json({items:[],next_cursor:null});
  }));render(<Sessions settings={()=>{}} records={()=>{}}/>);
- await waitFor(()=>expect(screen.getByRole("button",{name:"▶ 집중 시작"})).toBeEnabled());fail=true;
+ await waitFor(()=>expect(screen.getByRole("button",{name:"▶ 집중 시작"})).toBeEnabled());
+ await screen.findByText("저장된 반복 설정이 없습니다.");expect(screen.queryByRole("alert")).not.toBeInTheDocument();fail=true;
  fireEvent.click(screen.getByRole("button",{name:"연결·실행 상태 다시 확인"}));
- await screen.findByRole("alert");expect(screen.getByRole("button",{name:"▶ 집중 시작"})).toBeDisabled();
+ expect(await screen.findByRole("alert")).toHaveTextContent("입력 값을 확인하세요.");expect(screen.getByRole("button",{name:"▶ 집중 시작"})).toBeDisabled();
  expect(screen.getByRole("region",{name:"집중 타이머"})).toBeInTheDocument();
 });
 
@@ -128,4 +131,20 @@ it('transition polling observes actual application and release in one-second int
   const button=screen.getByRole('button',{name:'세션 종료'});await waitFor(()=>expect(button).toBeEnabled());fireEvent.click(button);
   await screen.findByText(/정책 해제 결과를 기다리고 있습니다/);active=false;
   await screen.findByRole('button',{name:'다음 집중 준비'}, {timeout:2500});
+});
+
+it("세션 조회와 CFG-01이 함께 실패하면 두 오류와 시작 차단을 모두 보존한다",async()=>{
+ let fail=false;const fetch=sessionFixture(null),base=fetch.getMockImplementation()!;
+ fetch.mockImplementation((url:string,init?:RequestInit)=>{
+  if(url.includes("/amvp/configs?"))return Promise.resolve(json({items:[],next_cursor:null}));
+  if(url.endsWith("/sessions/current")&&fail)return Promise.resolve(json({error:{code:"VALIDATION_FAILED"}},422));
+  return base(url,init);
+ });render(<Sessions settings={()=>{}} records={()=>{}}/>);
+ const configError=await screen.findByText("설정 목록을 끝까지 확인하지 못했습니다.");expect(configError).toHaveAttribute("role","alert");
+ await waitFor(()=>expect(screen.getByRole("button",{name:"▶ 집중 시작"})).toBeEnabled());fail=true;
+ fireEvent.click(screen.getByRole("button",{name:"연결·실행 상태 다시 확인"}));
+ expect(await screen.findByText("입력 값을 확인하세요.")).toHaveAttribute("role","alert");
+ expect(screen.getAllByRole("alert")).toHaveLength(2);
+ expect(screen.getByRole("button",{name:"▶ 집중 시작"})).toBeDisabled();
+ expect(fetch.mock.calls.some(c=>c[1]?.method==="POST")).toBe(false);
 });

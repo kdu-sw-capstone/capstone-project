@@ -18,23 +18,42 @@ export default function FocusSessions({settings,cadenceSettings=settings,records
   const key=useRef(crypto.randomUUID()),previous=useRef<string|null>(null),local=useRef<string|null>(null),checked=useRef(false);
   const [localExecutor,setLocalExecutor]=useState<string|null>(null);
   const cadence=useCadenceControl(current?.session_id,current?.executor_id);
+  // Discovery belongs to this mounted screen, not to a later account/view.
+  const discovery=useRef<{live:boolean;reads:Set<AbortController>}|null>(null);
   async function load(){
-    setFresh(false);
-    const s=await request<Session|null>("/sessions/current");
-    setCurrent(s);
-    const p=s?await request<Policy>(`/sessions/${s.session_id}/policy`):null;
-    if (!checked.current) { checked.current=true;local.current=await connectExecution(); }
-    const links=await request<{executor_id:string}[]>("/extension-installations");
-    const detected=links.some(i=>i.executor_id===local.current)?local.current:null;
-    setLocalExecutor(detected);
-    const saved=await allPages<PolicySite>("/sites");
-    const day=seoulDay();const ended=await allPages<Session>(`/sessions?from_date=${day}&to_date=${day}&status=ENDED`);
-    if(!s&&previous.current){const last=await request<Session>(`/sessions/${previous.current}`);setSelectedPolicy(await request<Policy>(`/sessions/${last.session_id}/policy`));setSelected(last);}
-    previous.current=s?.session_id??null;
-    setCurrent(s);setPolicy(p);setInstallations(links);setSites(saved);setToday(ended);setLoaded(true);setFresh(true);
-    setExecutor(old=>detected??(links.some(i=>i.executor_id===old)?old:links[0]?.executor_id??""));
+    const scope=discovery.current;if(!scope?.live)return;
+    const abort=new AbortController();scope.reads.add(abort);
+    const live=()=>scope.live&&discovery.current===scope&&!abort.signal.aborted;
+    try {
+      setFresh(false);
+      const s=await request<Session|null>("/sessions/current","GET",undefined,{signal:abort.signal});
+      if(!live())return;setCurrent(s);
+      const p=s?await request<Policy>(`/sessions/${s.session_id}/policy`,"GET",undefined,{signal:abort.signal}):null;
+      if(!live())return;
+      if (!checked.current) { checked.current=true;const connected=await connectExecution();if(!live())return;local.current=connected; }
+      const links=await request<{executor_id:string}[]>("/extension-installations","GET",undefined,{signal:abort.signal});
+      if(!live())return;
+      const detected=links.some(i=>i.executor_id===local.current)?local.current:null;
+      setLocalExecutor(detected);
+      const saved=await allPages<PolicySite>("/sites",abort.signal);if(!live())return;
+      const day=seoulDay();const ended=await allPages<Session>(`/sessions?from_date=${day}&to_date=${day}&status=ENDED`,abort.signal);if(!live())return;
+      if(!s&&previous.current){
+        const last=await request<Session>(`/sessions/${previous.current}`,"GET",undefined,{signal:abort.signal});if(!live())return;
+        const lastPolicy=await request<Policy>(`/sessions/${last.session_id}/policy`,"GET",undefined,{signal:abort.signal});if(!live())return;
+        setSelectedPolicy(lastPolicy);setSelected(last);
+      }
+      previous.current=s?.session_id??null;
+      setCurrent(s);setPolicy(p);setInstallations(links);setSites(saved);setToday(ended);setLoaded(true);setFresh(true);
+      setExecutor(old=>detected??(links.some(i=>i.executor_id===old)?old:links[0]?.executor_id??""));
+    }catch(error){if(live())throw error;}finally{scope.reads.delete(abort);}
   }
-  useEffect(()=>{void work.run(load);const id=setInterval(()=>{void work.run(load);},5000);const tick=setInterval(()=>setNow(performance.now()),250);return()=>{clearInterval(id);clearInterval(tick);};},[]);
+  useEffect(()=>{
+    const scope={live:true,reads:new Set<AbortController>()};discovery.current=scope;
+    // Skip the disposed StrictMode setup before it can take useWork's lock.
+    void Promise.resolve().then(()=>{if(scope.live)void work.run(load);});
+    const id=setInterval(()=>{void work.run(load);},5000),tick=setInterval(()=>setNow(performance.now()),250);
+    return()=>{scope.live=false;for(const abort of scope.reads)abort.abort();scope.reads.clear();clearInterval(id);clearInterval(tick);};
+  },[]);
   async function start() {
     setAction("현재 브라우저 연결 확인 중…");
     try {
@@ -99,7 +118,7 @@ export default function FocusSessions({settings,cadenceSettings=settings,records
           {localExecutor&&<p role="status">현재 브라우저의 확장을 자동 선택했습니다.</p>}
           <button className="primary" disabled={!loaded||!fresh||work.busy||!executor}>{action||"▶ 집중 시작"}</button>
         </form>:<div className="timer-controls"><p>{clockTime(session?.started_at)} 시작 · {ended?`${clockTime(session?.ended_at)} 종료`:session?.planned_end_at?`${clockTime(session.planned_end_at)} 종료 예정`:"실제 시작 시각 확인 중"}</p>
-          {ended&&<EndedAccess session={session!}/>}
+          {ended&&<EndedAccess key={session!.session_id} session={session!}/>}
           <div className="session-actions">{failed?<button className="primary" onClick={()=>{setSelected(null);setDraft("");}}>다시 집중 준비</button>:ended?<><button className="primary" onClick={()=>recordLink(session!)}>이 세션의 행동 기록</button><button onClick={()=>{setSelected(null);setDraft("");}}>다음 집중 준비</button></>:<><button disabled title="SESSION-05 추가 MVP 연동 전">일시정지 · 사용 불가</button><button className="danger" disabled={!current||!fresh||work.busy||status==="STARTING"||status==="ENDING"} onClick={()=>{void work.run(end);}}>{action||"세션 종료"}</button></>}</div>
           {status==="RUNNING"&&<small>예정 종료까지의 표시 시간입니다. 집중 시간은 확인된 실행 구간으로 집계합니다.</small>}
           {session&&<p className="muted">실행 상태: {label(status)} · 기록 상태: {label(session.record_status)}</p>}
@@ -142,8 +161,22 @@ function TimerRing({ratio}:{ratio:number}) {
   return <svg className="timer-ring" viewBox="0 0 280 280" aria-hidden="true"><circle cx="140" cy="140" r="116" fill="none" stroke="var(--border)" strokeWidth="14"/>{progress>0&&<circle cx="140" cy="140" r="116" fill="none" stroke="var(--brand)" strokeWidth="14" strokeLinecap="round" strokeDasharray={length} strokeDashoffset={length*(1-progress)} transform="rotate(-90 140 140)"/>}</svg>;
 }
 function EndedAccess({session}:{session:Session}) {
-  const work=useWork(),[rows,setRows]=useState<Access[]|null>(null);
-  async function load(){setRows(await allPages<Access>("/access-events?"+new URLSearchParams({session_id:session.session_id,from_date:session.started_at?seoulDay(new Date(session.started_at)):seoulDay(),to_date:session.ended_at?seoulDay(new Date(session.ended_at)):seoulDay()})));}
-  useEffect(()=>{void work.run(load);},[session.session_id]);
+  const work=useWork(),[rows,setRows]=useState<Access[]|null>(null),generation=useRef(0);
+  async function load(signal?:AbortSignal) {
+    const current=generation.current;
+    try {
+      const result=await allPages<Access>("/access-events?"+new URLSearchParams({session_id:session.session_id,from_date:session.started_at?seoulDay(new Date(session.started_at)):seoulDay(),to_date:session.ended_at?seoulDay(new Date(session.ended_at)):seoulDay()}),signal);
+      if(current===generation.current)setRows(result);
+    } catch(error) {
+      if(current!==generation.current||signal?.aborted)return;
+      throw error;
+    }
+  }
+  useEffect(()=>{
+    const abort=new AbortController();
+    // StrictMode may dispose this effect before the first read starts.
+    void Promise.resolve().then(()=>{if(!abort.signal.aborted)void work.run(()=>load(abort.signal));});
+    return()=>{++generation.current;abort.abort();};
+  },[session.session_id]);
   return <div className="ended-access">{rows?<><p>전체 접근 {rows.length}회 · 사이트 차단 {rows.filter(x=>x.event_type==="BLOCKED_SITE_ACCESS").length}회 · 기록 {rows.filter(x=>x.event_type==="RECORDED_ACCESS").length}회 · Shorts {rows.filter(x=>x.event_type==="BLOCKED_FEATURE_ACCESS").length}회</p><p>그중 반복 접근 {rows.filter(x=>x.is_repeat).length}회 · {label(session.record_status)}</p></>:<p>{work.error?"세션의 접근 요약을 불러오지 못했습니다.":"세션의 접근 요약을 확인하고 있습니다."}</p>}{work.error&&<button onClick={()=>{void work.run(load);}}>접근 요약 다시 확인</button>}</div>;
 }

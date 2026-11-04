@@ -39,43 +39,58 @@ export function validateImportManifest(value: unknown, owner: string): Manifest 
 }
 const statusName: Record<string,string> = { COMPLETE: "가져오기 완료", PROCESSING: "처리 중", PENDING: "대기", PARTIAL: "일부 처리 · 결과 확인 필요", SUCCEEDED: "저장 완료", SKIPPED_CONFLICT: "기존 회원 설정 보존", FAILED: "실패 · 재시도 가능" };
 
-export default function GuestImports({ owner }: { owner?: string }) {
+export default function GuestImports(props: { owner?: string }) {
+  return <OwnedGuestImports key={JSON.stringify(props.owner??null)} {...props}/>;
+}
+function OwnedGuestImports({ owner }: { owner?: string }) {
   const work = useWork();
   const [manifest, setManifest] = useState<Manifest | null>(null), [selected, setSelected] = useState<string[]>([]);
   const [batches, setBatches] = useState<Batch[]>([]), [loaded, setLoaded] = useState(false), [cursor, setCursor] = useState<string | null>(null);
   const [notice, setNotice] = useState("");
-  const currentOwner = useRef(owner); currentOwner.current = owner;
+  const generation=useRef(0),reads=useRef(new Set<AbortController>());
+  useEffect(()=>()=>{++generation.current;for(const read of reads.current)read.abort();reads.current.clear();},[]);
+  async function ownedRead<T>(path:string):Promise<T>{
+    const abort=new AbortController();reads.current.add(abort);
+    try{return await request<T>(path,"GET",undefined,{signal:abort.signal});}finally{reads.current.delete(abort);}
+  }
   const [needsReconcile, setNeedsReconcile] = useState(false);
-  useEffect(() => { setManifest(null); setSelected([]); setBatches([]); setLoaded(false); setCursor(null); setNotice(""); setNeedsReconcile(false); }, [owner]);
   async function load(more = false) {
-    const actor = owner;
-    const page = await request<{ items: Batch[]; next_cursor: string | null }>(`/guest-imports${more && cursor ? `?cursor=${encodeURIComponent(cursor)}` : ""}`);
-    if (!actor || currentOwner.current !== actor) throw new UiError("계정이 변경되어 이전 처리 결과를 표시하지 않습니다.");
-    setBatches(previous => more ? [...previous, ...page.items] : page.items); setCursor(page.next_cursor); setLoaded(true);
-    setNeedsReconcile(false);
+    const current=generation.current;
+    try{
+      if(!owner)throw new UiError("현재 계정 정보를 다시 확인하세요.");
+      const page=await ownedRead<{items:Batch[];next_cursor:string|null}>(`/guest-imports${more&&cursor?`?cursor=${encodeURIComponent(cursor)}`:""}`);
+      if(current!==generation.current)return;
+      setBatches(previous=>more?[...previous,...page.items]:page.items);setCursor(page.next_cursor);setLoaded(true);setNeedsReconcile(false);
+    }catch(error){if(current!==generation.current)return;throw error;}
   }
   async function choose() {
-    setNotice(""); setManifest(null); setSelected([]);
-    if (!owner) throw new UiError("현재 계정 정보를 다시 확인하세요.");
-    const reply = await extensionImportMessage({ type: "FOCURVE_GUEST_IMPORT_LIST", version: "1.0", owner_user_id: owner });
-    if (currentOwner.current !== owner) throw new UiError("계정이 변경되어 이전 자료를 표시하지 않습니다.");
-    setManifest(validateImportManifest(reply, owner));
+    const current=generation.current;
+    try{
+      setNotice("");setManifest(null);setSelected([]);
+      if(!owner)throw new UiError("현재 계정 정보를 다시 확인하세요.");
+      const reply=await extensionImportMessage({type:"FOCURVE_GUEST_IMPORT_LIST",version:"1.0",owner_user_id:owner});
+      if(current!==generation.current)return;
+      setManifest(validateImportManifest(reply,owner));
+    }catch(error){if(current!==generation.current)return;throw error;}
   }
   async function submit() {
-    if (!manifest || !selected.length || needsReconcile) return;
-    if (!owner || manifest.owner_user_id !== owner) throw new UiError("현재 계정과 선택 자료가 일치하지 않습니다.");
-    setNotice("");
-    // An unconfirmed response must be reconciled explicitly; never auto-submit again.
-    setNeedsReconcile(true);
-    const reply = await extensionImportMessage({ type: "FOCURVE_GUEST_IMPORT_SUBMIT", version: "1.0", owner_user_id: owner,
-      executor_id: manifest.executor_id, request_id: crypto.randomUUID(), items: manifest.items.filter(i => selected.includes(i.source_item_id)).map(({ label: _label, ...item }) => item) }) as { batch_id?: string };
-    if (!reply?.batch_id || !uuid.test(reply.batch_id)) throw new UiError("전송 결과를 확인하지 못했습니다. 처리 결과를 조회한 뒤 미완료 항목만 다시 선택하세요.");
-    if (currentOwner.current !== owner) throw new UiError("계정이 변경되었습니다. 현재 계정의 처리 결과를 확인하세요.");
-    // Only the owner-scoped Server response can confirm persistence; extension acknowledgements cannot.
-    const result = await request(`/guest-imports/${reply.batch_id}`);
-    validateSelectedImportResult(result, reply.batch_id, selected);
-    await load(); setSelected([]);
-    setNotice("선택한 자료의 처리 결과를 확인하세요. 원본은 확장 프로그램에 보존됩니다.");
+    if(!manifest||!selected.length||needsReconcile)return;
+    const current=generation.current;
+    try{
+      if(!owner||manifest.owner_user_id!==owner)throw new UiError("현재 계정과 선택 자료가 일치하지 않습니다.");
+      setNotice("");
+      // This is only a UI lifetime fence: the extension/server retain unconfirmed import obligations.
+      setNeedsReconcile(true);
+      const reply=await extensionImportMessage({type:"FOCURVE_GUEST_IMPORT_SUBMIT",version:"1.0",owner_user_id:owner,
+        executor_id:manifest.executor_id,request_id:crypto.randomUUID(),items:manifest.items.filter(i=>selected.includes(i.source_item_id)).map(({label:_label,...item})=>item)}) as {batch_id?:string};
+      if(current!==generation.current)return;
+      if(!reply?.batch_id||!uuid.test(reply.batch_id))throw new UiError("전송 결과를 확인하지 못했습니다. 처리 결과를 조회한 뒤 미완료 항목만 다시 선택하세요.");
+      const result=await ownedRead(`/guest-imports/${reply.batch_id}`);
+      if(current!==generation.current)return;
+      validateSelectedImportResult(result,reply.batch_id,selected);
+      await load();if(current!==generation.current)return;
+      setSelected([]);setNotice("선택한 자료의 처리 결과를 확인하세요. 원본은 확장 프로그램에 보존됩니다.");
+    }catch(error){if(current!==generation.current)return;throw error;}
   }
   return <section className="settings-card" aria-label="비회원 자료 가져오기">
     <h4>비회원 자료 가져오기</h4><p>이 Chrome의 비회원 설정·종료 기록 중 선택한 항목만 가져옵니다. 로그인만으로 전송하지 않습니다. 이미 가져온 자료는 다른 계정으로 옮길 수 없습니다.</p>
