@@ -756,7 +756,7 @@ def channel_modules(instance):
 
 
 def main():
- parser=argparse.ArgumentParser();parser.add_argument('action',choices=['verify','install','complete-certificate-install','connect','start','stop','status','recover-hold-plan','recover-hold','renew-product-hold-scope','channel-observation-plan','channel-observation-apply','channel-observation-open','channel-observation-restore','stop-channel-services']);parser.add_argument('--config');parser.add_argument('--instance');parser.add_argument('--approve-install',action='store_true');parser.add_argument('--approve-current-user-certificate',action='store_true');parser.add_argument('--approve-launch',action='store_true');parser.add_argument('--interactive',action='store_true');parser.add_argument('--user-session',action='store_true');parser.add_argument('--minutes',type=int,default=None);parser.add_argument('--json',action='store_true');parser.add_argument('--not-after');parser.add_argument('--recovery-id');parser.add_argument('--expected-hold-sha256');parser.add_argument('--approve-hold-recovery',action='store_true');parser.add_argument('--package');parser.add_argument('--package-sha256');parser.add_argument('--expected-installation-sha256');parser.add_argument('--expected-failure-sha256');parser.add_argument('--certificate-thumbprint');parser.add_argument('--observation-directory');parser.add_argument('--approve-channel-observation',action='store_true');parser.add_argument('--approve-preserved-service-stop',action='store_true');a=parser.parse_args()
+ parser=argparse.ArgumentParser();parser.add_argument('action',choices=['native-resume-plan','native-resume','verify','install','complete-certificate-install','connect','start','stop','status','recover-hold-plan','recover-hold','renew-product-hold-scope','channel-observation-plan','channel-observation-apply','channel-observation-open','channel-observation-restore','stop-channel-services']);parser.add_argument('--expected-plan-sha256');parser.add_argument('--config');parser.add_argument('--instance');parser.add_argument('--approve-install',action='store_true');parser.add_argument('--approve-current-user-certificate',action='store_true');parser.add_argument('--approve-launch',action='store_true');parser.add_argument('--interactive',action='store_true');parser.add_argument('--user-session',action='store_true');parser.add_argument('--minutes',type=int,default=None);parser.add_argument('--json',action='store_true');parser.add_argument('--not-after');parser.add_argument('--recovery-id');parser.add_argument('--expected-hold-sha256');parser.add_argument('--approve-hold-recovery',action='store_true');parser.add_argument('--package');parser.add_argument('--package-sha256');parser.add_argument('--expected-installation-sha256');parser.add_argument('--expected-failure-sha256');parser.add_argument('--certificate-thumbprint');parser.add_argument('--observation-directory');parser.add_argument('--approve-channel-observation',action='store_true');parser.add_argument('--approve-preserved-service-stop',action='store_true');a=parser.parse_args()
  if a.minutes is None:a.minutes=20 if a.action=='renew-product-hold-scope' else 60
  try:
   if a.action.startswith('channel-observation-') or a.action=='stop-channel-services':
@@ -790,6 +790,18 @@ def main():
   elif a.action=='complete-certificate-install':
    require(all([a.instance,a.package,a.package_sha256,a.expected_installation_sha256,a.expected_failure_sha256,a.certificate_thumbprint,a.not_after]),'CERTIFICATE_COMPLETION_ARGUMENTS_REQUIRED')
    result=complete_certificate_install(a.instance,a.package,a.package_sha256,a.expected_installation_sha256,a.expected_failure_sha256,a.certificate_thumbprint,a.not_after,approve=a.approve_install and a.approve_current_user_certificate)
+  elif a.action in ['native-resume-plan','native-resume']:
+   require(a.instance is not None,'INSTALLATION_PATH_REQUIRED')
+   location=pathlib.Path(__file__).resolve().parent/'native_setup.py'
+   spec=importlib.util.spec_from_file_location('owned_native_resume',location);module=importlib.util.module_from_spec(spec);spec.loader.exec_module(module)
+   try:
+    if a.action=='native-resume-plan':
+     plan=module.resume_plan(sys.modules[__name__],a.instance);result={'plan':plan,'planSHA256':module._digest(plan),'changesApplied':False}
+    else:
+     require(a.approve_launch and a.not_after and a.expected_plan_sha256,'NATIVE_RESUME_APPROVAL_REQUIRED')
+     result=module.resume(sys.modules[__name__],a.instance,a.expected_plan_sha256,a.minutes,a.not_after,True,a.user_session)
+   except (RuntimeError,ValueError,KeyError,OSError) as error:
+    code=str(error);raise InstallError(code if re.fullmatch('[A-Z][A-Z0-9_]{0,100}',code) else 'NATIVE_RESUME_EVIDENCE_UNCONFIRMED') from None
   elif a.action=='connect':
    require(a.instance is not None,'INSTALLATION_PATH_REQUIRED')
    approved=a.approve_launch
