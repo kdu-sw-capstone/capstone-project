@@ -960,3 +960,12 @@
 - 기존 독립4반례는 수정전2PASS/2FAIL → 동일 파일 수정후4/4 PASS(exit0). 영향 Node4파일 67/67(exit0, 수명25 포함), 설치Chrome 모의입력대기 pagehide/Worker/generation 3/3(exit0). 구문2파일/diff검사 PASS. 전체499/계약6은 이전제출결과로만 보존하며 이번tree 전체PASS로 사용하지 않음.
 - 증거: content-lifetime-20261104/revision-counterexamples.log, revision-lifetime.log, revision-input-browser.log, revision-verification.json. Node/합성Chrome결과는 제품수용 아님. example.org 기존5항목 범위유지/이전문서pagehide NOT_OBSERVED/실제블러추론 NOT_RUN.
 - Commit/Push/PR없음. M1 BLOCKED, 실제연결HOLD, 제품E2E NOT_RUN, MVP_FINAL_COMPLETE=false. 다음: Core 문서수명·등록인증 호출 확정과 이 후속diff 독립확인.
+
+
+## 2026-11-04 계약 CI 불일치 격리 수정 후보 (미게시)
+
+### 2026-11-01 IG-06 사용자 전달 범위 확인
+사용자가 팀 회신으로 "흑백처리는 싹 다, 프로필까지" 포함한다고 전달했다. Content IG-06 적용 화면은 기존 피드/게시물/릴스에 프로필·프로필 게시물/릴스/태그 목록·탐색·스토리를 포함한다. 기존 DM·로그인/인증·FOCURVE UI 제외, 영상 재생/소리 유지, scope별 복원 규칙은 유지한다. 이전 구현의 프로필/스토리 제외는 공동 확정 제외가 아니었으며 이를 해소한다. Wire/Schema·권한·제품 활성화 계약을 변경하거나 실제 수용 완료로 판정하는 기록은 아니다. feature-registry의 기존 FEED/POST/REELS 예시는 비포괄적 경로 예시로 유지하며 최종 통합 검토에서 이 범위 확인을 함께 대조한다.
+
+
+위 사용자 요구 원문은 보존한다. 제품 흑백 범위를 축소하거나 기존 구현을 변경하지 않는다. 이 기록만으로 공동 계약/Manifest 개정이 승인됐다고 보지 않는다. 보호된 계약 05에 추가됐던 설명만 기존 작업카드로 이동하며 계약·revision manifest·legacy-lock 값은 변경하지 않는다. 공동 계약 표현의 정비는 담당 판정 후 별도 반영한다. legacy-lock 17개 불일치는 미해소다.
