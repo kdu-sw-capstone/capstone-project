@@ -10,12 +10,32 @@ import org.springframework.jdbc.datasource.DataSourceUtils;
 import static org.assertj.core.api.Assertions.*;
 import static kr.ac.kdu.focurve.MemberAuth.*;
 import static kr.ac.kdu.focurve.AmvpBridgeSupport.*;
-/** PROPOSED real SQL tests; not run without an owned fresh isolated database. Core proof remains synthetic. */
+/** Real SQL against an initialized disposable CI database; UUID-owned rows only, no schema reset or deletes.
+ * Core proof remains synthetic. Explicit opt-in runs this suite after the existing schema owner. */
 @EnabledIfEnvironmentVariable(named="FOCURVE_AMVP_TEST_URL",matches="jdbc:mysql://127\\.0\\.0\\.1:[0-9]+/amvp_test_[a-f0-9]+.*")
+@EnabledIfEnvironmentVariable(named="FOCURVE_PREPARED_ADAPTER_TESTS",matches="1")
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class ServerM1PreparedAdaptersMysqlTest {
  final AdditionalConfigMysqlTest helper=new AdditionalConfigMysqlTest();
- @BeforeAll void schema(){helper.schema();}
+ final Map<String,List<Map<String,Object>>> existing=new LinkedHashMap<>();
+ @BeforeAll void initializedDatabase(){
+  var ds=new org.springframework.jdbc.datasource.DriverManagerDataSource(System.getenv("FOCURVE_AMVP_TEST_URL"),System.getenv("FOCURVE_AMVP_TEST_USER"),System.getenv("FOCURVE_AMVP_TEST_PASSWORD"));
+  helper.db=new org.springframework.jdbc.core.JdbcTemplate(ds);
+  assertThat(helper.db.queryForObject("SELECT DATABASE()",String.class)).matches("amvp_test_[a-f0-9]+");
+  helper.manager=new org.springframework.jdbc.datasource.DataSourceTransactionManager(ds);
+  helper.auth=new MemberAuth(helper.db,helper.json,"https://localhost:33339",Base64.getEncoder().encodeToString(new byte[32]),"chrome-extension://aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa/popup/popup.html");
+  // Fail if the required schema is absent. This suite never migrates, clears or reinitializes it.
+  for(String table:List.of("users","extension_installations","amvp_owner_bindings","amvp_capability_receipts"))
+   existing.put(table,helper.db.queryForList("SELECT * FROM "+table));
+  assertThat(existing.get("amvp_owner_bindings")).as("run after existing bridge fixtures, not on an empty DB").isNotEmpty();
+ }
+ @AfterEach void preservesPreexistingRows(){
+  existing.forEach((table,rows)->assertThat(helper.db.queryForList("SELECT * FROM "+table)).as("unchanged pre-existing rows in %s",table).containsAll(rows));
+ }
+ @Test void previousEmptyDatabaseInitializerRejectsThisPopulatedDatabase(){
+  // The old assertion fails before its first DDL; do not run migrations or alter existing data.
+  assertThatThrownBy(()->new AdditionalConfigMysqlTest().schema()).isInstanceOf(AssertionError.class).hasMessageContaining("expected: 0");
+ }
  record Harness(AdditionalConfigMysqlTest.Fixture f,Binding binding,ObjectNode selection,TransactionTemplate tx){}
  Harness fixture()throws Exception {
   var f=helper.fixture();var b=new Binding(f.binding(),f.executor(),f.identity().user(),1);
