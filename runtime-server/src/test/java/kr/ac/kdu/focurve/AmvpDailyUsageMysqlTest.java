@@ -25,11 +25,55 @@ class AmvpDailyUsageMysqlTest {
  AmvpDailyUsage reader(AmvpRuntimeBridgeMysqlTest.Harness h){return new AmvpDailyUsage(helper.base.auth,helper.base.manager,h.publisher());}
  ObjectNode read(AmvpRuntimeBridgeMysqlTest.Harness h){return reader(h).get(h.fixture().identity(),h.policy().path("policy_id").asText(),new AmvpDailyUsage.Query(h.fixture().executor(),LocalDate.parse("2026-10-29")));}
  void receive(AmvpRuntimeBridgeMysqlTest.Harness h)throws Exception{helper.send(h,helper.receiver(h,true),helper.segment(h,1,null));}
+ @Test void deletedPolicyUsageRemainsDiscoverableOverTcpAndCannotMoveToAReplacementPolicy()throws Exception{
+  var h=helper.fixture();receive(h);var a=helper.base.auth;String original=h.policy().path("policy_id").asText();
+  h.configs().delete(h.fixture().identity(),original,"\"1\"",id());
+  String replacement=id();var next=h.policy().deepCopy().put("policy_id",replacement).put("daily_limit_ms",120000);
+  h.configs().put(h.fixture().identity(),replacement,a.obj("executor_id",h.fixture().executor(),"value",next),null,"*",id());
+  assertThatThrownBy(()->h.configs().put(h.fixture().identity(),original,a.obj("executor_id",h.fixture().executor(),"value",h.policy()),"\"2\"",null,id())).hasMessage("VERSION_CONFLICT");
+  String token=new TransactionTemplate(helper.base.manager).execute(tx->a.mint(h.fixture().executor(),h.fixture().identity().user(),id(),1)).path("access_token").asText();
+  var source=helper.source(h.selection());
+  String before=a.db.queryForList("SELECT * FROM amvp_day_budgets WHERE executor_id=?",h.fixture().executor()).toString()+a.db.queryForList("SELECT * FROM amvp_operations WHERE owner_binding_id=? ORDER BY operation_id",h.fixture().binding());
+  // Real TCP/controller/auth/SQL, with deliberately synthetic authority providers.
+  try(var http=new AmvpLoopbackHttp(a,helper.base.manager,h.publisher(),source,(p,b,r,pack,prev)->new AmvpReportReceiver.VerifiedReport(Set.of()),(p,b,s,prev)->AmvpUsageReceiver.VerifiedCapture.quarantine())){
+   var history=http.send("GET","/api/v1/amvp/web/site-time-deletions?executor_id="+h.fixture().executor(),token,null);
+   assertThat(history.statusCode()).isEqualTo(200);assertThat(a.json.readTree(history.body()).path("items").get(0).path("config_id").asText()).isEqualTo(original);
+   String query="?executor_id="+h.fixture().executor()+"&date=2026-10-29";
+   var response=http.send("GET","/api/v1/amvp/site-time-policies/"+original+"/usage"+query,token,null);
+   assertThat(response.statusCode()).isEqualTo(200);var result=a.json.readTree(response.body());
+   assertThat(result.path("confirmed_ms").asLong()).isEqualTo(5000);assertThat(result.path("daily_limit_ms").asLong()).isEqualTo(60000);
+   assertThat(result.path("remaining_ms").isNull()).isTrue();assertThat(result.path("enforcement_state").asText()).isEqualTo("UNKNOWN");
+   assertThat(http.send("GET","/api/v1/amvp/site-time-policies/"+replacement+"/usage"+query,token,null).statusCode()).isEqualTo(404);
+   assertThat(http.send("GET","/api/v1/amvp/site-time-policies/"+original+"/usage?executor_id="+id()+"&date=2026-10-29",token,null).statusCode()).isEqualTo(403);
+  }
+  assertThat(a.db.queryForList("SELECT * FROM amvp_day_budgets WHERE executor_id=?",h.fixture().executor()).toString()+a.db.queryForList("SELECT * FROM amvp_operations WHERE owner_binding_id=? ORDER BY operation_id",h.fixture().binding())).isEqualTo(before);
+ }
  @Test void readsCountedPrefixWithoutInventingLiveQuotaAndWritesNothing()throws Exception{
   var h=helper.fixture();receive(h);long receipts=helper.base.db.queryForObject("SELECT COUNT(*) FROM amvp_operations",Long.class);var before=helper.base.db.queryForList("SELECT * FROM amvp_day_budgets WHERE executor_id=?",h.fixture().executor());
   var result=read(h);new AdditionalConfigContract(helper.base.json).validate("DailyUsage",result);
   assertThat(result.path("confirmed_ms").asLong()).isEqualTo(5000);assertThat(result.path("remaining_ms").isNull()).isTrue();assertThat(result.path("enforcement_state").asText()).isEqualTo("UNKNOWN");assertThat(result.path("quality").asText()).isEqualTo("PARTIAL");assertThat(result.path("next_usable_at").isNull()).isTrue();
   assertThat(read(h).path("confirmed_ms")).isEqualTo(result.path("confirmed_ms"));assertThat(helper.base.db.queryForList("SELECT * FROM amvp_day_budgets WHERE executor_id=?",h.fixture().executor())).isEqualTo(before);assertThat(helper.base.db.queryForObject("SELECT COUNT(*) FROM amvp_operations",Long.class)).isEqualTo(receipts);
+ }
+ @Test void sequentialKstYearBoundaryReadsOverTcpPreserveSourceReceiptsAndDoNotInventMissingDays()throws Exception{
+  var h=helper.fixture();var a=helper.base.auth;var zone=ZoneId.of("Asia/Seoul");String policy=h.policy().path("policy_id").asText();
+  var dates=List.of(LocalDate.parse("2026-12-31"),LocalDate.parse("2027-01-01"));
+  for(int i=0;i<dates.size();i++){var date=dates.get(i);seed(h,date,zone.getId(),date.atStartOfDay(zone).toInstant(),date.plusDays(1).atStartOfDay(zone).toInstant(),i+1);}
+  String before=a.db.queryForList("SELECT * FROM amvp_usage_segments WHERE executor_id=? ORDER BY local_usage_seq",h.fixture().executor()).toString()+a.db.queryForList("SELECT * FROM amvp_operations WHERE owner_binding_id=? ORDER BY operation_id",h.fixture().binding())+a.db.queryForList("SELECT * FROM amvp_day_budgets WHERE executor_id=? ORDER BY day_start_at",h.fixture().executor());
+  String token=new TransactionTemplate(helper.base.manager).execute(tx->a.mint(h.fixture().executor(),h.fixture().identity().user(),id(),1)).path("access_token").asText();
+  try(var http=new AmvpLoopbackHttp(a,helper.base.manager,h.publisher(),helper.source(h.selection()),(p,b,r,pack,prev)->new AmvpReportReceiver.VerifiedReport(Set.of()),(p,b,s,prev)->AmvpUsageReceiver.VerifiedCapture.quarantine())){
+   long confirmed=0;String path="/api/v1/amvp/site-time-policies/"+policy+"/usage?executor_id="+h.fixture().executor()+"&date=";
+   for(var date:dates){var response=http.send("GET",path+date,token,null);assertThat(response.statusCode()).isEqualTo(200);var row=a.json.readTree(response.body());
+    assertThat(row.path("day_start_at").asText()).isEqualTo(utc(date.atStartOfDay(zone).toInstant()));assertThat(row.path("timezone").asText()).isEqualTo("Asia/Seoul");assertThat(row.path("quality").asText()).isEqualTo("PARTIAL");assertThat(row.path("remaining_ms").isNull()).isTrue();confirmed+=row.path("confirmed_ms").asLong();}
+   assertThat(confirmed).isEqualTo(10000); // Carry 7000/day is not measured browsing time.
+   assertThat(http.send("GET",path+"2027-01-02",token,null).statusCode()).isEqualTo(404);
+   assertThat(http.send("GET",path+"2027-02-29",token,null).statusCode()).isEqualTo(422);
+   assertThat(http.send("GET",path+"2026-12-31&from_date=2026-12-01",token,null).statusCode()).isEqualTo(400);
+  }
+  // A new JDBC connection reads the same immutable source; no write-side repair/reset.
+  try(var connection=helper.base.manager.getDataSource().getConnection();var stmt=connection.prepareStatement("SELECT COUNT(*) FROM amvp_usage_segments WHERE executor_id=?")){
+   stmt.setString(1,h.fixture().executor());try(var result=stmt.executeQuery()){assertThat(result.next()).isTrue();assertThat(result.getInt(1)).isEqualTo(2);}
+  }
+  assertThat(a.db.queryForList("SELECT * FROM amvp_usage_segments WHERE executor_id=? ORDER BY local_usage_seq",h.fixture().executor()).toString()+a.db.queryForList("SELECT * FROM amvp_operations WHERE owner_binding_id=? ORDER BY operation_id",h.fixture().binding())+a.db.queryForList("SELECT * FROM amvp_day_budgets WHERE executor_id=? ORDER BY day_start_at",h.fixture().executor())).isEqualTo(before);
  }
  @Test void noDataOrQuarantineDoesNotBecomeZero()throws Exception{
   var h=helper.fixture();assertThatThrownBy(()->read(h)).hasMessage("RESOURCE_NOT_FOUND");helper.send(h,helper.receiver(h,false),helper.segment(h,1,null));assertThatThrownBy(()->read(h)).hasMessage("RESOURCE_NOT_FOUND");

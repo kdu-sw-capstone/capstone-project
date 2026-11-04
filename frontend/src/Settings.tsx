@@ -3,6 +3,8 @@ import { clearCsrf, request } from "./api";
 import { dateTime, label, useWork, type Session } from "./FocusShared";
 import GuestImports from "./GuestImports";
 import ThemeSettings from "./ThemeSettings";
+import DailyFocusGoal from "./DailyFocusGoal";
+import AnalysisConsent from "./AnalysisConsent";
 import AdditionalSettings from "./AdditionalSettings";
 import "./settings.css";
 
@@ -18,6 +20,7 @@ export default function Settings({ user, social, refreshUser, sites, sessions, l
   useEffect(()=>{const form=reauthForm.current;return()=>form?.reset();},[]);
   const [installations, setInstallations] = useState<Installation[]>([]);
   const [active, setActive] = useState<Session | null>(null), [loaded, setLoaded] = useState(false);
+  const [connectionsCurrent, setConnectionsCurrent] = useState(false);
   const [notice, setNotice] = useState(""), [connectionNotice, setConnectionNotice] = useState("");
   const [disconnecting, setDisconnecting] = useState<string | null>(null);
   const [ticket, setTicket] = useState(() => new URLSearchParams(window.location.hash.split("?")[1] ?? "").get("ticket"));
@@ -25,18 +28,23 @@ export default function Settings({ user, social, refreshUser, sites, sessions, l
     const [links, current] = await Promise.all([
       request<Installation[]>("/extension-installations"), request<Session | null>("/sessions/current"),
     ]);
-    setInstallations(links); setActive(current); setLoaded(true);
+    setInstallations(links); setActive(current); setLoaded(true); setConnectionsCurrent(true);
   }
   useEffect(() => { void connection.run(load); const timer = setInterval(() => { void connection.run(load); }, 5000); return () => clearInterval(timer); }, []);
+  useEffect(() => { if (connection.error) setConnectionsCurrent(false); }, [connection.error]);
   function clearTicket() {
     setTicket(null); window.history.replaceState(null, "", window.location.pathname + window.location.search);
     window.dispatchEvent(new HashChangeEvent("hashchange"));
   }
   const canLogout = loaded && !connection.error && !active && installations.length === 0;
+  const additionalReady = loaded && connectionsCurrent && !connection.error;
   return <section className="page settings-page">
     <header className="settings-heading"><h3>설정</h3><p>계정과 확장 프로그램 연결 상태를 확인하세요.</p></header>
     <ThemeSettings />
-    <AdditionalSettings installations={installations} />
+    {user.user_id && <><DailyFocusGoal owner={user.user_id} editor/><AnalysisConsent owner={user.user_id}/></>}
+    {!additionalReady && <section className="settings-card" aria-label="추가 집중 설정 연결 확인"><h4>추가 집중 설정</h4><p role={connection.error ? "alert" : "status"}>{connection.error ? "연결된 설치를 확인하지 못했습니다. 아래 연결 상태 새로고침으로 다시 확인해 주세요." : "연결된 설치를 확인하고 있습니다."}</p></section>}
+    {/* Keep the editor/request identity mounted after the first successful discovery. */}
+    {loaded && <div hidden={!additionalReady} inert={!additionalReady}><AdditionalSettings installations={installations} /></div>}
     <section className="settings-card" aria-labelledby="account-title">
       <h4 id="account-title">계정</h4>
       <div className="settings-row"><div><strong>{user.display_name}</strong><p>{user.email ?? "제공된 이메일 없음"}</p></div><span className="settings-badge">{user.providers.includes("EMAIL") ? "이메일 계정" : "소셜 계정"}</span></div>
@@ -70,6 +78,6 @@ export default function Settings({ user, social, refreshUser, sites, sessions, l
     <GuestImports owner={user.user_id} />
     <section className="settings-card" aria-labelledby="logout-title"><h4 id="logout-title">로그아웃</h4><p>실행 정책 해제 확인 → 대상 설치의 회원 연결 종료 → 웹 로그인 종료 순서로 진행합니다. 계정 기록과 확장 프로그램의 미전송 자료는 보존합니다.</p><p className="muted">{!loaded ? "현재 실행·연결 상태를 확인하고 있습니다." : active ? `현재 ${label(active.execution_status)} 상태입니다. 집중 세션에서 해제 결과를 먼저 확인하세요.` : installations.length ? "위에서 대상 설치의 회원 연결을 종료해 주세요. 현재 브라우저 식별 연동 전에는 다른 설치를 자동으로 해제하지 않습니다." : connection.error ? "연결 상태를 다시 확인한 후 진행하세요." : "현재 활성 세션과 회원 연결이 없어 웹 로그아웃을 진행할 수 있습니다."}</p><button disabled={!canLogout || logout.busy} onClick={() => { void logout.run(async () => { await request("/auth/logout", "POST", {}); clearCsrf(); reauthForm.current?.reset(); loggedOut(); }); }}>{logout.busy ? "로그아웃 처리 중" : "로그아웃"}</button>{logout.error && <p role="alert">{logout.error}</p>}</section>
     <section className="settings-card" aria-labelledby="data-title"><h4 id="data-title">자료 보관·삭제 안내</h4><p>로그아웃·회원 연결 종료로 회원 자료를 삭제하지 않습니다. 비회원의 종료 기록은 종료 후 30일간, 설정은 별도로 보관됩니다.</p><p className="muted">회원 탈퇴·회원 기록 일괄 삭제는 현재 제공 범위에 없습니다. 사이트 삭제는 사이트 관리에서 개별 확인하며 과거 기록을 보존합니다.</p></section>
-    <p className="settings-footer">기록 시각과 하루의 기준: 한국 시간 (Asia/Seoul)</p>
+    <p className="settings-footer">기존 기록·통계 기준: 한국 시간 (Asia/Seoul). 하루 목표는 계정 설정 시간대를 따릅니다.</p>
   </section>;
 }

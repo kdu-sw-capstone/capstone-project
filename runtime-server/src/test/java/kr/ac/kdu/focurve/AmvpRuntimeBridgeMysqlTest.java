@@ -53,6 +53,24 @@ class AmvpRuntimeBridgeMysqlTest {
   assertThat(pack.path("runtime_policies").size()).isEqualTo(1);assertThat(pack.path("focus_defaults").isNull()).isTrue();assertThat(pack.path("runtime_revision").asLong()).isEqualTo(1);
   assertThat(base.db.queryForObject("SELECT COUNT(*) FROM amvp_outbox WHERE owner_binding_id=? AND payload_sha256=?",Integer.class,h.fixture.binding(),pack.path("payload_sha256").asText())).isEqualTo(1);
  }
+ @Test void staleLimitEditOverTcpRequiresFreshVersionAndPreservesOriginalUsageAndReceipts()throws Exception{
+  var h=fixture();send(h,receiver(h,true),segment(h,1,null));String config=h.policy.path("policy_id").asText();
+  String source=base.db.queryForList("SELECT * FROM amvp_usage_segments WHERE executor_id=?",h.fixture.executor()).toString()+base.db.queryForList("SELECT * FROM amvp_day_budgets WHERE executor_id=?",h.fixture.executor());
+  var original=base.db.queryForList("SELECT * FROM amvp_config_versions WHERE config_id=? AND version=1",config);
+  var changed=h.policy.deepCopy().put("daily_limit_ms",120000);h.configs.put(h.fixture.identity(),config,base.auth.obj("executor_id",h.fixture.executor(),"value",changed),"\"1\"",null,id());
+  String token=new TransactionTemplate(base.manager).execute(tx->base.auth.mint(h.fixture.executor(),h.fixture.identity().user(),id(),1)).path("access_token").asText();
+  try(var http=new AmvpLoopbackHttp(base.auth,base.manager,h.publisher,source(h.selection),(p,b,r,pack,prev)->new AmvpReportReceiver.VerifiedReport(Set.of()),(p,b,s,prev)->AmvpUsageReceiver.VerifiedCapture.quarantine())){
+   String path="/api/v1/amvp/configs/"+config;var draft=h.policy.deepCopy().put("daily_limit_ms",180000);var body=base.auth.obj("executor_id",h.fixture.executor(),"value",draft);
+   assertThat(http.send("PUT",path,token,body.toString(),"If-Match","\"1\"","Idempotency-Key",id()).statusCode()).isEqualTo(412);
+   var latest=http.send("GET",path,token,null);assertThat(latest.statusCode()).isEqualTo(200);var row=base.json.readTree(latest.body());assertThat(row.path("version").asInt()).isEqualTo(2);
+   draft.put("version",row.path("version").asLong());body.set("value",draft);String key=id();var saved=http.send("PUT",path,token,body.toString(),"If-Match","\"2\"","Idempotency-Key",key);
+   assertThat(saved.statusCode()).isEqualTo(200);var result=base.json.readTree(saved.body());assertThat(result.path("version").asInt()).isEqualTo(3);assertThat(result.path("value").path("daily_limit_ms").asInt()).isEqualTo(180000);
+   assertThat(base.json.readTree(http.send("PUT",path,token,body.toString(),"If-Match","\"2\"","Idempotency-Key",key).body())).isEqualTo(result);
+  }
+  assertThat(base.db.queryForList("SELECT * FROM amvp_config_versions WHERE config_id=? AND version=1",config)).isEqualTo(original);
+  assertThat(base.db.queryForObject("SELECT COUNT(*) FROM amvp_config_versions WHERE config_id=?",Integer.class,config)).isEqualTo(3);
+  assertThat(base.db.queryForList("SELECT * FROM amvp_usage_segments WHERE executor_id=?",h.fixture.executor()).toString()+base.db.queryForList("SELECT * FROM amvp_day_budgets WHERE executor_id=?",h.fixture.executor())).isEqualTo(source);
+ }
  @Test void missingCapabilityAndUnsupportedCarrierRollbackConfigAndPackage()throws Exception{
   var h=fixture();var before=current(h);var cadence=base.auth.obj("executor_id",h.fixture.executor(),"value",example("CadenceConfig"));assertThatThrownBy(()->h.configs.put(h.fixture.identity(),id(),cadence,null,"*",id())).hasMessage("UNSUPPORTED_CONTRACT");
   assertThat(current(h)).isEqualTo(before);assertThat(base.db.queryForObject("SELECT COUNT(*) FROM amvp_configs WHERE owner_binding_id=?",Integer.class,h.fixture.binding())).isEqualTo(1);
