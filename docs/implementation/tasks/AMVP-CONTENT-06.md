@@ -789,3 +789,12 @@
 - 최종전체Content387/387(기존362+신규25)·계약6/6·build·구문·diff PASS. Node24.19/Playwright1.62.1/설치Windows Chrome156 headless합성DOM·mock검증기이며실제제품/MV3권한수용이아니다. 명령 기존환경 node --test extension/content-tests/ig04-evidence-browser.test.mjs extension/content-tests/ig04-reservation-browser.test.mjs; node --test --test-concurrency=2 extension/content-tests/*.test.mjs; node --test contracts/additional-mvp/rc1/tests/legacy-boundary.test.mjs; node extension/content-tools/build-chrome-harness.mjs; node --check; git diff --check. ignored로그 evidence-focused*.log/evidence-full.log/evidence-contract.log/evidence-build.log. 신규module은builder에포함했다.
 - Core최소인계:기존reserve에binding context검증과reservation_identity를결속;효과전실제영속ACK를확인한뒤plan_id 반환;읽기전용snapshot을issuedoperation/scan/profile과조회결속;scoped RELEASE·DOM복원확인후실제영속completion을검증하는callback을제공하고identity/opaqueProof로hook호출. 자체scope/native authority/영속store/cleanup lease/ContentResult/RuntimeReport producer/Server verifier는여전히미연결이다. proof형식·local hash를실제계약hash로매핑하는방식·stable target복구·cleanup terminal/lease와재시작의미는공동합의필요다.
 - 새branch Commit/Push·정확HEAD CI후외부검증기록에fullSHA/tree/run을남긴다. 선행gatebranch/#83branch변경·forcePush·PR생성·Approve/Draft해제/Resolve/Merge없음. 실제Chrome설치/START/서비스/Native/DB실행없음. 제품수용NOT_RUN,MVP_FINAL_COMPLETE=false.
+
+
+## 2026-11-04 계약 CI 불일치 격리 수정 후보 (미게시)
+
+### 2026-11-01 IG-06 사용자 전달 범위 확인
+사용자가 팀 회신으로 "흑백처리는 싹 다, 프로필까지" 포함한다고 전달했다. Content IG-06 적용 화면은 기존 피드/게시물/릴스에 프로필·프로필 게시물/릴스/태그 목록·탐색·스토리를 포함한다. 기존 DM·로그인/인증·FOCURVE UI 제외, 영상 재생/소리 유지, scope별 복원 규칙은 유지한다. 이전 구현의 프로필/스토리 제외는 공동 확정 제외가 아니었으며 이를 해소한다. Wire/Schema·권한·제품 활성화 계약을 변경하거나 실제 수용 완료로 판정하는 기록은 아니다. feature-registry의 기존 FEED/POST/REELS 예시는 비포괄적 경로 예시로 유지하며 최종 통합 검토에서 이 범위 확인을 함께 대조한다.
+
+
+위 사용자 요구 원문은 보존한다. 제품 흑백 범위를 축소하거나 기존 구현을 변경하지 않는다. 이 기록만으로 공동 계약/Manifest 개정이 승인됐다고 보지 않는다. 보호된 계약 05에 추가됐던 설명만 기존 작업카드로 이동하며 계약·revision manifest·legacy-lock 값은 변경하지 않는다. 공동 계약 표현의 정비는 담당 판정 후 별도 반영한다. legacy-lock 17개 불일치는 미해소다.

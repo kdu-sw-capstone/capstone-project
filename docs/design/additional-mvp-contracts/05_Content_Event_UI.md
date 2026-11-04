@@ -1,8 +1,5 @@
 # Content·Event·UI 계약
 
-### 2026-11-01 IG-06 사용자 전달 범위 확인
-사용자가 팀 회신으로 "흑백처리는 싹 다, 프로필까지" 포함한다고 전달했다. Content IG-06 적용 화면은 기존 피드/게시물/릴스에 프로필·프로필 게시물/릴스/태그 목록·탐색·스토리를 포함한다. 기존 DM·로그인/인증·FOCURVE UI 제외, 영상 재생/소리 유지, scope별 복원 규칙은 유지한다. 이전 구현의 프로필/스토리 제외는 공동 확정 제외가 아니었으며 이를 해소한다. Wire/Schema·권한·제품 활성화 계약을 변경하거나 실제 수용 완료로 판정하는 기록은 아니다. feature-registry의 기존 FEED/POST/REELS 예시는 비포괄적 경로 예시로 유지하며 최종 통합 검토에서 이 범위 확인을 함께 대조한다.
-
 최신 선택: 사용자 전달 채지민의 QUERY/sender/Port/16옵션/DOM/SPA/복원/블러/URL 방향 동의와 추가 Content 수정 요청 없음을 반영한다. 최종 SHA GitHub 승인·실제 Chrome PASS는 별도다. T01~04 수락을 유지하고 다시 전면 검토하지 않는다.
 
 IG03은 탐색만(검색 전체 제외), IG06은 feed/post/reels 흑백·DM/로그인/FOCURVE UI 제외다. 기존16개 ID·exact 결과 집합·미디어/정책 증거·복원을 보존한다. START 당시 frozen Snapshot과 Attachment를 RESUME에도 그대로 사용하며 중간 저장한 옵션은 섞지 않는다. QUERY는 별도 읽기·seq 비소비이며 요청/target/hash/scope 응답 결속은03/Schema를 따른다. registry/proof/Port 재연결은03, 미확정 예산/idle는04가 원본이다.
