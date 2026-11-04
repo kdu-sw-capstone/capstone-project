@@ -26,7 +26,7 @@ async function fixture(t,{reservation='instant',input='instant',release='instant
   };
   window.opts={ledger,getWorkerInstance:()=>worker,getGeneration:()=>generation,
    isCurrent:c=>current&&c.scope.document_id===nativeDocument&&c.scope.owner_binding_id===binding.scope.owner_binding_id,
-   verifyInput:(proof,e)=>verify('input',proof,e),verifyRelease:(proof,e)=>verify('release',proof,e),verifyCompletion:(proof,e)=>verify('completion',proof,e),
+   prepareResources:()=>true,verifyInput:(proof,e)=>verify('input',proof,e),verifyRelease:(proof,e)=>verify('release',proof,e),verifyCompletion:(proof,e)=>verify('completion',proof,e),
    reserve:(plan,metadata)=>new Promise((resolve,reject)=>{requests.push({plan,metadata,resolve,reject});if(modes.reservation==='instant')resolve(plan.plan_id);if(modes.reservation==='reject')reject(Error('store unknown'));}),timeoutMs:modes.timeout};
   if(modes.missing)delete opts[modes.missing];window.receiver=new IG04ContentReceiver(document,opts);
  },{reservation,input,release,completion,missing,timeout});return p;

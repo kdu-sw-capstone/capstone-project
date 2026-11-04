@@ -9,10 +9,12 @@ export class HideReservationGate {
   #context;#originalContextScope;#verifyContext;#verifyCompletion;#contextMode;#contextHash;#gateId=crypto.randomUUID();
   // Instance-local fence only; not a Core/provider authority or public token.
   #cleanupRevision=0n;
-  constructor(ledger,{reserve,getGeneration,timeoutMs=5000,maxPlans=256,context,verifyContext,verifyCompletion}={},refresh=()=>{},owner={}) {
+  #lifetimeRecords;
+  constructor(ledger,{reserve,getGeneration,timeoutMs=5000,maxPlans=256,context,verifyContext,verifyCompletion,localLifetime}={},refresh=()=>{},owner={}) {
     if(!Number.isSafeInteger(timeoutMs)||timeoutMs<1||timeoutMs>60000)throw Error('INVALID_RESERVATION_TIMEOUT');
     if(!Number.isSafeInteger(maxPlans)||maxPlans<1||maxPlans>4096)throw Error('INVALID_RESERVATION_CAPACITY');
     this.#ledger=ledger;this.#reserve=reserve;this.#generation=getGeneration;this.#refresh=refresh;this.#timeout=timeoutMs;
+    this.#lifetimeRecords=localLifetime;
     this.#boundGeneration=this.#epoch();
     this.#maxPlans=maxPlans;
     this.#contextMode=context!==undefined;this.#verifyContext=verifyContext;this.#verifyCompletion=verifyCompletion;
@@ -20,7 +22,8 @@ export class HideReservationGate {
       try{this.#context=boundContext(context,owner,this.#boundGeneration);}catch{this.#context=null;}
     }
     this.#originalContextScope=this.#context?.scope??null;
-    this.#contextHash=this.#context?localDigest(this.#context).catch(()=>{this.#context=null;return null;}):Promise.resolve(null);
+    const contextHash=()=>this.#context?localDigest(this.#context).catch(()=>{this.#context=null;return null;}):Promise.resolve(null);
+    this.#contextHash=this.#lifetimeRecords?this.#lifetimeRecords.run('gate.context_hash',contextHash):contextHash();
   }
   #epoch(){try{const v=this.#generation?.();if(v&&typeof v.then==='function')Promise.resolve(v).catch(()=>{});
     return Number.isSafeInteger(v)&&v>0?v:null;}catch{return null;}}
@@ -47,15 +50,16 @@ export class HideReservationGate {
     record.timer=setTimeout(()=>finish('TIMED_OUT'),this.#timeout);
     // Re-entering release from reserve is safe: record exists before callback.
     const base={...plan,generation:record.generation,document_instance_id:this.#documentInstance,gate_id:this.#gateId};
-    record.hashes=this.#contextHash.then(async context_sha256=>{
+    const hash=()=>this.#contextHash.then(async context_sha256=>{
       const plan_sha256=await localDigest({...base,context_sha256});
       record.identity=freezeCopy({gate_id:this.#gateId,plan_id:plan.plan_id,context_sha256,plan_sha256,
         operation_id:this.#context?.operation_id??null,generation:record.generation});
       return record.identity;
     });
+    record.hashes=this.#lifetimeRecords?this.#lifetimeRecords.run('gate.plan_hash',hash,{local_plan_id:record.local_plan_id,plan_id:plan.plan_id}):hash();
     const dispatch=externalPlan=>{
       if(record.state!=='PENDING'||this.#closed)return;
-      try{record.reserve_called=true;Promise.resolve(this.#reserve(externalPlan,{signal:record.controller.signal})).then(ack=>{
+      try{record.reserve_called=true;const invoke=()=>this.#reserve(externalPlan,{signal:record.controller.signal});Promise.resolve(this.#lifetimeRecords?this.#lifetimeRecords.run('gate.reserve',invoke,{local_plan_id:record.local_plan_id,plan_id:plan.plan_id}):invoke()).then(ack=>{
         record.reserve_reply=ack===plan.plan_id?'MATCHING_PLAN_ID':'OTHER_VALUE';
         finish(ack===plan.plan_id&&!this.#closed&&this.#validContext()&&this.#epoch()===record.generation&&this.#current(current)?'READY':'DENIED');
       },()=>{record.reserve_reply='REJECTED';finish('UNCONFIRMED');});}catch{record.reserve_reply='THREW';finish('UNCONFIRMED');}
@@ -85,7 +89,7 @@ export class HideReservationGate {
     reserve_callbacks_unsettled:this.#issued.filter(r=>r.reserve_called&&r.reserve_reply==='UNOBSERVED').length,
     context_scope:s?structuredClone({owner_binding_id:s.owner_binding_id,binding_id:s.binding_id,
       generation:s.generation,document_instance_id:s.document_instance_id}):null};}
-  async snapshot(){await Promise.all(this.#issued.map(r=>r.hashes.catch(()=>null)));
+  async snapshot(){await this.#contextHash;await Promise.all(this.#issued.map(r=>r.hashes.catch(()=>null)));
     return structuredClone({gate_id:this.#gateId,context_bound:!!this.#context,closed:this.#closed,
       local_tracking:this.#localTracking(),local_records:this.#localRecords(),
       reservations:this.#issued.map(r=>({identity:r.identity??null,state:r.state,completed:r.completed===true,completion_pending:(r.verifying??0)>0}))});}
@@ -99,7 +103,7 @@ export class HideReservationGate {
     if(!this.#closed||!this.#current(locallyRestored)||revision!==this.#cleanupRevision)return reject('LOCAL_CLEANUP_UNCONFIRMED');
     const expected=freezeCopy({identity:record.identity,context:this.#context});
     let verified=false;record.verifying=(record.verifying??0)+1;
-    try{verified=await this.#verifyCompletion(proof,expected)===true;}catch{}finally{record.verifying--;}
+    try{const invoke=()=>this.#verifyCompletion(proof,expected);verified=await(this.#lifetimeRecords?this.#lifetimeRecords.run('gate.verifyCompletion',invoke,{local_plan_id:record.local_plan_id,plan_id:record.plan.plan_id}):invoke())===true;}catch{}finally{record.verifying--;}
     if(!verified)return reject('DURABLE_COMPLETION_UNCONFIRMED');
     // Check after the synchronous callback as well: it may re-enter close().
     // No await between this last check and consuming the verified completion.

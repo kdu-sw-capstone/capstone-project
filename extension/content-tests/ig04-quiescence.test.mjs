@@ -27,7 +27,7 @@ function bound(h){return {scope:{owner_binding_id:h.options.owner_binding_id,bin
 const enabled=[{feature_id:'IG-04',enabled:true,required:true}];
 function receiverFixture(){const h=fixture();let worker='worker-1';
  const receiver=new IG04ContentReceiver(h.document,{ledger:h.ledger,getWorkerInstance:()=>worker,getGeneration:()=>1,isCurrent:()=>true,
- verifyInput:()=>true,reserve:()=>new Promise(()=>{}),verifyRelease:()=>true,verifyCompletion:()=>false});
+ prepareResources:()=>true,verifyInput:()=>true,reserve:()=>new Promise(()=>{}),verifyRelease:()=>true,verifyCompletion:()=>false});
  return {...h,receiver,context:bound(h),worker:v=>worker=v};}
 test('producer drains queued scan and detaches receiver, adapter and Session listeners',async()=>{
  const h=receiverFixture();await h.receiver.apply({context:h.context,features:enabled},'fixture');
@@ -60,8 +60,9 @@ test('listener detach failure stays unconfirmed and a real retry can confirm rem
 test('pending input verification is not drained until its real continuation exits',async()=>{
  const h=fixture();let resolve;
  const receiver=new IG04ContentReceiver(h.document,{getWorkerInstance:()=> 'worker-1',getGeneration:()=>1,isCurrent:()=>true,
- verifyInput:()=>new Promise(r=>resolve=r),reserve:()=>undefined,verifyRelease:()=>true,verifyCompletion:()=>false});
+ prepareResources:()=>true,verifyInput:()=>new Promise(r=>resolve=r),reserve:()=>undefined,verifyRelease:()=>true,verifyCompletion:()=>false});
  const opening=receiver.apply({context:bound(h),features:enabled},'fixture');
+ await new Promise(setImmediate);
  const q=await receiver.quiescenceSnapshot();assert.equal(q.local_quiescence.input_verification_pending,true);
  assert.equal(q.local_quiescence.locally_quiescent,false);assert.equal(q.local_startup.adapter_start_called,false);
  resolve(true);assert.equal((await opening).accepted,false);

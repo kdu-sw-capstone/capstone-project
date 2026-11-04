@@ -20,12 +20,12 @@ function fixture(){
   const options={owner_binding_id,binding_id,ledger,features:[{feature_id:'IG-04',enabled:true,required:true}],isCurrent:()=>true};
   return {win,document,ledger,observers,options};
 }
-test('unstarted receiver still reports its own listeners rather than an empty watch',async()=>{
+test('unprepared receiver owns no listener before its separate preparation',async()=>{
   const h=fixture(),receiver=new IG04ContentReceiver(h.document,{getWorkerInstance:()=> 'node-fixture-worker'}),q=await receiver.query();
   assert.equal(q.state,null);assert.equal(q.phase,'UNBOUND');
-  assert.equal(h.win.listeners.get('pagehide').size,1);
+  assert.equal(h.win.listeners.get('pagehide')?.size??0,0);
   assert.equal(q.local_startup.adapter_start_called,false);
-  assert.equal(q.local_startup.receiver_resources_may_remain,true);
+  assert.equal(q.local_startup.receiver_resources_may_remain,false);
   assert.equal(q.native_verified,false);
 });
 test('pagehide registration failure after attachment is recorded as partial start',()=>{
@@ -94,40 +94,41 @@ function bound(h){return {scope:{owner_binding_id:h.options.owner_binding_id,bin
   executor_id:'00000000-0000-4000-8000-000000000005',runtime_execution_id:'00000000-0000-4000-8000-000000000006',package_id:'00000000-0000-4000-8000-000000000007',runtime_revision:1,
   scope_epoch:'00000000-0000-4000-8000-000000000008',tab_id:1,frame_id:0,document_id:'node-fixture-document',document_instance_id:'00000000-0000-4000-8000-000000000004',url_sha256:'2'.repeat(64),focus_ref:null},
   operation_id:'00000000-0000-4000-8000-000000000003',semantic_sha256:'1'.repeat(64)};}
-test('scoped release while input verification waits records adapter non-entry with receiver debt',async()=>{
+test('scoped release during input verification records non-entry and actual pending work',async()=>{
   const h=fixture(),context=bound(h);let resolve,calls=0;
   const receiver=new IG04ContentReceiver(h.document,{ledger:h.ledger,getWorkerInstance:()=> 'node-worker',getGeneration:()=>1,isCurrent:()=>true,
-    verifyInput:()=>new Promise(r=>resolve=r),reserve:()=>{calls++;},verifyRelease:()=>true,verifyCompletion:()=>true});
+    prepareResources:()=>true,verifyInput:()=>new Promise(r=>resolve=r),reserve:()=>{calls++;},verifyRelease:()=>true,verifyCompletion:()=>true});
   const opening=receiver.apply({context,features:h.options.features},'fixture-proof');
+  await new Promise(setImmediate);
   const ended=await receiver.release(context,'fixture-cleanup');resolve(true);const late=await opening;
   assert.equal(ended.accepted,true);assert.equal(late.accepted,false);assert.equal(calls,0);
   assert.equal(late.local_startup.adapter_start_called,false);assert.equal(late.local_startup.adapter_created,false);
-  assert.equal(late.local_startup.receiver_resources_may_remain,true);assert.equal(h.observers.length,0);
+  assert.equal(late.local_startup.receiver_resources_may_remain,false);assert.equal(ended.local_lifetime.pending_work.some(r=>r.kind==='receiver.verifyInput'),true);assert.equal(h.observers.length,0);
 });
 test('receiver plan0 snapshot keeps receiver and adapter resource ownership separate',async()=>{
   const h=fixture(),context=bound(h);let calls=0;
   const receiver=new IG04ContentReceiver(h.document,{ledger:h.ledger,getWorkerInstance:()=> 'node-worker',getGeneration:()=>1,isCurrent:()=>true,
-    verifyInput:()=>true,reserve:()=>{calls++;},verifyRelease:()=>true,verifyCompletion:()=>true});
+    prepareResources:()=>true,verifyInput:()=>true,reserve:()=>{calls++;},verifyRelease:()=>true,verifyCompletion:()=>true});
   const started=await receiver.apply({context,features:h.options.features},'fixture-proof');
   assert.equal(started.accepted,true);assert.equal(started.local_startup.adapter_start_called,true);
   assert.equal(started.state.local_startup.session_start_returned,1);assert.equal(started.snapshot.observer_active,true);
   assert.equal(started.snapshot.gate.reservations.length,0);assert.equal(calls,0);
   const ended=await receiver.release(context,'fixture-cleanup');
-  assert.equal(ended.state.local_startup.resources_may_remain,false);assert.equal(ended.local_startup.receiver_resources_may_remain,true);
+  assert.equal(ended.state.local_startup.resources_may_remain,false);assert.equal(ended.local_startup.receiver_resources_may_remain,false);
   assert.equal(ended.native_verified,false);assert.equal(ended.local_only,true);
 });
-test('adapter construction rejection after input verification is not a resource-free receiver',async()=>{
+test('adapter construction rejection retains original context and observes receiver cleanup',async()=>{
   const h=fixture(),receiver=new IG04ContentReceiver(h.document,{ledger:{},getWorkerInstance:()=> 'node-worker',getGeneration:()=>1,isCurrent:()=>true,
-    verifyInput:()=>true,reserve:()=>assert.fail('no reservation'),verifyRelease:()=>true,verifyCompletion:()=>true});
+    prepareResources:()=>true,verifyInput:()=>true,reserve:()=>assert.fail('no reservation'),verifyRelease:()=>true,verifyCompletion:()=>true});
   const denied=await receiver.apply({context:bound(h),features:h.options.features},'fixture-proof');
   assert.equal(denied.accepted,false);assert.equal(denied.reason,'CONTENT_START_FAILED');
   assert.equal(denied.local_startup.adapter_created,false);assert.equal(denied.local_startup.adapter_start_called,false);
-  assert.equal(denied.local_startup.receiver_resources_may_remain,true);assert.equal(h.observers.length,0);
+  assert.equal(denied.local_startup.receiver_resources_may_remain,false);assert.deepEqual(denied.local_lifetime.context,bound(h));assert.equal(h.observers.length,0);
 });
 
 for(const invalid of ['truthy-input','async-current'])test(`${invalid} still rejects before adapter start`,async()=>{
   const h=fixture(),receiver=new IG04ContentReceiver(h.document,{ledger:h.ledger,getWorkerInstance:()=> 'node-worker',getGeneration:()=>1,
-    isCurrent:()=>invalid==='async-current'?Promise.resolve(true):true,verifyInput:()=>invalid==='truthy-input'?'yes':true,
+    isCurrent:()=>invalid==='async-current'?Promise.resolve(true):true,prepareResources:()=>true,verifyInput:()=>invalid==='truthy-input'?'yes':true,
     reserve:()=>assert.fail('no reservation'),verifyRelease:()=>true,verifyCompletion:()=>true});
   const q=await receiver.apply({context:bound(h),features:h.options.features},'fixture-proof');
   assert.equal(q.accepted,false);assert.equal(q.local_startup.adapter_start_called,false);assert.equal(h.observers.length,0);
@@ -173,7 +174,7 @@ test('identity creation binds back to the same local record without confirming a
 });
 test('plan0 does not erase the adapter observer or receiver listener tracking',async()=>{
   const h=fixture(),receiver=new IG04ContentReceiver(h.document,{ledger:h.ledger,getWorkerInstance:()=> 'node-worker',getGeneration:()=>1,isCurrent:()=>true,
-    verifyInput:()=>true,reserve:()=>assert.fail('no DOM plan'),verifyRelease:()=>true,verifyCompletion:()=>true});
+    prepareResources:()=>true,verifyInput:()=>true,reserve:()=>assert.fail('no DOM plan'),verifyRelease:()=>true,verifyCompletion:()=>true});
   const q=await receiver.apply({context:bound(h),features:h.options.features},'fixture-proof');
   await receiver.release(bound(h),'fixture-cleanup');
   assert.deepEqual(q.snapshot.gate.local_records,[]);assert.equal(q.snapshot.observer_active,true);
@@ -206,20 +207,20 @@ test('synchronous reserve failure and release-before-hash never drop a local rec
   const before=other.gate.inspect().local_records[0];other.gate.close();const after=(await other.gate.snapshot()).local_records[0];
   assert.equal(after.local_plan_id,before.local_plan_id);assert.equal(after.reserve_called,false);assert.equal(after.state,'CANCELLED');assert.equal(after.obligation_pending,true);
 });
-test('per-record completion leaves the other record and common receiver resources intact',async()=>{
+test('per-record completion preserves other debt even after receiver listeners detach',async()=>{
   const h=fixture(),targets=[localTarget(h),localTarget(h)];h.document.querySelectorAll=selector=>selector.startsWith('textarea')?targets:[];
   const receiver=new IG04ContentReceiver(h.document,{ledger:h.ledger,getWorkerInstance:()=> 'node-worker',getGeneration:()=>1,isCurrent:()=>true,
-    verifyInput:()=>true,reserve:p=>p.plan_id,verifyRelease:()=>true,verifyCompletion:()=>true});
+    prepareResources:()=>true,verifyInput:()=>true,reserve:p=>p.plan_id,verifyRelease:()=>true,verifyCompletion:()=>true});
   await receiver.apply({context:bound(h),features:h.options.features},'fixture-proof');await new Promise(setImmediate);
   h.ledger.hide('unrelated-owner',targets[0]);await receiver.release(bound(h),'fixture-cleanup');
   const before=await receiver.query(),records=before.snapshot.gate.local_records;assert.equal(records.length,2);
   assert.notEqual(records[0].local_plan_id,records[1].local_plan_id);
   await receiver.completeReservation(bound(h),records[0].identity,'fixture-proof');
   const partial=await receiver.query();assert.equal(partial.snapshot.gate.local_records.filter(r=>r.obligation_pending).length,1);
-  assert.equal(partial.local_startup.receiver_resources_may_remain,true);assert.equal(targets[0].inert,true);
+  assert.equal(partial.local_startup.receiver_resources_may_remain,false);assert.equal(partial.state.cleanup_pending,true);assert.equal(targets[0].inert,true);
   await receiver.completeReservation(bound(h),records[1].identity,'fixture-proof');
   const ended=await receiver.query();assert.equal(ended.snapshot.gate.local_records.length,2);
-  assert.equal(ended.local_startup.receiver_resources_may_remain,true);assert.equal(ended.native_verified,false);
+  assert.equal(ended.local_startup.receiver_resources_may_remain,false);assert.equal(ended.native_verified,false);
   assert.equal(targets[0].inert,true);h.ledger.release('unrelated-owner');assert.equal(targets[0].inert,false);
   assert.ok(ended.snapshot.gate.local_records.every(r=>r.durable_commit_status==='UNCONFIRMED'));
 });

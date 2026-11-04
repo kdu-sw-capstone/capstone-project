@@ -26,7 +26,7 @@ async function fixture(t,{reservation='instant',input='instant',release='instant
   };
   window.opts={ledger,getWorkerInstance:()=>worker,getGeneration:()=>generation,
    isCurrent:c=>current&&c.scope.document_id===nativeDocument&&c.scope.owner_binding_id===binding.scope.owner_binding_id,
-   verifyInput:(proof,e)=>verify('input',proof,e),verifyRelease:(proof,e)=>verify('release',proof,e),verifyCompletion:(proof,e)=>verify('completion',proof,e),
+   prepareResources:()=>true,verifyInput:(proof,e)=>verify('input',proof,e),verifyRelease:(proof,e)=>verify('release',proof,e),verifyCompletion:(proof,e)=>verify('completion',proof,e),
    reserve:(plan,metadata)=>new Promise((resolve,reject)=>{requests.push({plan,metadata,resolve,reject});if(modes.reservation==='instant')resolve(plan.plan_id);if(modes.reservation==='reject')reject(Error('store unknown'));}),timeoutMs:modes.timeout};
   if(modes.missing)delete opts[modes.missing];window.receiver=new IG04ContentReceiver(document,opts);
  },{reservation,input,release,completion,missing,timeout});return p;
@@ -165,7 +165,7 @@ test('Worker restart retires old receiver even if token changes back; old comple
 });
 
 test('truthy verification and Promise current guards are rejected rather than treated as authority',async t=>{
- for(const mode of ['truthy','promise']){const p=await fixture(t);await p.evaluate(async mode=>{const {IG04ContentReceiver}=await import('/content/ig04-receiver.mjs');receiver=new IG04ContentReceiver(document,{...opts,...(mode==='truthy'?{verifyInput:()=>({verified:true})}:{isCurrent:()=>Promise.resolve(true)})});},mode);assert.equal((await apply(p)).accepted,false);assert.equal(await hidden(p),false);}
+ for(const mode of ['truthy','promise']){const p=await fixture(t);await p.evaluate(async mode=>{const {IG04ContentReceiver}=await import('/content/ig04-receiver.mjs');receiver=new IG04ContentReceiver(document,{...opts,...(mode==='truthy'?{prepareResources:()=>true,verifyInput:()=>({verified:true})}:{isCurrent:()=>Promise.resolve(true)})});},mode);assert.equal((await apply(p)).accepted,false);assert.equal(await hidden(p),false);}
 });
 test('Worker restart after an effect refuses old instance reuse and leaves cleanup for verified recovery',async t=>{
  const p=await fixture(t);await applied(p);await p.evaluate(()=>worker='worker-two');const q=await p.evaluate(()=>receiver.query());assert.equal(q.revalidation_required,true);assert.equal(q.state.cleanup_pending,true);assert.equal(await hidden(p),true);
@@ -174,7 +174,7 @@ test('Worker restart after an effect refuses old instance reuse and leaves clean
 test('separate receivers share the Ledger without releasing another owner',async t=>{
  const p=await fixture(t);await applied(p);const firstId=await id(p);
  await p.evaluate(async()=>{const {IG04ContentReceiver}=await import('/content/ig04-receiver.mjs');window.secondInput=structuredClone(input);secondInput.context.scope.owner_binding_id='00000000-0000-4000-8000-000000000009';secondInput.context.scope.binding_id='00000000-0000-4000-8000-00000000000a';secondInput.context.operation_id='00000000-0000-4000-8000-00000000000b';
-  window.other=new IG04ContentReceiver(document,{...opts,isCurrent:c=>current&&c.scope.owner_binding_id===secondInput.context.scope.owner_binding_id,verifyInput:(proof,e)=>proof==='other-input'&&e.context.operation_id===secondInput.context.operation_id,verifyRelease:proof=>proof==='other-release',verifyCompletion:proof=>proof==='other-completion'});await other.apply(secondInput,'other-input');});
+  window.other=new IG04ContentReceiver(document,{...opts,isCurrent:c=>current&&c.scope.owner_binding_id===secondInput.context.scope.owner_binding_id,prepareResources:()=>true,verifyInput:(proof,e)=>proof==='other-input'&&e.context.operation_id===secondInput.context.operation_id,verifyRelease:proof=>proof==='other-release',verifyCompletion:proof=>proof==='other-completion'});await other.apply(secondInput,'other-input');});
  await p.waitForFunction(()=>requests.length===2);await p.waitForFunction(async()=>{const q=await other.query();return q.snapshot?.observation?.restricted_target_count===1;});
  await release(p);await p.evaluate(identity=>receiver.completeReservation(binding,identity,'completion-token'),firstId);assert.equal(await hidden(p),true);
  const secondId=await p.evaluate(async()=> (await other.query()).snapshot.gate.reservations[0].identity);await p.evaluate(()=>other.release(secondInput.context,'other-release'));assert.equal(await hidden(p),false);
@@ -182,7 +182,7 @@ test('separate receivers share the Ledger without releasing another owner',async
 });
 test('old completed receiver duplicate ACK cannot close a newer same-scope Session',async t=>{
  const p=await fixture(t);await applied(p);const oldId=await id(p);await release(p);await p.evaluate(identity=>receiver.completeReservation(binding,identity,'completion-token'),oldId);
- await p.evaluate(async()=>{window.old=receiver;const {IG04ContentReceiver}=await import('/content/ig04-receiver.mjs');input.context.operation_id='00000000-0000-4000-8000-00000000000b';receiver=new IG04ContentReceiver(document,{...opts,verifyInput:()=>true});await receiver.apply(input,'new-fixture-proof');});await p.waitForFunction(()=>document.querySelector('#comment').inert);
+ await p.evaluate(async()=>{window.old=receiver;const {IG04ContentReceiver}=await import('/content/ig04-receiver.mjs');input.context.operation_id='00000000-0000-4000-8000-00000000000b';receiver=new IG04ContentReceiver(document,{...opts,prepareResources:()=>true,verifyInput:()=>true});await receiver.apply(input,'new-fixture-proof');});await p.waitForFunction(()=>document.querySelector('#comment').inert);
  const duplicate=await p.evaluate(identity=>old.completeReservation(binding,identity,'completion-token'),oldId);assert.equal(duplicate.duplicate,true);assert.equal(await hidden(p),true);assert.equal((await p.evaluate(()=>receiver.query())).state.closed,false);
 });
 test('pending old Session blocks same-scope replacement without losing its reservation debt',async t=>{

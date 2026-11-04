@@ -885,3 +885,44 @@
 - 11/5지민재분담후보: 실제Instagram DOM드리프트/IG01~06 제품수용·미디어/복원수동사례,정해진형식의Contentwatch/cleanup consumer,새문서/BFCache자동재승인client 및keyword/blur실제사이트검증. 본결과를정식인수인계받았다고가정하지않고당시HEAD/진척에따라배정.
 - 실제제품전필수: 공동동일후보수락·신뢰issued/frozen/nativeauthority·영속watch/planprovider·검증된ACK·lease/oldscopeclosure·Workerchannel/restartadoption·RuntimeReport/ServerEvidenceVerifier결속·승인된공식설치환경과실제정책ON/OFF/복원/재기동수용. 이번로컬결과가이를대체하지않음.
 - NO_FURTHER_CHECK 아님: 안전한로컬producer는실제개발완료했으나독립리뷰/제품연결잔여존재. M1 BLOCKED / Shorts PARTIAL / 제품E2E NOT_RUN / MVP_FINAL_COMPLETE=false.
+
+
+## 2026-11-04 다훈 전담 — #97/#99 종료 관측 재사용·#87 자원 수명 실제 구현
+- 실행 범위: 사용자 요청의 순서대로 #97/#99 마무리 근거 확인 후 #87 내부 구현. 기준 #87 a56bc190ebfa478e9d7b0cffc0b699f5f6a143cb, P4 manifest f5c4e5b924383b3645c35e721a4abb9e73c3d647a4d3db06fd12f5690c4a6863. 현재 Worktree C:/Users/dahun/.codex/worktrees/ig04-resource-lifetime/04 · 추가 MVP 구현 (managed/detached). 신규 branch/Commit/Push/PR/승인/병합 없음.
+- #97/#99는 기존 handoff.json의 파일 raw SHA256를 재대조해 keyword4/4·blur6/6 일치. 추가 독립 검토 content-termination-review-20261104.json의 "추가필수결함 없음"과 Chrome156.0.8078.80 모의페이지 keyword14/14·blur41/41 PASS를 동일소스 근거로 재사용. Node59/59·67/67과 합산/재실행하지 않음. 해당 Worktree의 파일/문서/index는 수정하지 않았다.
+- 새 실제 공개 사이트 확인: 새 Chrome 임시 context에서 example.org HTTP200의 실제 DOM과 모듈만 주입하는 시험으로 키워드 제한·시험유발 push/replaceState 복원·다른시험owner보존·원래값복원·해제뒤refresh재적용0의5항목 확인. local canApply/이동승인은 시험용이다. 실제사이트 고유SPA/정책/실제media 수용과 구분한다. 새문서 교체 후 이전 Keyword/BlurSession 객체가 없는 것은 확인했지만 old document의 pagehide 종료관측은 수집되지 않아 NOT_OBSERVED. 이전 문서 자원/복원 의무의 완료로 보고하지 않음.
+- 블러 실제모델 NOT_RUN: 두 termination Worktree에 extension/build/blur-model/manifest.json·검증 profile/weights 산출물이 없음. source/lockfile·모의 profile을 실제 검증모델로 대체하지 않았고 설치/다운로드도 하지 않음. 공개문서 resource-only BlurSession은 이미지선택false, 추론/실제블러효과 검증 아님. 원래실패/첫관측로그 보존(첫관측의 window.blur builtin 이름충돌은 고유 blurSession 이름으로 바로잡아 재확인).
+
+### 실제 구현
+- 신규 extension/content/local-lifetime.mjs: 원래 receiver/Worker instance 및 frozen context에 결속한 내부 작업 ticket·자원 상태·진입/반환/throw 집계. 실제 Promise settle/동기finally/실제listener제거만 관측. 완료작업은 집계로 압축하고 미완료ticket/자원은 유지하여 완료로그 무한증가를 피함. ticket sequence는 instance내비재사용BigInt로 발급하며 Core fence/authority가 아니다. snapshot은 사본으로 DOM/handler/원래CSS를 노출하지 않는다.
+- Receiver constructor는 동기 그대로이며 listener를 설치하지 않는다. 최초 apply에서 내부 prepareResources(opaqueAuthorization, frozen {context,features,transport}) callback stricttrue를 기다리고 receiver revision·document/Worker/generation·동기 isCurrent를 재검사한 뒤 listener를 설치한다. 그 다음 기존 verifyInput stricttrue를 통과해야 Adapter 생성/start 가능. 준비callback 누락/false/truthy/예외/유실/퇴역뒤응답은 listener/Adapter 시작금지. 확인되지 않은 준비시도는 원래 context/instance의 UNCONFIRMED 로컬의무로 remaining에 남는다.
+- prepareResources는 이번 Content 내부 trusted-caller 옵션명일 뿐 실제 Core API/등록 메시지/권한증거/ACK schema 확정이 아니다. 생산 caller/bootstrap에 모의true를 연결하지 않는다. 실제 Core provider가 없으면 기본거절한다. positive mocks는 격리시험에서만 제공한다.
+- 구현 전 설계의 "verifyInput 완료 후 listener 설치" 순서에서는 실제 browser 반례가 발생했다: input검증 대기중 pagehide가 발생해도 Session이 시작됨(102 focused 중101PASS/1FAIL). 따라서 "준비확인→listener설치→입력검증→Adapter"로 최소 순서를 조정했다. listener분리·동기constructor·stricttrue/sync현재성은 유지하며 준비단계가 APPLY권한을 대신하지 않는다. Core는 APPLY 이전의 자원보호 attempt 확인과 현재 native 수명을 공급해야 한다. 준비응답 대기 중 아직없는 listener가 pagehide/BFCache를 관측했다고 주장하지 않으며, 마지막 native 수명 확인이 없으면 실제연결 HOLD다.
+- listener추가 직전 UNCONFIRMED 자원기록, 정상반환 후 ATTACHED; 부분추가/동기재진입후 늦은추가도 다시제거시도하며 실패/불명자원은보존. cleanup은다른자원제거를계속시도하고원래instance를다른Worker/소유자로옮기지않는다. scoped RELEASE는receiver listener도정리하지만 Corewatch closure나예약terminal은만들지않는다.
+- Adapter #emit의 실제 async onObservation/onInvalidated와 Receiver의 준비/input/release/completion/reserve 대기를 관측한다. #opening은 BUSY용, callback_error_count는진단용으로유지한다. 다른callback·준비미확인상태가남으면 scan0/오류0/#openingfalse여도localquiescence=false/cleanup_pending을보존한다. callbacksettle은Corecommit/Worker물리실행종료증거가아니다.
+- NavigationSurfaceSession은 예약microtask ticket을 실제callback끝까지 보존하고scan stack진입/종료를 추적한다. Session/Adapter/Receiver의observer/listener기록을같은로컬수명원장에연결한다. root 추적옵션이없는다른저수준Session은기존동작유지. Gate는원래 L/P와context/planhash·reserve·completion 검증대기를연결한다. plan0도진행context hash를snapshot에서실제대기하며busy/scheduled를강제0으로쓰지않는다. local_plan_id≠identity.plan_id·원래claim/복원목표·다른owner는유지한다.
+- local_lifetime.remaining은이instance의로컬작업/자원관측이다. Core attempt/watch/cutoff/round·coverage/remaining 원장과등록인증·영속closure는미연결이며, 로컬drained/cleanup_pending을그전체의무완료로승격하지않는다. 외부watch공통원장·다른owner·예약의무를삭제/갱신하는새API는없다. 관측collector자체를업무ticket으로세어자기완료를기다리는교착도만들지않음.
+
+### 검증·실패 근거
+- 최소2반례는 정확한 기준에서0PASS/2FAIL(lifetime-before.log) → 수정후동일2PASS. 신규Node22건: 기본거절·준비대기/진행input·늦은준비응답/권한·세대·Worker/문서변경·partiallistener실패/재시도·동기retire뒤늦은add·release검증대기·비동기adapter callback·scanqueue·null/plan과L/P보존·사본/ID비재사용.
+- 중간회귀: 초기context hash진행을추적하자plan0의기존성급한quiescence 기대가실패하여실제context hash를snapshot에서기다리도록보완. constructor/listener 기대는분리후 실제단계로갱신. receiver inputwait browser반례102중1FAIL은위순서보완. 첫전체499중498PASS/1FAIL은잘못된중복proof가유효Session까지닫는회귀였으며기존Session 거절동작을유지하고처음시작실패만닫도록수정. 이전로그를삭제/최종PASS로소급하지않음.
+- 최종 실제 소스 Content499/499 PASS, FAIL/SKIP0(exit0), 신규22는전체에포함. 기존YouTube/IG01~06·원장·다중owner·복원/partialretry·권한/foreign/SPA·모의BFCache·late callback 포함. 계약6/6(exit0), harness빌드/구문/diff PASS. 환경 Node24.19.0·Playwright1.62.1·설치Chrome156 headless 합성DOM/모의Core권한. 실제Extension/계정/Native/Server/M1수용 아님. 기존477이나#97/#99집합과합산하지않음.
+- 명령: PLAYWRIGHT_MODULE=기존runtime dependencies/node/node_modules/playwright, CHROME_EXECUTABLE=설치Chrome로 node --test --test-concurrency=2 extension/content-tests/*.test.mjs; node --test contracts/additional-mvp/rc1/tests/legacy-boundary.test.mjs; node extension/content-tools/build-chrome-harness.mjs; node --check; git diff --check.
+- 증거: C:/Users/dahun/.codex/visualizations/2026/10/31/01a191b6-1724-73b2-b0e1-0149c53fba64/content-lifetime-20261104/ 의 lifetime-before.log, lifetime-focused*.log, lifetime-browser-focused.log, lifetime-content-full.log(중간1FAIL), lifetime-content-final.log(최종499), lifetime-contract.log, lifetime-build.log, public-site-check.json/public-pagehide-check.json, verification.json 및 ig04-resource-lifetime.patch. 실제시험tree는baseHEAD+명시diff/파일SHA256/tested-source-manifest로식별. 독립재리뷰/새HEAD원격CI는NOT_RUN, 이변경은미커밋이다.
+
+### 다음에 종민이 제공해야 할 입력만
+1. 자원보호 준비의실제인증호출: 원래receiver/Worker/native document/generation/context와보호attempt/watch를결속한인증참조·등록commit/동일원문조회결과. 자원준비와APPLY입력검증을분리하되준비응답대기중문서/BFCache변화까지최종확인할freshness/비재사용보장. 현재내부boolean seam은그Core형식을대신확정하지않음.
+2. 인증된cutoff/round의고정대상·조회/재수집수명과accepted scope/fence/version·coverage/remaining 표현. 기존로컬ticket/scan원문을그대상에매핑할때caller ref를권한으로믿지않음.
+3. closure/ACK callback의정확입력/출력·commit후후검사·timeout/abort/응답유실/NOT_FOUND/충돌·이전원문조회/새correlation 규칙. 이입력뒤에만별도cleanup-only facade/closure소비자를연결한다.
+- 신규제품설치/서비스/Native/DB/credential/실제START/END·타worktree/index변경없음. 기존공유staged삭제1,036파일·keyword/blur/scan0 미커밋 보존. 장기시험프로세스/상시서비스 생성없음, 시험Browser정상정리.
+- 구현:Content로컬연결준비완료 / 자동검증:PASS / Git:NOT_COMMITTED·NOT_PUSHED / 실제Core연결:HOLD / 실제제품수용:NOT_RUN. P4통합T2~T5와공동최종승인은미완료. M1 BLOCKED / Shorts PARTIAL / MVP_FINAL_COMPLETE=false.
+
+
+### 2026-11-04 독립 검토 CHANGES_REQUIRED 후속 최소 수정 (미커밋)
+- 원래13파일 후보/verification.json/patch/499/499·계약6/6 제출근거는 보존. 이번 수정은 navigation-surface.mjs, ig04-receiver.mjs, ig04-resource-lifetime.test.mjs 및 이 작업카드. 다른 Worktree/index/PR 변경 없음.
+- Session #listen: 설치 전 #canApply; 설치 성공/예외 후 removed=false로 실제 후속 제거대상 유지; 설치 후 퇴역을 재검사하여 즉시 disconnect. 동기 퇴역 후 late add와 add후throw 및 제거실패를 시험하고, 실제 제거 재시도까지 원래 자원을 remaining에 보존. 퇴역 후 다음 listener 설치도 중단.
+- Receiver: 준비 callback의 동기 stricttrue는 동일 stack에서 현재성 확인 뒤 listener설치. Promise 준비는 실제 settlement를 관측하되, 대기 중 pagehide/BFCache를 관측할 보호자원이 없으므로 true여도 RESOURCE_LIFETIME_REVALIDATION_REQUIRED로 거절. 준비 의무 UNCONFIRMED 유지, listener/Adapter 미설치. 이 로컬 차단은 준비확인/local등록commit/APPLY허가의 대체가 아니다.
+- Core HOLD 위치: receiver.apply 준비 결과 소비 직후/첫 #installListeners 이전. 필요한 입력은 원래 receiver/Worker/native document/generation/operation/context, 보호attempt 및 등록commit 원문과의 결속; 결과는 대기구간 pagehide/BFCache를 포함한 비재사용·현재 문서수명 인증. 응답유실/미확인/불일치 기본거절과 원래 의무유지. 실제 함수·DTO·인증결과 형식 미확정이므로 새 provider나 공개 schema를 만들지 않음. 해당 보장이 공동확정되기 전 비동기 준비 활성화 금지. constructor 사전결속안과 분리안의 공동선택은 여전히 미확정.
+- 기존 독립4반례는 수정전2PASS/2FAIL → 동일 파일 수정후4/4 PASS(exit0). 영향 Node4파일 67/67(exit0, 수명25 포함), 설치Chrome 모의입력대기 pagehide/Worker/generation 3/3(exit0). 구문2파일/diff검사 PASS. 전체499/계약6은 이전제출결과로만 보존하며 이번tree 전체PASS로 사용하지 않음.
+- 증거: content-lifetime-20261104/revision-counterexamples.log, revision-lifetime.log, revision-input-browser.log, revision-verification.json. Node/합성Chrome결과는 제품수용 아님. example.org 기존5항목 범위유지/이전문서pagehide NOT_OBSERVED/실제블러추론 NOT_RUN.
+- Commit/Push/PR없음. M1 BLOCKED, 실제연결HOLD, 제품E2E NOT_RUN, MVP_FINAL_COMPLETE=false. 다음: Core 문서수명·등록인증 호출 확정과 이 후속diff 독립확인.

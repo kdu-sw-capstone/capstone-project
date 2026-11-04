@@ -26,7 +26,7 @@ function bound(h){return {scope:{owner_binding_id:h.options.owner_binding_id,bin
 // Node lifecycle doubles; hold delivery of the real adapter snapshot once.
 function setup(){const h=fixture();let generation=1,worker='worker-1',authority=true;
  const receiver=new IG04ContentReceiver(h.document,{ledger:h.ledger,getWorkerInstance:()=>worker,getGeneration:()=>generation,isCurrent:()=>authority,
- verifyInput:()=>true,reserve:()=>undefined,verifyRelease:()=>true,verifyCompletion:()=>false});
+ prepareResources:()=>true,verifyInput:()=>true,reserve:()=>undefined,verifyRelease:()=>true,verifyCompletion:()=>false});
  return {h,receiver,context:bound(h),generation:v=>generation=v,worker:v=>worker=v,authority:v=>authority=v};}
 async function holdSnapshot(run){const original=ContentSessionAdapter.prototype.evidenceSnapshot;let entered,finish;
  const ready=new Promise(r=>entered=r),wait=new Promise(r=>finish=r);let once=true;
