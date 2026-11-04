@@ -9,3 +9,6 @@ test('guest sender fix sources reproduce the shipped content and worker bundles'
 test('member sources reproduce the shipped content and worker bundles',async()=>{
  const actual=buildMemberA1();assert.equal(actual.content,await readFile(new URL('../member-a1/content.bundle.js',import.meta.url),'utf8'));assert.equal(actual.core,await readFile(new URL('../background/member-a1-core.bundle.js',import.meta.url),'utf8'));
 });
+
+import {buildA0} from '../scripts/build-a0.mjs';
+test('legacy A0 content includes shared ledger and reproduces shipped bundle',async()=>{assert.equal(buildA0().content,await readFile(new URL('../a0/content.bundle.js',import.meta.url),'utf8'));});

@@ -1,6 +1,7 @@
 """Synthetic files/registry only. No installed profile, credential or DB access."""
 import copy,datetime,json,pathlib,shutil,sys,types,unittest
 from unittest.mock import MagicMock,patch
+from test_native_setup import SyntheticLockCustody
 import test_session_update as fixture
 from test_session_update import m,core,folder,module
 
@@ -108,7 +109,7 @@ class UnusedSetupRenewalTests(unittest.TestCase):
   self.assertFalse((self.o/'original-backup').exists());self.assertTrue((self.p/'product-update.lock').exists())
  def test_connect_routes_unused_setup_through_updater_not_fresh_registration(self):
   self.c.require.side_effect=lambda ok,code:None if ok else (_ for _ in ()).throw(RuntimeError(code))
-  with patch.object(native,'_renew_stopped',return_value={'servicesStarted':False}) as renew,patch.object(native,'_connect_fresh') as fresh:
+  with patch.object(native,'_LockCustody',SyntheticLockCustody),patch.object(native,'_renew_stopped',return_value={'servicesStarted':False}) as renew,patch.object(native,'_connect_fresh') as fresh:
    native.connect(self.c,self.p,60,True,user_session=True)
   renew.assert_called_once();fresh.assert_not_called();self.c.spawn_owned.assert_not_called()
  @unittest.skipUnless(m.os.name=='nt','Windows native compiler integration; no Native registration or real installation')
