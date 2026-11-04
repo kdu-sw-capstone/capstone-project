@@ -1,0 +1,45 @@
+{
+  "manifest_version": 3,
+  "name": "FOCURVE 전체 웹 이미지 블러 시험 — Core 미연결",
+  "version": "0.3.5",
+  "permissions": [
+    "offscreen",
+    "activeTab"
+  ],
+  "host_permissions": [
+    "http://*/*",
+    "https://*/*"
+  ],
+  "background": {
+    "service_worker": "background.mjs",
+    "type": "module"
+  },
+  "action": {
+    "default_popup": "popup.html"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "http://*/*",
+        "https://*/*"
+      ],
+      "js": [
+        "bootstrap.js"
+      ],
+      "run_at": "document_idle"
+    }
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": [
+        "content/blur-session.mjs",
+        "model/profile.mjs",
+        "diagnostics.mjs"
+      ],
+      "matches": [
+        "http://*/*",
+        "https://*/*"
+      ]
+    }
+  ]
+}
