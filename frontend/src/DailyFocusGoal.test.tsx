@@ -86,10 +86,16 @@ describe("daily goal actual confirmed projection",()=>{
   }finally{window.removeEventListener("focurve:authentication-expired",expired);}
  });
  it("the fresh post-write read still expires authentication on a current 401",async()=>{
-  let reads=0;get.mockImplementation(async(_path,method,body)=>{if(method==="PUT")return row({...body as Partial<Goal>,version:2});if(++reads===1)return row();throw new ApiError("UNAUTHENTICATED",401);});
+  let finishInitial!:(value:Goal)=>void;const initial=new Promise<Goal>(resolve=>{finishInitial=resolve;});
+  let reads=0;get.mockImplementation(async(_path,method,body)=>{if(method==="PUT")return row({...body as Partial<Goal>,version:2});if(++reads===1)return initial;throw new ApiError("UNAUTHENTICATED",401);});
   const expired=vi.fn();window.addEventListener("focurve:authentication-expired",expired);
-  try{render(<DailyFocusGoal owner="A" editor/>);fireEvent.click(await screen.findByRole("button",{name:"목표 수정"}));fireEvent.click(screen.getByRole("button",{name:"목표 저장"}));
+  try{render(<DailyFocusGoal owner="A" editor/>);const edit=await screen.findByRole("button",{name:"목표 수정"});
+   // Presence is not readiness: the initial GET must enable editing before the click.
+   expect(edit).toBeDisabled();expect(screen.queryByRole("button",{name:"목표 저장"})).not.toBeInTheDocument();
+   await act(async()=>finishInitial(row()));await waitFor(()=>expect(edit).toBeEnabled());fireEvent.click(edit);
+   fireEvent.click(await screen.findByRole("button",{name:"목표 저장"}));
    await waitFor(()=>expect(expired).toHaveBeenCalledTimes(1));expect(screen.getByRole("alert")).toBeInTheDocument();
+   expect(get.mock.calls.filter(c=>c[1]==="PUT")).toHaveLength(1);expect(reads).toBe(2);
   }finally{window.removeEventListener("focurve:authentication-expired",expired);}
  });
  it("another goal view refreshes from the save event while its old read is pending",async()=>{
