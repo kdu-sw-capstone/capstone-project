@@ -225,3 +225,11 @@ base PR26 HEAD2a2f1b4/develop9868a0f Draft. 별도shorts-pr26-port detached Work
 ### 2026-11-03 후보tree fixture 누락 수정 — EXACT_TREE_TESTED
 이전43e98168 후보에미추적fixture디렉터리2파일누락되어CHANGES_REQUIRED. 이전Worktree91PASS를이전treePASS로간주하지않는다. 새tree d7da4caad200d012cc58751bdf798c320c3e4650는이전tree+fixtures/yt08-port/endcards.mjs 및navigation-surface.mjs만추가. 통합e3a3760 원본과대조,후보ClaimLedger상대import외변경없음. 전체변경목록/blob/SHA는PR26-FIXTURE-FIX-RESULT.json. 새tree git archive를별도exact-tree-fixture-fix에추출하고기존node_modules만연결,소스overlay없이91/91PASS·skip0·bundle재현3·구문PASS. 시험후전체소스manifest동일확인.
 생산연결공백유지: A0content-entry:9와A1/membercontent:8에서기본효과생성시ledger주입없음. trustedcomposer의문서별원장동일성/수명/소유scope를Core·Content담당과합의후해당생성호출및번들입력에주입필요. 이번엔그코드수정0. 독립재검토는새tree전체의재현성과추가fixture2개진위/import범위,이전지적해소에한정. 승인전Commit/Push/PR/merge0. 제품E2ENOT_RUN·ShortsPARTIAL·IG04BLOCKED·MVP_FINAL_COMPLETE=false.
+
+## 2026-11-04 Shorts suspend submission candidate
+
+- Source/generator/three-content-bundle review closed as independent PASS (user confirmed); no product acceptance inferred.
+- Submission base ca07679edcc5ddbd61dbf5ef27cfb287395fde6b includes merged #103. Preserve base ClaimLedger and session-adapter; do not overlay older #26 or unintegrated production tree cd086159762fed2eb7739f10147d226d8a987be0, or latest #87 0a1b5e7e07ee3cfd47fe7a8ca495b3044ac5e6ca.
+- Port only ShortsControl.suspend and A0ShortsEffect.stopEpoch listener suspension; regenerate three Content bundles from unchanged base generators. Source/bundle parity and syntax PASS; changed-base claim/SPA/failure/media regressions 34/34 PASS. Earlier 26/26, 3/3 and reviews are separate reusable evidence, not new-base acceptance.
+- Exact tree/diff/file hashes and commands: submission-preparation/integration-ca07679e/SUBMISSION-RESULT.json in the existing Shorts evidence workspace. Dedicated index only; no Commit/Push/installation/service/START.
+- Original DIRECT_SHORTS_FAIL remains unresolved. Accounts-frame contract request and Native export request are unchanged; no duplicate requests. Shorts PARTIAL; product E2E NOT_RUN; MVP_FINAL_COMPLETE=false.
