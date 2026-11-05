@@ -1,3 +1,5 @@
+import SiteClassificationCard from "./SiteClassification";
+import PurposeUsageByDay from "./PurposeUsageCharts";
 import { SiteMark } from "./FocusShared";
 import { requestedWorkspaceView } from "./workspaceNavigation";
 import { submittedSiteHost } from "./siteHostConfirmation";
@@ -750,6 +752,7 @@ function Statistics({
       {state.error && summary && <p>조회에 실패해 마지막 성공 결과를 유지합니다.</p>}
       {summary && <Metrics data={summary} />}
       <AccessPattern from={range.from} to={range.to}/>
+      <PurposeUsageByDay/>
       <div className="table-card"><table className="statistics-table"><caption>대상별 접근과 반복</caption><colgroup><col style={{width:"28%"}}/><col style={{width:"8%"}}/><col style={{width:"8%"}}/><col style={{width:"8%"}}/><col style={{width:"10%"}}/><col style={{width:"12%"}}/><col style={{width:"26%"}}/></colgroup><thead><tr><th>대상</th><th>전체 접근</th><th>반복 접근</th><th>차단 접근</th><th>반복 비율</th><th>수집 상태</th><th>기록·설정</th></tr></thead><tbody>
         {targets.map((t) => (
           <tr key={String(t.host)}><td>
@@ -776,21 +779,7 @@ function Statistics({
   );
 }
 function SiteClassification({open}:{open:()=>void}) {
-  const [counts,setCounts]=useState<number[]|null>(null);
-  const [error,setError]=useState("");
-  useEffect(()=>{const controller=new AbortController();async function load(){
-    const all:Site[]=[];let cursor:string|null=null;const seen=new Set<string>();
-    do {const page:Page<Site>=await request("/sites?"+new URLSearchParams({limit:"100",...(cursor?{cursor}:{})}),"GET",undefined,{signal:controller.signal});
-      if(!Array.isArray(page.items))throw new ApiError("SERVER_RESPONSE_INVALID",502);
-      all.push(...page.items);cursor=page.next_cursor;if(cursor&&seen.has(cursor))throw new ApiError("INVALID_CURSOR",400);if(cursor)seen.add(cursor);
-    }while(cursor&&!controller.signal.aborted);
-    if(!controller.signal.aborted)setCounts(["FOCUS","DISTRACTION","GENERAL"].map(p=>all.filter(s=>s.purpose===p).length));
-  }void load().catch(e=>{if(!controller.signal.aborted)setError(message(e));});return()=>controller.abort();},[]);
-  const total=counts?.reduce((a,b)=>a+b,0)??0;
-  const first=counts&&total?counts[0]/total*100:0,second=counts&&total?(counts[0]+counts[1])/total*100:0;
-  return <section className="card site-classification"><div className="panel-heading"><h4>사이트 분류 현황</h4><button onClick={open}>관리 →</button></div><p className="muted">현재 등록한 사이트 · 이용 목적 기준</p>
-    {error?<p role="alert">{error}</p>:counts===null?<p role="status">사이트 분류를 확인하고 있습니다.</p>:total===0?<p>등록된 사이트가 없습니다.</p>:<div className="distribution"><div className="donut" role="img" aria-label={"등록 사이트 "+total+"개"} style={{background:"conic-gradient(#579fff 0% "+first+"%, #7dd3e8 "+first+"% "+second+"%, #bdd6ef "+second+"% 100%)"}}><div><strong>{total}</strong><small>등록 사이트</small></div></div><ul>{counts.map((count,i)=><li key={i}><span>{["집중 대상","방해 대상","일반 이용"][i]}</span><strong>{count}개</strong><small>{(count/total*100).toFixed(1)}%</small></li>)}</ul></div>}
-  </section>;
+  return <SiteClassificationCard open={open}/>;
 }
 function Dashboard({ owner, sessions, records, sites }: { owner:string; sessions: () => void; records: () => void; sites: () => void }) {
   const state = useAction();
