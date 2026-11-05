@@ -26,4 +26,3 @@ export default function HourlyAccessPattern({from,to}:{from?:string;to?:string})
   {current.error?<p role="alert">{current.error}</p>:!current.rows?<p role="status">시간대별 접근 기록을 확인하고 있습니다.</p>:<div className="table-card"><table><caption>00시부터 23시까지 시간대별 접근·반복 기록</caption><thead><tr><th>시간대</th><th>접근</th><th>반복 접근</th><th>차단 접근</th><th>반복 비율</th><th>수집 상태</th></tr></thead><tbody>{current.rows.map((row,hour)=><tr key={hour}><th scope="row">{String(hour).padStart(2,"0")}시</th><td>{row.total_access??"미확인"}</td><td>{row.repeat_access??"미확인"}</td><td>{row.blocked_access??"미확인"}</td><td>{row.repeat_ratio===null?"미확인":metricPercentage(row.repeat_ratio)+"%"}</td><td>{{COMPLETE:"수집 완료",PARTIAL:"일부 수집",NO_DATA:"자료 없음",NOT_COLLECTED:"미수집",REVIEW_REQUIRED:"추가 확인 필요"}[row.quality]}</td></tr>)}</tbody></table><p>조회 기준 시각 {current.rows[0].as_of}</p></div>}
  </section>;
 }
-
