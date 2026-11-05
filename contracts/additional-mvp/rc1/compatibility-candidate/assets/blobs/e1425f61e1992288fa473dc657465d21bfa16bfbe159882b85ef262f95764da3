@@ -1,0 +1,46 @@
+{
+  "manifest_version": 3,
+  "name": "FOCURVE",
+  "version": "0.1.25",
+  "minimum_chrome_version": "120",
+  "description": "나의 집중을 위한 사이트 관리·접근 기록",
+  "action": {
+    "default_title": "FOCURVE · 나의 집중",
+    "default_popup": "member-ui/popup.html"
+  },
+  "background": {
+    "service_worker": "background/service-worker.js"
+  },
+  "permissions": [
+    "declarativeNetRequest",
+    "alarms",
+    "storage",
+    "tabs",
+    "webNavigation",
+    "scripting",
+    "nativeMessaging"
+  ],
+  "host_permissions": [
+    "http://*/*",
+    "https://*/*"
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": [
+        "blocked/blocked.html",
+        "blocked/shorts.html"
+      ],
+      "matches": [
+        "http://*/*",
+        "https://*/*"
+      ]
+    }
+  ],
+  "externally_connectable": {
+    "matches": [
+      "http://127.0.0.1/*",
+      "http://localhost/*",
+      "https://localhost/*"
+    ]
+  }
+}
