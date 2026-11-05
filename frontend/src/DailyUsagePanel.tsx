@@ -15,7 +15,7 @@ export default function DailyUsagePanel({executor,records}:{executor:string;reco
  const historyKey=executor+"/"+reload;
  useEffect(()=>{
   if(!includeDeleted)return;let disposed=false;const abort=new AbortController();setHistory({key:"",rows:[],error:""});
-  void listSiteTimeDeletions(executor,abort.signal).then(rows=>{if(!disposed)setHistory({key:historyKey,rows,error:""});}).catch(error=>{if(!disposed&&!abort.signal.aborted)setHistory({key:historyKey,rows:[],error:message(error)});});
+  void listSiteTimeDeletions(executor,abort.signal).then(rows=>{if(!disposed)setHistory({key:historyKey,rows,error:""});}).catch(error=>{if(disposed||abort.signal.aborted)return;setHistory({key:historyKey,rows:[],error:message(error)});if(error instanceof ApiError&&error.status===401)window.dispatchEvent(new Event("focurve:authentication-expired"));});
   return()=>{disposed=true;abort.abort();};
  },[executor,includeDeleted,historyKey]);
  const currentHistory=includeDeleted&&history.key===historyKey?history:null;
@@ -29,7 +29,7 @@ export default function DailyUsagePanel({executor,records}:{executor:string;reco
  useEffect(()=>{
   let disposed=false;const abort=new AbortController();setResult({key,data:null,error:""});
   if(!policy||!date)return()=>{disposed=true;abort.abort();};
-  void dailyUsage(executor,policy,date,abort.signal).then(data=>{if(!disposed)setResult({key,data,error:""});}).catch(error=>{if(!disposed&&!abort.signal.aborted)setResult({key,data:null,error:error instanceof ApiError&&[404,503].includes(error.status)?"이 날짜의 검증된 자료를 확인하지 못했습니다. 사용량 0 또는 이용 가능 상태를 뜻하지 않습니다.":message(error)});});
+  void dailyUsage(executor,policy,date,abort.signal).then(data=>{if(!disposed)setResult({key,data,error:""});}).catch(error=>{if(disposed||abort.signal.aborted)return;setResult({key,data:null,error:error instanceof ApiError&&[404,503].includes(error.status)?"이 날짜의 검증된 자료를 확인하지 못했습니다. 사용량 0 또는 이용 가능 상태를 뜻하지 않습니다.":message(error)});if(error instanceof ApiError&&error.status===401)window.dispatchEvent(new Event("focurve:authentication-expired"));});
   return()=>{disposed=true;abort.abort();};
  },[executor,policy,date,key,reload]);
  const visible=result.key===key?result:{key,data:null,error:""};const data=visible.data;

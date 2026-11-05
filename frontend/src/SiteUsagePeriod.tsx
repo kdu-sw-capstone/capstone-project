@@ -1,5 +1,5 @@
 import {useEffect,useState} from "react";
-import {message} from "./api";
+import {ApiError,message} from "./api";
 import type {ConfigRecord} from "./additionalConfigApi";
 import {kstToday,periodEnding,siteUsagePeriod,type UsagePeriod} from "./siteUsagePeriodApi";
 
@@ -19,7 +19,7 @@ function PeriodReader({executor,policy}:{executor:string;policy:ConfigRecord|und
   if(!policyId||query.key!==context)return;
   let disposed=false;const abort=new AbortController();
   setResult({key:context,attempt:query.attempt,data:null,error:"",busy:true});
-  void siteUsagePeriod(executor,policyId,from,to,abort.signal).then(data=>{if(!disposed)setResult({key:context,attempt:query.attempt,data,error:"",busy:false});}).catch(error=>{if(!disposed&&!abort.signal.aborted)setResult({key:context,attempt:query.attempt,data:null,error:message(error),busy:false});});
+  void siteUsagePeriod(executor,policyId,from,to,abort.signal).then(data=>{if(!disposed)setResult({key:context,attempt:query.attempt,data,error:"",busy:false});}).catch(error=>{if(disposed||abort.signal.aborted)return;setResult({key:context,attempt:query.attempt,data:null,error:message(error),busy:false});if(error instanceof ApiError&&error.status===401)window.dispatchEvent(new Event("focurve:authentication-expired"));});
   return()=>{disposed=true;abort.abort();};
  },[context,query,executor,policyId,from,to]);
  const visible=result.key===context&&result.attempt===query.attempt&&query.key===context?result:null;

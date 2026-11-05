@@ -22,13 +22,16 @@ function GoalView({editor}:{editor:boolean}){
  const [hours,setHours]=useState("0"),[minutes,setMinutes]=useState("0"),[timezone,setTimezone]=useState(""),[pending,setPending]=useState<Write|null>(null);
  const scope=useRef({current:false}),reading=useRef(false),writing=useRef(false),readEpoch=useRef(0),editRevision=useRef<number|null>(null),loadRef=useRef<()=>Promise<Goal|undefined>>(async()=>undefined);
  const readAbort=useRef<AbortController|null>(null);
+ const confirmedVersion=useRef(0);
  // A retired GET must neither block a post-save read nor unlock its successor.
  function retireRead(){readEpoch.current++;readAbort.current?.abort();readAbort.current=null;reading.current=false;}
  useEffect(()=>{
   const life={current:true};scope.current=life;
   const fail=(e:unknown)=>{if(!life.current)return;setError(e instanceof Error?e.message:"결과를 확인하지 못했습니다.");if(e instanceof ApiError&&e.status===401)window.dispatchEvent(new Event("focurve:authentication-expired"));};
   const load=async()=>{if(!life.current||reading.current||writing.current)return;reading.current=true;const epoch=readEpoch.current,abort=new AbortController();readAbort.current=abort;try{
-   const row=valid(await request<Goal>("/daily-focus-goal/today","GET",undefined,{signal:abort.signal}));if(!life.current||epoch!==readEpoch.current)return;setValue(row);setError("");return row;
+   const row=valid(await request<Goal>("/daily-focus-goal/today","GET",undefined,{signal:abort.signal}));if(!life.current||epoch!==readEpoch.current)return;
+   if(row.version<confirmedVersion.current)throw Error("저장된 목표보다 이전 버전의 조회입니다. 목표 상태를 다시 확인해 주세요.");
+   confirmedVersion.current=row.version;setValue(row);setError("");return row;
   }catch(e){if(epoch===readEpoch.current)fail(e);}finally{if(life.current&&epoch===readEpoch.current){reading.current=false;readAbort.current=null;}}};
   loadRef.current=load;void load();const timer=setInterval(()=>void load(),5000);
   const changed=()=>{retireRead();void load();};window.addEventListener("focurve:goal-changed",changed);
@@ -43,6 +46,7 @@ function GoalView({editor}:{editor:boolean}){
   setPending(intent);retireRead();writing.current=true;setBusy(true);setWriteError("");
   try{const ack=await request<Goal>("/daily-focus-goal","PUT",intent.body,{version:intent.version,key:intent.key});if(!life.current)return;
    if(ack?.goal_minutes!==intent.body.goal_minutes||ack?.timezone!==intent.body.timezone||ack?.version!==intent.version+1)throw Error("목표 저장 응답 불일치");
+   confirmedVersion.current=Math.max(confirmedVersion.current,ack.version);
    setPending(null);setEditing(false);window.dispatchEvent(new Event("focurve:goal-changed"));
   }catch(e){if(!life.current)return;
    if(e instanceof ApiError&&[400,403,412,422,428].includes(e.status))setPending(null);
