@@ -5,6 +5,10 @@ import {dailyUsage,type DailyUsage} from "./dailyUsageApi";
 import type {ConfigRecord} from "./additionalConfigApi";
 import {ApiError} from "./api";
 vi.mock("./dailyUsageApi",()=>({dailyUsage:vi.fn()}));
+it.each([false,true])("propagates only the current period query 401 (retired=%s)",async retired=>{
+ let reject!:(error:unknown)=>void;vi.mocked(dailyUsage).mockImplementation(()=>new Promise((_,r)=>{reject=r;}));const expired=vi.fn();window.addEventListener("focurve:authentication-expired",expired);
+ try{const view=render(<SiteUsagePeriod executor={executor} policy={policy}/>);setRange("2026-11-01","2026-11-01");query();await waitFor(()=>expect(reject).toBeTypeOf("function"));if(retired)view.unmount();await act(async()=>reject(new ApiError("UNAUTHENTICATED",401)));expect(expired).toHaveBeenCalledTimes(retired?0:1);}finally{window.removeEventListener("focurve:authentication-expired",expired);}
+});
 const executor="00000000-0000-4000-8000-000000000001",id="00000000-0000-4000-8000-000000000002";
 const policy:ConfigRecord={config_id:id,executor_id:executor,version:1,value:{kind:"SITE_TIME",scope:{host:"a-very-long-policy-host.example.org"}},deleted_at:null,saved_state:"SAVED",runtime_apply_state:"PENDING",saved_runtime_revision:1,applied_runtime_revision:null,next_focus_revision:1,updated_at:"2026-10-29T00:00:00.000Z"};
 const day=(date:string):DailyUsage=>({policy_id:id,executor_id:executor,day_start_at:new Date(Date.parse(date+"T00:00:00Z")-9*3600000).toISOString(),day_end_at:new Date(Date.parse(date+"T00:00:00Z")+15*3600000).toISOString(),timezone:"Asia/Seoul",timezone_version:1,day_kind:"NORMAL",confirmed_ms:5000,budget_carry_debit_ms:7000,remaining_ms:null,daily_limit_ms:60000,active_reasons:[],enforcement_state:"UNKNOWN",next_usable_at:null,next_usable_status:"UNKNOWN",quality:"PARTIAL",as_of:"2026-11-01T00:00:00.000Z"});

@@ -8,6 +8,26 @@ const get=vi.mocked(request);
 const row=(over:Partial<Goal>={}):Goal=>({goal_minutes:180,timezone:"Asia/Seoul",version:1,goal_effective_date:"2026-11-11",updated_at:null,confirmed_ms:7500000,last_confirmed_at:"2026-11-11T03:00:00Z",date:"2026-11-11",time_status:"CONFIRMED_LOWER_BOUND",...over});
 afterEach(()=>{cleanup();get.mockReset();vi.useRealTimers();});
 describe("daily goal actual confirmed projection",()=>{
+ it("keeps the last confirmed goal when a later GET regresses its resource version",async()=>{
+  get.mockResolvedValueOnce(row({goal_minutes:65,version:2})).mockResolvedValue(row());
+  render(<DailyFocusGoal owner="A" editor/>);await screen.findByText(/현재 목표 1시간 5분/);
+  fireEvent.click(screen.getByRole("button",{name:"목표 상태 재조회"}));
+  await screen.findByRole("alert");expect(screen.getByText(/현재 목표 1시간 5분/)).toBeInTheDocument();
+ });
+ it("does not carry a previous account's goal version into a new unset account",async()=>{
+  get.mockResolvedValueOnce(row({version:8})).mockResolvedValue(row({goal_minutes:null,version:0}));
+  const view=render(<DailyFocusGoal owner="A" editor/>);await screen.findByText(/현재 목표 3시간 0분/);
+  view.rerender(<DailyFocusGoal owner="B" editor/>);await screen.findByText(/목표 미설정/);
+  expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+ });
+ it("fences a pre-save version after the ACK and recovers by reading the persisted goal",async()=>{
+  let reads=0;get.mockImplementation(async(_path,method,body)=>method==="PUT"?row({...body as Partial<Goal>,version:2}):row({goal_minutes:++reads>=3?65:180,version:reads>=3?2:1}));
+  render(<DailyFocusGoal owner="A" editor/>);const edit=await screen.findByRole("button",{name:"목표 수정"});await waitFor(()=>expect(edit).toBeEnabled());fireEvent.click(edit);
+  fireEvent.change(screen.getByLabelText("목표 시간"),{target:{value:"1"}});fireEvent.change(screen.getByLabelText("목표 분"),{target:{value:"5"}});fireEvent.click(screen.getByRole("button",{name:"목표 저장"}));
+  await screen.findByRole("alert");expect(reads).toBe(2);
+  fireEvent.click(screen.getByRole("button",{name:"목표 상태 재조회"}));await screen.findByText(/현재 목표 1시간 5분/);
+  expect(screen.queryByRole("alert")).not.toBeInTheDocument();expect(get.mock.calls.filter(c=>c[1]==="PUT")).toHaveLength(1);
+ });
  it("validates the approved minutes without borrowing the session duration cap",()=>{
   expect(goalMinutes("0","1")).toBe(1);expect(goalMinutes("24","0")).toBe(1440);
   for(const [h,m] of [["0","0"],["24","1"],["1","60"],["1.5","0"],["","1"]])expect(()=>goalMinutes(h,m)).toThrow();

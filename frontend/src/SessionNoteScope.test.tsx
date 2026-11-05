@@ -7,6 +7,23 @@ vi.mock("./api",async original=>({...await original<typeof import("./api")>(),re
 const a="00000000-0000-4000-8000-000000000001",b="00000000-0000-4000-8000-000000000002";
 const input=()=>screen.getByLabelText("세션 메모 · 선택");
 beforeEach(()=>{vi.mocked(request).mockReset();});
+it.each([{text:"another note",version:2},{text:"my note",version:1}])("keeps the draft unconfirmed when the save ACK does not match the submitted note and next revision: %j",async ack=>{
+ const onDraft=vi.fn();vi.mocked(request).mockImplementation(async(_path,method)=>method==="PUT"?ack:{text:"stored",version:1});
+ render(<SessionNote sessionId={a} onDraft={onDraft}/>);await waitFor(()=>expect(input()).toHaveValue("stored"));
+ fireEvent.change(input(),{target:{value:"my note"}});fireEvent.click(screen.getByRole("button",{name:"메모 저장"}));
+ await screen.findByRole("alert");expect(input()).toHaveValue("my note");expect(onDraft).not.toHaveBeenCalled();expect(screen.queryByText("메모를 저장했습니다.")).not.toBeInTheDocument();
+});
+it("saves the exact note and reads it back after leaving and returning to its session",async()=>{
+ let stored={text:"stored",version:1};const onDraft=vi.fn();
+ vi.mocked(request).mockImplementation(async(path,method,body,options)=>{
+  if(path.includes(b))return {text:"B note",version:0};
+  if(method==="PUT"){expect(options?.version).toBe(stored.version);stored={text:(body as {text:string}).text,version:stored.version+1};}return {...stored};
+ });
+ const view=render(<SessionNote sessionId={a} onDraft={onDraft}/>);await waitFor(()=>expect(input()).toHaveValue("stored"));
+ fireEvent.change(input(),{target:{value:"saved note"}});fireEvent.click(screen.getByRole("button",{name:"메모 저장"}));await screen.findByText("메모를 저장했습니다.");expect(onDraft).toHaveBeenCalledWith("");
+ view.rerender(<SessionNote sessionId={b}/>);await waitFor(()=>expect(input()).toHaveValue("B note"));view.rerender(<SessionNote sessionId={a}/>);await waitFor(()=>expect(input()).toHaveValue("saved note"));
+ expect(vi.mocked(request).mock.calls.filter(c=>c[1]==="PUT")).toHaveLength(1);
+});
 it("starts the new session read immediately and rejects an old session's delayed note",async()=>{
  let resolve!:(v:unknown)=>void;vi.mocked(request).mockImplementation(async path=>path.includes(a)?new Promise(r=>{resolve=r;}):{text:"B note",version:1});
  const view=render(<SessionNote sessionId={a}/>);await waitFor(()=>expect(resolve).toBeTypeOf("function"));view.rerender(<SessionNote sessionId={b}/>);await waitFor(()=>expect(input()).toHaveValue("B note"));await act(async()=>resolve({text:"A note",version:1}));expect(input()).toHaveValue("B note");

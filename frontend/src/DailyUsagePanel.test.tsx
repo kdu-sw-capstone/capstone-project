@@ -11,6 +11,13 @@ const executor="00000000-0000-4000-8000-000000000001",policy="00000000-0000-4000
 const row:ConfigRecord={config_id:policy,executor_id:executor,version:1,value:{kind:"SITE_TIME",scope:{host:"example.org"}},deleted_at:null,saved_state:"SAVED",runtime_apply_state:"PENDING",saved_runtime_revision:1,applied_runtime_revision:null,next_focus_revision:1,updated_at:"2026-10-29T00:00:00.000Z"};
 const value:DailyUsage={policy_id:policy,executor_id:executor,day_start_at:"2026-10-29T00:00:00.000Z",day_end_at:"2026-10-30T00:00:00.000Z",timezone:"UTC",timezone_version:1,day_kind:"NORMAL",confirmed_ms:5000,budget_carry_debit_ms:7000,daily_limit_ms:60000,remaining_ms:null,active_reasons:[],enforcement_state:"UNKNOWN",next_usable_at:null,next_usable_status:"UNKNOWN",quality:"PARTIAL",as_of:"2026-10-29T00:00:05.000Z"};
 beforeEach(()=>{vi.mocked(dailyUsage).mockReset();vi.mocked(listSiteTimeDeletions).mockReset().mockResolvedValue([]);});
+it.each([["usage",false],["usage",true],["history",false],["history",true]] as const)("expires authentication only for the current %s read (retired=%s)",async(kind,retired)=>{
+ let reject!:(error:unknown)=>void;const pending=new Promise<never>((_,r)=>{reject=r;});const expired=vi.fn();window.addEventListener("focurve:authentication-expired",expired);
+ try{vi.mocked(dailyUsage).mockReturnValue(pending);vi.mocked(listSiteTimeDeletions).mockReturnValue(pending);
+  const view=render(<DailyUsagePanel executor={executor} records={kind==="usage"?[row]:[]}/>);if(kind==="history")fireEvent.click(screen.getByLabelText("삭제한 사이트 정책도 조회"));
+  if(retired)view.unmount();await act(async()=>reject(new ApiError("UNAUTHENTICATED",401)));expect(expired).toHaveBeenCalledTimes(retired?0:1);
+ }finally{window.removeEventListener("focurve:authentication-expired",expired);}
+});
 it("discovers deleted policy usage after reentry without keeping a browser reference",async()=>{
  const deleted={...row,version:2,deleted_at:"2026-10-30T00:00:00.000Z"};vi.mocked(listSiteTimeDeletions).mockResolvedValue([deleted]);vi.mocked(dailyUsage).mockResolvedValue(value);
  const first=render(<DailyUsagePanel executor={executor} records={[]}/>);expect(dailyUsage).not.toHaveBeenCalled();
