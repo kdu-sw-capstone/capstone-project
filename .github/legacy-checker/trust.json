@@ -1,0 +1,17 @@
+{
+  "schema": "FOCURVE_LEGACY_TRUST_PROPOSAL_1",
+  "enabled": false,
+  "repository": "kdu-sw-capstone/capstone-project",
+  "repository_id": 1318294980,
+  "control_ref": "refs/heads/develop",
+  "candidate_pr": null,
+  "candidate_sha": null,
+  "candidate_tree": "4d25331e2508bdb47ea797d4ab36cc9582bb808a",
+  "candidate_parent": "88d734dfdbc776c9fcb6c2f5544aaa395765fac4",
+  "observed_integration": "88d734dfdbc776c9fcb6c2f5544aaa395765fac4",
+  "base_review": "REQUIRED_NOT_INHERITED",
+  "tool_path": "contracts/additional-mvp/rc1/compatibility-candidate",
+  "tool_manifest_sha256": "67f10274cdafdae0da00cdeef2b6eecc449b4bb7b83a8b48c62a3f092c7b5b52",
+  "profile": "integration108-checkout-proposal",
+  "operational_approval": "NOT_GRANTED"
+}

@@ -1,0 +1,63 @@
+name: Trusted legacy isolated verification (NOT DEPLOYED)
+on:
+  workflow_dispatch:
+    inputs:
+      candidate_sha:
+        required: true
+        type: string
+permissions:
+  contents: read
+  pull-requests: read
+  actions: read
+jobs:
+  verify:
+    if: github.ref == 'refs/heads/develop'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment: legacy-checker-review
+    steps:
+      - name: Validate administrator root before checkout
+        env:
+          ROOT_JSON: ${{ vars.LEGACY_EXTERNAL_ROOT_JSON }}
+          ROOT_PIN: ${{ vars.LEGACY_EXTERNAL_ROOT_SHA256 }}
+          REQUEST_SHA: ${{ inputs.candidate_sha }}
+        shell: python
+        run: |
+          import os,json,hashlib,pathlib,re
+          raw=os.environ['ROOT_JSON'].encode()
+          assert hashlib.sha256(raw).hexdigest()==os.environ['ROOT_PIN']
+          root=json.loads(raw)
+          assert root['enabled'] is True
+          assert root['workflow_sha']==os.environ['GITHUB_WORKFLOW_SHA']
+          assert re.fullmatch('[0-9a-f]{40}',root['control_sha'])
+          assert re.fullmatch('[0-9a-f]{40}',os.environ['REQUEST_SHA'])
+          assert os.environ['REQUEST_SHA'] not in (root['control_sha'],root['workflow_sha'])
+          target=pathlib.Path(os.environ['RUNNER_TEMP'])/'external-root.json'
+          target.write_bytes(raw)
+          with open(os.environ['GITHUB_ENV'],'a') as f:
+              f.write('CONTROL_SHA='+root['control_sha']+'\n')
+              f.write('LEGACY_EXTERNAL_ROOT='+str(target)+'\n')
+              f.write('LEGACY_EXTERNAL_ROOT_SHA256='+os.environ['ROOT_PIN']+'\n')
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+        with:
+          ref: ${{ env.CONTROL_SHA }}
+          path: control
+          persist-credentials: false
+      - name: Verify entire executable control surface before execution
+        shell: python
+        run: |
+          import os,json,pathlib,hashlib
+          r=json.loads(pathlib.Path(os.environ['LEGACY_EXTERNAL_ROOT']).read_bytes())
+          for name,key in [('launcher.py','launcher_sha256'),('trust.json','trust_sha256')]:
+              p=pathlib.Path('control/.github/legacy-checker')/name
+              assert not p.is_symlink()
+              assert hashlib.sha256(p.read_bytes()).hexdigest()==r[key]
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+        with:
+          ref: ${{ inputs.candidate_sha }}
+          path: candidate
+          persist-credentials: false
+      - name: Live approval and complete tooling validation
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: python -I -B control/.github/legacy-checker/launcher.py --control control --candidate candidate --output "$RUNNER_TEMP/legacy-result"
