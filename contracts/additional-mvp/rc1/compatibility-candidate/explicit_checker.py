@@ -43,9 +43,10 @@ def exact_revision(root,expected,reviewed_binding=None,reviewed_binding_sha=None
     b=json.loads(raw)
     need(set(b)=={'kind','sourceCommit','sourceTree','verificationCommit','verificationTree','parents','toolingManifestSHA256','reviewReference'},'FOLLOWUP_BINDING_SCHEMA')
     need(b['kind']=='EXTERNALLY_REVIEWED_EXACT_CHECKER_COMMIT' and b['sourceCommit']==SOURCE_COMMIT and b['sourceTree']==SOURCE_TREE and b['toolingManifestSHA256']==expected,'FOLLOWUP_SOURCE_BINDING')
-    need(b['verificationCommit']==head and b['parents']==[SOURCE_COMMIT] and isinstance(b['reviewReference'],str) and bool(b['reviewReference']),'FOLLOWUP_EXACT_REVISION_REQUIRED')
+    need(b['verificationCommit']==head and isinstance(b['parents'],list) and len(b['parents'])==1 and all(isinstance(x,str) and len(x)==40 for x in b['parents']) and isinstance(b['reviewReference'],str) and bool(b['reviewReference']),'FOLLOWUP_EXACT_REVISION_REQUIRED')
     commit=git(root,'cat-file','-p',head).decode().splitlines()
-    need([line.split()[1] for line in commit if line.startswith('parent ')]==[SOURCE_COMMIT],'FOLLOWUP_PARENT_CHANGED')
+    need([line.split()[1] for line in commit if line.startswith('parent ')]==b['parents'],'FOLLOWUP_PARENT_CHANGED')
+    need(subprocess.run(['git','--no-optional-locks','-C',str(root),'merge-base','--is-ancestor',SOURCE_COMMIT,head],stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL).returncode==0,'SOURCE_ANCESTRY_MISMATCH')
     need(next(line.split()[1] for line in commit if line.startswith('tree '))==b['verificationTree'],'FOLLOWUP_TREE_CHANGED')
     return head
 
@@ -79,7 +80,7 @@ def checkout_snapshot(root,package,expected,profile,reviewed_binding=None,review
     fingerprint=sha(json.dumps({p:sha(v) for p,v in sorted(frozen.items())},sort_keys=True).encode()+raw)
     return frozen,fingerprint
 
-def verify_current(root,package,expected,profile,reviewed_binding=None,reviewed_binding_sha=None):
+def verify_current(root,package,expected,profile,reviewed_binding=None,reviewed_binding_sha=None,contract_suite=False):
     frozen,before=checkout_snapshot(root,package,expected,profile,reviewed_binding,reviewed_binding_sha)
     # No candidate module executes before operator-pinned tool verification.
     spec=importlib.util.spec_from_file_location('explicit_legacy_candidate',package/'legacy_compatibility_candidate.py')
@@ -87,6 +88,13 @@ def verify_current(root,package,expected,profile,reviewed_binding=None,reviewed_
     v=candidate.CandidateVerifier(package);p=v.profile(profile,SOURCE_COMMIT)
     # Exact immutable commit/parent provenance, plus the separately checked live checkout.
     need(v.verify_repo(root,commit=SOURCE_COMMIT,profile=profile)['candidateVerification']=='PASS','PROFILE_VERIFICATION_FAILED')
+    if contract_suite:
+        suite_spec=importlib.util.spec_from_file_location('pinned_contract_suite',package/'ci_contract_suite.py')
+        suite_module=importlib.util.module_from_spec(suite_spec);suite_spec.loader.exec_module(suite_module)
+        report=suite_module.run_frozen_contract_suite(root,frozen,v)
+        _after,after=checkout_snapshot(root,package,expected,profile,reviewed_binding,reviewed_binding_sha)
+        need(before==after,'CHECKOUT_CHANGED_DURING_VERIFICATION')
+        return {'verification':'PASS_ISOLATED_ONLY','sourceCommit':SOURCE_COMMIT,'sourceTree':SOURCE_TREE,'contractSuite':report,'toolingManifestSHA256':expected,'activation':False,'approval':'NOT_GRANTED','productAcceptance':'NOT_RUN'}
     # Reuse the owning original functions/tests as written; only this explicit entry
     # delegates exact accepted bytes after whole-checkout verification. No skip/fallback.
     tree=ast.parse(frozen[OWNER]);wanted={'CREATE_ADDITIONS','load','legacy_bytes_preserved'};nodes=[];methods=[]
@@ -110,6 +118,6 @@ def verify_current(root,package,expected,profile,reviewed_binding=None,reviewed_
     after_frozen,after=checkout_snapshot(root,package,expected,profile,reviewed_binding,reviewed_binding_sha);need(before==after,'CHECKOUT_CHANGED_DURING_VERIFICATION')
     return {'verification':'PASS_ISOLATED_ONLY','sourceCommit':SOURCE_COMMIT,'sourceTree':SOURCE_TREE,'profile':profile,'checkoutFingerprint':before,'restoredOriginalFiles':17,'ownerTests':result.testsRun,'ownerLog':stream.getvalue(),'toolingManifestSHA256':expected,'activation':False,'approval':'NOT_GRANTED','productAcceptance':'NOT_RUN'}
 if __name__=='__main__':
-    a=argparse.ArgumentParser();a.add_argument('--repo',required=True);a.add_argument('--profile',required=True);a.add_argument('--expected-tooling-manifest-sha256',required=True);a.add_argument('--reviewed-binding');a.add_argument('--reviewed-binding-sha256');args=a.parse_args()
-    try:print(json.dumps(verify_current(pathlib.Path(args.repo),pathlib.Path(__file__).resolve().parent,args.expected_tooling_manifest_sha256,args.profile,args.reviewed_binding,args.reviewed_binding_sha256),indent=2))
-    except Exception as e:print(json.dumps({'verification':'REJECTED','reason':str(e),'activation':False}));sys.exit(1)
+    a=argparse.ArgumentParser();a.add_argument('--repo',required=True);a.add_argument('--profile',required=True);a.add_argument('--expected-tooling-manifest-sha256',required=True);a.add_argument('--reviewed-binding');a.add_argument('--reviewed-binding-sha256');a.add_argument('--contract-suite',action='store_true');args=a.parse_args()
+    try:print(json.dumps(verify_current(pathlib.Path(args.repo),pathlib.Path(__file__).resolve().parent,args.expected_tooling_manifest_sha256,args.profile,args.reviewed_binding,args.reviewed_binding_sha256,args.contract_suite),indent=2))
+    except Exception as e:print(json.dumps({'verification':'REJECTED','reason':str(e),'contractSuite':getattr(e,'report',None),'activation':False}));sys.exit(1)
