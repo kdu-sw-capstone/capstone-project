@@ -1,0 +1,17 @@
+# REGISTRATION-ONLY DESIGN; NOT PUBLISHED. Manual main execution always rejects.
+name: Trusted legacy isolated verification (NOT DEPLOYED)
+on:
+  workflow_dispatch:
+    inputs:
+      candidate_sha:
+        required: true
+        type: string
+permissions: {}
+jobs:
+  registration_only:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Refuse registration-only definition execution
+        run: |
+          echo "Registration only. Select the approved develop ref; this definition cannot verify a candidate."
+          exit 1
