@@ -49,10 +49,11 @@ def authorize(root,trust,f):
  need(trust['base_review']=='CURRENT_BASE_REVIEWED','BASE_REVIEW_REQUIRED')
  need(sha(trust['candidate_sha']) and f['candidate_sha']==trust['candidate_sha'],'CANDIDATE_SHA_MISMATCH')
  need(f['candidate_tree']==trust['candidate_tree'] and f['candidate_parents']==[trust['candidate_parent']],'CANDIDATE_TREE_PARENT_MISMATCH')
- need(f['integration_sha']==trust['candidate_parent']==trust['observed_integration'],'CURRENT_BASE_MISMATCH')
+ need(f['integration_sha']==trust['source_commit']==trust['observed_integration'],'CURRENT_BASE_MISMATCH')
  need(trust['tool_manifest_sha256']==root['tool_manifest_sha256'] and h64(root['tool_manifest_sha256']),'TOOL_PIN_NOT_EXTERNAL')
- need(f['candidate_pr']['number']==trust['candidate_pr'] and f['candidate_pr']['head']['sha']==trust['candidate_sha'] and f['candidate_pr']['base']['sha']==trust['candidate_parent'],'CANDIDATE_PR_BINDING_MISMATCH')
+ need(f['candidate_pr']['number']==trust['candidate_pr'] and f['candidate_pr']['head']['sha']==trust['candidate_sha'] and f['candidate_pr']['base']['sha']==trust['source_commit'],'CANDIDATE_PR_BINDING_MISMATCH')
  need(f['control_pr']['number']==root['control_pr'] and f['control_pr']['head']['sha']==root['control_sha'],'CONTROL_PR_BINDING_MISMATCH')
+ need(f['source_in_candidate'] is True,'SOURCE_ANCESTRY_MISMATCH')
  need(f['candidate_threads_resolved'] and f['control_threads_resolved'],'UNRESOLVED_REVIEW_THREAD')
  candidate=reviews(root,f['candidate_pr'],f['candidate_reviews'],['core'])
  control=reviews(root,f['control_pr'],f['control_reviews'],['core'],control=True)
@@ -79,6 +80,15 @@ def bind_checkout(candidate,trust):
  need(not git(p,'diff','--name-only','HEAD','--').strip(),'DIRTY_CHECKOUT')
  need(not git(p,'ls-files','--others','--exclude-standard').strip(),'UNTRACKED_CHECKOUT')
  return p
+def exact_develop_environment(env,rules):
+ # GitHub custom deployment rules distinguish Branch from Tag. No glob matching.
+ if type(env) is not dict or env.get('name')!='legacy-checker-review':return False
+ mode=env.get('deployment_branch_policy')
+ if type(mode) is not dict or mode.get('protected_branches') is not False or mode.get('custom_branch_policies') is not True:return False
+ if type(rules) is not list or len(rules)!=1:return False
+ rule=rules[0]
+ return type(rule) is dict and rule.get('type')=='branch' and rule.get('name')=='develop'
+
 class GitHub:
  def __init__(self,token):self.token=token
  def request(self,path,body=None):
@@ -94,19 +104,31 @@ class GitHub:
    need(isinstance(data,list),'API_PAGE_INVALID');out.extend(data)
    if len(data)<100:return out
   raise Rejected('API_PAGE_LIMIT')
+ def environment_branches(self,name):
+  need(name=='legacy-checker-review','ENVIRONMENT_SCOPE_MISMATCH')
+  rows=[];total=None
+  for page in range(1,21):
+   data=self.get('environments/'+name+'/deployment-branch-policies?per_page=100&page='+str(page))
+   need(type(data) is dict and type(data.get('total_count')) is int and data['total_count']>=0 and type(data.get('branch_policies')) is list,'ENVIRONMENT_POLICY_QUERY_UNCONFIRMED')
+   if total is None:total=data['total_count']
+   need(total==data['total_count'],'ENVIRONMENT_POLICY_CHANGED_DURING_READ')
+   rows.extend(data['branch_policies'])
+   if len(data['branch_policies'])<100:
+    need(len(rows)==total,'ENVIRONMENT_POLICY_INCOMPLETE');return rows
+  raise Rejected('ENVIRONMENT_POLICY_PAGE_LIMIT')
  def resolved(self,pr):
   q='query($owner:String!,$name:String!,$number:Int!){repository(owner:$owner,name:$name){pullRequest(number:$number){reviewThreads(first:100){nodes{isResolved}pageInfo{hasNextPage}}}}}'
   r=self.request('/graphql',{'query':q,'variables':{'owner':'kdu-sw-capstone','name':'capstone-project','number':pr}});need(not r.get('errors'),'REVIEW_API_UNCONFIRMED');t=r['data']['repository']['pullRequest']['reviewThreads'];need(not t['pageInfo']['hasNextPage'],'REVIEW_THREAD_LIMIT');return all(x['isResolved'] for x in t['nodes'])
  def facts(self,root,trust):
-  cp=self.get('pulls/'+str(root['control_pr']));p=self.get('pulls/'+str(trust['candidate_pr']));cc=self.get('commits/'+root['control_sha']);c=self.get('commits/'+trust['candidate_sha']);develop=self.get('branches/develop');rules=self.get('rules/branches/develop');env=self.get('environments/'+root['environment_name']);collabs=self.pages('collaborators')
+  cp=self.get('pulls/'+str(root['control_pr']));p=self.get('pulls/'+str(trust['candidate_pr']));cc=self.get('commits/'+root['control_sha']);c=self.get('commits/'+trust['candidate_sha']);develop=self.get('branches/develop');rules=self.get('rules/branches/develop');env=self.get('environments/'+root['environment_name']);policies=self.environment_branches(root['environment_name']);collabs=self.pages('collaborators')
   protections=[x.get('parameters',{}) for x in rules if x['type']=='pull_request'];protected=develop.get('protected') is True and any(x.get('required_approving_review_count',0)>=1 and x.get('dismiss_stale_reviews_on_push') and x.get('required_review_thread_resolution') for x in protections)
-  environment=any(x['type']=='required_reviewers' and x.get('prevent_self_review') is True and any(v.get('type')=='User' and v.get('reviewer',{}).get('id')==root['admin_id'] for v in x.get('reviewers',[])) for x in env.get('protection_rules',[]))
+  environment=exact_develop_environment(env,policies)
   # Exact control HEAD may be merged to develop, but its PR head review remains the source.
   compare=self.get('compare/'+root['control_sha']+'...'+develop['commit']['sha']);in_develop=compare['status'] in ('identical','ahead')
-  f={'workflow_sha':os.environ['GITHUB_WORKFLOW_SHA'],'workflow_ref':os.environ['GITHUB_REF'],'actor_id':int(os.environ['GITHUB_ACTOR_ID']),'administrator_ids':[x['id'] for x in collabs if x.get('permissions',{}).get('admin')],'environment_verified':environment and env.get('deployment_branch_policy',{}).get('protected_branches') is True,'control_protection_verified':protected,'control_sha':cc['sha'],'control_tree':cc['commit']['tree']['sha'],'control_in_develop':in_develop,'candidate_sha':c['sha'],'candidate_tree':c['commit']['tree']['sha'],'candidate_parents':[x['sha'] for x in c['parents']],'integration_sha':self.get('branches/integration%2Fadditional-mvp-20261029')['commit']['sha'],'candidate_pr':p,'control_pr':cp,'candidate_reviews':self.pages('pulls/'+str(p['number'])+'/reviews'),'control_reviews':self.pages('pulls/'+str(cp['number'])+'/reviews'),'candidate_threads_resolved':self.resolved(p['number']),'control_threads_resolved':self.resolved(cp['number'])}
+  f={'workflow_sha':os.environ['GITHUB_WORKFLOW_SHA'],'workflow_ref':os.environ['GITHUB_REF'],'actor_id':int(os.environ['GITHUB_ACTOR_ID']),'administrator_ids':[x['id'] for x in collabs if x.get('permissions',{}).get('admin')],'environment_verified':environment,'environment_branch_policies':policies,'control_protection_verified':protected,'control_sha':cc['sha'],'control_tree':cc['commit']['tree']['sha'],'control_in_develop':in_develop,'candidate_sha':c['sha'],'candidate_tree':c['commit']['tree']['sha'],'candidate_parents':[x['sha'] for x in c['parents']],'source_in_candidate':self.get('compare/'+trust['source_commit']+'...'+trust['candidate_sha'])['status'] in ('ahead','identical'),'integration_sha':self.get('branches/integration%2Fadditional-mvp-20261029')['commit']['sha'],'candidate_pr':p,'control_pr':cp,'candidate_reviews':self.pages('pulls/'+str(p['number'])+'/reviews'),'control_reviews':self.pages('pulls/'+str(cp['number'])+'/reviews'),'candidate_threads_resolved':self.resolved(p['number']),'control_threads_resolved':self.resolved(cp['number'])}
   return f
 def main():
- a=argparse.ArgumentParser();a.add_argument('--control',required=True);a.add_argument('--candidate',required=True);a.add_argument('--output',required=True);args=a.parse_args()
+ a=argparse.ArgumentParser();a.add_argument('--control',required=True);a.add_argument('--candidate',required=True);a.add_argument('--output',required=True);a.add_argument('--contract-suite',action='store_true');args=a.parse_args()
  control=pathlib.Path(args.control).resolve();candidate=pathlib.Path(args.candidate).resolve();out=pathlib.Path(args.output).resolve();root_path=pathlib.Path(os.environ['LEGACY_EXTERNAL_ROOT']).resolve()
  need(not root_path.is_relative_to(candidate) and not root_path.is_relative_to(control),'ROOT_MUST_BE_EXTERNAL')
  need(not out.is_relative_to(candidate) and not control.is_relative_to(candidate) and not candidate.is_relative_to(control),'OUTPUT_CONTROL_MUST_BE_EXTERNAL')
@@ -126,10 +148,13 @@ def main():
  # No candidate-supplied receipt is accepted. This transient file follows actual GitHub checks.
  with tempfile.TemporaryDirectory(prefix='legacy-receipt-',dir=out) as d:
   p=pathlib.Path(d)/'reviewed-binding.json';p.write_text(json.dumps(receipt,sort_keys=True),encoding='utf-8')
-  result=subprocess.run([sys.executable,'-I','-B',str(package/'explicit_checker.py'),'--repo',str(candidate),'--profile',trust['profile'],'--expected-tooling-manifest-sha256',trust['tool_manifest_sha256'],'--reviewed-binding',str(p),'--reviewed-binding-sha256',digest(p.read_bytes())],capture_output=True,timeout=120)
+  command=[sys.executable,'-I','-B',str(package/'explicit_checker.py'),'--repo',str(candidate),'--profile',trust['profile'],'--expected-tooling-manifest-sha256',trust['tool_manifest_sha256'],'--reviewed-binding',str(p),'--reviewed-binding-sha256',digest(p.read_bytes())]+(['--contract-suite'] if args.contract_suite else [])
+  result=subprocess.run(command,capture_output=True,timeout=120)
  final=api.facts(root,trust);need(final==again and authorize(root,trust,final)==auth,'AUTHORIZATION_CHANGED_AFTER_EXEC');bind_checkout(candidate,trust);tool_files(candidate,trust)
+ (out/'checker-stdout.log').write_bytes(result.stdout);(out/'checker-stderr.log').write_bytes(result.stderr)
  need(result.returncode==0,'ISOLATED_CHECKER_REJECTED');parsed=json.loads(result.stdout);need(parsed.get('verification')=='PASS_ISOLATED_ONLY' and parsed.get('approval')=='NOT_GRANTED' and parsed.get('activation') is False,'CHECKER_RESULT_INVALID')
- record={'status':'PASS_TRUSTED_ISOLATED_VERIFICATION_ONLY','controlSHA':root['control_sha'],'workflowSHA':root['workflow_sha'],'candidateSHA':trust['candidate_sha'],'candidateTree':trust['candidate_tree'],'parents':[trust['candidate_parent']],'approvalReviewIDs':auth,'toolingManifestSHA256':trust['tool_manifest_sha256'],'activation':False,'githubResultPublished':False}
+ if args.contract_suite:need(parsed.get('contractSuite',{}).get('mode')=='FULL_ORIGINAL_CONTRACT_SUITE_EXACT_INVERSE_BRIDGE' and parsed['contractSuite'].get('skip')==0,'FULL_CONTRACT_SUITE_REQUIRED')
+ record={'status':'PASS_TRUSTED_ISOLATED_VERIFICATION_ONLY','controlSHA':root['control_sha'],'workflowSHA':root['workflow_sha'],'candidateSHA':trust['candidate_sha'],'candidateTree':trust['candidate_tree'],'parents':[trust['candidate_parent']],'approvalReviewIDs':auth,'toolingManifestSHA256':trust['tool_manifest_sha256'],'activation':False,'githubResultPublished':False,'contractSuite':parsed.get('contractSuite'),'sourceSHA':trust['source_commit']}
  (out/'result.json').write_text(json.dumps(record,indent=2),encoding='utf-8');print(json.dumps(record))
 if __name__=='__main__':
  try:main()
