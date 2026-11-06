@@ -1,0 +1,72 @@
+--- a/extension/background/session-core.js
++++ b/extension/background/session-core.js
+@@ -21,16 +21,52 @@
+  function blockedUrl(site,session){return chrome.runtime.getURL('blocked/blocked.html')+'?host='+encodeURIComponent(site.canonical_host)+'&session='+encodeURIComponent(session.session_id);}
+  function buildRules(session,existing){return FocurveHostPolicy.rules(session.snapshot.sites,existing,site=>blockedUrl(site,session),100000,session.snapshot.format_version==='1.1');}
+  async function rulesMatch(state){const actual=await chrome.declarativeNetRequest.getSessionRules();return state.journal.rules.every(rule=>actual.some(r=>r.id===rule.id&&stable(r)===stable(rule)));}
++ async function guardedDnrUpdate(suppliedState,suppliedRequest){
++  const state=structuredClone(suppliedState),request=structuredClone(suppliedRequest),gate=globalThis.FocurveMemberDnrWriter;
++  // Isolated source consumers retain their adapter. The shipped Worker installs
++  // the immutable canonical gate before processing any execution events.
++  if(!gate)return chrome.declarativeNetRequest.updateSessionRules(request);
++  return gate.write(request,async send=>{
++   const actual=await chrome.declarativeNetRequest.getSessionRules();
++   for(const rule of request.addRules??[])if(!state.journal.rules.some(r=>stable(r)===stable(rule))||actual.some(r=>r.id===rule.id&&stable(r)!==stable(rule)))throw Error('RULE_OWNERSHIP_CONFLICT');
++   for(const id of request.removeRuleIds??[]){const rule=state.journal.rules.find(r=>r.id===id);if(!rule||actual.some(r=>r.id===id&&stable(r)!==stable(rule)))throw Error('RULE_OWNERSHIP_CONFLICT');}
++   const adding=!!request.addRules?.length,authority=adding?FocurveMemberAuth.AuthStore.writeState():null;
++   if(adding){
++    if(authority.pending)throw Error('OWNER_MISMATCH');
++    const auth=globalThis.__memberIntegration?.auth;if(!auth)throw Error('MEMBER_ADAPTER_NOT_READY');
++    if(!['UNREGISTERED','REGISTERED'].includes((await auth.load()).phase))throw Error('ACCOUNT_TRANSITION_ACTIVE');
++    await __memberRootAuthority.idle();const owner=await LocalStore.guestContext();
++    if(owner.owner_key!==state.session.owner_key||owner.installation_id!==state.session.executor_id)throw Error('OWNER_MISMATCH');
++   }
++   let failure;
++   try{return await SessionDB.transaction('readonly',(tx,done)=>{
++    const rows={},reject=e=>{failure=e;tx.abort();};let pending=3;
++    const finish=()=>{if(--pending)return;try{
++     const c=rows.current,s=rows.session,j=rows.journal;
++     if(c?.execution_contract||s?.execution_contract)throw Error('EXECUTION_ROUTE_MISMATCH');
++     if(!c||c.owner_key!==state.session.owner_key||c.session_id!==state.session.session_id||!s||s.executor_id!==state.session.executor_id||stable(s.snapshot)!==stable(state.session.snapshot)||!j||j.owner_key!==state.session.owner_key||j.session_id!==state.session.session_id||stable(j.rules)!==stable(state.journal.rules))throw Error('OWNER_MISMATCH');
++     if(adding){
++      if(stable(s)!==stable(state.session)||stable(j)!==stable(state.journal)||s.status!=='STARTING'||j.desired!=='APPLIED'||j.terminal_intent)throw Error('STALE_APPLY');
++      validateFrozen(state);checkApplyDeadline(state);
++      if(authority!==FocurveMemberAuth.AuthStore.writeState())throw Error('OWNER_MISMATCH');
++     }
++     done(send());
++    }catch(e){reject(e);}};
++    const q=tx.objectStore('metadata').get('current');q.onsuccess=()=>{rows.current=q.result;finish();};
++    for(const [name,store]of [['session','sessions'],['journal','journal']]){const q=tx.objectStore(store).get([state.session.owner_key,state.session.session_id]);q.onsuccess=()=>{rows[name]=q.result;finish();};}
++   });}catch(e){throw failure??e;}
++  });
++ }
+  async function release(state){
+   const actual=await chrome.declarativeNetRequest.getSessionRules();
+   // ID 충돌 시 다른 기능의 규칙을 임의로 지우지 않습니다.
+   for(const rule of state.journal.rules){const found=actual.find(r=>r.id===rule.id);if(found&&stable(found)!==stable(rule))throw new Error('RULE_OWNERSHIP_CONFLICT');}
+   const ids=state.journal.rules.map(r=>r.id);
+-  if(ids.length)await chrome.declarativeNetRequest.updateSessionRules({removeRuleIds:ids});
++  if(ids.length)await guardedDnrUpdate(state,{removeRuleIds:ids});
+   const after=await chrome.declarativeNetRequest.getSessionRules();if(after.some(r=>ids.includes(r.id)))throw new Error('RELEASE_UNCONFIRMED');
+  }
+  function event(state,type){return {owner_key:state.session.owner_key,event_id:crypto.randomUUID(),session_id:state.session.session_id,ack:false,payload:{schema_version:'1.1',event_id:null,executor_id:state.session.executor_id,session_id:state.session.session_id,policy_snapshot_id:state.session.snapshot.policy_snapshot_id,event_type:type,occurred_at:now(),local_seq:(state.session.last_local_seq??(state.session.started_at?1:0))+1,payload:{}}};}
+- async function persist(state,type){let e=type?event(state,type):null;if(e){e.payload.event_id=e.event_id;state.session.last_local_seq=e.payload.local_seq;}await SessionDB.save(state,e);}
++ async function persist(state,type,create=false){let e=type?event(state,type):null;if(e){e.payload.event_id=e.event_id;state.session.last_local_seq=e.payload.local_seq;}await SessionDB.save(state,e,{scope:{owner_key:state.session.owner_key,session_id:state.session.session_id},create});}
+  async function schedule(state){if(state.session.status==='RUNNING')await chrome.alarms.create(alarmName,{when:Math.min(Date.parse(state.session.planned_end_at),Date.now()+30000)});else await chrome.alarms.clear(alarmName);}
+  async function divertTabs(state){
+   const tabs=await chrome.tabs.query({});
+@@ -131,12 +167,12 @@
+   FocurveHostPolicy.validateSnapshot(session.snapshot,true);
+   const rules=buildRules(session,await chrome.declarativeNetRequest.getSessionRules());
+   const state={session,journal:{owner_key:owner.owner_key,session_id:sessionId,revision:1,action_seq:1,desired:'APPLIED',observed:'UNCONFIRMED',rules,execute_before:new Date(Date.now()+30000).toISOString()}};
+-  await persist(state);
++  await persist(state,undefined,true);
+   try{
+    await chrome.alarms.create(alarmName,{when:Date.now()+30000});
+    for(const rule of rules){const check=await chrome.declarativeNetRequest.isRegexSupported({regex:rule.condition.regexFilter,isCaseSensitive:false});if(!check.isSupported)throw new Error('RULE_UNSUPPORTED');}
+    checkApplyDeadline(state);
+-   if(rules.length)await chrome.declarativeNetRequest.updateSessionRules({addRules:rules});
++   if(rules.length)await guardedDnrUpdate(state,{addRules:rules});
+    return await completeStart(state);
+   }catch(error){state.session.last_error_code=error.message;try{await finish(state,'START_FAILED','APPLY_FAILED');}catch{throw new Error('RELEASE_UNCONFIRMED');}throw error;}
+  }

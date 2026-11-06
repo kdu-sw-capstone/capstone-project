@@ -1,0 +1,1669 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "d06-a0-registry-candidate-1 — UNAPPROVED draft",
+  "description": "Candidate-3 control schemas retained verbatim; new Registry persistence messages require approval. Semantic/native sender checks are mandatory outside Schema.",
+  "$defs": {
+    "uuid": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+    },
+    "safe": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 9007199254740991
+    },
+    "count": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 9007199254740991
+    },
+    "context": {
+      "type": "object",
+      "properties": {
+        "session_id": {
+          "$ref": "#/$defs/uuid"
+        },
+        "policy_snapshot_id": {
+          "$ref": "#/$defs/uuid"
+        },
+        "executor_id": {
+          "$ref": "#/$defs/uuid"
+        },
+        "navigation_id": {
+          "$ref": "#/$defs/uuid"
+        },
+        "binding_id": {
+          "$ref": "#/$defs/uuid"
+        },
+        "desired_revision": {
+          "$ref": "#/$defs/safe"
+        },
+        "document_id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 200
+        }
+      },
+      "required": [
+        "session_id",
+        "policy_snapshot_id",
+        "executor_id",
+        "navigation_id",
+        "binding_id",
+        "desired_revision",
+        "document_id"
+      ],
+      "additionalProperties": false
+    },
+    "owner": {
+      "type": "string",
+      "pattern": "^GUEST:[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+    },
+    "policy": {
+      "type": "object",
+      "properties": {
+        "format_version": {
+          "const": "1.2"
+        },
+        "site_match_strategy": {
+          "const": "MOST_SPECIFIC_HOST"
+        },
+        "source_version": {
+          "$ref": "#/$defs/safe"
+        },
+        "site_id": {
+          "$ref": "#/$defs/uuid"
+        },
+        "site_version": {
+          "$ref": "#/$defs/safe"
+        },
+        "target_host": {
+          "const": "www.youtube.com"
+        },
+        "matched_policy_host": {
+          "enum": [
+            "youtube.com",
+            "www.youtube.com"
+          ]
+        },
+        "access_policy": {
+          "const": "ALLOW"
+        },
+        "feature_policies": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 1,
+          "items": {
+            "type": "object",
+            "properties": {
+              "feature_code": {
+                "const": "YOUTUBE_SHORTS"
+              },
+              "enabled": {
+                "const": true
+              }
+            },
+            "required": [
+              "feature_code",
+              "enabled"
+            ],
+            "additionalProperties": false
+          }
+        }
+      },
+      "required": [
+        "format_version",
+        "site_match_strategy",
+        "source_version",
+        "site_id",
+        "site_version",
+        "target_host",
+        "matched_policy_host",
+        "access_policy",
+        "feature_policies"
+      ],
+      "additionalProperties": false
+    },
+    "query_bootstrap": {
+      "type": "object",
+      "properties": {
+        "request_id": {
+          "$ref": "#/$defs/uuid"
+        },
+        "type": {
+          "const": "D06_CONTENT_CONTROL"
+        },
+        "owner_context": {
+          "type": "null"
+        },
+        "payload": {
+          "type": "object",
+          "properties": {
+            "contract_version": {
+              "const": "d06-shorts-a0-candidate-3"
+            },
+            "operation_id": {
+              "$ref": "#/$defs/uuid"
+            },
+            "operation": {
+              "const": "QUERY"
+            },
+            "target_document_id": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 200
+            },
+            "context": {
+              "type": "null"
+            }
+          },
+          "required": [
+            "contract_version",
+            "operation_id",
+            "operation",
+            "target_document_id",
+            "context"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "request_id",
+        "type",
+        "owner_context",
+        "payload"
+      ],
+      "additionalProperties": false
+    },
+    "query_bound": {
+      "type": "object",
+      "properties": {
+        "request_id": {
+          "$ref": "#/$defs/uuid"
+        },
+        "type": {
+          "const": "D06_CONTENT_CONTROL"
+        },
+        "owner_context": {
+          "$ref": "#/$defs/owner"
+        },
+        "payload": {
+          "type": "object",
+          "properties": {
+            "contract_version": {
+              "const": "d06-shorts-a0-candidate-3"
+            },
+            "operation_id": {
+              "$ref": "#/$defs/uuid"
+            },
+            "operation": {
+              "const": "QUERY"
+            },
+            "target_document_id": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 200
+            },
+            "context": {
+              "$ref": "#/$defs/context"
+            },
+            "content_instance_id": {
+              "$ref": "#/$defs/uuid"
+            }
+          },
+          "required": [
+            "contract_version",
+            "operation_id",
+            "operation",
+            "target_document_id",
+            "context",
+            "content_instance_id"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "request_id",
+        "type",
+        "owner_context",
+        "payload"
+      ],
+      "additionalProperties": false
+    },
+    "apply": {
+      "type": "object",
+      "properties": {
+        "request_id": {
+          "$ref": "#/$defs/uuid"
+        },
+        "type": {
+          "const": "D06_CONTENT_CONTROL"
+        },
+        "owner_context": {
+          "$ref": "#/$defs/owner"
+        },
+        "payload": {
+          "type": "object",
+          "properties": {
+            "contract_version": {
+              "const": "d06-shorts-a0-candidate-3"
+            },
+            "operation_id": {
+              "$ref": "#/$defs/uuid"
+            },
+            "operation": {
+              "const": "APPLY"
+            },
+            "target_document_id": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 200
+            },
+            "context": {
+              "$ref": "#/$defs/context"
+            },
+            "content_instance_id": {
+              "$ref": "#/$defs/uuid"
+            },
+            "control_seq": {
+              "$ref": "#/$defs/safe"
+            },
+            "observation": {
+              "type": "object",
+              "properties": {
+                "round_id": {
+                  "$ref": "#/$defs/uuid"
+                }
+              },
+              "required": [
+                "round_id"
+              ],
+              "additionalProperties": false
+            },
+            "policy": {
+              "$ref": "#/$defs/policy"
+            },
+            "rule_id": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 200
+            },
+            "cleanup_authorization_id": {
+              "$ref": "#/$defs/uuid"
+            }
+          },
+          "required": [
+            "contract_version",
+            "operation_id",
+            "operation",
+            "target_document_id",
+            "context",
+            "content_instance_id",
+            "control_seq",
+            "observation",
+            "policy",
+            "rule_id",
+            "cleanup_authorization_id"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "request_id",
+        "type",
+        "owner_context",
+        "payload"
+      ],
+      "additionalProperties": false
+    },
+    "release_normal": {
+      "type": "object",
+      "properties": {
+        "request_id": {
+          "$ref": "#/$defs/uuid"
+        },
+        "type": {
+          "const": "D06_CONTENT_CONTROL"
+        },
+        "owner_context": {
+          "$ref": "#/$defs/owner"
+        },
+        "payload": {
+          "type": "object",
+          "properties": {
+            "contract_version": {
+              "const": "d06-shorts-a0-candidate-3"
+            },
+            "operation_id": {
+              "$ref": "#/$defs/uuid"
+            },
+            "operation": {
+              "const": "RELEASE"
+            },
+            "target_document_id": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 200
+            },
+            "context": {
+              "$ref": "#/$defs/context"
+            },
+            "content_instance_id": {
+              "$ref": "#/$defs/uuid"
+            },
+            "applied_binding_id": {
+              "$ref": "#/$defs/uuid"
+            },
+            "cleanup_authorization_id": {
+              "$ref": "#/$defs/uuid"
+            },
+            "release_mode": {
+              "const": "NORMAL"
+            },
+            "control_seq": {
+              "$ref": "#/$defs/safe"
+            }
+          },
+          "required": [
+            "contract_version",
+            "operation_id",
+            "operation",
+            "target_document_id",
+            "context",
+            "content_instance_id",
+            "applied_binding_id",
+            "cleanup_authorization_id",
+            "release_mode",
+            "control_seq"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "request_id",
+        "type",
+        "owner_context",
+        "payload"
+      ],
+      "additionalProperties": false
+    },
+    "release_cleanup": {
+      "type": "object",
+      "properties": {
+        "request_id": {
+          "$ref": "#/$defs/uuid"
+        },
+        "type": {
+          "const": "D06_CONTENT_CONTROL"
+        },
+        "owner_context": {
+          "$ref": "#/$defs/owner"
+        },
+        "payload": {
+          "type": "object",
+          "properties": {
+            "contract_version": {
+              "const": "d06-shorts-a0-candidate-3"
+            },
+            "operation_id": {
+              "$ref": "#/$defs/uuid"
+            },
+            "operation": {
+              "const": "RELEASE"
+            },
+            "target_document_id": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 200
+            },
+            "context": {
+              "$ref": "#/$defs/context"
+            },
+            "content_instance_id": {
+              "$ref": "#/$defs/uuid"
+            },
+            "applied_binding_id": {
+              "$ref": "#/$defs/uuid"
+            },
+            "cleanup_authorization_id": {
+              "$ref": "#/$defs/uuid"
+            },
+            "release_mode": {
+              "const": "CLEANUP_ONLY"
+            },
+            "control_seq": {
+              "type": "null"
+            }
+          },
+          "required": [
+            "contract_version",
+            "operation_id",
+            "operation",
+            "target_document_id",
+            "context",
+            "content_instance_id",
+            "applied_binding_id",
+            "cleanup_authorization_id",
+            "release_mode",
+            "control_seq"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "request_id",
+        "type",
+        "owner_context",
+        "payload"
+      ],
+      "additionalProperties": false
+    },
+    "effect_evidence": {
+      "type": "object",
+      "properties": {
+        "route_kind": {
+          "enum": [
+            "SHORTS",
+            "OTHER"
+          ]
+        },
+        "viewer_count": {
+          "$ref": "#/$defs/count"
+        },
+        "hidden_viewer_count": {
+          "$ref": "#/$defs/count"
+        },
+        "inert_viewer_count": {
+          "$ref": "#/$defs/count"
+        },
+        "media_count": {
+          "$ref": "#/$defs/count"
+        },
+        "paused_media_count": {
+          "$ref": "#/$defs/count"
+        },
+        "error_count": {
+          "$ref": "#/$defs/count"
+        },
+        "observer_ready": {
+          "type": "boolean"
+        },
+        "scan_completed_without_error": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "route_kind",
+        "viewer_count",
+        "hidden_viewer_count",
+        "inert_viewer_count",
+        "media_count",
+        "paused_media_count",
+        "error_count",
+        "observer_ready",
+        "scan_completed_without_error"
+      ],
+      "additionalProperties": false
+    },
+    "release_evidence": {
+      "type": "object",
+      "properties": {
+        "observer_stopped": {
+          "type": "boolean"
+        },
+        "timers_cleared": {
+          "type": "boolean"
+        },
+        "listeners_removed": {
+          "type": "boolean"
+        },
+        "notice_removed": {
+          "type": "boolean"
+        },
+        "owned_changes_restored": {
+          "type": "boolean"
+        },
+        "remaining_owned_changes": {
+          "$ref": "#/$defs/count"
+        },
+        "error_count": {
+          "$ref": "#/$defs/count"
+        }
+      },
+      "required": [
+        "observer_stopped",
+        "timers_cleared",
+        "listeners_removed",
+        "notice_removed",
+        "owned_changes_restored",
+        "remaining_owned_changes",
+        "error_count"
+      ],
+      "additionalProperties": false
+    },
+    "current": {
+      "type": "object",
+      "properties": {
+        "binding_state": {
+          "enum": [
+            "UNBOUND",
+            "ACTIVE",
+            "CLEANUP_PENDING",
+            "RESTORED"
+          ]
+        },
+        "lifecycle": {
+          "enum": [
+            "ACTIVE",
+            "INACTIVE",
+            "GONE"
+          ]
+        },
+        "control_seq": {
+          "$ref": "#/$defs/count"
+        },
+        "result_state": {
+          "enum": [
+            "OBSERVING",
+            "APPLIED",
+            "NOT_APPLICABLE",
+            "UNSUPPORTED",
+            "APPLY_FAILED",
+            "TIMED_OUT",
+            "RELEASED",
+            "RELEASE_FAILED"
+          ]
+        },
+        "effect": {
+          "enum": [
+            "CONFIRMED",
+            "UNCONFIRMED"
+          ]
+        },
+        "round_id": {
+          "oneOf": [
+            {
+              "$ref": "#/$defs/uuid"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "evidence": {
+          "oneOf": [
+            {
+              "$ref": "#/$defs/effect_evidence"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "release_evidence": {
+          "oneOf": [
+            {
+              "$ref": "#/$defs/release_evidence"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "binding_state",
+        "lifecycle",
+        "control_seq",
+        "result_state",
+        "effect",
+        "round_id",
+        "evidence",
+        "release_evidence"
+      ],
+      "additionalProperties": false
+    },
+    "bootstrap_data": {
+      "type": "object",
+      "properties": {
+        "contract_version": {
+          "const": "d06-shorts-a0-candidate-3"
+        },
+        "operation_id": {
+          "$ref": "#/$defs/uuid"
+        },
+        "operation": {
+          "const": "QUERY"
+        },
+        "target_document_id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 200
+        },
+        "content_instance_id": {
+          "$ref": "#/$defs/uuid"
+        },
+        "adapter_ready": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "contract_version",
+        "operation_id",
+        "operation",
+        "target_document_id",
+        "content_instance_id",
+        "adapter_ready"
+      ],
+      "additionalProperties": false
+    },
+    "bound_data": {
+      "type": "object",
+      "properties": {
+        "contract_version": {
+          "const": "d06-shorts-a0-candidate-3"
+        },
+        "operation_id": {
+          "$ref": "#/$defs/uuid"
+        },
+        "operation": {
+          "const": "QUERY"
+        },
+        "target_document_id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 200
+        },
+        "content_instance_id": {
+          "$ref": "#/$defs/uuid"
+        },
+        "adapter_ready": {
+          "type": "boolean"
+        },
+        "current": {
+          "oneOf": [
+            {
+              "$ref": "#/$defs/current"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "contract_version",
+        "operation_id",
+        "operation",
+        "target_document_id",
+        "content_instance_id",
+        "adapter_ready",
+        "current"
+      ],
+      "additionalProperties": false
+    },
+    "apply_data": {
+      "type": "object",
+      "properties": {
+        "contract_version": {
+          "const": "d06-shorts-a0-candidate-3"
+        },
+        "operation_id": {
+          "$ref": "#/$defs/uuid"
+        },
+        "operation": {
+          "const": "APPLY"
+        },
+        "target_document_id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 200
+        },
+        "content_instance_id": {
+          "$ref": "#/$defs/uuid"
+        },
+        "result_state": {
+          "enum": [
+            "APPLIED",
+            "NOT_APPLICABLE",
+            "UNSUPPORTED",
+            "APPLY_FAILED",
+            "TIMED_OUT"
+          ]
+        },
+        "effect": {
+          "enum": [
+            "CONFIRMED",
+            "UNCONFIRMED"
+          ]
+        },
+        "round_id": {
+          "$ref": "#/$defs/uuid"
+        },
+        "evidence": {
+          "$ref": "#/$defs/effect_evidence"
+        }
+      },
+      "required": [
+        "contract_version",
+        "operation_id",
+        "operation",
+        "target_document_id",
+        "content_instance_id",
+        "result_state",
+        "effect",
+        "round_id",
+        "evidence"
+      ],
+      "additionalProperties": false
+    },
+    "release_data": {
+      "type": "object",
+      "properties": {
+        "contract_version": {
+          "const": "d06-shorts-a0-candidate-3"
+        },
+        "operation_id": {
+          "$ref": "#/$defs/uuid"
+        },
+        "operation": {
+          "const": "RELEASE"
+        },
+        "target_document_id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 200
+        },
+        "content_instance_id": {
+          "$ref": "#/$defs/uuid"
+        },
+        "result_state": {
+          "enum": [
+            "RELEASED",
+            "RELEASE_FAILED"
+          ]
+        },
+        "effect": {
+          "enum": [
+            "CONFIRMED",
+            "UNCONFIRMED"
+          ]
+        },
+        "applied_binding_id": {
+          "$ref": "#/$defs/uuid"
+        },
+        "release_evidence": {
+          "$ref": "#/$defs/release_evidence"
+        }
+      },
+      "required": [
+        "contract_version",
+        "operation_id",
+        "operation",
+        "target_document_id",
+        "content_instance_id",
+        "result_state",
+        "effect",
+        "applied_binding_id",
+        "release_evidence"
+      ],
+      "additionalProperties": false
+    },
+    "error_response": {
+      "type": "object",
+      "properties": {
+        "request_id": {
+          "$ref": "#/$defs/uuid"
+        },
+        "status": {
+          "const": "ERROR"
+        },
+        "data": {
+          "type": "null"
+        },
+        "error": {
+          "type": "object",
+          "properties": {
+            "code": {
+              "enum": [
+                "INVALID_SCHEMA",
+                "UNSUPPORTED_CONTRACT",
+                "UNAUTHORIZED_SENDER",
+                "SCOPE_MISMATCH",
+                "INSTANCE_MISMATCH",
+                "OPERATION_CONFLICT",
+                "STALE_CONTROL",
+                "INACTIVE_DOCUMENT",
+                "REGISTRY_CAPACITY",
+                "QUEUE_FULL",
+                "CONTROL_SEQUENCE_EXHAUSTED",
+                "STORAGE_FAILED",
+                "UNKNOWN_CLEANUP_BINDING",
+                "CLEANUP_REQUIRED",
+                "OPERATION_RESULT_EVICTED"
+              ]
+            },
+            "retryable": {
+              "type": "boolean"
+            }
+          },
+          "required": [
+            "code",
+            "retryable"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "request_id",
+        "status",
+        "data",
+        "error"
+      ],
+      "additionalProperties": false,
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "error": {
+                "properties": {
+                  "code": {
+                    "const": "OPERATION_RESULT_EVICTED"
+                  }
+                },
+                "required": [
+                  "code"
+                ]
+              }
+            },
+            "required": [
+              "error"
+            ]
+          },
+          "then": {
+            "properties": {
+              "error": {
+                "properties": {
+                  "retryable": {
+                    "const": false
+                  }
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "ok_response": {
+      "type": "object",
+      "properties": {
+        "request_id": {
+          "$ref": "#/$defs/uuid"
+        },
+        "status": {
+          "const": "OK"
+        },
+        "data": {
+          "oneOf": [
+            {
+              "$ref": "#/$defs/bootstrap_data"
+            },
+            {
+              "$ref": "#/$defs/bound_data"
+            },
+            {
+              "$ref": "#/$defs/apply_data"
+            },
+            {
+              "$ref": "#/$defs/release_data"
+            }
+          ]
+        },
+        "error": {
+          "type": "null"
+        }
+      },
+      "required": [
+        "request_id",
+        "status",
+        "data",
+        "error"
+      ],
+      "additionalProperties": false
+    },
+    "credential": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$",
+      "not": {
+        "const": "0000000000000000000000000000000000000000000000000000000000000000"
+      }
+    },
+    "ledger_entry": {
+      "type": "object",
+      "properties": {
+        "node_id": {
+          "$ref": "#/$defs/safe"
+        },
+        "display": {
+          "type": "string",
+          "maxLength": 256
+        },
+        "priority": {
+          "enum": [
+            "",
+            "important"
+          ]
+        },
+        "inert": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "node_id",
+        "display",
+        "priority",
+        "inert"
+      ],
+      "additionalProperties": false
+    },
+    "begin_change": {
+      "type": "object",
+      "properties": {
+        "kind": {
+          "const": "BEGIN_OPERATION"
+        },
+        "operation_id": {
+          "$ref": "#/$defs/uuid"
+        }
+      },
+      "required": [
+        "kind",
+        "operation_id"
+      ],
+      "additionalProperties": false
+    },
+    "ledger_change": {
+      "type": "object",
+      "properties": {
+        "kind": {
+          "const": "LEDGER_PLAN"
+        },
+        "operation_id": {
+          "$ref": "#/$defs/uuid"
+        },
+        "entries": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/ledger_entry"
+          },
+          "maxItems": 512
+        }
+      },
+      "required": [
+        "kind",
+        "operation_id",
+        "entries"
+      ],
+      "additionalProperties": false
+    },
+    "complete_change": {
+      "type": "object",
+      "properties": {
+        "kind": {
+          "const": "COMPLETE_OPERATION"
+        },
+        "operation_id": {
+          "$ref": "#/$defs/uuid"
+        },
+        "response": {
+          "oneOf": [
+            {
+              "$ref": "#/$defs/ok_response"
+            },
+            {
+              "$ref": "#/$defs/error_response"
+            }
+          ]
+        }
+      },
+      "required": [
+        "kind",
+        "operation_id",
+        "response"
+      ],
+      "additionalProperties": false
+    },
+    "invalidate_change": {
+      "type": "object",
+      "properties": {
+        "kind": {
+          "const": "INVALIDATE"
+        },
+        "reason": {
+          "enum": [
+            "PAGEHIDE",
+            "NAVIGATION",
+            "DOCUMENT_REPLACED"
+          ]
+        }
+      },
+      "required": [
+        "kind",
+        "reason"
+      ],
+      "additionalProperties": false
+    },
+    "change": {
+      "oneOf": [
+        {
+          "$ref": "#/$defs/begin_change"
+        },
+        {
+          "$ref": "#/$defs/ledger_change"
+        },
+        {
+          "$ref": "#/$defs/complete_change"
+        },
+        {
+          "$ref": "#/$defs/invalidate_change"
+        }
+      ]
+    },
+    "selector": {
+      "oneOf": [
+        {
+          "type": "object",
+          "properties": {
+            "view": {
+              "const": "SUMMARY"
+            }
+          },
+          "required": [
+            "view"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "view": {
+              "const": "LEDGER"
+            }
+          },
+          "required": [
+            "view"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "view": {
+              "const": "OPERATION"
+            },
+            "operation_id": {
+              "$ref": "#/$defs/uuid"
+            }
+          },
+          "required": [
+            "view",
+            "operation_id"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "view": {
+              "const": "RECEIPT"
+            },
+            "write_id": {
+              "$ref": "#/$defs/uuid"
+            }
+          },
+          "required": [
+            "view",
+            "write_id"
+          ],
+          "additionalProperties": false
+        }
+      ]
+    },
+    "registry_read": {
+      "type": "object",
+      "properties": {
+        "request_id": {
+          "$ref": "#/$defs/uuid"
+        },
+        "type": {
+          "const": "D06_A0_REGISTRY"
+        },
+        "owner_context": {
+          "$ref": "#/$defs/owner"
+        },
+        "payload": {
+          "type": "object",
+          "properties": {
+            "protocol_version": {
+              "const": "d06-a0-registry-candidate-1"
+            },
+            "registry_id": {
+              "$ref": "#/$defs/uuid"
+            },
+            "registry_epoch": {
+              "$ref": "#/$defs/uuid"
+            },
+            "context": {
+              "$ref": "#/$defs/context"
+            },
+            "content_instance_id": {
+              "$ref": "#/$defs/uuid"
+            },
+            "channel_credential": {
+              "$ref": "#/$defs/credential"
+            },
+            "action": {
+              "const": "READ"
+            },
+            "selector": {
+              "$ref": "#/$defs/selector"
+            },
+            "write_id": {
+              "type": "null"
+            },
+            "expected_record_version": {
+              "type": "null"
+            },
+            "change": {
+              "type": "null"
+            }
+          },
+          "required": [
+            "protocol_version",
+            "registry_id",
+            "registry_epoch",
+            "context",
+            "content_instance_id",
+            "channel_credential",
+            "action",
+            "selector",
+            "write_id",
+            "expected_record_version",
+            "change"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "request_id",
+        "type",
+        "owner_context",
+        "payload"
+      ],
+      "additionalProperties": false
+    },
+    "registry_commit": {
+      "type": "object",
+      "properties": {
+        "request_id": {
+          "$ref": "#/$defs/uuid"
+        },
+        "type": {
+          "const": "D06_A0_REGISTRY"
+        },
+        "owner_context": {
+          "$ref": "#/$defs/owner"
+        },
+        "payload": {
+          "type": "object",
+          "properties": {
+            "protocol_version": {
+              "const": "d06-a0-registry-candidate-1"
+            },
+            "registry_id": {
+              "$ref": "#/$defs/uuid"
+            },
+            "registry_epoch": {
+              "$ref": "#/$defs/uuid"
+            },
+            "context": {
+              "$ref": "#/$defs/context"
+            },
+            "content_instance_id": {
+              "$ref": "#/$defs/uuid"
+            },
+            "channel_credential": {
+              "$ref": "#/$defs/credential"
+            },
+            "action": {
+              "const": "COMMIT"
+            },
+            "selector": {
+              "type": "null"
+            },
+            "write_id": {
+              "$ref": "#/$defs/uuid"
+            },
+            "expected_record_version": {
+              "$ref": "#/$defs/uuid"
+            },
+            "change": {
+              "$ref": "#/$defs/change"
+            }
+          },
+          "required": [
+            "protocol_version",
+            "registry_id",
+            "registry_epoch",
+            "context",
+            "content_instance_id",
+            "channel_credential",
+            "action",
+            "selector",
+            "write_id",
+            "expected_record_version",
+            "change"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "request_id",
+        "type",
+        "owner_context",
+        "payload"
+      ],
+      "additionalProperties": false
+    },
+    "summary_state": {
+      "type": "object",
+      "properties": {
+        "view": {
+          "const": "SUMMARY"
+        },
+        "readiness": {
+          "enum": [
+            "PROVISIONAL",
+            "READY",
+            "BLOCKED"
+          ]
+        },
+        "lifecycle": {
+          "enum": [
+            "ACTIVE",
+            "INACTIVE",
+            "GONE"
+          ]
+        },
+        "control_seq": {
+          "$ref": "#/$defs/count"
+        },
+        "cleanup_pending": {
+          "type": "boolean"
+        },
+        "apply_closed": {
+          "type": "boolean"
+        },
+        "recovery": {
+          "enum": [
+            "NONE",
+            "WORKER_RECREATED",
+            "RECORD_INVALID",
+            "DOCUMENT_UNREACHABLE"
+          ]
+        },
+        "current": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/current"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "view",
+        "readiness",
+        "lifecycle",
+        "control_seq",
+        "cleanup_pending",
+        "apply_closed",
+        "recovery",
+        "current"
+      ],
+      "additionalProperties": false
+    },
+    "ledger_state": {
+      "type": "object",
+      "properties": {
+        "view": {
+          "const": "LEDGER"
+        },
+        "entries": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/ledger_entry"
+          },
+          "maxItems": 512
+        },
+        "cleanup_pending": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "view",
+        "entries",
+        "cleanup_pending"
+      ],
+      "additionalProperties": false
+    },
+    "operation_state": {
+      "type": "object",
+      "properties": {
+        "view": {
+          "const": "OPERATION"
+        },
+        "operation_id": {
+          "$ref": "#/$defs/uuid"
+        },
+        "phase": {
+          "enum": [
+            "IN_FLIGHT",
+            "COMPLETED",
+            "RESULT_EVICTED",
+            "IN_DOUBT"
+          ]
+        },
+        "response": {
+          "anyOf": [
+            {
+              "oneOf": [
+                {
+                  "$ref": "#/$defs/ok_response"
+                },
+                {
+                  "$ref": "#/$defs/error_response"
+                }
+              ]
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "view",
+        "operation_id",
+        "phase",
+        "response"
+      ],
+      "additionalProperties": false
+    },
+    "receipt_state": {
+      "type": "object",
+      "properties": {
+        "view": {
+          "const": "RECEIPT"
+        },
+        "write_id": {
+          "$ref": "#/$defs/uuid"
+        },
+        "phase": {
+          "enum": [
+            "COMMITTED",
+            "RESULT_EVICTED"
+          ]
+        },
+        "commit_receipt": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/uuid"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "committed_record_version": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/uuid"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "view",
+        "write_id",
+        "phase",
+        "commit_receipt",
+        "committed_record_version"
+      ],
+      "additionalProperties": false
+    },
+    "read_state": {
+      "oneOf": [
+        {
+          "$ref": "#/$defs/summary_state"
+        },
+        {
+          "$ref": "#/$defs/ledger_state"
+        },
+        {
+          "$ref": "#/$defs/operation_state"
+        },
+        {
+          "$ref": "#/$defs/receipt_state"
+        }
+      ]
+    },
+    "read_result": {
+      "type": "object",
+      "properties": {
+        "protocol_version": {
+          "const": "d06-a0-registry-candidate-1"
+        },
+        "registry_id": {
+          "$ref": "#/$defs/uuid"
+        },
+        "registry_epoch": {
+          "$ref": "#/$defs/uuid"
+        },
+        "record_version": {
+          "$ref": "#/$defs/uuid"
+        },
+        "action": {
+          "const": "READ"
+        },
+        "write_id": {
+          "type": "null"
+        },
+        "commit_receipt": {
+          "type": "null"
+        },
+        "state": {
+          "$ref": "#/$defs/read_state"
+        }
+      },
+      "required": [
+        "protocol_version",
+        "registry_id",
+        "registry_epoch",
+        "record_version",
+        "action",
+        "write_id",
+        "commit_receipt",
+        "state"
+      ],
+      "additionalProperties": false
+    },
+    "commit_result": {
+      "type": "object",
+      "properties": {
+        "protocol_version": {
+          "const": "d06-a0-registry-candidate-1"
+        },
+        "registry_id": {
+          "$ref": "#/$defs/uuid"
+        },
+        "registry_epoch": {
+          "$ref": "#/$defs/uuid"
+        },
+        "record_version": {
+          "$ref": "#/$defs/uuid"
+        },
+        "action": {
+          "const": "COMMIT"
+        },
+        "write_id": {
+          "$ref": "#/$defs/uuid"
+        },
+        "commit_receipt": {
+          "$ref": "#/$defs/uuid"
+        },
+        "state": {
+          "type": "null"
+        }
+      },
+      "required": [
+        "protocol_version",
+        "registry_id",
+        "registry_epoch",
+        "record_version",
+        "action",
+        "write_id",
+        "commit_receipt",
+        "state"
+      ],
+      "additionalProperties": false
+    },
+    "registry_ok": {
+      "type": "object",
+      "properties": {
+        "request_id": {
+          "$ref": "#/$defs/uuid"
+        },
+        "status": {
+          "const": "OK"
+        },
+        "data": {
+          "oneOf": [
+            {
+              "$ref": "#/$defs/read_result"
+            },
+            {
+              "$ref": "#/$defs/commit_result"
+            }
+          ]
+        },
+        "error": {
+          "type": "null"
+        }
+      },
+      "required": [
+        "request_id",
+        "status",
+        "data",
+        "error"
+      ],
+      "additionalProperties": false
+    },
+    "registry_error": {
+      "type": "object",
+      "properties": {
+        "request_id": {
+          "$ref": "#/$defs/uuid"
+        },
+        "status": {
+          "const": "ERROR"
+        },
+        "data": {
+          "type": "null"
+        },
+        "error": {
+          "type": "object",
+          "properties": {
+            "protocol_version": {
+              "const": "d06-a0-registry-candidate-1"
+            },
+            "code": {
+              "enum": [
+                "STORE_UNAUTHORIZED",
+                "STORE_SCOPE_MISMATCH",
+                "STORE_INVALID_SCHEMA",
+                "STORE_NOT_READY",
+                "STORE_INACTIVE",
+                "STORE_VERSION_CONFLICT",
+                "STORE_WRITE_CONFLICT",
+                "STORE_RESULT_EVICTED",
+                "STORE_FAILED",
+                "STORE_CAPACITY",
+                "STORE_QUEUE_FULL",
+                "STORE_RECORD_INVALID",
+                "STORE_UNKNOWN_OPERATION",
+                "STORE_UNKNOWN_WRITE"
+              ]
+            },
+            "retryable": {
+              "type": "boolean"
+            }
+          },
+          "required": [
+            "protocol_version",
+            "code",
+            "retryable"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "request_id",
+        "status",
+        "data",
+        "error"
+      ],
+      "additionalProperties": false
+    }
+  },
+  "oneOf": [
+    {
+      "$ref": "#/$defs/query_bootstrap"
+    },
+    {
+      "$ref": "#/$defs/query_bound"
+    },
+    {
+      "$ref": "#/$defs/apply"
+    },
+    {
+      "$ref": "#/$defs/release_normal"
+    },
+    {
+      "$ref": "#/$defs/release_cleanup"
+    },
+    {
+      "$ref": "#/$defs/ok_response"
+    },
+    {
+      "$ref": "#/$defs/error_response"
+    },
+    {
+      "$ref": "#/$defs/registry_read"
+    },
+    {
+      "$ref": "#/$defs/registry_commit"
+    },
+    {
+      "$ref": "#/$defs/registry_ok"
+    },
+    {
+      "$ref": "#/$defs/registry_error"
+    }
+  ]
+}

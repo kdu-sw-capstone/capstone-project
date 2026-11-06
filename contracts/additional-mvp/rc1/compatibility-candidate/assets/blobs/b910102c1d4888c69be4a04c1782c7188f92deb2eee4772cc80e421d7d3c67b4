@@ -1,0 +1,41 @@
+--- a/extension/src/member-journal-store.js
++++ b/extension/src/member-journal-store.js
+@@ -34,9 +34,37 @@
+       request.onsuccess = () => done(request.result.filter(entry => entry.owner_key === ownerKey && entry.executor_id === executorId));
+     });
+   }
+-  save(entry) {
++  save(entry, options = {}) {
+     const copy = structuredClone(entry);
+     if (!/^MEMBER:[1-9][0-9]*$/.test(copy.owner_key)) throw new Error('INVALID_OWNER');
++    if (Object.hasOwn(options, 'expected')) {
++      const expected = structuredClone(options.expected); let failure;
++      return this.transaction('readwrite', (store, done) => {
++        const request = store.get([copy.owner_key, copy.session_id]);
++        request.onsuccess = () => { try {
++          if (JSON.stringify(request.result ?? null) !== JSON.stringify(expected)) {
++            failure = new Error('JOURNAL_CONFLICT'); store.transaction.abort(); return;
++          }
++          store.put(copy); done(null);
++        } catch (error) { failure = error; store.transaction.abort(); } };
++      }).catch(error => { throw failure ?? error; });
++    }
+     return this.transaction('readwrite', (store, done) => { store.put(copy); done(null); });
+   }
++
++  // Trusted Core callback only. Invoke native dispatch synchronously in the
++  // same readonly snapshot as the original operation/footprint. Box its Promise.
++  withFootprint(supplied, dispatch, { applying = false } = {}) {
++    const expected = structuredClone(supplied); let failure;
++    return this.transaction('readonly', (store, done) => {
++      const request = store.get([expected.owner_key, expected.session_id]);
++      request.onsuccess = () => { try {
++        const current = request.result;
++        if (!current || ['owner_key', 'session_id', 'executor_id', 'command_id', 'snapshot', 'rules'].some(key => JSON.stringify(current[key]) !== JSON.stringify(expected[key]))
++          || current.revision > expected.revision || current.action_seq > expected.action_seq
++          || applying && JSON.stringify(current) !== JSON.stringify(expected)) throw new Error('JOURNAL_SCOPE_MISMATCH');
++        done(dispatch());
++      } catch (error) { failure = error; store.transaction.abort(); } };
++    }).catch(error => { throw failure ?? error; });
++  }
+ }

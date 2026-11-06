@@ -1,0 +1,41 @@
+--- a/extension/src/member-execution-loop.js
++++ b/extension/src/member-execution-loop.js
+@@ -19,11 +19,23 @@
+     this.captureSuspended = new Set();
+     this.queue = Promise.resolve(); this.recovered = new Set(); this.command = null;
+     this.controller = new SiteController({ dnr, tabs, journal, blockedPageUrl, now,
+-      getContext: () => this.context() });
++      getContext: () => this.context(), getDnrContext: () => this.dnrContext() });
+     this.access = new MemberAccessCollector({store:accessStore,getContext: at => this.accessContext(at), blockedPageUrl});
+     this.view = { status: 'IDLE', session_id: null };
+   }
+   serial(work) { const result = this.queue.then(work); this.queue = result.catch(() => {}); return result; }
++  async dnrContext() {
++    const auth = globalThis.__memberIntegration?.auth;
++    if (!auth) throw new Error('LOCAL_DNR_CONTEXT_UNAVAILABLE');
++    // Local load only. context()/getCredentials/status may acquire Auth.serial
++    // or perform HTTP and must not be called from inside the DNR lock.
++    const record = await auth.load(), command = this.command;
++    if (!command || record.phase !== 'LINKED' || record.server_url !== this.client.baseUrl
++      || !/^[1-9][0-9]*$/.test(record.owner_user_id) || record.executor_id !== command.executor_id) throw new Error('EXECUTION_SCOPE_MISMATCH');
++    return { owner_key: 'MEMBER:' + record.owner_user_id, executor_id: record.executor_id,
++      session_id: command.session_id, command_id: command.command_id, revision: command.desired_revision,
++      desired: command.type === 'APPLY_POLICY' ? 'APPLIED' : 'RELEASED', reconciled: true };
++  }
+   async context() {
+     const credentials = await this.getCredentials(), command = this.command;
+     if (!command) throw new Error('RECONCILE_REQUIRED');
+@@ -76,9 +88,11 @@
+       return;
+     }
+     if (journal.executor_id !== row.executor_id || journal.owner_key !== row.owner_key) throw new Error('JOURNAL_SCOPE_MISMATCH');
+-    journal.desired = 'RELEASED'; journal.observed = 'UNCONFIRMED'; await this.journal.save(journal);
++    const previous = structuredClone(journal);
++    journal.desired = 'RELEASED'; journal.observed = 'UNCONFIRMED'; await this.journal.save(journal, { expected: previous });
++    const pending = structuredClone(journal);
+     await this.scope(row); await this.controller.removeOwned(journal);
+-    journal.observed = 'RELEASED'; await this.journal.save(journal);
++    journal.observed = 'RELEASED'; await this.journal.save(journal, { expected: pending });
+   }
+   async localEnd(row, reason) {
+     await this.cleanup(row);
