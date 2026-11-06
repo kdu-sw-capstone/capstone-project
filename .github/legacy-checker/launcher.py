@@ -80,6 +80,15 @@ def bind_checkout(candidate,trust):
  need(not git(p,'diff','--name-only','HEAD','--').strip(),'DIRTY_CHECKOUT')
  need(not git(p,'ls-files','--others','--exclude-standard').strip(),'UNTRACKED_CHECKOUT')
  return p
+def exact_develop_environment(env,rules):
+ # GitHub custom deployment rules distinguish Branch from Tag. No glob matching.
+ if type(env) is not dict or env.get('name')!='legacy-checker-review':return False
+ mode=env.get('deployment_branch_policy')
+ if type(mode) is not dict or mode.get('protected_branches') is not False or mode.get('custom_branch_policies') is not True:return False
+ if type(rules) is not list or len(rules)!=1:return False
+ rule=rules[0]
+ return type(rule) is dict and rule.get('type')=='branch' and rule.get('name')=='develop'
+
 class GitHub:
  def __init__(self,token):self.token=token
  def request(self,path,body=None):
@@ -95,16 +104,28 @@ class GitHub:
    need(isinstance(data,list),'API_PAGE_INVALID');out.extend(data)
    if len(data)<100:return out
   raise Rejected('API_PAGE_LIMIT')
+ def environment_branches(self,name):
+  need(name=='legacy-checker-review','ENVIRONMENT_SCOPE_MISMATCH')
+  rows=[];total=None
+  for page in range(1,21):
+   data=self.get('environments/'+name+'/deployment-branch-policies?per_page=100&page='+str(page))
+   need(type(data) is dict and type(data.get('total_count')) is int and data['total_count']>=0 and type(data.get('branch_policies')) is list,'ENVIRONMENT_POLICY_QUERY_UNCONFIRMED')
+   if total is None:total=data['total_count']
+   need(total==data['total_count'],'ENVIRONMENT_POLICY_CHANGED_DURING_READ')
+   rows.extend(data['branch_policies'])
+   if len(data['branch_policies'])<100:
+    need(len(rows)==total,'ENVIRONMENT_POLICY_INCOMPLETE');return rows
+  raise Rejected('ENVIRONMENT_POLICY_PAGE_LIMIT')
  def resolved(self,pr):
   q='query($owner:String!,$name:String!,$number:Int!){repository(owner:$owner,name:$name){pullRequest(number:$number){reviewThreads(first:100){nodes{isResolved}pageInfo{hasNextPage}}}}}'
   r=self.request('/graphql',{'query':q,'variables':{'owner':'kdu-sw-capstone','name':'capstone-project','number':pr}});need(not r.get('errors'),'REVIEW_API_UNCONFIRMED');t=r['data']['repository']['pullRequest']['reviewThreads'];need(not t['pageInfo']['hasNextPage'],'REVIEW_THREAD_LIMIT');return all(x['isResolved'] for x in t['nodes'])
  def facts(self,root,trust):
-  cp=self.get('pulls/'+str(root['control_pr']));p=self.get('pulls/'+str(trust['candidate_pr']));cc=self.get('commits/'+root['control_sha']);c=self.get('commits/'+trust['candidate_sha']);develop=self.get('branches/develop');rules=self.get('rules/branches/develop');env=self.get('environments/'+root['environment_name']);collabs=self.pages('collaborators')
+  cp=self.get('pulls/'+str(root['control_pr']));p=self.get('pulls/'+str(trust['candidate_pr']));cc=self.get('commits/'+root['control_sha']);c=self.get('commits/'+trust['candidate_sha']);develop=self.get('branches/develop');rules=self.get('rules/branches/develop');env=self.get('environments/'+root['environment_name']);policies=self.environment_branches(root['environment_name']);collabs=self.pages('collaborators')
   protections=[x.get('parameters',{}) for x in rules if x['type']=='pull_request'];protected=develop.get('protected') is True and any(x.get('required_approving_review_count',0)>=1 and x.get('dismiss_stale_reviews_on_push') and x.get('required_review_thread_resolution') for x in protections)
-  environment=any(x['type']=='required_reviewers' and x.get('prevent_self_review') is True and any(v.get('type')=='User' and v.get('reviewer',{}).get('id')==root['admin_id'] for v in x.get('reviewers',[])) for x in env.get('protection_rules',[]))
+  environment=exact_develop_environment(env,policies)
   # Exact control HEAD may be merged to develop, but its PR head review remains the source.
   compare=self.get('compare/'+root['control_sha']+'...'+develop['commit']['sha']);in_develop=compare['status'] in ('identical','ahead')
-  f={'workflow_sha':os.environ['GITHUB_WORKFLOW_SHA'],'workflow_ref':os.environ['GITHUB_REF'],'actor_id':int(os.environ['GITHUB_ACTOR_ID']),'administrator_ids':[x['id'] for x in collabs if x.get('permissions',{}).get('admin')],'environment_verified':environment and env.get('deployment_branch_policy',{}).get('protected_branches') is True,'control_protection_verified':protected,'control_sha':cc['sha'],'control_tree':cc['commit']['tree']['sha'],'control_in_develop':in_develop,'candidate_sha':c['sha'],'candidate_tree':c['commit']['tree']['sha'],'candidate_parents':[x['sha'] for x in c['parents']],'source_in_candidate':self.get('compare/'+trust['source_commit']+'...'+trust['candidate_sha'])['status'] in ('ahead','identical'),'integration_sha':self.get('branches/integration%2Fadditional-mvp-20261029')['commit']['sha'],'candidate_pr':p,'control_pr':cp,'candidate_reviews':self.pages('pulls/'+str(p['number'])+'/reviews'),'control_reviews':self.pages('pulls/'+str(cp['number'])+'/reviews'),'candidate_threads_resolved':self.resolved(p['number']),'control_threads_resolved':self.resolved(cp['number'])}
+  f={'workflow_sha':os.environ['GITHUB_WORKFLOW_SHA'],'workflow_ref':os.environ['GITHUB_REF'],'actor_id':int(os.environ['GITHUB_ACTOR_ID']),'administrator_ids':[x['id'] for x in collabs if x.get('permissions',{}).get('admin')],'environment_verified':environment,'environment_branch_policies':policies,'control_protection_verified':protected,'control_sha':cc['sha'],'control_tree':cc['commit']['tree']['sha'],'control_in_develop':in_develop,'candidate_sha':c['sha'],'candidate_tree':c['commit']['tree']['sha'],'candidate_parents':[x['sha'] for x in c['parents']],'source_in_candidate':self.get('compare/'+trust['source_commit']+'...'+trust['candidate_sha'])['status'] in ('ahead','identical'),'integration_sha':self.get('branches/integration%2Fadditional-mvp-20261029')['commit']['sha'],'candidate_pr':p,'control_pr':cp,'candidate_reviews':self.pages('pulls/'+str(p['number'])+'/reviews'),'control_reviews':self.pages('pulls/'+str(cp['number'])+'/reviews'),'candidate_threads_resolved':self.resolved(p['number']),'control_threads_resolved':self.resolved(cp['number'])}
   return f
 def main():
  a=argparse.ArgumentParser();a.add_argument('--control',required=True);a.add_argument('--candidate',required=True);a.add_argument('--output',required=True);a.add_argument('--contract-suite',action='store_true');args=a.parse_args()
