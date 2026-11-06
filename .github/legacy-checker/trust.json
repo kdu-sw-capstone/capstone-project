@@ -4,14 +4,15 @@
   "repository": "kdu-sw-capstone/capstone-project",
   "repository_id": 1318294980,
   "control_ref": "refs/heads/develop",
-  "candidate_pr": null,
+  "candidate_pr": 109,
   "candidate_sha": null,
-  "candidate_tree": "4d25331e2508bdb47ea797d4ab36cc9582bb808a",
-  "candidate_parent": "88d734dfdbc776c9fcb6c2f5544aaa395765fac4",
+  "candidate_tree": "90d60f421dc3812b9a1fcc181f72ba70bdc1b2bf",
+  "candidate_parent": "7bae33fe1565b82b0e00ae2a276805b4cc569345",
   "observed_integration": "88d734dfdbc776c9fcb6c2f5544aaa395765fac4",
   "base_review": "REQUIRED_NOT_INHERITED",
   "tool_path": "contracts/additional-mvp/rc1/compatibility-candidate",
-  "tool_manifest_sha256": "67f10274cdafdae0da00cdeef2b6eecc449b4bb7b83a8b48c62a3f092c7b5b52",
+  "tool_manifest_sha256": "88ee812ca1aad64aadb3aa11878e6ecc7906b2cb05c341a7947f6328d3af2f0a",
   "profile": "integration108-checkout-proposal",
-  "operational_approval": "NOT_GRANTED"
+  "operational_approval": "NOT_GRANTED",
+  "source_commit": "88d734dfdbc776c9fcb6c2f5544aaa395765fac4"
 }

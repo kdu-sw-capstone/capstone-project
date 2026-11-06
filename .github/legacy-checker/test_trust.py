@@ -6,10 +6,10 @@ import launcher as l
 
 def fixture():
  r=dict(enabled=True,repository=l.REPO,repository_id=l.REPO_ID,workflow_sha='a'*40,control_sha='b'*40,control_tree='c'*40,operators=[10],admin_id=20,tool_manifest_sha256='d'*64,control_pr=1,review_groups={'core':[30],'trust':[40]},principal_groups={'50':'author','51':'author'})
- t=dict(enabled=True,repository=l.REPO,repository_id=l.REPO_ID,control_ref='refs/heads/develop',base_review='CURRENT_BASE_REVIEWED',candidate_sha='e'*40,candidate_tree='f'*40,candidate_parent='1'*40,observed_integration='1'*40,tool_manifest_sha256='d'*64,candidate_pr=2)
+ t=dict(enabled=True,repository=l.REPO,repository_id=l.REPO_ID,control_ref='refs/heads/develop',base_review='CURRENT_BASE_REVIEWED',candidate_sha='e'*40,candidate_tree='f'*40,candidate_parent='1'*40,observed_integration='1'*40,source_commit='1'*40,tool_manifest_sha256='d'*64,candidate_pr=2)
  def pr(n,sha,control=False):return dict(number=n,state='closed' if control else 'open',merged=control,user={'id':50},head={'sha':sha,'repo':{'id':l.REPO_ID}},base={'sha':'1'*40})
  def review(uid,sha,n):return dict(id=n,user={'id':uid},state='APPROVED',commit_id=sha,submitted_at=str(n))
- f=dict(workflow_sha='a'*40,workflow_ref='refs/heads/develop',actor_id=10,administrator_ids=[20],environment_verified=True,control_protection_verified=True,control_sha='b'*40,control_tree='c'*40,control_in_develop=True,candidate_sha='e'*40,candidate_tree='f'*40,candidate_parents=['1'*40],integration_sha='1'*40,candidate_pr=pr(2,'e'*40),control_pr=pr(1,'b'*40,True),candidate_reviews=[review(30,'e'*40,1)],control_reviews=[review(30,'b'*40,2),review(40,'b'*40,3)],candidate_threads_resolved=True,control_threads_resolved=True)
+ f=dict(workflow_sha='a'*40,workflow_ref='refs/heads/develop',actor_id=10,administrator_ids=[20],environment_verified=True,control_protection_verified=True,control_sha='b'*40,control_tree='c'*40,control_in_develop=True,source_in_candidate=True,candidate_sha='e'*40,candidate_tree='f'*40,candidate_parents=['1'*40],integration_sha='1'*40,candidate_pr=pr(2,'e'*40),control_pr=pr(1,'b'*40,True),candidate_reviews=[review(30,'e'*40,1)],control_reviews=[review(30,'b'*40,2),review(40,'b'*40,3)],candidate_threads_resolved=True,control_threads_resolved=True)
  return r,t,f
 class Tests(unittest.TestCase):
  def test_positive(self):

@@ -60,4 +60,4 @@ jobs:
       - name: Live approval and complete tooling validation
         env:
           GITHUB_TOKEN: ${{ github.token }}
-        run: python -I -B control/.github/legacy-checker/launcher.py --control control --candidate candidate --output "$RUNNER_TEMP/legacy-result"
+        run: python -I -B control/.github/legacy-checker/launcher.py --control control --candidate candidate --output "$RUNNER_TEMP/legacy-result" --contract-suite
