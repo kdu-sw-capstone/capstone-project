@@ -18,7 +18,9 @@ document.querySelectorAll('button[data-type]').forEach(button=>button.addEventLi
   try{
     const [tab]=await chrome.tabs.query({active:true,currentWindow:true});
     if(!tab?.id)throw Error('ACTIVE_TAB_NOT_FOUND');
-    const response=await chrome.tabs.sendMessage(tab.id,{type:button.dataset.type});
+    const message={type:button.dataset.type};
+    if(message.type==='TEST_KEYWORD_APPLY')message.term=document.querySelector('#keyword-term').value;
+    const response=await chrome.tabs.sendMessage(tab.id,message);
     if(response===undefined)throw Error('EMPTY_CONTENT_RESPONSE');
     report.response=response;
   }catch(error){report.error=error.message;report.hint='Instagram 또는 YouTube 탭에서 페이지를 새로고침한 뒤 다시 적용하세요.';}

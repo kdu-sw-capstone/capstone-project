@@ -309,8 +309,28 @@ const instagramGrayscaleReady=Promise.all([homeReady,import(chrome.runtime.getUR
     }};
   });
 
+const keywordReady=Promise.all([homeReady,import(chrome.runtime.getURL('content/keyword-session.mjs'))]).then(([{ledger},{KeywordSession}])=>{
+  let session=null;
+  return {handle(message){
+    if(message.type==='TEST_KEYWORD_APPLY'){
+      if(session)throw Error('KEYWORD_RELEASE_FIRST: 키워드 해제 후 다시 적용하세요.');
+      if(typeof message.term!=='string'||!message.term.trim()||[...message.term].length>80)throw Error('INVALID_TEST_KEYWORD');
+      session=new KeywordSession(document,{ledger,owner_binding_id:crypto.randomUUID(),binding_id:crypto.randomUUID(),
+        policy:{enabled:true,match_profile:'URL_BOUNDARY_1',scope:'FOCUS_FROZEN',terms:[message.term],exceptions:[]},
+        // Isolated manual test only. Not issued/native authority or durable ACK.
+        canApply:()=>true,authorizeNavigation:()=>true});
+      try{session.start();}catch(error){session=null;throw error;}
+    }
+    let released;
+    if(message.type==='TEST_KEYWORD_RELEASE'&&session){released=session.release();if(released.restored)session=null;}
+    return {testOnly:true,coreConnected:false,test_build:'keyword-block-1',state:session?.inspect()??null,released};
+  }};
+});
 chrome.runtime.onMessage.addListener((message, sender, reply) => {
   if (sender.id !== chrome.runtime.id || sender.url !== chrome.runtime.getURL('popup.html')) return;
+  if(['TEST_KEYWORD_APPLY','TEST_KEYWORD_RELEASE','TEST_KEYWORD_STATE'].includes(message?.type)){
+    keywordReady.then(adapter=>reply(adapter.handle(message))).catch(error=>reply({testOnly:true,error:error.message}));return true;
+  }
   if(['TEST_IG_GRAYSCALE_APPLY','TEST_IG_GRAYSCALE_RELEASE','TEST_IG_GRAYSCALE_STATE'].includes(message?.type)){
     instagramGrayscaleReady.then(adapter=>reply(adapter.handle(message.type))).catch(error=>reply({testOnly:true,error:error.message}));return true;
   }

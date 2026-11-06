@@ -6,5 +6,6 @@ for (const name of ['changes','entry','shorts','features','keyword','controller'
   await copyFile(new URL(`../content/${name}.mjs`,import.meta.url),new URL(`content/${name}.mjs`,output));
 }
 await mkdir(new URL('ui/',output),{recursive:true});
+for(const name of ['keyword-url','keyword-casefold','keyword-session'])await copyFile(new URL(`../content/${name}.mjs`,import.meta.url),new URL(`content/${name}.mjs`,output));
 await copyFile(new URL('../ui/restriction.mjs',import.meta.url),new URL('ui/restriction.mjs',output));
 console.log('TEST ONLY unpacked extension: ' + decodeURIComponent(output.pathname));
