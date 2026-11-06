@@ -351,11 +351,11 @@
     "assets/blobs/fd76b3418b08fc00708985daa8f025fdea6f6cf1a0c263a91c7c230b4ec3321c": "fd76b3418b08fc00708985daa8f025fdea6f6cf1a0c263a91c7c230b4ec3321c",
     "assets/blobs/fe72a6e09ae331a99412d41d3aa7b656b7328a31010f9340db7f7397de104ab7": "fe72a6e09ae331a99412d41d3aa7b656b7328a31010f9340db7f7397de104ab7",
     "ci_contract_suite.py": "16f0813af283dc9407b3101302d841f0a3905bb83cff6ba6e7c12a3f6f2ac38e",
-    "explicit_checker.py": "11ee7c063789f98cf472dba89e16bc9ebe5284d77969490c90c0b4293ab8fa9f",
-    "legacy_compatibility_candidate.py": "dfc83b560e5a4925631e2834b456b8954bd5e7cecf11f3f5ce1235570c4a63b7",
-    "policy.json": "95602b5ac475362c02146fa1b77a1d95f231167a88af158c7b6b7e82a5a60f2a"
+    "explicit_checker.py": "34054efb29e1d7cd554451ac1a5f4830ea8beb21af39b067b4e19a15e52a6df2",
+    "legacy_compatibility_candidate.py": "38b73d213a17df9a4e1d2ad3ad0bded924985feb9e65513e502265f1b349f7b2",
+    "policy.json": "fc11b725fd5672db76dc375ab3e2aba862bfeb1e76a76b7269e5ea2213e485b4"
   },
-  "sourceCommit": "88d734dfdbc776c9fcb6c2f5544aaa395765fac4",
+  "sourceCommit": "bcf9cc129c718c6d2df73141d06137ae91be11e6",
   "sourceOnlyScope": "isolated explicit adapter; original owning checker unchanged",
-  "sourceTree": "bffe1ddf23cd64aa63d7c2e4b6c15676f1572db6"
+  "sourceTree": "709d19a87ebf7cf727dd8ca1bbdd0a527fcf76f7"
 }
