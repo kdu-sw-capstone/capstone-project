@@ -5,14 +5,14 @@
   "repository_id": 1318294980,
   "control_ref": "refs/heads/develop",
   "candidate_pr": 109,
-  "candidate_sha": null,
-  "candidate_tree": "90d60f421dc3812b9a1fcc181f72ba70bdc1b2bf",
-  "candidate_parent": "7bae33fe1565b82b0e00ae2a276805b4cc569345",
-  "observed_integration": "88d734dfdbc776c9fcb6c2f5544aaa395765fac4",
-  "base_review": "REQUIRED_NOT_INHERITED",
+  "candidate_sha": "efd128f4ac2fb31f3905730e52be9cd79d78e796",
+  "candidate_tree": "bf444338a8fb2f62a1272968a6c83f7b97b0367b",
+  "candidate_parent": "22b4e5e7950b922f89c7e831fd3d35d96f7b23bf",
+  "observed_integration": "bcf9cc129c718c6d2df73141d06137ae91be11e6",
+  "base_review": "CURRENT_BASE_REVIEWED",
   "tool_path": "contracts/additional-mvp/rc1/compatibility-candidate",
-  "tool_manifest_sha256": "88ee812ca1aad64aadb3aa11878e6ecc7906b2cb05c341a7947f6328d3af2f0a",
-  "profile": "integration108-checkout-proposal",
+  "tool_manifest_sha256": "4507bcf3d2ff53778765dd0953602de050844ce93ed5efe7844988d9e402b97f",
+  "profile": "integration111-checkout-proposal",
   "operational_approval": "NOT_GRANTED",
-  "source_commit": "88d734dfdbc776c9fcb6c2f5544aaa395765fac4"
+  "source_commit": "bcf9cc129c718c6d2df73141d06137ae91be11e6"
 }
