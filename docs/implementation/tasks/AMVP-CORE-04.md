@@ -159,3 +159,13 @@
 - 대상 브랜치: integration/additional-mvp-20261029. 자동 병합/제품 활성화 요청이 아니라 기반 모듈 리뷰 범위다.
 - 제출 전 DNR24/24·기존 계약6/6·npm run check 재실행 PASS. GitHub CI는 Ubuntu/Windows Node24에서 동일 모의 시험 수행; Windows 실제 Chrome 수용 시험을 뜻하지 않는다.
 - 미완료: legacy writer guard 전체 결속, Worker 진입점 연결, 실제 DNR·quota·브라우저 재시작 수용. 기존 API·DB·Content 구현은 이번 PR에 포함하지 않는다.
+
+## 2026-11-02 SITE_TIME 증거 등록 CAS — 진행 중
+
+- 담당 윤종민, 브랜치 `fix/additional-mvp-site-time-evidence-cas`, 기준 integration `2201654e4ba3adbc1a4738bc14723b708d522c69`.
+- 기존 SiteTimeDnrEvidence 등록 경로에서 검증 이후 같은 개수의 증거 내용 변경·DNR 원장 변경·지연 중복 응답을 반례로 확인한다. 제품 writer·#70 DNR CAS·shared 계약·권한 provider·RuntimeReport는 변경하지 않는다.
+- 원본과 다른 owner/cleanup 의무를 보존하면서 기존 증거와 관측 DNR 원장의 정확한 snapshot을 최종 transaction에서 대조하는 최소 수정 범위다. 실제 Chrome START·병합은 수행하지 않는다.
+
+- 종료: 동일 개수 정책 원문 변경·최종 commit 전 DNR 원장 변경·검사 후 지연 중복 성공의 기존 반례3건을 재현했다. 증거 전체 snapshot과 DNR row를 같은 최종 transaction에서 비교하고, 중복도 최종 readonly snapshot을 확인한다. 기존 공개 API/저장 형식/권한 provider/DNR writer·#70 CAS는 불변이다.
+- 신규12/12·기존 증거 포함37/37·전체 Extension991/991·계약6/6·Chromium 실제 IndexedDB/Web Lock1/1·syntax/whitespace PASS. 신규/관련은 전체에 포함되며 중복 합산하지 않는다. 브라우저 DNR/authority는 모의, 실제 Chrome START·MV3/Server 수용 미실행.
+- 상태: 담당 리뷰·통합 대기. 실패 시 원본·다른 owner/cleanup 의무 보존, 새 writer 뒤 정확한 과거 중복 재시도 보존. [재현·CAS·검증·한계](../evidence/AMVP-CORE-04-site-time-evidence-cas.md). 제품 caller/issued provider/Report·한도·clock 연결은 별도 미완료다.
