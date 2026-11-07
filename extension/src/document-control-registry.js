@@ -24,6 +24,58 @@ function canonical(v) {
 }
 const equal = (a, b) => JSON.stringify(canonical(a)) === JSON.stringify(canonical(b));
 const terminal = state => ['RESTORED', 'DOCUMENT_GONE'].includes(state);
+const invalidStored = () => { throw new Error('INVALID_DOCUMENT_REGISTRY'); };
+// Validate existing v1 links, never repair/erase a missing restoration debt.
+// Consistent data is not native authority or proof of a DOM effect.
+function validateDocument(row, expectedRef = null) {
+  try {
+    if (!exact(row, ['key','ref','sequence','epoch','operations','obligations','lifecycle'])
+      || !equal(row.key, key(reference(row.ref))) || expectedRef && !equal(row.ref, expectedRef)
+      || !Number.isSafeInteger(row.sequence) || row.sequence < 0
+      || !Number.isSafeInteger(row.epoch) || row.epoch < 1
+      || !['ACTIVE','INACTIVE','GONE'].includes(row.lifecycle)
+      || !Array.isArray(row.operations) || !Array.isArray(row.obligations)
+      || row.sequence !== row.operations.length) invalidStored();
+    const bindings = new Map(), operations = new Set();
+    for (const item of row.obligations) {
+      if (!exact(item, ['scope','state'])) invalidStored();
+      const binding = scope(item.scope);
+      if (bindings.has(binding.bindingKey)) invalidStored();
+      bindings.set(binding.bindingKey, { scope: binding, state: 'UNCONFIRMED', applied: false });
+    }
+    let priorEpoch = 0;
+    for (const [i, operation] of row.operations.entries()) {
+      if (!exact(operation, ['operationKey','intent','ticket','result']) || !text(operation.operationKey)
+        || operations.has(operation.operationKey) || ![null,'CONFIRMED','FAILED','UNCONFIRMED'].includes(operation.result)) invalidStored();
+      const intent = operation.intent, ticket = operation.ticket;
+      if (!exact(intent, ['operationKey','action','controlScope']) || intent.operationKey !== operation.operationKey
+        || !['APPLY','RELEASE'].includes(intent.action)
+        || !exact(ticket, ['ref','operationKey','sequence','epoch','action','controlScope'])
+        || ticket.operationKey !== operation.operationKey || ticket.action !== intent.action
+        || !equal(ticket.ref, row.ref) || !equal(scope(intent.controlScope), scope(ticket.controlScope))
+        || ticket.sequence !== i + 1 || !Number.isSafeInteger(ticket.epoch)
+        || ticket.epoch < 1 || ticket.epoch < priorEpoch || ticket.epoch > row.epoch) invalidStored();
+      const binding = bindings.get(intent.controlScope.bindingKey);
+      if (!binding || !equal(binding.scope, intent.controlScope)
+        || (intent.action === 'APPLY' ? binding.applied : !binding.applied)) invalidStored();
+      if (intent.action === 'APPLY') binding.applied = true;
+      if (operation.result !== null) binding.state = intent.action === 'RELEASE'
+        ? operation.result === 'CONFIRMED' ? 'RESTORED' : 'CLEANUP_UNCONFIRMED'
+        : operation.result === 'CONFIRMED' ? 'APPLY_CONFIRMED' : 'UNCONFIRMED';
+      operations.add(operation.operationKey); priorEpoch = ticket.epoch;
+    }
+    for (const item of row.obligations) {
+      const binding = bindings.get(item.scope.bindingKey);
+      const expected = row.lifecycle === 'GONE' && !terminal(binding.state) ? 'DOCUMENT_GONE' : binding.state;
+      if (!binding.applied || item.state !== expected) invalidStored();
+    }
+  } catch { invalidStored(); }
+}
+function validateSlot(row, ref) {
+  if (!exact(row, ['key','documentKey']) || !equal(row.key, slot(ref))
+    || !Array.isArray(row.documentKey) || row.documentKey.length !== 4
+    || !equal(row.documentKey.slice(0, 3), slot(ref)) || !text(row.documentKey[3])) invalidStored();
+}
 export class DocumentControlRegistry {
   constructor({ indexedDB = globalThis.indexedDB, name = 'focurve-core-documents', operationLimit = 256 } = {}) {
     if (!Number.isSafeInteger(operationLimit) || operationLimit < 1) throw new Error('INVALID_REGISTRY_LIMIT');
@@ -52,8 +104,11 @@ export class DocumentControlRegistry {
   }
   load(ref) {
     ref = reference(ref);
-    return this.transaction('readonly', (documents, _slots, done) => {
-      const r = documents.get(key(ref)); r.onsuccess = () => done(r.result ?? null);
+    return this.transaction('readonly', (documents, _slots, done, run) => {
+      const r = documents.get(key(ref)); r.onsuccess = () => run(() => {
+        if (r.result) validateDocument(r.result, ref);
+        done(r.result ?? null);
+      });
     });
   }
   // Replacement only proves inactivity. BFCache documents still need cleanup.
@@ -62,18 +117,26 @@ export class DocumentControlRegistry {
     return this.transaction('readwrite', (documents, slots, done, run) => {
       const current = slots.get(slot(ref));
       current.onsuccess = () => run(() => {
+        if (current.result) validateSlot(current.result, ref);
         if (current.result && !equal(current.result.documentKey, key(ref))) {
           const prev = documents.get(current.result.documentKey);
           prev.onsuccess = () => run(() => {
-            if (prev.result?.lifecycle === 'ACTIVE') documents.put({ ...prev.result, lifecycle: 'INACTIVE', epoch: prev.result.epoch + 1 });
+            if (!prev.result) invalidStored();
+            validateDocument(prev.result, { ...ref, documentKey: current.result.documentKey[3] });
+            if (prev.result.lifecycle === 'ACTIVE') {
+              const next = { ...prev.result, lifecycle: 'INACTIVE', epoch: prev.result.epoch + 1 };
+              validateDocument(next); documents.put(next);
+            }
           });
         }
         const r = documents.get(key(ref));
         r.onsuccess = () => run(() => {
+          if (r.result) validateDocument(r.result, ref);
+          else if (current.result && equal(current.result.documentKey, key(ref))) invalidStored();
           const row = r.result || { key: key(ref), ref, sequence: 0, epoch: 0, operations: [], obligations: [] };
           if (row.lifecycle === 'GONE') throw new Error('DOCUMENT_ALREADY_GONE');
           if (row.lifecycle !== 'ACTIVE') row.epoch++;
-          row.lifecycle = 'ACTIVE'; documents.put(row);
+          row.lifecycle = 'ACTIVE'; validateDocument(row, ref); documents.put(row);
           slots.put({ key: slot(ref), documentKey: row.key }); done(row);
         });
       });
@@ -86,10 +149,12 @@ export class DocumentControlRegistry {
       const r = documents.get(key(ref));
       r.onsuccess = () => run(() => {
         const row = r.result; if (!row) throw new Error('UNKNOWN_DOCUMENT');
+        validateDocument(row, ref);
         row.lifecycle = 'GONE'; row.epoch++;
         for (const item of row.obligations) if (!terminal(item.state)) item.state = 'DOCUMENT_GONE';
-        documents.put(row);
+        validateDocument(row, ref); documents.put(row);
         const current = slots.get(slot(ref)); current.onsuccess = () => run(() => {
+          if (current.result) validateSlot(current.result, ref);
           if (equal(current.result?.documentKey, row.key)) slots.delete(slot(ref)); done(row);
         });
       });
@@ -103,6 +168,7 @@ export class DocumentControlRegistry {
     return this.transaction('readwrite', (documents, _slots, done, run) => {
       const r = documents.get(key(ref)); r.onsuccess = () => run(() => {
         const row = r.result; if (!row) throw new Error('UNKNOWN_DOCUMENT');
+        validateDocument(row, ref);
         const previous = row.operations.find(item => item.operationKey === operationKey);
         if (previous) {
           if (!equal(previous.intent, intent)) throw new Error('OPERATION_CONFLICT');
@@ -125,7 +191,7 @@ export class DocumentControlRegistry {
           obligation = { scope: controlScope, state: 'UNCONFIRMED' }; row.obligations.push(obligation);
         } else if (!obligation || !equal(obligation.scope, controlScope)) throw new Error('UNKNOWN_CLEANUP_BINDING');
         const ticket = { ref, operationKey, sequence: ++row.sequence, epoch: row.epoch, action, controlScope };
-        row.operations.push({ operationKey, intent, ticket, result: null }); documents.put(row);
+        row.operations.push({ operationKey, intent, ticket, result: null }); validateDocument(row, ref); documents.put(row);
         done({ ticket, duplicate: false, result: null });
       });
     });
@@ -136,7 +202,9 @@ export class DocumentControlRegistry {
     if (!['CONFIRMED', 'FAILED', 'UNCONFIRMED'].includes(outcome)) throw new Error('INVALID_CONTROL_OUTCOME');
     return this.transaction('readwrite', (documents, _slots, done, run) => {
       const r = documents.get(key(ref)); r.onsuccess = () => run(() => {
-        const row = r.result, operation = row?.operations.find(item => item.operationKey === ticket.operationKey);
+        const row = r.result;
+        if (row) validateDocument(row, ref);
+        const operation = row?.operations.find(item => item.operationKey === ticket.operationKey);
         if (!operation || !equal(operation.ticket, ticket)) throw new Error('UNKNOWN_CONTROL_TICKET');
         if (operation.result !== null) {
           if (operation.result !== outcome) throw new Error('CONTROL_RESULT_CONFLICT');
@@ -149,15 +217,23 @@ export class DocumentControlRegistry {
         const obligation = row.obligations.find(item => item.scope.bindingKey === ticket.controlScope.bindingKey);
         obligation.state = ticket.action === 'RELEASE' && outcome === 'CONFIRMED' ? 'RESTORED'
           : ticket.action === 'RELEASE' ? 'CLEANUP_UNCONFIRMED' : outcome === 'CONFIRMED' ? 'APPLY_CONFIRMED' : 'UNCONFIRMED';
-        documents.put(row); done({ accepted: true, duplicate: false });
+        validateDocument(row, ref); documents.put(row); done({ accepted: true, duplicate: false });
       });
     });
   }
   pending(executorKey) {
     if (!text(executorKey)) throw new Error('INVALID_EXECUTOR');
-    return this.transaction('readonly', (documents, _slots, done) => {
-      const r = documents.getAll(); r.onsuccess = () => done(r.result.filter(row => row.ref.executorKey === executorKey
-        && row.obligations.some(item => !terminal(item.state))));
+    return this.transaction('readonly', (documents, _slots, done, run) => {
+      const r = documents.getAll(); r.onsuccess = () => run(() => {
+        const selected = [];
+        for (const row of r.result) {
+          if (!Array.isArray(row?.key) || row.key.length !== 4 || !text(row.key[0])) invalidStored();
+          if (row.key[0] !== executorKey && row.ref?.executorKey !== executorKey) continue;
+          validateDocument(row);
+          if (row.obligations.some(item => !terminal(item.state))) selected.push(row);
+        }
+        done(selected);
+      });
     });
   }
 }
