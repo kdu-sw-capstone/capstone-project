@@ -54,13 +54,33 @@ function OwnedGuestImports({ owner }: { owner?: string }) {
     try{return await request<T>(path,"GET",undefined,{signal:abort.signal});}finally{reads.current.delete(abort);}
   }
   const [needsReconcile, setNeedsReconcile] = useState(false);
-  async function load(more = false) {
+  // Correlation for a known batch is UI-only; the extension retains durable import obligations.
+  const pendingResult=useRef<{batchId:string;selectedIds:string[]}|null>(null);
+  function acceptResult(value:unknown,batchId:string,selectedIds:string[]){
+    validateSelectedImportResult(value,batchId,selectedIds);
+    const result=value as Batch;
+    const completed=new Set(result.items.filter(item=>["SUCCEEDED","SKIPPED_CONFLICT"].includes(item.status)).map(item=>item.source_item_id));
+    const unfinished=result.items.filter(item=>!completed.has(item.source_item_id));
+    const pending=unfinished.some(item=>item.status==="PENDING");
+    setManifest(old=>old?{...old,items:old.items.filter(item=>!completed.has(item.source_item_id))}:old);
+    setSelected(old=>old.filter(id=>!completed.has(id)));
+    pendingResult.current=pending?{batchId,selectedIds:[...selectedIds]}:null;
+    setNeedsReconcile(pending);
+    setNotice(pending?"처리 중인 자료가 남아 있습니다. 처리 결과를 다시 조회한 뒤 미완료 자료만 선택하세요.":unfinished.length?"일부 자료가 실패했습니다. 완료된 자료는 제외했으며, 남은 선택을 확인한 뒤 다시 요청하세요.":"선택한 자료의 처리 결과를 확인하세요. 원본은 확장 프로그램에 보존됩니다.");
+  }
+  async function load(more = false,reconcile = true) {
     const current=generation.current;
     try{
       if(!owner)throw new UiError("현재 계정 정보를 다시 확인하세요.");
+      const pending=pendingResult.current;
+      if(reconcile&&pending){
+        const result=await ownedRead(`/guest-imports/${pending.batchId}`);
+        if(current!==generation.current)return;
+        acceptResult(result,pending.batchId,pending.selectedIds);
+      }
       const page=await ownedRead<{items:Batch[];next_cursor:string|null}>(`/guest-imports${more&&cursor?`?cursor=${encodeURIComponent(cursor)}`:""}`);
       if(current!==generation.current)return;
-      setBatches(previous=>more?[...previous,...page.items]:page.items);setCursor(page.next_cursor);setLoaded(true);setNeedsReconcile(false);
+      setBatches(previous=>more?[...previous,...page.items]:page.items);setCursor(page.next_cursor);setLoaded(true);setNeedsReconcile(pendingResult.current!==null);
     }catch(error){if(current!==generation.current)return;throw error;}
   }
   async function choose() {
@@ -76,20 +96,22 @@ function OwnedGuestImports({ owner }: { owner?: string }) {
   async function submit() {
     if(!manifest||!selected.length||needsReconcile)return;
     const current=generation.current;
+    const selectedIds=[...selected];
     try{
       if(!owner||manifest.owner_user_id!==owner)throw new UiError("현재 계정과 선택 자료가 일치하지 않습니다.");
       setNotice("");
       // This is only a UI lifetime fence: the extension/server retain unconfirmed import obligations.
       setNeedsReconcile(true);
       const reply=await extensionImportMessage({type:"FOCURVE_GUEST_IMPORT_SUBMIT",version:"1.0",owner_user_id:owner,
-        executor_id:manifest.executor_id,request_id:crypto.randomUUID(),items:manifest.items.filter(i=>selected.includes(i.source_item_id)).map(({label:_label,...item})=>item)}) as {batch_id?:string};
+        executor_id:manifest.executor_id,request_id:crypto.randomUUID(),items:manifest.items.filter(i=>selectedIds.includes(i.source_item_id)).map(({label:_label,...item})=>item)}) as {batch_id?:string};
       if(current!==generation.current)return;
       if(!reply?.batch_id||!uuid.test(reply.batch_id))throw new UiError("전송 결과를 확인하지 못했습니다. 처리 결과를 조회한 뒤 미완료 항목만 다시 선택하세요.");
+      // A known batch stays fenced even if its first result read fails.
+      pendingResult.current={batchId:reply.batch_id,selectedIds};
       const result=await ownedRead(`/guest-imports/${reply.batch_id}`);
       if(current!==generation.current)return;
-      validateSelectedImportResult(result,reply.batch_id,selected);
-      await load();if(current!==generation.current)return;
-      setSelected([]);setNotice("선택한 자료의 처리 결과를 확인하세요. 원본은 확장 프로그램에 보존됩니다.");
+      acceptResult(result,reply.batch_id,selectedIds);
+      await load(false,false);if(current!==generation.current)return;
     }catch(error){if(current!==generation.current)return;throw error;}
   }
   return <section className="settings-card" aria-label="비회원 자료 가져오기">
