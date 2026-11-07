@@ -159,3 +159,13 @@
 - 대상 브랜치: integration/additional-mvp-20261029. 자동 병합/제품 활성화 요청이 아니라 기반 모듈 리뷰 범위다.
 - 제출 전 DNR24/24·기존 계약6/6·npm run check 재실행 PASS. GitHub CI는 Ubuntu/Windows Node24에서 동일 모의 시험 수행; Windows 실제 Chrome 수용 시험을 뜻하지 않는다.
 - 미완료: legacy writer guard 전체 결속, Worker 진입점 연결, 실제 DNR·quota·브라우저 재시작 수용. 기존 API·DB·Content 구현은 이번 PR에 포함하지 않는다.
+
+## 2026-11-02 C06 정책 제한 사유 합성 — 진행 중
+
+- 담당 윤종민, 브랜치 `feature/additional-mvp-policy-reasons`, 기준 integration `2201654e4ba3adbc1a4738bc14723b708d522c69`.
+- RC2 C06의 모든 matching 제약·예외는 자기 reason만 제거·focus ALLOW가 runtime 한도/시간창/성인/키워드를 우회하지 않는 규칙을 Core 내부 순수 계산으로 구현한다. 검증된 현재 scope의 전체 제한 사유와 기존 frozen host 선택에서 도출한 접근 정책을 받으며, 호스트 선택/권한/효과 증거를 재구현하지 않는다.
+- 기존 purpose↔access_policy 검증·Snapshot/Attachment·DNR/Content/Server/Report·IG04 ACK를 변경/활성화하지 않는다. 신규 함수는 내부 후보 판단이며 실제 적용/해제 성공이 아니다.
+
+- 종료: `composePolicyReasons`로 검증된 전체 matching runtime reason 합집합과 기존 focus 접근 후보를 합성한다. 기능 예외는 자기 reason만 제거하며 한도·시간창·미확인 hold·focus USER_SITE는 보존한다. 목적 분류/host 선택·Snapshot·Wire·DNR/DOM/Report·권한 provider는 변경하지 않는다.
+- 신규18/18·전체 Extension997/997·계약6/6·기존 RC2 Python oracle384/384·실제 #84/#91 모듈 합성 호환4/4·syntax/whitespace PASS. 신규18은 전체 포함, 중복 합산 금지. 호환4는 합성 입력이며 실제 제품 연결이 아니다.
+- 상태: 담당 리뷰·통합 대기. caller의 검증된 전체 source·owner/scope/freshness, 실제 compiler/claim·DNR/Content/Report/Chrome 수용은 별도 미완료다. [입출력·기준·검증·제한](../evidence/AMVP-CORE-04-policy-reasons.md). 기존 목적/정책 분리·IG04 ACK 공동 계약 대기를 유지한다.
