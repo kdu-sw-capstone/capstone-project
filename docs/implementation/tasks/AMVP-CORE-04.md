@@ -1,5 +1,24 @@
 # AMVP-CORE-04 — Core DNR 소유권·복원
 
+## 2026-11-02 PR78 문서 충돌 최소 동기화
+
+- 이번 후보 로컬 검증: 생산 원장19/19·계약6/6·syntax PASS(fail/skip0). 권한·효과·ACK는 모의이며 제품 MV3/Server 수용 검증이 아니다. 각 집합은 합산하지 않는다.
+- 담당 윤종민. 최신 통합 `24f8b60ddd918bb0bb3d5e09a070e235f0ea9ae4`를 기존 PR78 브랜치에 merge 동기화한다. 수동 해결은 본 카드와 통합현황 두 문서뿐이며, 양쪽 원문의 비어 있지 않은 모든 줄을 중복 횟수와 순서까지 보존한다. 아래 이전 상태·실패·미완료·검증 기록은 당시 이력이다.
+- 기존 PR 제품·시험·계약 및 통합의 원본 blob을 대조하고 관련 로컬 시험과 최신 후보 CI로 확인한다. 제품 구현·검증 조건·공용 계약은 변경하지 않는다. 최신 HEAD·실행 결과는 PR에 별도 남기며 기존 승인을 새 HEAD에 소급하지 않는다.
+- #76 → #78 → #80 통합 순서와 #98 선행 관계를 보존한다. 이번 작업은 담당 브랜치 동기화이며 PR 병합·실제 Worker/Server·Chrome START 및 제품 수용 완료를 뜻하지 않는다. 병합은 다훈이 관리한다.
+
+
+## 2026-11-01 RuntimeReport 생산 원장 착수
+
+- 담당 윤종민, 브랜치 `feature/additional-mvp-runtime-report-producer`, 시작 통합 `3f31f75e8be65996af3b1fb94a846b0df2d7c085`. PR76 발신함은 수정하지 않고 리뷰 대기로 보존한다. PR59는 통합됐고 PR68은 별도 리뷰 대상이다.
+- RuntimeReport의 durable source report_id·고정 epoch·연속 seq·원문을 원자 보존한다. 실제 issued/effect verifier가 없으면 생성 거절, 기존 policy state/cleanup 성공을 추정하지 않는다. Wire/Server/제품 Worker/전송·발신함 활성화는 이번 단위에 포함하지 않는다.
+- 상태: 구현·검증 진행 중. 실제 source observation의 영속 ID와 현재 owner/issued generation/관측 시각·상태 전이 검증은 trusted adapter 책임이며 기본 거절한다.
+
+### RuntimeReport 생산 원장 단위 종료
+
+- `RuntimeReportProducer.produce/recover`: source report_id 보존, runtime stream별 고정 epoch/연속 seq와 immutable report·generation hash를 동일 metadata transaction에 저장. 재시도는 같은 원문을 반환하며 변경 ID 충돌·producer snapshot CAS·quota 실패·원장 변조에서 성공을 만들지 않는다.
+- 신규19/19·전체925/925·기존 계약6/6·Chromium 실제 IDB1/1 PASS(fail/skip0, 신규는 전체에 포함). browser의 owner/effect verifier는 모의이며 강제 종료/제품 MV3·Server 수용이 아니다.
+- 단위 구현·로컬 검증 완료, 리뷰/통합 대기. [함수·저장 형식·미연결 경계](../evidence/AMVP-CORE-04-runtime-report-producer.md). 실제 source/issued effect verifier·현재 epoch 등록·발신함 replay/checkpoint·인증 HTTP/Worker·장시간 검증은 후속이다. PR76을 수정/활성화하지 않으며 전체 Core 완료율은 변경하지 않는다.
 ## 2026-11-01 PR76 — PR68 병합 후 문서2파일 동기화
 
 - 새 후보 로컬 확인: 발신함28/28·계약6/6·syntax·문서2파일 whitespace PASS. 기존 전체989/실제IDB1·독립/Content 검증은 원본 코드 동일성에 근거해 재사용하며 이번에 새 전체/browser 시험을 실행했다고 보고하지 않는다. 새 CI/checkout/tree는 PR 최신 결과를 따른다.
@@ -159,3 +178,11 @@
 - 대상 브랜치: integration/additional-mvp-20261029. 자동 병합/제품 활성화 요청이 아니라 기반 모듈 리뷰 범위다.
 - 제출 전 DNR24/24·기존 계약6/6·npm run check 재실행 PASS. GitHub CI는 Ubuntu/Windows Node24에서 동일 모의 시험 수행; Windows 실제 Chrome 수용 시험을 뜻하지 않는다.
 - 미완료: legacy writer guard 전체 결속, Worker 진입점 연결, 실제 DNR·quota·브라우저 재시작 수용. 기존 API·DB·Content 구현은 이번 PR에 포함하지 않는다.
+
+
+## 2026-11-02 PR78 — PR76 정식 병합 후 문서 동기화
+
+- 담당 윤종민. 기존 HEAD `81d6ff24af289997d63d044001cc5693bc26fd51`에 #76 병합 통합 `80ac55776dd551ec8923159e4d8054ebea52c7a0`를 반영한다. 앞선24f8b60 기준 동기화 이후 #76이 공통 문서의 같은 위치에 기록을 추가해 충돌이 다시 발생했다. 수동 해결은 CORE-04·통합현황 두 문서뿐이다.
+- 양부모의 작업·실패·미완료 기록을 줄 순서와 중복 횟수까지 보존한다. 기존 #78 제품·시험·계약과 #76 발신함·순번 P2 수정·시험·CI 원본은 blob 대조로 확인하며 변경하지 않는다. 이전 검증·리뷰는 당시 이력이고 새 HEAD에 자동 소급하지 않는다.
+- 이번 후보 시험·CI 결과와 새 HEAD는 PR 인계 자료에 기록한다. #80은 #78 병합 후 최신 통합으로 동기화하고, #98은 Content 승인·선행 관계를 유지한다. #80/#98 브랜치·공용 계약·제품 활성화·Chrome START·PR 병합은 이번 작업에 포함하지 않는다. 실제 MV3/Server 제품 수용은 미검증이다.
+- 새 후보 로컬 결과: 생산 원장19+발신함28 = 47/47·기존 계약6/6·syntax·whitespace PASS(fail/skip0). 전체 회귀·실제 Chrome/Server 시험을 이번 실행으로 보고하지 않는다.
