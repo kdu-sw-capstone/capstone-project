@@ -70,6 +70,7 @@ export class AdditionalForegroundObserver {
     this.stop();
     this.running = true;
     const lifecycle = this.lifecycle;
+    const current = () => this.running && lifecycle === this.lifecycle;
     this.idleState = 'UNAVAILABLE';
     this.accessRevoked = false;
     try {
@@ -81,7 +82,7 @@ export class AdditionalForegroundObserver {
       const removed = this.permissions?.onRemoved;
       if (!removed?.addListener || !removed?.removeListener) throw Error('API_UNAVAILABLE');
       const onRemoved = change => {
-        if (!this.running || !(change.permissions?.includes('tabs') || change.origins?.length)) return;
+        if (!current() || !(change.permissions?.includes('tabs') || change.origins?.length)) return;
         // Require an explicit restart and fresh current-context access check.
         this.accessRevoked = true;
         ++this.revision;
@@ -90,7 +91,7 @@ export class AdditionalForegroundObserver {
       removed.addListener(onRemoved);
       this.listeners.push([removed, onRemoved]);
       for (const event of events) {
-        const listener = () => { void this.refresh('BROWSER_EVENT'); };
+        const listener = () => { if (current()) void this.refresh('BROWSER_EVENT'); };
         event.addListener(listener);
         this.listeners.push([event, listener]);
       }
