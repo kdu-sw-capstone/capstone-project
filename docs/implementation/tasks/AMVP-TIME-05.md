@@ -84,3 +84,11 @@
 - 순수 helper 입력의 activeSession/alreadyIssued/recovered와 시각은 신뢰 adapter가 검증해야 한다. READY는 실제 세션 시작 허가나 RUNNING 증거가 아니다. 중복 판정은 영속 발생 원장·owner/version 검증과 함께 사용해야 하며 본 모듈은 영속 멱등을 구현하지 않는다.
 - 실행기 연결 전 실제 시간대/이벤트 loop 성능·alarm 지연·재시작·실제 적용/복원을 검증해야 한다. Server weekly 구현을 변경하거나 ONCE legacy actor 매핑을 임의 확정하지 않는다. 제품 기능 전체는 부분 구현이며 작은 모듈 리뷰 단위다.
 - 최신 기준 예약8/8·계약6/6·syntax/whitespace 검증 후 Commit/Push 및 PR 제출. 원격 CI는 Ubuntu/Windows Node24에서 같은 예약·계약 검증을 수행하며 Chrome 수용은 아니다.
+
+## 2026-11-02 관측 원장 복구 검증 보강 — 검토 대기
+
+- 담당 윤종민, 브랜치 `fix/additional-mvp-observation-recovery`, 시작 integration `2201654e4ba3adbc1a4738bc14723b708d522c69`.
+- C05/C11 기존 local staging v1 복구에서 epoch·owner/boot 문맥·미확인 의무·boundary 의미를 검증하고, 비동기 hash 검증 뒤 transaction 안에서 전체 snapshot CAS를 적용했다. 원본·cursor·미확인 의무·다른 metadata를 보존한다.
+- 수정 전 복구 반례4건과 transaction 경합3건의 거절 누락을 재현했다. 최종 신규24/24·관련55/55·전체 Extension1003/1003·계약6/6·Chromium 실제 IndexedDB1/1·syntax/whitespace PASS(포함 관계 중복 합산 금지). 브라우저 최초 JSON import route 누락 실패는 시험 harness 수정으로 해결했다.
+- 제품 Worker/clock/계수/한도/Report·IG04 ACK 계약을 변경하지 않았다. 실제 Chrome START·장시간 측정·제품 수용은 미실행/미완료다. 기존 작업·실패·미완료 기록을 보존한다.
+- 담당 리뷰 및 PR 통합 전으로 기능 전체 완료 아님. 상세 코드·명령·실패·제한은 [복구 검증 기록](../evidence/AMVP-TIME-05-observation-recovery.md).
