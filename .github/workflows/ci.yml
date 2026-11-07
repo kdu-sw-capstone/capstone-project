@@ -135,3 +135,5 @@ jobs:
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
       - run: python3 -B -m unittest discover -s distribution/tests -p 'test_*.py'
+      - name: Package provenance and archive contracts (synthetic only)
+        run: python3 -B -m unittest discover -s scripts/tests -p 'test_package_provenance.py'
