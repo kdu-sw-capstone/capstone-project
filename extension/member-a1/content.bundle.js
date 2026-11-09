@@ -5275,6 +5275,8 @@ class ClaimLedger {
   #entries = new Map();
   #open = true;
   #busy = false;
+  #hidePlans = new WeakMap();
+  #appliedHidePlans = new WeakMap();
 
   constructor(document) { this.#document = document; }
 
@@ -5285,6 +5287,43 @@ class ClaimLedger {
   hide(claim, element, canApply = () => true) { return this.#acquire(claim, element, ['display', 'inert'], canApply); }
   conceal(claim, element, canApply = () => true) { return this.#acquire(claim, element, ['opacity', 'inert'], canApply); }
   grayscale(claim, element, canApply = () => true) { return this.#acquire(claim, element, ['filter'], canApply); }
+
+  #hideState(element) {
+    return ['display','inert'].map(property=>{
+      const current=this.#read(element,property),entry=this.#entries.get(element)?.get(property);
+      const restore=entry&&(!entry.written||entry.pending||this.#equal(current,entry.written))?entry.original:current;
+      return {property,current,restore,target:this.#restricted(property,restore),
+        entry:entry?{original:entry.original,written:entry.written,pending:entry.pending??null,claims:[...entry.claims].sort()}:null};
+    });
+  }
+  // Read-only local plan, not a durable reservation or authority proof. Do not
+  // expose Element references to a persistence callback.
+  planHide(claim,element) {
+    if(typeof claim!=='string'||!claim||claim.length>256)throw Error('INVALID_CLAIM_ID');
+    if(!this.#open||this.#busy||element?.ownerDocument!==this.#document||!element.isConnected)throw Error('HIDE_PLAN_UNAVAILABLE');
+    const state=this.#hideState(element);
+    if(state.some(p=>p.entry?.pending))throw Error('HIDE_PLAN_UNAVAILABLE');
+    const plan={plan_id:crypto.randomUUID(),claim,properties:state.map(({property,current,restore,target})=>({property,current:{...current},restore:{...restore},target:{...target}}))};
+    plan.properties.forEach(p=>{Object.freeze(p.current);Object.freeze(p.restore);Object.freeze(p.target);Object.freeze(p);});
+    Object.freeze(plan.properties);Object.freeze(plan);
+    this.#hidePlans.set(plan,{element,claim,state:JSON.stringify(state)});return plan;
+  }
+  applyHidePlan(plan,element,canApply) {
+    const saved=this.#hidePlans.get(plan);this.#hidePlans.delete(plan);
+    if(!saved||saved.element!==element||!this.#open||this.#busy||element?.ownerDocument!==this.#document||!element.isConnected
+      ||JSON.stringify(this.#hideState(element))!==saved.state)return null;
+    const verified=this.hide(saved.claim,element,canApply);
+    if(verified)this.#appliedHidePlans.set(plan,{element,state:JSON.stringify(this.#hideState(element))});
+    return verified;
+  }
+  isHiddenBy(claim,element,plan) {
+    if(element?.ownerDocument!==this.#document)return false;
+    if(plan){const applied=this.#appliedHidePlans.get(plan);
+      if(!applied||applied.element!==element||applied.state!==JSON.stringify(this.#hideState(element)))return false;}
+    return ['display','inert'].every(property=>{const entry=this.#entries.get(element)?.get(property);
+      return entry?.claims.has(claim)&&!entry.pending&&entry.written&&this.#equal(this.#read(element,property),entry.written);})
+      &&this.#document.defaultView.getComputedStyle(element).display==='none'&&element.inert===true;
+  }
 
   #read(element, property) {
     if (property === 'inert') return { value: element.inert };
@@ -5424,6 +5463,20 @@ class ClaimLedger {
     }
     // No DOM references, text, URL, or native/whole-session success assertion.
     return { remaining_targets: remaining, remaining_properties: properties };
+  }
+  // The Session supplies its private claim set. Never enumerate another
+  // owner's IDs, DOM text/attributes, original styles or Element references.
+  snapshotClaims(claims) {
+    const selected=new Set(claims),rows=[];
+    for(const [element,entries]of this.#entries)for(const claim of selected){
+      const properties=[];
+      for(const [property,entry]of entries)if(entry.claims.has(claim)){
+        let matches=null;try{if(element.ownerDocument===this.#document)matches=!!entry.written&&this.#equal(this.#read(element,property),entry.written);}catch{}
+        properties.push({property,pending:entry.pending?.kind??null,matches_owned:matches});
+      }
+      if(properties.length)rows.push({claim,foreign_document:element.ownerDocument!==this.#document,connected:element.isConnected===true,properties});
+    }
+    return structuredClone({remaining_targets:new Set(rows.map(r=>r.claim)).size,claims:rows});
   }
 }
 ;return {ClaimLedger};})();
