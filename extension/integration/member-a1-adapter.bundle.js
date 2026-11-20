@@ -3978,12 +3978,13 @@ function authorizeContinuation(command,session,identity,bundle,now=Date.now()){
 ;return {MODE,uuid,equal,validateReport,mergeIntervals,authorizeCommand,authorizeContinuation};})();
 modules["integration/member-a1-adapter.mjs"]=(()=>{const {MODE,uuid,validateReport,authorizeCommand,authorizeContinuation,equal}=modules["member-a1/protocol.mjs"];
 const {digest}=modules["member-a1/contract.mjs"];
+const scheduleUtc=v=>typeof v==='string'&&/^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d\.\d{3}Z$/.test(v)&&Number.isFinite(Date.parse(v))&&new Date(Date.parse(v)).toISOString()===v;
 // Background trusted caller only. No new Content authority or public START endpoint.
 class MemberA1Adapter {
  constructor({auth,core,db,authority,inspectGuest,fetch=globalThis.fetch.bind(globalThis),now=Date.now,timeoutMs=10000}){Object.assign(this,{auth,core,db,authority,inspectGuest,fetch,now,timeoutMs});this.tail=Promise.resolve();}
  serial(f){const p=this.tail.then(f);this.tail=p.catch(()=>{});return p;}
  async identity(){const s=await this.auth.status();const i={owner_key:'MEMBER:'+s.owner_user_id,executor_id:s.executor_id,authority:s.server_url};if(!s.owner_user_id||!uuid(i.executor_id)||!i.authority)throw Error('MEMBER_AUTH_REQUIRED');if(this.frozen&&!equal(i,this.frozen))throw Error('OWNER_MISMATCH');this.frozen??=i;return i;}
- async request(path,body,headers={}){if(this.preservedEndScope)throw Error('PRESERVED_END_ONLY');const i=await this.identity(),c=await this.auth.credentials(),again=await this.identity();if(c.owner_key!==i.owner_key||c.executor_id!==i.executor_id||!equal(again,i))throw Error('OWNER_MISMATCH');if(body!==undefined&&/^\/sessions\/[-0-9a-f]{36}\/end$/.test(path)&&!headers['Idempotency-Key']){const key='member:http-intent:'+path+':'+await digest(body);let intent=await this.read(key);if(!intent){intent={id:crypto.randomUUID()};await this.put(key,intent);}headers={...headers,'Idempotency-Key':intent.id};}const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),this.timeoutMs);try{const res=await this.fetch(i.authority+path,{method:body===undefined?'GET':'POST',redirect:'error',credentials:'omit',cache:'no-store',signal:controller.signal,headers:{Authorization:'Bearer '+c.access_token,'Content-Type':'application/json',...headers},...(body===undefined?{}:{body:JSON.stringify(body)})});const result=await res.json();if(!res.ok)throw Error('MEMBER_HTTP_'+res.status+':'+result.error?.code);return result;}finally{clearTimeout(timer);}}
+ async request(path,body,headers={},beforeSend=null){if(this.preservedEndScope)throw Error('PRESERVED_END_ONLY');const i=await this.identity(),c=await this.auth.credentials(),again=await this.identity();if(c.owner_key!==i.owner_key||c.executor_id!==i.executor_id||!equal(again,i))throw Error('OWNER_MISMATCH');if(body!==undefined&&/^\/sessions\/[-0-9a-f]{36}\/end$/.test(path)&&!headers['Idempotency-Key']){const key='member:http-intent:'+path+':'+await digest(body);let intent=await this.read(key);if(!intent){intent={id:crypto.randomUUID()};await this.put(key,intent);}headers={...headers,'Idempotency-Key':intent.id};}const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),this.timeoutMs);try{if(beforeSend&&!equal(await this.identity(),i))throw Error('OWNER_MISMATCH');const dispatch=()=>({response:this.fetch(i.authority+path,{method:body===undefined?'GET':'POST',redirect:'error',credentials:'omit',cache:'no-store',signal:controller.signal,headers:{Authorization:'Bearer '+c.access_token,'Content-Type':'application/json',...headers},...(body===undefined?{}:{body:JSON.stringify(body)})})});const sent=beforeSend?await beforeSend(dispatch):dispatch(),res=await sent.response;const result=await res.json();if(!res.ok)throw Error('MEMBER_HTTP_'+res.status+':'+result.error?.code);return result;}finally{clearTimeout(timer);}}
  async read(key){return this.db.transaction('readonly',(tx,done)=>{const q=tx.objectStore('metadata').get(key);q.onsuccess=()=>done(q.result??null);});}
  async put(key,value){return this.db.transaction('readwrite',(tx,done)=>{tx.objectStore('metadata').put({key,...structuredClone(value)});done(value);});}
  async authorize(command){const i=await this.identity(),session=await this.request('/sessions/'+command.session_id),issued=await this.request('/executors/'+i.executor_id+'/commands'),original=issued.commands.find(x=>x.command_id===command.command_id);if(!original||await digest(original)!==await digest(command))throw Error('MEMBER_COMMAND_REJECTED');authorizeCommand(command,session,i,this.now());const guest=await this.inspectGuest();if(guest.active||guest.unresolved||guest.cleanup)throw Error('GUEST_OBLIGATION_EXISTS');const claim=await this.authority.claim(i,command.session_id);const admission={authority_epoch:claim.epoch,authority:i.authority,owner_key:i.owner_key,executor_id:i.executor_id,session_id:command.session_id,command_id:command.command_id,server_revision:command.desired_revision,policy_snapshot_id:command.snapshot.policy_snapshot_id,snapshot_sha256:await digest(command.snapshot),command:structuredClone(command)};return {...i,admission};}
@@ -4003,6 +4004,101 @@ class MemberA1Adapter {
  async flushBody(){const i=await this.identity(),rows=await this.pendingOutbox(i);rows.sort((a,b)=>(Date.parse(a.body.observed_at??a.body.local_actions?.[0]?.report?.observed_at)||0)-(Date.parse(b.body.observed_at??b.body.local_actions?.[0]?.report?.observed_at)||0));for(const row of rows){const ack=await this.request('/executors/'+i.executor_id+(row.kind==='LOCAL_END'?'/reconcile':'/reports'),row.body);if(!equal(await this.identity(),i))throw Error('OWNER_MISMATCH');let serverAck=null;if(row.nr01){if(!['ACCEPTED','DUPLICATE'].includes(ack.result)||!Number.isSafeInteger(ack.desired_revision)||ack.desired_revision<row.body.desired_revision)throw Error('REPORT_ACK_UNCONFIRMED');serverAck={...ack,running_confirmed:false};if(row.body.result==='APPLIED'){const confirmation=ack.execution_confirmation;if(confirmation!==undefined&&(confirmation?.contract!=='NR01_REPORT_CONFIRMATION_1'||confirmation.report_id!==row.body.report_id||confirmation.command_id!==row.body.command_id||!confirmation.state||typeof confirmation.state!=='object'||Array.isArray(confirmation.state)))throw Error('REPORT_ACK_UNCONFIRMED');const state=confirmation===undefined?await this.request('/sessions/'+row.body.session_id):confirmation.state,r=row.root_binding,n=row.body.transition_context,d=row.body.effect_transition_context;if(!equal(await this.identity(),i))throw Error('OWNER_MISMATCH');if(state.session_id!==row.body.session_id||state.native_transition_contract!=='NR01_1'||state.time_accounting_mode!==MODE||state.owner_user_id!==i.owner_key.slice(7)||state.executor_id!==i.executor_id||state.policy_snapshot_id!==r.snapshot_ref.policy_snapshot_id){await this.put(row.key,{...row,acked:true,server_ack:serverAck});await this.core.markUnknown('OWNER_MISMATCH');throw Error('SERVER_SCOPE_MISMATCH');}serverAck.running_confirmed=state.execution_status==='RUNNING'&&state.native_transition_contract==='NR01_1'&&!state.first_nr_failure&&state.owner_user_id===i.owner_key.slice(7)&&state.executor_id===i.executor_id&&state.desired_revision===r.desired_revision&&state.policy_snapshot_id===r.snapshot_ref.policy_snapshot_id&&(!n||state.native_transition?.transition_id===n.transition_id&&state.native_transition?.phase==='CONFIRMED'&&state.native_transition?.root_generation===n.root_generation)&&(!d||state.dom_transition_contract==='DP01_1'&&!state.first_dp_failure&&state.effect_transition?.transition_id===d.transition_id&&state.effect_transition?.phase==='CONFIRMED'&&state.effect_transition?.root_generation===d.root_generation);if(state.execution_status==='UNKNOWN'&&state.desired_revision===r.desired_revision){await this.put(row.key,{...row,acked:true,server_ack:serverAck});await this.core.markUnknown('REVALIDATION_REQUIRED');throw Error('SERVER_EXECUTION_UNCONFIRMED');}}}
 if(!equal(await this.identity(),i))throw Error('OWNER_MISMATCH');
 if(row.kind==='LOCAL_END'&&!ack.acknowledged_actions?.includes(row.body.local_actions[0].action_id))throw Error('RECONCILE_UNCONFIRMED');if(row.kind==='LOCAL_END'||row.body.result==='RELEASED')await this.authority.released(i,row.kind==='LOCAL_END'?row.body.local_actions[0].session_id:row.body.session_id);await this.put(row.key,{...row,acked:true,...(serverAck?{server_ack:serverAck}:{})});}return rows.length;}
+ // Read-only local admission snapshot. Unknown state/debt is not an idle grant.
+ async scheduleClaimLocal(i){
+  await this.core.ready;
+  const b=await this.core.bundle(),rows=await this.core.registry.rows(),root=await this.authority.current(),intent=await this.read('member:start-intent');
+  if(!Array.isArray(rows))throw Error('MEMBER_LOCAL_STATE_UNCONFIRMED');
+  if(intent&&intent.completed!==true)throw Error('START_INTENT_CONFLICT');
+  const sessions=new Set();let foreign=false;
+  const debt=(sid,context)=>{if(!uuid(sid)||typeof context!=='string')throw Error('MEMBER_LOCAL_STATE_UNCONFIRMED');sessions.add(sid);if(context!==i.owner_key)foreign=true;};
+  if(b){
+   if(b.a.owner_context!==i.owner_key||b.a.executor_id!==i.executor_id)throw Error('OWNER_MISMATCH');
+   if(!['ENDED','START_FAILED','INTERRUPTED'].includes(b.a.session_status)||b.a.cleanup_pending||b.state?.journal?.desired!=='RELEASED'||b.state?.journal?.observed!=='RELEASED')debt(b.a.session_id,i.owner_key);
+   for(const binding of b.bindings??[])if(binding.resolution==='NONE'||binding.cleanup_pending)debt(binding.scope?.session_id,binding.scope?.owner_context);
+  }
+  for(const row of rows){
+   if(row.record_kind==='A1_BINDING'&&(row.resolution==='NONE'||row.cleanup_pending))debt(row.scope?.session_id,row.scope?.owner_context);
+   if(row.record_kind==='A1_OPERATION'&&['ISSUED','IN_FLIGHT','IN_DOUBT'].includes(row.phase))debt(row.command?.payload?.scope?.session_id,row.command?.owner_context);
+  }
+  if(root){
+   if(!['ACTIVE','RELEASED'].includes(root.phase))throw Error('MEMBER_LOCAL_STATE_UNCONFIRMED');
+   if(root.phase==='ACTIVE'){
+    if(root.owner_key!==i.owner_key||root.executor_id!==i.executor_id||root.authority!==i.authority)throw Error('ROOT_OBLIGATION_EXISTS');
+    debt(root.session_id,i.owner_key);
+   }
+  }
+  return {bundle:b,sessions:[...sessions],foreign};
+ }
+ async guardScheduleClaim(i){
+  if(!equal(await this.identity(),i))throw Error('OWNER_MISMATCH');
+  const guest=await this.inspectGuest();if(guest.active||guest.unresolved||guest.cleanup)throw Error('GUEST_OBLIGATION_EXISTS');
+  const local=await this.scheduleClaimLocal(i);if(local.foreign||local.sessions.length)throw Error('CLEANUP_REQUIRED');
+  await this.authority.idle();
+  const again=await this.scheduleClaimLocal(i);if(again.foreign||again.sessions.length)throw Error('CLEANUP_REQUIRED');
+ }
+ async dispatchScheduleClaim(i,send){
+  // Linearize the last read and synchronous fetch initiation with Core transitions.
+  // send() boxes its response Promise: release Core.serial before awaiting the network.
+  if(typeof this.core.serial!=='function')throw Error('SCHEDULE_ADMISSION_UNSUPPORTED');
+  return this.core.serial(async()=>{await this.guardScheduleClaim(i);return send();});
+ }
+ async recoverScheduleClaim(body,i,local){
+  // A matching busy occurrence is recovery by GET only, never a new mutation or APPLY replay.
+  if(local.foreign||local.sessions.length!==1)throw Error('CLEANUP_REQUIRED');
+  const page=await this.request('/schedules/'+body.schedule_id+'/occurrences');
+  if(!Array.isArray(page?.items)||page.has_more!==false||page.next_cursor!==null)throw Error('SCHEDULE_OCCURRENCE_UNCONFIRMED');
+  const matches=page.items.filter(r=>r.schedule_id===body.schedule_id&&r.scheduled_start_at===body.scheduled_start_at&&r.schedule_version===body.version);
+  if(matches.length!==1||!uuid(matches[0].occurrence_id)||matches[0].session_id!==local.sessions[0]||!scheduleUtc(matches[0].scheduled_end_at)||Date.parse(matches[0].scheduled_end_at)<=Date.parse(body.scheduled_start_at))throw Error('CLEANUP_REQUIRED');
+  const row=matches[0],saved=await this.request('/sessions/'+row.session_id);
+  if(!equal(await this.identity(),i)||saved?.session_id!==row.session_id||saved.executor_id!==i.executor_id||'MEMBER:'+saved.owner_user_id!==i.owner_key||saved.source!=='SCHEDULE'||saved.origin!=='MEMBER'||saved.planned_end_at!==row.scheduled_end_at)throw Error('SCHEDULE_SESSION_UNCONFIRMED');
+  const fresh=await this.scheduleClaimLocal(i);if(fresh.foreign||fresh.sessions.some(s=>s!==row.session_id))throw Error('CLEANUP_REQUIRED');
+  const execution=await this.status();if(!equal(await this.identity(),i))throw Error('OWNER_MISMATCH');
+  return {occurrence_session_id:row.session_id,execution:execution?.session_id===row.session_id?execution:null,read_only:true,recovery_required:true};
+ }
+ // Trusted background caller only; same Server occurrence is the sole writer.
+ claimSchedule(input){const body=structuredClone(input);return this.serial(async()=>{
+  const utc=scheduleUtc;
+  if(!body||Object.keys(body).sort().join(',')!=='schedule_id,scheduled_start_at,version'||!uuid(body.schedule_id)||!Number.isSafeInteger(body.version)||body.version<1||!utc(body.scheduled_start_at))throw Error('INVALID_SCHEDULE_CLAIM');
+  if(this.preservedEndScope)throw Error('PRESERVED_END_ONLY');
+  const i=await this.identity(),guest=await this.inspectGuest();
+  if(guest.active||guest.unresolved||guest.cleanup)throw Error('GUEST_OBLIGATION_EXISTS');
+  const local=await this.scheduleClaimLocal(i);
+  if(local.sessions.length||local.foreign)return this.recoverScheduleClaim(body,i,local);
+  await this.guardScheduleClaim(i);
+  const list=await this.request('/schedules?executor_id='+encodeURIComponent(i.executor_id));
+  if(!Array.isArray(list?.items)||list.has_more!==false||list.next_cursor!==null)throw Error('SCHEDULE_LIST_UNCONFIRMED');
+  const matches=list.items.filter(r=>r.schedule_id===body.schedule_id);
+  if(matches.length!==1)throw Error('SCHEDULE_NOT_FOUND');
+  const schedule=matches[0];
+  if(schedule.executor_id!==i.executor_id||schedule.version!==body.version||schedule.enabled!==true||schedule.deleted_at!==null||!Number.isInteger(schedule.duration_minutes)||schedule.duration_minutes<1||schedule.duration_minutes>180)throw Error('SCHEDULE_VERSION_UNCONFIRMED');
+  const end=new Date(Date.parse(body.scheduled_start_at)+schedule.duration_minutes*60000).toISOString();
+  if(!utc(end))throw Error('INVALID_SCHEDULE_CLAIM');
+  // Default closed: current confirmed-run Core cannot enforce a scheduled fixed end.
+  // Only a trusted Core deadline implementation may authorize this admission.
+  if(typeof this.core.verifyScheduledDeadline!=='function'||await this.core.verifyScheduledDeadline({owner:structuredClone(i),claim:structuredClone(body),fixedEndAt:end})!==true)throw Error('SCHEDULE_FIXED_END_UNSUPPORTED');
+  if(!equal(await this.identity(),i))throw Error('OWNER_MISMATCH');
+  await this.guardScheduleClaim(i);
+  const result=await this.request('/schedule-occurrences/claim',body,{},send=>this.dispatchScheduleClaim(i,send));
+  if(!equal(await this.identity(),i))throw Error('OWNER_MISMATCH');
+  if(result?.execution_status!==undefined){
+   if(!uuid(result.session_id)||result.executor_id!==i.executor_id||'MEMBER:'+result.owner_user_id!==i.owner_key||result.source!=='SCHEDULE'||result.origin!=='MEMBER'||result.planned_end_at!==end||!['STARTING','RUNNING','EFFECT_VERIFYING','NATIVE_VERIFYING','UNKNOWN','ENDING','ENDED','START_FAILED','INTERRUPTED'].includes(result.execution_status))throw Error('SCHEDULE_SESSION_UNCONFIRMED');
+   // Bind the returned session to the exact durable Server occurrence.
+   const occurrences=await this.request('/schedules/'+body.schedule_id+'/occurrences');
+   if(!Array.isArray(occurrences?.items)||occurrences.has_more!==false||occurrences.next_cursor!==null)throw Error('SCHEDULE_OCCURRENCE_UNCONFIRMED');
+   const links=occurrences.items.filter(r=>r.schedule_id===body.schedule_id&&r.scheduled_start_at===body.scheduled_start_at);
+   if(links.length!==1||!uuid(links[0].occurrence_id)||links[0].schedule_version!==body.version||links[0].scheduled_end_at!==end||links[0].session_id!==result.session_id)throw Error('SCHEDULE_SESSION_UNCONFIRMED');
+   // Re-read the existing Server session before the normal command authorization path.
+   const saved=await this.request('/sessions/'+result.session_id);
+   if(!equal(await this.identity(),i)||saved.session_id!==result.session_id||saved.executor_id!==i.executor_id||'MEMBER:'+saved.owner_user_id!==i.owner_key||saved.source!=='SCHEDULE'||saved.origin!=='MEMBER'||saved.planned_end_at!==end)throw Error('SCHEDULE_SESSION_UNCONFIRMED');
+   // HTTP success is not RUNNING. tickInner re-fetches and authorizes actual commands.
+   const execution=await this.tickInner();
+   if(execution?.session_id!==result.session_id)throw Error('SCHEDULE_EXECUTION_UNCONFIRMED');
+   return {occurrence_session_id:result.session_id,execution};
+  }
+  if(!uuid(result?.occurrence_id)||result.schedule_id!==body.schedule_id||result.schedule_version!==body.version||result.scheduled_start_at!==body.scheduled_start_at||result.scheduled_end_at!==end||!['PENDING','WAITING_CONFLICT','SKIPPED'].includes(result.status)||result.session_id!==null)throw Error('SCHEDULE_OCCURRENCE_UNCONFIRMED');
+  return {occurrence_id:result.occurrence_id,status:result.status,reason:result.reason??null,scheduled_end_at:end};
+ });}
  start(minutes,uiRequestId){return this.serial(async()=>{if(this.preservedEndScope)throw Error('PRESERVED_END_ONLY');if(!Number.isInteger(minutes)||minutes<1||minutes>180)throw Error('INVALID_DURATION');if(uiRequestId!==undefined&&!uuid(uiRequestId))throw Error('INVALID_UI_REQUEST_ID');const i=await this.identity(),guest=await this.inspectGuest();if(guest.active||guest.unresolved||guest.cleanup)throw Error('GUEST_OBLIGATION_EXISTS');await this.authority.idle();const existing=await this.core.bundle();if(existing&&(!['ENDED','START_FAILED','INTERRUPTED'].includes(existing.a.session_status)||existing.bindings.some(x=>x.resolution==='NONE')))throw Error('CLEANUP_REQUIRED');let intent=await this.read('member:start-intent');if(uiRequestId!==undefined&&intent?.ui_request_id===uiRequestId&&intent.completed)throw Error('START_REQUEST_ALREADY_RECORDED');if(uiRequestId!==undefined&&intent&&!intent.completed){if(!intent.ui_request_id)throw Error('START_REQUEST_CORRELATION_UNCONFIRMED');if(intent.ui_request_id!==uiRequestId)throw Error('START_INTENT_CONFLICT');throw Error('START_REQUEST_OUTCOME_UNCONFIRMED');}if(!intent||intent.completed)intent={id:uiRequestId??crypto.randomUUID(),minutes,completed:false,...(uiRequestId===undefined?{}:{ui_request_id:uiRequestId})};if(intent.minutes!==minutes)throw Error('START_INTENT_CONFLICT');await this.put('member:start-intent',intent);const s=await this.request('/sessions',{executor_id:i.executor_id,duration_minutes:minutes,...(this.core.nd01?{document_transition_contract:'ND01_1'}:{}),...(this.core.nr01?{native_transition_contract:'NR01_1'}:{}),...(this.core.dp01?{dom_transition_contract:'DP01_1'}:{})},{'Idempotency-Key':intent.id});await this.put('member:start-intent',{...intent,completed:true,session_id:s.session_id});if(s.execution_status!=='STARTING')throw Error('FALSE_RUNNING');await this.tickInner();return this.status();});}
  async tickInnerBody(){if(this.preservedEndScope)throw Error('PRESERVED_END_ONLY');await this.core.ready;await this.identity();await this.flush();const i=await this.identity(),response=await this.request('/executors/'+i.executor_id+'/commands');for(const command of response.commands){const session=await this.request('/sessions/'+command.session_id);try{authorizeCommand(command,session,i,this.now());}catch(error){if(command.type!=='APPLY_POLICY'||error.cause?.stage!=='COMMAND_EXPIRY')throw error;await this.request('/sessions/'+command.session_id+'/end',{reason:'APPLY_EXPIRED'});return this.status();}await this.put('member:active-command',{command});if(command.type==='APPLY_POLICY'){await this.core.startCommand(command);const b=await this.core.bundle();if(b.a.session_status!=='RUNNING')throw Error('LOCAL_APPLY_UNCONFIRMED');await this.report(command,'APPLIED');}else{const b=await this.core.bundle();if(b&&b.a.session_id===command.session_id){if(session.policy_snapshot_id!==b.a.snapshot_ref.policy_snapshot_id)throw Error('SNAPSHOT_MISMATCH');if(b.a.session_status==='START_FAILED'){await this.verifyRelease();}else if(!b.state.session.started_at&&!session.started_at){await this.core.endIntent(command.session_id,'SYSTEM_START_FAILURE');await this.core.serial(()=>this.core.finish());}else await this.core.end(command.session_id);await this.verifyRelease();await this.report(command,'RELEASED');}else {await this.authority.claim(i,command.session_id);const report={report_id:crypto.randomUUID(),command_id:command.command_id,session_id:command.session_id,executor_id:i.executor_id,desired_revision:command.desired_revision,result:'RELEASED',observed_at:new Date(this.now()).toISOString(),intervals:[],rollback_confirmed:true};if((await this.core.chrome.declarativeNetRequest.getSessionRules()).length||(await this.core.registry.rows()).some(r=>r.record_kind==='A1_BINDING'&&r.resolution==='NONE'))throw Error('CLEANUP_REQUIRED');await this.put('member:outbox:'+report.report_id,{kind:'REPORT',body:report,acked:false,...i});}}}await this.flush();const b=await this.core.bundle();if(b&&!['ENDED','START_FAILED','INTERRUPTED'].includes(b.a.session_status)){await this.core.tick();const fresh=await this.core.bundle();if(fresh.a.session_status==='RUNNING'){await this.report(fresh.state.session.member_admission.command,'APPLIED');await this.flush();}else if(fresh.a.session_status==='EFFECT_VERIFYING'){await this.report(fresh.state.session.member_admission.command,'EFFECT_VERIFYING');await this.flush();}else if(fresh.a.session_status==='NATIVE_VERIFYING'){await this.report(fresh.state.session.member_admission.command,'REVALIDATING');await this.flush();}else if(['ENDED','INTERRUPTED'].includes(fresh.a.session_status)){await this.offlineEndInner();await this.flush();}else throw Error('LOCAL_EXECUTION_UNCONFIRMED');}return this.status();}
  async tickInner(){try{return await this.tickInnerBody();}catch(e){const b=await this.core.bundle(),active=await this.read('member:active-command');if(b?.a.session_status==='START_FAILED'&&active?.command?.type==='APPLY_POLICY'){await this.verifyRelease();await this.report(active.command,'FAILED',{rollbackConfirmed:true,errorCode:e.message});await this.flush();}if(b?.a.session_status==='UNKNOWN'&&active?.command){try{const code=b.state?.session?.last_error_code??this.core.firstFailureDiagnostic?.code;const safeCode=['REVALIDATION_REQUIRED','STORE_UNCONFIRMED','OWNER_MISMATCH','GENERATION_CHANGED','INVALID_CURRENT_RESPONSE','RUNNING_GATE_DENIED','INVALID_EFFECT_EVIDENCE','CLEANUP_REQUIRED','INVALID_TRANSITION_STATE','UNAUTHORIZED_SENDER','MEMBER_AUTH_REQUIRED','INVALID_SNAPSHOT','SCOPE_MISMATCH'].includes(code)?code:null;await this.report(active.command,'UNCONFIRMED',safeCode?{errorCode:safeCode}:{});await this.flush();}catch{}}throw e;}}

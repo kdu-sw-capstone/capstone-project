@@ -1,0 +1,32 @@
+name: Additional Core schedule claim admission
+on:
+  pull_request:
+    branches: [integration/additional-mvp-20261029]
+    paths:
+      - 'extension/integration/member-a1-adapter*'
+      - 'extension/tests/member-schedule-claim.test.mjs'
+      - 'extension/member-a1/**'
+      - 'extension/scripts/build-member-a1.mjs'
+      - 'extension/package*.json'
+      - '.github/workflows/additional-core-schedule-claim.yml'
+permissions:
+  contents: read
+jobs:
+  schedule-claim:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-24.04, windows-latest]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38
+        with:
+          node-version: '24.19.0'
+      - run: npm ci --ignore-scripts --no-audit --no-fund
+        working-directory: extension
+      - run: node --test extension/tests/member-schedule-claim.test.mjs extension/tests/ui-start-correlation.test.mjs extension/tests/member-preserved-end.test.mjs extension/tests/member-confirmation-publication.test.mjs extension/tests/member-failure-report.test.mjs
+      - run: node --test contracts/additional-mvp/rc1/tests/legacy-boundary.test.mjs
+      - run: npm run check
+        working-directory: extension
