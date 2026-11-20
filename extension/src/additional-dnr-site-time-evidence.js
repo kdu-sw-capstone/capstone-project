@@ -1,7 +1,9 @@
-import { digest } from '../a1/contract.mjs';
+import { digest, same } from '../a1/contract.mjs';
 import { inspectAdditionalDnr, validateDnrClaims } from './additional-dnr-inventory.js';
 
 const KEY = 'amvp_journal_v1:site-time-dnr-evidence';
+// Existing AdditionalDnrStore metadata key; no new schema or parallel journal.
+const DNR_KEY = 'amvp_journal_v1:dnr';
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
 const CONTEXT = ['operation_id', 'owner_binding_id', 'executor_id', 'runtime_execution_id', 'package_id', 'runtime_revision', 'generation'];
 const fail = code => { throw Error(code); };
@@ -37,22 +39,38 @@ export class SiteTimeDnrEvidence {
       || !Number.isSafeInteger(capacity) || capacity < 1) fail('INVALID_SITE_TIME_EVIDENCE_SERVICE');
     Object.assign(this, { coordinator, verifyBinding, capacity });
   }
-  async transaction(mode, reduce) {
+  async transaction(mode, reduce, expected) {
     let reason;
     try {
       return await this.coordinator.store.db.transaction(mode, (tx, done) => {
-        const metadata = tx.objectStore('metadata'), request = metadata.get(KEY);
-        request.onsuccess = () => {
-          try {
-            const state = request.result ?? { key: KEY, version: 1, entries: [] };
-            if (!exact(state, ['key', 'version', 'entries']) || state.key !== KEY || state.version !== 1
-              || !Array.isArray(state.entries) || new Set(state.entries.map(e => e.intent?.context?.operation_id)).size !== state.entries.length) fail('INVALID_SITE_TIME_EVIDENCE_JOURNAL');
-            const result = reduce(state);
-            if (result?.then) fail('ASYNC_SITE_TIME_EVIDENCE_TRANSACTION');
-            if (mode === 'readwrite') metadata.put(state);
-            done(structuredClone(result));
-          } catch (error) { reason = error; tx.abort(); }
+        const metadata = tx.objectStore('metadata');
+        const abort = error => { reason = error; tx.abort(); };
+        const loadEvidence = () => {
+          const request = metadata.get(KEY);
+          request.onsuccess = () => {
+            try {
+              const state = request.result ?? { key: KEY, version: 1, entries: [] };
+              if (!exact(state, ['key', 'version', 'entries']) || state.key !== KEY || state.version !== 1
+                || !Array.isArray(state.entries) || new Set(state.entries.map(e => e.intent?.context?.operation_id)).size !== state.entries.length) fail('INVALID_SITE_TIME_EVIDENCE_JOURNAL');
+              if (expected && !same(state, expected.state)) fail('SITE_TIME_EVIDENCE_STATE_CHANGED');
+              const result = reduce(state);
+              if (result?.then) fail('ASYNC_SITE_TIME_EVIDENCE_TRANSACTION');
+              if (mode === 'readwrite') metadata.put(state);
+              done(structuredClone(result));
+            } catch (error) { abort(error); }
+          };
         };
+        if (expected?.journal) {
+          // Both rows are fenced in this same IDB transaction. A length-only
+          // check or an earlier asynchronous digest cannot protect this commit.
+          const request = metadata.get(DNR_KEY);
+          request.onsuccess = () => {
+            try {
+              if (!same(request.result, expected.journal)) fail('SITE_TIME_EVIDENCE_STATE_CHANGED');
+              loadEvidence();
+            } catch (error) { abort(error); }
+          };
+        } else loadEvidence();
       });
     } catch (error) { throw reason ?? Error('SITE_TIME_EVIDENCE_STORAGE_UNCONFIRMED', { cause: error }); }
   }
@@ -83,7 +101,9 @@ export class SiteTimeDnrEvidence {
       if (prior) {
         await this.checkedEntry(prior);
         if (prior.intent_sha256 !== hash) fail('SITE_TIME_OPERATION_CONFLICT');
-        return { duplicate: true, intent_sha256: hash };
+        // A duplicate reply also asserts that the checked registration persists.
+        // New writer epochs alone do not invalidate historical exact retries.
+        return this.transaction('readonly', () => ({ duplicate: true, intent_sha256: hash }), { state });
       }
       if (state.entries.length >= this.capacity) fail('SITE_TIME_EVIDENCE_CAPACITY');
       const journal = await this.coordinator.store.read();
@@ -100,10 +120,9 @@ export class SiteTimeDnrEvidence {
       const payload = { intent, intent_sha256: hash, registration };
       const entry = { ...payload, entry_sha256: await digest(payload) };
       return this.transaction('readwrite', current => {
-        if (current.entries.length !== state.entries.length) fail('SITE_TIME_EVIDENCE_STATE_CHANGED');
         current.entries.push(entry);
         return { duplicate: false, intent_sha256: hash };
-      });
+      }, { state, journal });
     });
   }
   /** Read-only: exact immutable context required, with authority rechecked. */
