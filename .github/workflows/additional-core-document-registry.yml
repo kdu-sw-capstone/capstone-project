@@ -1,0 +1,30 @@
+name: Additional Core document registry recovery
+on:
+  pull_request:
+    branches: [integration/additional-mvp-20261029]
+    paths:
+      - 'extension/src/document-control-registry.js'
+      - 'extension/tests/document-control-registry*.mjs'
+      - 'extension/package*.json'
+      - '.github/workflows/additional-core-document-registry.yml'
+permissions:
+  contents: read
+jobs:
+  document-registry:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-24.04, windows-latest]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38
+        with:
+          node-version: '24.19.0'
+      - run: npm ci --ignore-scripts --no-audit --no-fund
+        working-directory: extension
+      - run: node --test extension/tests/document-control-registry.test.mjs extension/tests/document-control-registry-recovery.test.mjs
+      - run: node --test contracts/additional-mvp/rc1/tests/legacy-boundary.test.mjs
+      - run: npm run check
+        working-directory: extension
