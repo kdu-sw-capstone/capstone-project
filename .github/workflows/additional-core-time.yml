@@ -33,3 +33,4 @@ jobs:
       - run: node --test contracts/additional-mvp/rc1/tests/legacy-boundary.test.mjs
       - run: npm run check
         working-directory: extension
+      - run: node --test extension/tests/additional-observer-lifetime.test.mjs

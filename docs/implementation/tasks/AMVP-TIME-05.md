@@ -84,3 +84,13 @@
 - 순수 helper 입력의 activeSession/alreadyIssued/recovered와 시각은 신뢰 adapter가 검증해야 한다. READY는 실제 세션 시작 허가나 RUNNING 증거가 아니다. 중복 판정은 영속 발생 원장·owner/version 검증과 함께 사용해야 하며 본 모듈은 영속 멱등을 구현하지 않는다.
 - 실행기 연결 전 실제 시간대/이벤트 loop 성능·alarm 지연·재시작·실제 적용/복원을 검증해야 한다. Server weekly 구현을 변경하거나 ONCE legacy actor 매핑을 임의 확정하지 않는다. 제품 기능 전체는 부분 구현이며 작은 모듈 리뷰 단위다.
 - 최신 기준 예약8/8·계약6/6·syntax/whitespace 검증 후 Commit/Push 및 PR 제출. 원격 CI는 Ubuntu/Windows Node24에서 같은 예약·계약 검증을 수행하며 Chrome 수용은 아니다.
+
+## 2026-11-02 관측 callback 수명 격리 — 진행 중
+
+- 담당 윤종민, 브랜치 `fix/additional-mvp-observer-lifetime`, 시작 integration `2201654e4ba3adbc1a4738bc14723b708d522c69`.
+- 기존 C05/C11 stop·재시작·권한 회수 규칙 안에서 이전 lifecycle의 지연 callback이 새 관측에 영향을 주지 않도록 반례부터 확인한다. #89 원장 복구·공용 Wire·clock·실제 제품 START는 변경하지 않는다.
+- 수용 기준: 중단/재시작 전 callback과 권한 회수 이후 queued idle callback은 새 CANDIDATE·durable capture를 생성하지 않는다. 새 lifecycle의 유효 관측과 최초60초·threshold60·미확인 hold는 유지한다.
+
+- 종료: idle generation·foreground lifecycle별 callback을 검증해 이전 callback과 권한 회수/현재 조회 실패 뒤 active callback을 차단했다. 정상 새 회차 관측·threshold60·원본/owner/의무 보존은 유지한다.
+- 설치 기본 캐시 실패/import 실패를 해결한 뒤 기존 source 반례6/6 실패를 재확인했다. 최종 신규14/14·관련45/45·전체 Extension993/993·계약6/6·Chromium native IndexedDB1/1·syntax/whitespace PASS. #89 source/신규24와 임시 복사본 호환69/69 PASS(중복 합산 금지, 제품 통합 아님).
+- 상태는 검토 대기로 전환한다. #89 포함 없이 같은 integration base에 신규14를 추가한 결과이며 기존 시험 삭제 없음. 실제 Chrome START·장시간 측정·Worker/clock/한도/Report/IG04 ACK 공동 계약은 별도 미완료다. [상세 기록](../evidence/AMVP-TIME-05-observer-lifetime.md).

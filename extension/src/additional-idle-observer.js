@@ -12,14 +12,8 @@ export class AdditionalIdleObserver {
     this.sequence = 0;
     this.running = false;
     this.state = 'UNAVAILABLE';
-    this.onState = state => { if (this.running) this.publish(state); };
-    this.onRemoved = change => {
-      if (this.running && change.permissions?.includes('idle')) {
-        this.generation++;
-        this.idle?.onStateChanged?.removeListener?.(this.onState);
-        this.publish('UNAVAILABLE');
-      }
-    };
+    this.onState = null;
+    this.onRemoved = null;
   }
   publish(state) {
     if (!['active', 'idle', 'locked'].includes(state)) state = 'UNAVAILABLE';
@@ -38,6 +32,17 @@ export class AdditionalIdleObserver {
     this.stop();
     this.running = true;
     const generation = ++this.generation;
+    const current = () => this.running && generation === this.generation;
+    // Removing a listener does not authenticate callbacks already dispatched.
+    // Each registration belongs to this start only, including permission events.
+    this.onState = state => { if (current()) this.publish(state); };
+    this.onRemoved = change => {
+      if (current() && change.permissions?.includes('idle')) {
+        this.generation++;
+        this.idle?.onStateChanged?.removeListener?.(this.onState);
+        this.publish('UNAVAILABLE');
+      }
+    };
     this.publish('UNAVAILABLE');
     try {
       if (!this.idle?.queryState || !this.idle?.setDetectionInterval
@@ -54,6 +59,7 @@ export class AdditionalIdleObserver {
       if (this.running && generation === this.generation && sequence === this.sequence) this.publish(state);
     } catch {
       if (this.running && generation === this.generation) {
+        this.generation++;
         this.idle?.onStateChanged?.removeListener?.(this.onState);
         this.publish('UNAVAILABLE');
       }
@@ -62,7 +68,7 @@ export class AdditionalIdleObserver {
   stop() {
     this.running = false;
     this.generation++;
-    this.idle?.onStateChanged?.removeListener?.(this.onState);
-    this.permissions?.onRemoved?.removeListener?.(this.onRemoved);
+    if (this.onState) this.idle?.onStateChanged?.removeListener?.(this.onState);
+    if (this.onRemoved) this.permissions?.onRemoved?.removeListener?.(this.onRemoved);
   }
 }
