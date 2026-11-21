@@ -3,7 +3,6 @@ package kr.ac.kdu.focurve.auth;
 import java.security.MessageDigest;
 import java.security.SecureRandom;
 import java.nio.charset.StandardCharsets;
-import java.sql.Timestamp;
 import java.time.Instant;
 import java.util.Map;
 import java.util.UUID;
@@ -41,7 +40,7 @@ public class EmailSignupCodes {
     // DB-only disclosure cannot brute-force the 6 digits: HMAC uses the high-entropy
     // HttpOnly credential, which is never stored in the challenge table or response.
     db.update("INSERT INTO email_signup_codes(id,owner_hash,email,code_hash,expires_at) VALUES (?,?,?,?,?)",
-      id,owner,email,AuthSupport.fingerprint(credential,id+":"+code),Timestamp.from(expires));
+      id,owner,email,AuthSupport.fingerprint(credential,id+":"+code),java.time.LocalDateTime.ofInstant(expires, java.time.ZoneOffset.UTC));
     mail.send(email,"SIGNUP_CODE",code);
     // Failed delivery rolls back the new row and preserves the previously valid code/proof.
     db.update("UPDATE email_signup_codes SET superseded_at=UTC_TIMESTAMP(3) WHERE owner_hash=? AND email=? AND id<>? AND superseded_at IS NULL AND consumed_at IS NULL",owner,email,id);
@@ -69,7 +68,7 @@ public class EmailSignupCodes {
       throw new ApiFailure(attempts==4?429:422,attempts==4?"CODE_ATTEMPTS_EXCEEDED":"CODE_INVALID");
     }
     String proof=AuthSupport.token(); Instant expires=Instant.now().plusSeconds(600);
-    db.update("UPDATE email_signup_codes SET verified_at=UTC_TIMESTAMP(3),proof_hash=?,proof_expires_at=? WHERE id=?",AuthSupport.hash(proof),Timestamp.from(expires),id);
+    db.update("UPDATE email_signup_codes SET verified_at=UTC_TIMESTAMP(3),proof_hash=?,proof_expires_at=? WHERE id=?",AuthSupport.hash(proof),java.time.LocalDateTime.ofInstant(expires, java.time.ZoneOffset.UTC),id);
     return Map.of("verified",true,"verification_proof",proof,"proof_expires_at",expires.toString());
   }
   // Called inside the signup transaction, after the same session lock. Consuming a

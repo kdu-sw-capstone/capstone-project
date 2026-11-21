@@ -1,6 +1,5 @@
 package kr.ac.kdu.focurve.auth;
 
-import java.sql.Timestamp;
 import java.time.*;
 import java.util.*;
 import kr.ac.kdu.focurve.api.ApiFailure;
@@ -46,8 +45,8 @@ public class AuthRateLimits {
         "INSERT IGNORE INTO auth_rate_limits(bucket_hash,window_start,attempts,last_attempt) VALUES"
             + " (?,?,0,?)",
         key,
-        Timestamp.from(now),
-        Timestamp.from(Instant.EPOCH));
+        utcDateTime(now),
+        utcDateTime(Instant.EPOCH));
       var r = db.queryForMap("SELECT * FROM auth_rate_limits WHERE bucket_hash=? FOR UPDATE", key);
       Instant start = kr.ac.kdu.focurve.api.DbTime.instant(r.get("window_start")),
         last = kr.ac.kdu.focurve.api.DbTime.instant(r.get("last_attempt"));
@@ -68,9 +67,14 @@ public class AuthRateLimits {
       state.count++;state.last=observedAt;
       db.update(
         "UPDATE auth_rate_limits SET window_start=?,attempts=?,last_attempt=? WHERE bucket_hash=?",
-        Timestamp.from(state.start),state.count,Timestamp.from(observedAt),state.key);
+        utcDateTime(state.start),state.count,utcDateTime(observedAt),state.key);
     }
     return states.stream().map(s->s.deadline(observedAt)).max(Instant::compareTo).orElse(observedAt);
+  }
+
+  // MySQL DATETIME stores wall time. Bind UTC explicitly rather than using the JDBC timezone.
+  private static LocalDateTime utcDateTime(Instant instant) {
+    return LocalDateTime.ofInstant(instant, ZoneOffset.UTC);
   }
 
   static Instant retryAt(int count,int max,Instant start,Instant last,long window,long gap,Instant now) {

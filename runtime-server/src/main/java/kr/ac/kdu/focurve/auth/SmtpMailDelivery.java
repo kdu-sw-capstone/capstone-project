@@ -47,11 +47,15 @@ public class SmtpMailDelivery implements MailDelivery {
     p.setProperty("mail.smtp.writetimeout", "5000");
   }
 
+  public boolean configured() {
+    return !host.isBlank() && !from.isBlank()
+        && java.util.Set.of("mailpit", "external").contains(mode)
+        && !(tls && ssl)
+        && (!mode.equals("external") || tls || ssl);
+  }
+
   public void send(String address, String kind, String token) {
-    if (host.isBlank() || from.isBlank()) throw new ApiFailure(503, "MAIL_UNAVAILABLE");
-    if (!java.util.Set.of("mailpit", "external").contains(mode)
-        || tls && ssl
-        || mode.equals("external") && !tls && !ssl) throw new ApiFailure(503, "MAIL_UNAVAILABLE");
+    if (!configured()) throw new ApiFailure(503, "MAIL_UNAVAILABLE");
     try {
       var base = java.net.URI.create(url);
       if (!java.util.Set.of("http", "https").contains(base.getScheme())
